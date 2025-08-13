@@ -88,28 +88,7 @@ export function AreaSelector({
     onAreasChange(selectedAreas.filter(area => area !== areaName));
   };
 
-  const addCustomArea = () => {
-    if (!searchValue.trim() || selectedAreas.includes(searchValue.trim())) {
-      return;
-    }
-    
-    if (selectedAreas.length >= maxAreas) {
-      return;
-    }
-
-    addArea(searchValue.trim());
-    setSearchValue('');
-    setOpen(false);
-  };
-
-  const canAddCustomArea = () => {
-    return (
-      searchValue.trim().length >= 2 &&
-      !selectedAreas.includes(searchValue.trim()) &&
-      !uniqueAreaNames.some(name => name.toLowerCase() === searchValue.trim().toLowerCase()) &&
-      selectedAreas.length < maxAreas
-    );
-  };
+  // Removed addCustomArea and canAddCustomArea functions - only allow selection from existing areas
 
   return (
     <FormItem className={className}>
@@ -172,24 +151,12 @@ export function AreaSelector({
                       "Loading areas..."
                     ) : searchValue.trim().length >= 2 ? (
                       <div className="p-2">
-                        <p className="text-sm text-muted-foreground mb-2">
-                          No existing areas found.
+                        <p className="text-sm text-muted-foreground">
+                          No existing areas found. Please select from available areas only.
                         </p>
-                        {canAddCustomArea() && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={addCustomArea}
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add "{searchValue.trim()}"
-                          </Button>
-                        )}
                       </div>
                     ) : (
-                      "Type at least 2 characters to search or add new area"
+                      "Type at least 2 characters to search areas"
                     )}
                   </CommandEmpty>
 

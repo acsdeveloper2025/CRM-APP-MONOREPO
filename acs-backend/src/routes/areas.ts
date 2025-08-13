@@ -64,7 +64,7 @@ const listAreasValidation = [
     .withMessage('Search term must be less than 100 characters'),
   query('sortBy')
     .optional()
-    .isIn(['name', 'cityName', 'state', 'country', 'pincodeCode', 'usageCount', 'createdAt'])
+    .isIn(['name', 'usageCount', 'createdAt'])
     .withMessage('Invalid sort field'),
   query('sortOrder')
     .optional()

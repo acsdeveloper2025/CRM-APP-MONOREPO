@@ -103,11 +103,11 @@ export class LocationsService {
 
   // Utility functions
   async getStates(): Promise<ApiResponse<string[]>> {
-    return apiService.get('/locations/states');
+    return apiService.get('/states');
   }
 
   async getCountries(): Promise<ApiResponse<string[]>> {
-    return apiService.get('/locations/countries');
+    return apiService.get('/countries');
   }
 }
 

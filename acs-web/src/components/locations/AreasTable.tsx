@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, Edit, Trash2, MapPin, Building, Hash } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, MapPin, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -41,10 +41,6 @@ interface AreasTableProps {
 }
 
 interface AreaWithDetails extends PincodeArea {
-  pincodeCode?: string;
-  cityName?: string;
-  state?: string;
-  country?: string;
   usageCount?: number;
 }
 
@@ -82,9 +78,6 @@ export function AreasTable({ data, isLoading }: AreasTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Area Name</TableHead>
-              <TableHead>Pincode</TableHead>
-              <TableHead>City</TableHead>
-              <TableHead>State</TableHead>
               <TableHead>Usage Count</TableHead>
               <TableHead>Created Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -94,9 +87,6 @@ export function AreasTable({ data, isLoading }: AreasTableProps) {
             {Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={index}>
                 <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
@@ -115,9 +105,6 @@ export function AreasTable({ data, isLoading }: AreasTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Area Name</TableHead>
-              <TableHead>Pincode</TableHead>
-              <TableHead>City</TableHead>
-              <TableHead>State</TableHead>
               <TableHead>Usage Count</TableHead>
               <TableHead>Created Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -125,7 +112,7 @@ export function AreasTable({ data, isLoading }: AreasTableProps) {
           </TableHeader>
           <TableBody>
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                 No areas found. Areas will appear here when pincodes are created with area information.
               </TableCell>
             </TableRow>
@@ -142,9 +129,6 @@ export function AreasTable({ data, isLoading }: AreasTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Area Name</TableHead>
-              <TableHead>Pincode</TableHead>
-              <TableHead>City</TableHead>
-              <TableHead>State</TableHead>
               <TableHead>Usage Count</TableHead>
               <TableHead>Created Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -163,28 +147,6 @@ export function AreasTable({ data, isLoading }: AreasTableProps) {
                         #{area.displayOrder}
                       </Badge>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {areaWithDetails.pincodeCode && (
-                      <Badge variant="secondary" className="font-mono">
-                        {areaWithDetails.pincodeCode}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {areaWithDetails.cityName && (
-                      <div className="flex items-center space-x-1">
-                        <Building className="h-3 w-3 text-muted-foreground" />
-                        <span>{areaWithDetails.cityName}</span>
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {areaWithDetails.state && (
-                      <span className="text-sm text-muted-foreground">
-                        {areaWithDetails.state}
-                      </span>
-                    )}
                   </TableCell>
                   <TableCell>
                     {areaWithDetails.usageCount !== undefined && (
@@ -240,7 +202,7 @@ export function AreasTable({ data, isLoading }: AreasTableProps) {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the area
-              "{areaToDelete?.name}" from pincode "{areaToDelete?.pincodeCode}".
+              "{areaToDelete?.name}".
               {areaToDelete?.usageCount && areaToDelete.usageCount > 1 && (
                 <span className="block mt-2 text-amber-600">
                   Warning: This area is used in {areaToDelete.usageCount} pincode(s).

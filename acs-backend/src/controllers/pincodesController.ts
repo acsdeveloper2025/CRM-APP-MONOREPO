@@ -3,89 +3,7 @@ import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from '@/middleware/auth';
 import { query } from '@/config/database';
 
-// Mock data for demonstration (replace with actual database operations)
-let pincodes: any[] = [
-  {
-    id: 'pincode_1',
-    code: '400001',
-    area: 'Fort',
-    cityId: 'city_1',
-    cityName: 'Mumbai',
-    state: 'Maharashtra',
-    country: 'India',
-    district: 'Mumbai',
-    region: 'Western',
-    isActive: true,
-    coordinates: {
-      latitude: 18.9387,
-      longitude: 72.8353,
-    },
-    deliveryStatus: 'DELIVERY',
-    officeType: 'Head Office',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'pincode_2',
-    code: '400002',
-    area: 'Kalbadevi',
-    cityId: 'city_1',
-    cityName: 'Mumbai',
-    state: 'Maharashtra',
-    country: 'India',
-    district: 'Mumbai',
-    region: 'Western',
-    isActive: true,
-    coordinates: {
-      latitude: 18.9467,
-      longitude: 72.8342,
-    },
-    deliveryStatus: 'DELIVERY',
-    officeType: 'Sub Office',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'pincode_3',
-    code: '110001',
-    area: 'Connaught Place',
-    cityId: 'city_2',
-    cityName: 'Delhi',
-    state: 'Delhi',
-    country: 'India',
-    district: 'Central Delhi',
-    region: 'Northern',
-    isActive: true,
-    coordinates: {
-      latitude: 28.6304,
-      longitude: 77.2177,
-    },
-    deliveryStatus: 'DELIVERY',
-    officeType: 'Head Office',
-    createdAt: '2024-01-02T00:00:00.000Z',
-    updatedAt: '2024-01-02T00:00:00.000Z',
-  },
-  {
-    id: 'pincode_4',
-    code: '560001',
-    area: 'Bangalore GPO',
-    cityId: 'city_3',
-    cityName: 'Bangalore',
-    state: 'Karnataka',
-    country: 'India',
-    district: 'Bangalore Urban',
-    region: 'Southern',
-    isActive: true,
-    coordinates: {
-      latitude: 12.9716,
-      longitude: 77.5946,
-    },
-    deliveryStatus: 'DELIVERY',
-    officeType: 'Head Office',
-    createdAt: '2024-01-03T00:00:00.000Z',
-    updatedAt: '2024-01-03T00:00:00.000Z',
-  },
-];
+// Database-driven pincodes controller - no more mock data
 
 // GET /api/pincodes - List pincodes with pagination and filters
 export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
@@ -109,27 +27,17 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
       SELECT
         p.id,
         p.code,
+        p.area,
         p.city_id as "cityId",
         c.name as "cityName",
         s.name as state,
         co.name as country,
         p.created_at as "createdAt",
-        p.updated_at as "updatedAt",
-        COALESCE(
-          JSON_AGG(
-            JSON_BUILD_OBJECT(
-              'id', pa.id,
-              'name', pa.area_name,
-              'displayOrder', pa.display_order
-            ) ORDER BY pa.display_order
-          ) FILTER (WHERE pa.id IS NOT NULL),
-          '[]'::json
-        ) as areas
+        p.updated_at as "updatedAt"
       FROM pincodes p
       JOIN cities c ON p.city_id = c.id
       JOIN states s ON c.state_id = s.id
       JOIN countries co ON c.country_id = co.id
-      LEFT JOIN pincode_areas pa ON p.id = pa.pincode_id
       WHERE 1=1
     `;
 
@@ -155,13 +63,12 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
         p.code ILIKE $${paramCount} OR
         c.name ILIKE $${paramCount} OR
         s.name ILIKE $${paramCount} OR
-        pa.area_name ILIKE $${paramCount}
+        p.area ILIKE $${paramCount}
       )`;
       params.push(`%${search}%`);
     }
 
-    // Group by pincode to aggregate areas
-    sql += ` GROUP BY p.id, p.code, p.city_id, c.name, s.name, co.name, p.created_at, p.updated_at`;
+    // No need to group by since we're not aggregating areas anymore
 
     // Apply sorting
     const sortDirection = sortOrder === 'desc' ? 'DESC' : 'ASC';
@@ -393,50 +300,33 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    // Create pincode in database
+    // Create pincode in database with area
     const pincodeResult = await query(
-      'INSERT INTO pincodes (code, city_id) VALUES ($1, $2) RETURNING id, code, city_id as "cityId", created_at as "createdAt", updated_at as "updatedAt"',
-      [code, cityId]
+      'INSERT INTO pincodes (code, area, city_id) VALUES ($1, $2, $3) RETURNING id, code, area, city_id as "cityId", created_at as "createdAt", updated_at as "updatedAt"',
+      [code, areaList[0], cityId]
     );
 
     const newPincode = pincodeResult.rows[0];
 
-    // Add areas to the pincode
-    for (let i = 0; i < areaList.length; i++) {
-      const areaName = areaList[i].trim();
-      const displayOrder = i + 1;
-
-      await query(
-        'INSERT INTO pincode_areas (pincode_id, area_name, display_order) VALUES ($1, $2, $3)',
-        [newPincode.id, areaName, displayOrder]
-      );
-    }
+    // Simplified: area is already stored in the pincodes table
 
     // Get complete pincode data with city information
     const completeResult = await query(`
       SELECT
         p.id,
         p.code,
+        p.area,
         p.city_id as "cityId",
         c.name as "cityName",
         s.name as state,
         co.name as country,
         p.created_at as "createdAt",
-        p.updated_at as "updatedAt",
-        JSON_AGG(
-          JSON_BUILD_OBJECT(
-            'id', pa.id,
-            'name', pa.area_name,
-            'displayOrder', pa.display_order
-          ) ORDER BY pa.display_order
-        ) as areas
+        p.updated_at as "updatedAt"
       FROM pincodes p
       JOIN cities c ON p.city_id = c.id
       JOIN states s ON c.state_id = s.id
       JOIN countries co ON c.country_id = co.id
-      JOIN pincode_areas pa ON p.id = pa.pincode_id
       WHERE p.id = $1
-      GROUP BY p.id, p.code, p.city_id, c.name, s.name, co.name, p.created_at, p.updated_at
     `, [newPincode.id]);
 
     const responseData = completeResult.rows[0];
@@ -444,7 +334,7 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
     logger.info(`Created new pincode: ${newPincode.id}`, {
       userId: req.user?.id,
       pincodeCode: code,
-      area: areaList.join(', '),
+      area: responseData.area,
       cityName: responseData.cityName
     });
 
@@ -469,8 +359,13 @@ export const updatePincode = async (req: AuthenticatedRequest, res: Response) =>
     const { id } = req.params;
     const updateData = req.body;
 
-    const pincodeIndex = pincodes.findIndex(pin => pin.id === id);
-    if (pincodeIndex === -1) {
+    // Check if pincode exists
+    const existingResult = await query(
+      'SELECT * FROM pincodes WHERE id = $1',
+      [id]
+    );
+
+    if (existingResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Pincode not found',
@@ -480,8 +375,12 @@ export const updatePincode = async (req: AuthenticatedRequest, res: Response) =>
 
     // Check for duplicate code if being updated
     if (updateData.code) {
-      const existingPincode = pincodes.find(pin => pin.id !== id && pin.code === updateData.code);
-      if (existingPincode) {
+      const duplicateResult = await query(
+        'SELECT id FROM pincodes WHERE id != $1 AND code = $2',
+        [id, updateData.code]
+      );
+
+      if (duplicateResult.rows.length > 0) {
         return res.status(400).json({
           success: false,
           message: 'Pincode already exists',
@@ -490,23 +389,71 @@ export const updatePincode = async (req: AuthenticatedRequest, res: Response) =>
       }
     }
 
-    // Update pincode
-    const updatedPincode = {
-      ...pincodes[pincodeIndex],
-      ...updateData,
-      updatedAt: new Date().toISOString(),
-    };
+    // Build update query
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+    let paramCount = 0;
 
-    pincodes[pincodeIndex] = updatedPincode;
+    if (updateData.code) {
+      paramCount++;
+      updateFields.push(`code = $${paramCount}`);
+      updateValues.push(updateData.code);
+    }
 
-    logger.info(`Updated pincode: ${id}`, { 
+    if (updateData.area) {
+      paramCount++;
+      updateFields.push(`area = $${paramCount}`);
+      updateValues.push(updateData.area);
+    }
+
+    if (updateData.cityId) {
+      paramCount++;
+      updateFields.push(`city_id = $${paramCount}`);
+      updateValues.push(updateData.cityId);
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid fields to update',
+        error: { code: 'NO_UPDATE_FIELDS' },
+      });
+    }
+
+    // Add updated_at
+    paramCount++;
+    updateFields.push(`updated_at = $${paramCount}`);
+    updateValues.push(new Date());
+
+    // Add id for WHERE clause
+    paramCount++;
+    updateValues.push(id);
+
+    const updateQuery = `
+      UPDATE pincodes
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramCount}
+      RETURNING *
+    `;
+
+    const result = await query(updateQuery, updateValues);
+    const updatedPincode = result.rows[0];
+
+    logger.info(`Updated pincode: ${id}`, {
       userId: req.user?.id,
       changes: Object.keys(updateData)
     });
 
     res.json({
       success: true,
-      data: updatedPincode,
+      data: {
+        id: updatedPincode.id,
+        code: updatedPincode.code,
+        area: updatedPincode.area,
+        cityId: updatedPincode.city_id,
+        createdAt: updatedPincode.created_at,
+        updatedAt: updatedPincode.updated_at,
+      },
       message: 'Pincode updated successfully',
     });
   } catch (error) {
@@ -524,8 +471,13 @@ export const deletePincode = async (req: AuthenticatedRequest, res: Response) =>
   try {
     const { id } = req.params;
 
-    const pincodeIndex = pincodes.findIndex(pin => pin.id === id);
-    if (pincodeIndex === -1) {
+    // Check if pincode exists
+    const existingResult = await query(
+      'SELECT * FROM pincodes WHERE id = $1',
+      [id]
+    );
+
+    if (existingResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Pincode not found',
@@ -533,12 +485,14 @@ export const deletePincode = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    const deletedPincode = pincodes[pincodeIndex];
-    pincodes.splice(pincodeIndex, 1);
+    const pincodeToDelete = existingResult.rows[0];
 
-    logger.info(`Deleted pincode: ${id}`, { 
+    // Delete the pincode
+    await query('DELETE FROM pincodes WHERE id = $1', [id]);
+
+    logger.info(`Deleted pincode: ${id}`, {
       userId: req.user?.id,
-      pincodeCode: deletedPincode.code
+      pincodeCode: pincodeToDelete.code
     });
 
     res.json({
@@ -568,19 +522,36 @@ export const searchPincodes = async (req: AuthenticatedRequest, res: Response) =
       });
     }
 
-    const searchTerm = (q as string).toLowerCase();
-    const searchResults = pincodes
-      .filter(pin =>
-        pin.code.includes(searchTerm) ||
-        pin.area.toLowerCase().includes(searchTerm) ||
-        pin.cityName.toLowerCase().includes(searchTerm) ||
-        pin.district.toLowerCase().includes(searchTerm)
-      )
-      .slice(0, Number(limit));
+    const searchTerm = `%${(q as string).toLowerCase()}%`;
+    const limitNum = parseInt(limit as string, 10);
+
+    const result = await query(`
+      SELECT
+        p.id,
+        p.code,
+        p.area,
+        p.city_id as "cityId",
+        c.name as "cityName",
+        s.name as state,
+        co.name as country,
+        p.created_at as "createdAt",
+        p.updated_at as "updatedAt"
+      FROM pincodes p
+      JOIN cities c ON p.city_id = c.id
+      JOIN states s ON c.state_id = s.id
+      JOIN countries co ON c.country_id = co.id
+      WHERE
+        LOWER(p.code) LIKE $1 OR
+        LOWER(p.area) LIKE $1 OR
+        LOWER(c.name) LIKE $1 OR
+        LOWER(s.name) LIKE $1
+      ORDER BY p.code
+      LIMIT $2
+    `, [searchTerm, limitNum]);
 
     res.json({
       success: true,
-      data: searchResults,
+      data: result.rows,
     });
   } catch (error) {
     logger.error('Error searching pincodes:', error);
@@ -595,80 +566,11 @@ export const searchPincodes = async (req: AuthenticatedRequest, res: Response) =
 // POST /api/pincodes/bulk-import - Bulk import pincodes
 export const bulkImportPincodes = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { pincodes: importPincodes } = req.body;
-
-    if (!importPincodes || !Array.isArray(importPincodes) || importPincodes.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Pincodes array is required',
-        error: { code: 'MISSING_PINCODES' },
-      });
-    }
-
-    const importedPincodes = [];
-    const errors = [];
-
-    for (let i = 0; i < importPincodes.length; i++) {
-      try {
-        const pincodeData = importPincodes[i];
-        const { code, area, cityId, cityName, state, district } = pincodeData;
-
-        // Validate required fields
-        if (!code || !area || !cityName || !state) {
-          errors.push(`Row ${i + 1}: Code, area, city name, and state are required`);
-          continue;
-        }
-
-        // Check for duplicate code
-        const existingPincode = pincodes.find(pin => pin.code === code);
-        if (existingPincode) {
-          errors.push(`Row ${i + 1}: Pincode '${code}' already exists`);
-          continue;
-        }
-
-        const newPincode = {
-          id: `pincode_${Date.now()}_${i}`,
-          code,
-          area,
-          cityId: cityId || `city_${code.substring(0, 3)}`,
-          cityName,
-          state,
-          country: pincodeData.country || 'India',
-          district: district || cityName,
-          region: pincodeData.region || 'Unknown',
-          coordinates: pincodeData.coordinates || { latitude: 0, longitude: 0 },
-          deliveryStatus: pincodeData.deliveryStatus || 'DELIVERY',
-          officeType: pincodeData.officeType || 'Sub Office',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        pincodes.push(newPincode);
-        importedPincodes.push(newPincode);
-      } catch (error) {
-        errors.push(`Row ${i + 1}: ${error}`);
-      }
-    }
-
-    logger.info(`Bulk imported ${importedPincodes.length} pincodes`, {
-      userId: req.user?.id,
-      successCount: importedPincodes.length,
-      errorCount: errors.length
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        imported: importedPincodes,
-        errors,
-        summary: {
-          total: importPincodes.length,
-          successful: importedPincodes.length,
-          failed: errors.length,
-        }
-      },
-      message: `Bulk import completed: ${importedPincodes.length} successful, ${errors.length} failed`,
+    // TODO: Implement database-driven bulk import
+    res.status(501).json({
+      success: false,
+      message: 'Bulk import not implemented yet - requires database integration',
+      error: { code: 'NOT_IMPLEMENTED' },
     });
   } catch (error) {
     logger.error('Error in bulk import:', error);
@@ -684,30 +586,38 @@ export const bulkImportPincodes = async (req: AuthenticatedRequest, res: Respons
 export const getPincodesByCity = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id: cityId } = req.params;
-    const { isActive, limit = 50 } = req.query;
+    const { limit = 50 } = req.query;
 
-    let cityPincodes = pincodes.filter(pin => pin.cityId === cityId);
+    const limitNum = parseInt(limit as string, 10);
 
-    // Apply active filter if specified
-    if (isActive !== undefined) {
-      cityPincodes = cityPincodes.filter(pin => pin.isActive === (isActive === 'true'));
-    }
+    const result = await query(`
+      SELECT
+        p.id,
+        p.code,
+        p.area,
+        p.city_id as "cityId",
+        c.name as "cityName",
+        s.name as state,
+        co.name as country,
+        p.created_at as "createdAt",
+        p.updated_at as "updatedAt"
+      FROM pincodes p
+      JOIN cities c ON p.city_id = c.id
+      JOIN states s ON c.state_id = s.id
+      JOIN countries co ON c.country_id = co.id
+      WHERE p.city_id = $1
+      ORDER BY p.code
+      LIMIT $2
+    `, [cityId, limitNum]);
 
-    // Apply limit
-    cityPincodes = cityPincodes.slice(0, Number(limit));
-
-    // Sort by pincode
-    cityPincodes.sort((a, b) => a.code.localeCompare(b.code));
-
-    logger.info(`Retrieved ${cityPincodes.length} pincodes for city ${cityId}`, {
+    logger.info(`Retrieved ${result.rows.length} pincodes for city ${cityId}`, {
       userId: req.user?.id,
-      cityId,
-      isActive
+      cityId
     });
 
     res.json({
       success: true,
-      data: cityPincodes,
+      data: result.rows,
     });
   } catch (error) {
     logger.error('Error getting pincodes by city:', error);

@@ -54,13 +54,13 @@ export const getCities = async (req: AuthenticatedRequest, res: Response) => {
     // Apply filters
     if (state) {
       paramCount++;
-      sql += ` AND s.name = $${paramCount}`;
+      sql += ` AND UPPER(s.name) = UPPER($${paramCount})`;
       params.push(state);
     }
 
     if (country) {
       paramCount++;
-      sql += ` AND co.name = $${paramCount}`;
+      sql += ` AND UPPER(co.name) = UPPER($${paramCount})`;
       params.push(country);
     }
 

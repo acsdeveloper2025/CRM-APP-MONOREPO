@@ -197,7 +197,7 @@ export class LocationsService {
 
   // Utility functions
   async getStateNames(): Promise<ApiResponse<State[]>> {
-    return apiService.get('/locations/states');
+    return this.getStates();
   }
 
   // Area operations

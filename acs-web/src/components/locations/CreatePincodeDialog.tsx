@@ -31,16 +31,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { locationsService } from '@/services/locations';
-import { AreaSelector } from './AreaSelector';
 
 const createPincodeSchema = z.object({
   code: z.string()
     .min(6, 'Pincode must be 6 digits')
     .max(6, 'Pincode must be 6 digits')
     .regex(/^\d{6}$/, 'Pincode must contain only numbers'),
-  areas: z.array(z.string().min(2, 'Area name must be at least 2 characters'))
-    .min(1, 'At least one area is required')
-    .max(15, 'Maximum 15 areas allowed'),
+  area: z.string().min(1, 'Area selection is required'),
   cityId: z.string().min(1, 'City selection is required'),
 });
 
@@ -58,7 +55,7 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
     resolver: zodResolver(createPincodeSchema),
     defaultValues: {
       code: '',
-      areas: [],
+      area: '',
       cityId: '',
     },
   });
@@ -67,6 +64,13 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
   const { data: citiesData } = useQuery({
     queryKey: ['cities'],
     queryFn: () => locationsService.getCities(),
+    enabled: open,
+  });
+
+  // Fetch areas for the dropdown
+  const { data: areasData } = useQuery({
+    queryKey: ['areas'],
+    queryFn: () => locationsService.getAreas(),
     enabled: open,
   });
 
@@ -96,7 +100,7 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
     // Prepare data with all required fields for backend
     const pincodeData = {
       code: data.code,
-      areas: data.areas,
+      area: data.area,
       cityId: data.cityId,
       cityName: selectedCity.name,
       state: selectedCity.state,
@@ -107,6 +111,7 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
   };
 
   const cities = citiesData?.data || [];
+  const areas = areasData?.data || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -144,15 +149,29 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
 
             <FormField
               control={form.control}
-              name="areas"
-              render={({ field, fieldState }) => (
-                <AreaSelector
-                  selectedAreas={field.value}
-                  onAreasChange={field.onChange}
-                  cityId={form.watch('cityId')}
-                  error={fieldState.error?.message}
-                  disabled={createMutation.isPending}
-                />
+              name="area"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Area</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={createMutation.isPending}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an area" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {areas.map((area) => (
+                        <SelectItem key={area.id || area.name} value={area.name}>
+                          {area.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the area for this pincode
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
               )}
             />
 

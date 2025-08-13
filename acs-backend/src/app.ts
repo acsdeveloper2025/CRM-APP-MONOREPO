@@ -24,7 +24,7 @@ import statesRoutes from '@/routes/states';
 import countriesRoutes from '@/routes/countries';
 import pincodesRoutes from '@/routes/pincodes';
 import areasRoutes from '@/routes/areas';
-import locationsRoutes from '@/routes/locations';
+// Removed mock locations routes - using individual database-driven routes instead
 import reportsRoutes from '@/routes/reports';
 import auditLogsRoutes from '@/routes/audit-logs';
 import geolocationRoutes from '@/routes/geolocation';
@@ -102,7 +102,7 @@ app.use('/api/states', statesRoutes);
 app.use('/api/countries', countriesRoutes);
 app.use('/api/pincodes', pincodesRoutes);
 app.use('/api/areas', areasRoutes);
-app.use('/api/locations', locationsRoutes);
+// Removed mock locations routes - using individual database-driven routes instead
 app.use('/api/reports', reportsRoutes);
 app.use('/api/audit-logs', auditLogsRoutes);
 app.use('/api/geolocation', geolocationRoutes);

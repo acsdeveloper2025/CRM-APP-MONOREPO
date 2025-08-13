@@ -3,26 +3,7 @@ import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from '@/middleware/auth';
 import { query } from '@/config/database';
 
-// Mock data for states (in production, this would come from database)
-const states = [
-  // Indian States
-  { id: 'state_1', name: 'Maharashtra', country: 'India', code: 'MH', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_2', name: 'Delhi', country: 'India', code: 'DL', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_3', name: 'Karnataka', country: 'India', code: 'KA', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_4', name: 'Tamil Nadu', country: 'India', code: 'TN', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_5', name: 'Gujarat', country: 'India', code: 'GJ', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_6', name: 'Rajasthan', country: 'India', code: 'RJ', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_7', name: 'West Bengal', country: 'India', code: 'WB', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_8', name: 'Uttar Pradesh', country: 'India', code: 'UP', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_9', name: 'Punjab', country: 'India', code: 'PB', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_10', name: 'Haryana', country: 'India', code: 'HR', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  
-  // US States (sample)
-  { id: 'state_us_1', name: 'California', country: 'United States', code: 'CA', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_us_2', name: 'New York', country: 'United States', code: 'NY', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_us_3', name: 'Texas', country: 'United States', code: 'TX', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  { id: 'state_us_4', name: 'Florida', country: 'United States', code: 'FL', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-];
+// Database-driven states controller - no more mock data
 
 // GET /api/states - List states with pagination and filters
 export const getStates = async (req: AuthenticatedRequest, res: Response) => {
@@ -157,8 +138,15 @@ export const getStateById = async (req: AuthenticatedRequest, res: Response) => 
   try {
     const { id } = req.params;
 
-    const state = states.find(s => s.id === id);
-    if (!state) {
+    const result = await query(
+      `SELECT s.id, s.name, s.code, c.name as country, s.created_at as "createdAt", s.updated_at as "updatedAt"
+       FROM states s
+       JOIN countries c ON s.country_id = c.id
+       WHERE s.id = $1`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'State not found',
@@ -166,7 +154,9 @@ export const getStateById = async (req: AuthenticatedRequest, res: Response) => 
       });
     }
 
-    logger.info(`Retrieved state: ${state.name}`, { 
+    const state = result.rows[0];
+
+    logger.info(`Retrieved state: ${state.name}`, {
       userId: req.user?.id,
       stateId: id
     });
@@ -190,14 +180,33 @@ export const createState = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { name, code, country } = req.body;
 
-    // Log the request data for debugging
-    console.log('Create state request:', { name, code, country });
-    console.log('Existing states:', states.map(s => ({ code: s.code, country: s.country })));
+    logger.info('Creating state with data:', { name, code, country, userId: req.user?.id });
 
-    // Check if state code already exists
-    const existingState = states.find(s => s.code === code && s.country === country);
-    if (existingState) {
-      console.log('Duplicate state found:', existingState);
+    // Get country_id from country name
+    const countryResult = await query(
+      'SELECT id FROM countries WHERE name = $1',
+      [country]
+    );
+
+    if (countryResult.rows.length === 0) {
+      logger.warn('Country not found:', { country });
+      return res.status(400).json({
+        success: false,
+        message: 'Country not found',
+        error: { code: 'COUNTRY_NOT_FOUND' },
+      });
+    }
+
+    const countryId = countryResult.rows[0].id;
+
+    // Check if state code already exists in this country
+    const existingStateResult = await query(
+      'SELECT id FROM states WHERE code = $1 AND country_id = $2',
+      [code.toUpperCase(), countryId]
+    );
+
+    if (existingStateResult.rows.length > 0) {
+      logger.warn('Duplicate state code:', { code, country });
       return res.status(400).json({
         success: false,
         message: 'State code already exists in this country',
@@ -205,19 +214,15 @@ export const createState = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Create new state
-    const newState = {
-      id: `state_${Date.now()}`,
-      name,
-      code: code.toUpperCase(),
-      country,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Create new state in database
+    const result = await query(
+      'INSERT INTO states (name, code, country_id) VALUES ($1, $2, $3) RETURNING *',
+      [name, code.toUpperCase(), countryId]
+    );
 
-    states.push(newState);
+    const newState = result.rows[0];
 
-    logger.info(`Created new state: ${newState.name}`, { 
+    logger.info(`Created new state: ${newState.name}`, {
       userId: req.user?.id,
       stateId: newState.id,
       stateData: newState
@@ -225,7 +230,14 @@ export const createState = async (req: AuthenticatedRequest, res: Response) => {
 
     res.status(201).json({
       success: true,
-      data: newState,
+      data: {
+        id: newState.id,
+        name: newState.name,
+        code: newState.code,
+        country: country,
+        createdAt: newState.created_at,
+        updatedAt: newState.updated_at,
+      },
       message: 'State created successfully',
     });
   } catch (error) {
@@ -244,8 +256,13 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const stateIndex = states.findIndex(s => s.id === id);
-    if (stateIndex === -1) {
+    // Check if state exists
+    const existingResult = await query(
+      'SELECT s.*, c.name as country FROM states s JOIN countries c ON s.country_id = c.id WHERE s.id = $1',
+      [id]
+    );
+
+    if (existingResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'State not found',
@@ -253,14 +270,31 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
+    const existingState = existingResult.rows[0];
+
     // Check for duplicate code if being updated
     if (updateData.code) {
-      const existingState = states.find(s => 
-        s.id !== id && 
-        s.code === updateData.code.toUpperCase() && 
-        s.country === (updateData.country || states[stateIndex].country)
+      let countryId = existingState.country_id;
+
+      // If country is being updated, get new country_id
+      if (updateData.country && updateData.country !== existingState.country) {
+        const countryResult = await query('SELECT id FROM countries WHERE name = $1', [updateData.country]);
+        if (countryResult.rows.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Country not found',
+            error: { code: 'COUNTRY_NOT_FOUND' },
+          });
+        }
+        countryId = countryResult.rows[0].id;
+      }
+
+      const duplicateResult = await query(
+        'SELECT id FROM states WHERE id != $1 AND code = $2 AND country_id = $3',
+        [id, updateData.code.toUpperCase(), countryId]
       );
-      if (existingState) {
+
+      if (duplicateResult.rows.length > 0) {
         return res.status(400).json({
           success: false,
           message: 'State code already exists in this country',
@@ -269,17 +303,69 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
-    // Update state
-    const updatedState = {
-      ...states[stateIndex],
-      ...updateData,
-      code: updateData.code ? updateData.code.toUpperCase() : states[stateIndex].code,
-      updatedAt: new Date().toISOString(),
-    };
+    // Build update query
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+    let paramCount = 0;
 
-    states[stateIndex] = updatedState;
+    if (updateData.name) {
+      paramCount++;
+      updateFields.push(`name = $${paramCount}`);
+      updateValues.push(updateData.name);
+    }
 
-    logger.info(`Updated state: ${updatedState.name}`, { 
+    if (updateData.code) {
+      paramCount++;
+      updateFields.push(`code = $${paramCount}`);
+      updateValues.push(updateData.code.toUpperCase());
+    }
+
+    if (updateData.country) {
+      const countryResult = await query('SELECT id FROM countries WHERE name = $1', [updateData.country]);
+      if (countryResult.rows.length > 0) {
+        paramCount++;
+        updateFields.push(`country_id = $${paramCount}`);
+        updateValues.push(countryResult.rows[0].id);
+      }
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid fields to update',
+        error: { code: 'NO_UPDATE_FIELDS' },
+      });
+    }
+
+    // Add updated_at
+    paramCount++;
+    updateFields.push(`updated_at = $${paramCount}`);
+    updateValues.push(new Date());
+
+    // Add id for WHERE clause
+    paramCount++;
+    updateValues.push(id);
+
+    const updateQuery = `
+      UPDATE states
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramCount}
+      RETURNING *
+    `;
+
+    const result = await query(updateQuery, updateValues);
+    const updatedState = result.rows[0];
+
+    // Get the updated state with country name
+    const finalResult = await query(
+      `SELECT s.id, s.name, s.code, c.name as country, s.created_at as "createdAt", s.updated_at as "updatedAt"
+       FROM states s
+       JOIN countries c ON s.country_id = c.id
+       WHERE s.id = $1`,
+      [id]
+    );
+
+    logger.info(`Updated state: ${updatedState.name}`, {
       userId: req.user?.id,
       stateId: id,
       updateData
@@ -287,7 +373,7 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({
       success: true,
-      data: updatedState,
+      data: finalResult.rows[0],
       message: 'State updated successfully',
     });
   } catch (error) {
@@ -305,8 +391,16 @@ export const deleteState = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    const stateIndex = states.findIndex(s => s.id === id);
-    if (stateIndex === -1) {
+    // Check if state exists and get its details
+    const existingResult = await query(
+      `SELECT s.id, s.name, s.code, c.name as country
+       FROM states s
+       JOIN countries c ON s.country_id = c.id
+       WHERE s.id = $1`,
+      [id]
+    );
+
+    if (existingResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'State not found',
@@ -314,12 +408,30 @@ export const deleteState = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    const deletedState = states[stateIndex];
-    states.splice(stateIndex, 1);
+    const stateToDelete = existingResult.rows[0];
 
-    logger.info(`Deleted state: ${deletedState.name}`, { 
+    // Check if state is being used by cities
+    const citiesResult = await query(
+      'SELECT COUNT(*) as count FROM cities WHERE state_id = $1',
+      [id]
+    );
+
+    const citiesCount = parseInt(citiesResult.rows[0].count);
+    if (citiesCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete state. It has ${citiesCount} cities associated with it.`,
+        error: { code: 'STATE_HAS_CITIES' },
+      });
+    }
+
+    // Delete the state
+    await query('DELETE FROM states WHERE id = $1', [id]);
+
+    logger.info(`Deleted state: ${stateToDelete.name}`, {
       userId: req.user?.id,
-      stateId: id
+      stateId: id,
+      stateName: stateToDelete.name
     });
 
     res.json({
@@ -339,9 +451,22 @@ export const deleteState = async (req: AuthenticatedRequest, res: Response) => {
 // GET /api/states/stats - Get states statistics
 export const getStatesStats = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const totalStates = states.length;
-    const statesByCountry = states.reduce((acc, state) => {
-      acc[state.country] = (acc[state.country] || 0) + 1;
+    // Get total states count
+    const totalResult = await query('SELECT COUNT(*) as total FROM states');
+    const totalStates = parseInt(totalResult.rows[0].total);
+
+    // Get states count by country
+    const countryResult = await query(`
+      SELECT c.name as country, COUNT(s.id) as count
+      FROM countries c
+      LEFT JOIN states s ON c.id = s.country_id
+      GROUP BY c.id, c.name
+      HAVING COUNT(s.id) > 0
+      ORDER BY c.name
+    `);
+
+    const statesByCountry = countryResult.rows.reduce((acc, row) => {
+      acc[row.country] = parseInt(row.count);
       return acc;
     }, {} as Record<string, number>);
 
@@ -350,6 +475,11 @@ export const getStatesStats = async (req: AuthenticatedRequest, res: Response) =
       statesByCountry,
       countries: Object.keys(statesByCountry).length,
     };
+
+    logger.info('Retrieved states statistics', {
+      userId: req.user?.id,
+      stats
+    });
 
     res.json({
       success: true,

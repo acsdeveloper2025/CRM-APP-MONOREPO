@@ -97,16 +97,10 @@ export const getAreas = async (req: AuthenticatedRequest, res: Response) => {
     const sortDirection = sortOrder === 'desc' ? 'DESC' : 'ASC';
     const sortField = sortBy as string;
 
-    if (sortField === 'cityName') {
-      sql += ` ORDER BY "cityName" ${sortDirection}`;
-    } else if (sortField === 'state') {
-      sql += ` ORDER BY state ${sortDirection}`;
-    } else if (sortField === 'country') {
-      sql += ` ORDER BY country ${sortDirection}`;
-    } else if (sortField === 'pincodeCode') {
-      sql += ` ORDER BY "pincodeCode" ${sortDirection}`;
-    } else if (sortField === 'usageCount') {
+    if (sortField === 'usageCount') {
       sql += ` ORDER BY usage_count ${sortDirection}`;
+    } else if (sortField === 'createdAt') {
+      sql += ` ORDER BY created_at ${sortDirection}`;
     } else if (sortField === 'name') {
       sql += ` ORDER BY name ${sortDirection}`;
     } else {

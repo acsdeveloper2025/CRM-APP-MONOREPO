@@ -21,10 +21,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, password, deviceId }: LoginRequest = req.body;
 
-    console.log('🔐 Backend: Login attempt for username:', username, 'deviceId:', deviceId);
-    console.log('🔐 Backend: Request body keys:', Object.keys(req.body));
-    console.log('🔐 Backend: Password provided:', !!password);
-
     // Find user by username
     const userRes = await query(
       `SELECT id, name, username, email, "passwordHash", role, "employeeId", designation, department, "profilePhotoUrl"
@@ -33,28 +29,16 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     );
     const user = userRes.rows[0];
 
-    console.log('🔐 Backend: User found:', !!user);
-    if (user) {
-      console.log('🔐 Backend: User details:', {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        hasPasswordHash: !!user.passwordHash
-      });
-    }
-
     if (!user) {
-      console.log('🔐 Backend: User not found for username:', username);
+      logger.warn('Login failed: User not found', { username });
       throw createError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
     }
 
     // Verify password
-    console.log('🔐 Backend: Comparing password...');
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    console.log('🔐 Backend: Password valid:', isPasswordValid);
 
     if (!isPasswordValid) {
-      console.log('🔐 Backend: Password comparison failed');
+      logger.warn('Login failed: Invalid password', { username });
       throw createError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
     }
 
