@@ -34,7 +34,10 @@ import type { State, UpdateStateData } from '@/types/location';
 
 const updateStateSchema = z.object({
   name: z.string().min(1, 'State name is required').max(100, 'State name is too long'),
-  code: z.string().min(2, 'State code must be at least 2 characters').max(10, 'State code is too long'),
+  code: z.string()
+    .min(2, 'State code must be at least 2 characters')
+    .max(10, 'State code is too long')
+    .regex(/^[A-Z0-9]+$/, 'State code must contain only uppercase letters and numbers'),
   country: z.string().min(1, 'Country is required'),
 });
 

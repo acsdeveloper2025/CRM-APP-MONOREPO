@@ -8,13 +8,21 @@ export const handleValidationErrors = (
   next: NextFunction
 ): void => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     const validationErrors: ValidationError[] = errors.array().map(error => ({
       field: error.type === 'field' ? error.path : 'unknown',
       message: error.msg,
       value: error.type === 'field' ? error.value : undefined,
     }));
+
+    // Log validation errors for debugging
+    console.log('Validation errors:', {
+      url: req.url,
+      method: req.method,
+      body: req.body,
+      errors: validationErrors
+    });
 
     const response: ApiResponse = {
       success: false,

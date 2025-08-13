@@ -54,7 +54,9 @@ class ApiService {
   }
 
   async post<T>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
+    console.log('🌐 API: POST request to', url, 'with data:', data);
     const response = await this.api.post<ApiResponse<T>>(url, data, config);
+    console.log('🌐 API: Response status:', response.status, 'data:', response.data);
     return response.data;
   }
 

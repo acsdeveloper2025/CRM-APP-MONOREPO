@@ -16,24 +16,24 @@ async function main() {
 
     // Create admin user if not exists
     await cx.query(
-      `INSERT INTO users (id, name, username, password, "passwordHash", role, "createdAt")
-       VALUES (gen_random_uuid()::text, 'System Administrator', 'admin', $1, $2, 'ADMIN', CURRENT_TIMESTAMP)
+      `INSERT INTO users (id, name, username, password, "passwordHash", role, created_at)
+       VALUES (gen_random_uuid(), 'System Administrator', 'admin', $1, $2, 'ADMIN', CURRENT_TIMESTAMP)
        ON CONFLICT (username) DO NOTHING`,
       [password, hash]
     );
 
     // Create sample client
     await cx.query(
-      `INSERT INTO clients (id, name, code, "createdAt")
-       VALUES (gen_random_uuid()::text, 'ABC Bank Ltd.', 'CLI001', CURRENT_TIMESTAMP)
+      `INSERT INTO clients (id, name, code, created_at)
+       VALUES (gen_random_uuid(), 'ABC Bank Ltd.', 'CLI001', CURRENT_TIMESTAMP)
        ON CONFLICT (code) DO NOTHING`
     );
 
     // Create sample products
     await cx.query(
-      `INSERT INTO products (id, name, code, "createdAt") VALUES
-       (gen_random_uuid()::text, 'Personal Loan Verification', 'PERSONAL_LOAN', CURRENT_TIMESTAMP),
-       (gen_random_uuid()::text, 'Home Loan Verification', 'HOME_LOAN', CURRENT_TIMESTAMP)
+      `INSERT INTO products (id, name, code, created_at) VALUES
+       (gen_random_uuid(), 'Personal Loan Verification', 'PERSONAL_LOAN', CURRENT_TIMESTAMP),
+       (gen_random_uuid(), 'Home Loan Verification', 'HOME_LOAN', CURRENT_TIMESTAMP)
        ON CONFLICT (code) DO NOTHING`
     );
 

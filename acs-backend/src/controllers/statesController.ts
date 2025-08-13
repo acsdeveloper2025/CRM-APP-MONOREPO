@@ -190,9 +190,14 @@ export const createState = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { name, code, country } = req.body;
 
+    // Log the request data for debugging
+    console.log('Create state request:', { name, code, country });
+    console.log('Existing states:', states.map(s => ({ code: s.code, country: s.country })));
+
     // Check if state code already exists
     const existingState = states.find(s => s.code === code && s.country === country);
     if (existingState) {
+      console.log('Duplicate state found:', existingState);
       return res.status(400).json({
         success: false,
         message: 'State code already exists in this country',

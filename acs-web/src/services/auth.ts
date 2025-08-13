@@ -3,15 +3,27 @@ import type { LoginRequest, LoginResponse, User } from '@/types/auth';
 
 export class AuthService {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
+    console.log('🔐 AuthService: Attempting login with credentials:', {
+      username: credentials.username,
+      password: credentials.password ? '[REDACTED]' : 'undefined'
+    });
+
     const response = await apiService.post<LoginResponse['data']>('/auth/login', credentials);
-    
+
+    console.log('🔐 AuthService: Login response:', {
+      success: response.success,
+      message: response.message,
+      hasData: !!response.data
+    });
+
     if (response.success && response.data) {
       // Store token and user data
       localStorage.setItem('auth_token', response.data.tokens.accessToken);
       localStorage.setItem('auth_refresh_token', response.data.tokens.refreshToken);
       localStorage.setItem('auth_user', JSON.stringify(response.data.user));
+      console.log('🔐 AuthService: Tokens stored successfully');
     }
-    
+
     return {
       success: response.success,
       message: response.message,

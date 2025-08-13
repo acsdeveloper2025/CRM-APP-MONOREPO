@@ -21,6 +21,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, password, deviceId }: LoginRequest = req.body;
 
+    console.log('🔐 Backend: Login attempt for username:', username, 'deviceId:', deviceId);
+    console.log('🔐 Backend: Request body keys:', Object.keys(req.body));
+    console.log('🔐 Backend: Password provided:', !!password);
+
     // Find user by username
     const userRes = await query(
       `SELECT id, name, username, email, "passwordHash", role, "employeeId", designation, department, "profilePhotoUrl"
@@ -29,13 +33,28 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     );
     const user = userRes.rows[0];
 
+    console.log('🔐 Backend: User found:', !!user);
+    if (user) {
+      console.log('🔐 Backend: User details:', {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        hasPasswordHash: !!user.passwordHash
+      });
+    }
+
     if (!user) {
+      console.log('🔐 Backend: User not found for username:', username);
       throw createError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
     }
 
     // Verify password
+    console.log('🔐 Backend: Comparing password...');
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    console.log('🔐 Backend: Password valid:', isPasswordValid);
+
     if (!isPasswordValid) {
+      console.log('🔐 Backend: Password comparison failed');
       throw createError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
     }
 
@@ -62,9 +81,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // Log successful login
     await query(
-      `INSERT INTO audit_logs (id, "userId", action, details, "createdAt")
-       VALUES (gen_random_uuid()::text, $1, 'LOGIN', $2, CURRENT_TIMESTAMP)`,
-      [user.id, JSON.stringify({ deviceId, ip: req.ip, userAgent: req.get('User-Agent') })]
+      `INSERT INTO audit_logs (id, user_id, action, entity_type, new_values, ip_address, user_agent, created_at)
+       VALUES (gen_random_uuid(), $1, 'LOGIN', 'USER', $2, $3, $4, CURRENT_TIMESTAMP)`,
+      [user.id, JSON.stringify({ deviceId }), req.ip, req.get('User-Agent')]
     );
 
     const response: LoginResponse = {
@@ -104,9 +123,9 @@ export const logout = async (req: AuthenticatedRequest, res: Response): Promise<
 
     // Log logout
     await query(
-      `INSERT INTO audit_logs (id, "userId", action, details, "createdAt")
-       VALUES (gen_random_uuid()::text, $1, 'LOGOUT', $2, CURRENT_TIMESTAMP)`,
-      [req.user.id, JSON.stringify({ deviceId: req.user.deviceId, ip: req.ip, userAgent: req.get('User-Agent') })]
+      `INSERT INTO audit_logs (id, user_id, action, entity_type, new_values, ip_address, user_agent, created_at)
+       VALUES (gen_random_uuid(), $1, 'LOGOUT', 'USER', $2, $3, $4, CURRENT_TIMESTAMP)`,
+      [req.user.id, JSON.stringify({ deviceId: req.user.deviceId }), req.ip, req.get('User-Agent')]
     );
 
     const response: ApiResponse = {
