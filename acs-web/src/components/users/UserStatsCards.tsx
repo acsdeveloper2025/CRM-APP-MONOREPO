@@ -16,7 +16,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.totalUsers}</div>
+          <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
           <p className="text-xs text-muted-foreground">
             Registered in the system
           </p>
@@ -29,7 +29,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
           <UserCheck className="h-4 w-4 text-green-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-600">{stats.activeUsers}</div>
+          <div className="text-2xl font-bold text-green-600">{stats?.activeUsers || 0}</div>
           <p className="text-xs text-muted-foreground">
             Currently active
           </p>
@@ -42,7 +42,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
           <UserX className="h-4 w-4 text-red-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">{stats.inactiveUsers}</div>
+          <div className="text-2xl font-bold text-red-600">{stats?.inactiveUsers || 0}</div>
           <p className="text-xs text-muted-foreground">
             Deactivated accounts
           </p>
@@ -55,7 +55,7 @@ export function UserStatsCards({ stats }: UserStatsCardsProps) {
           <Shield className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.recentLogins.length}</div>
+          <div className="text-2xl font-bold">{stats.recentLogins?.length || 0}</div>
           <p className="text-xs text-muted-foreground">
             In the last 24 hours
           </p>

@@ -455,15 +455,36 @@ export const getUserStats = async (req: AuthenticatedRequest, res: Response) => 
       return acc;
     }, {} as Record<string, number>);
 
+    // Convert role stats to expected format
+    const usersByRole = Object.entries(roleStats).map(([role, count]) => ({
+      role: role as any,
+      count
+    }));
+
+    // Convert department stats to expected format
+    const usersByDepartment = Object.entries(departmentStats).map(([department, count]) => ({
+      department,
+      count
+    }));
+
+    // Get recent logins (last 24 hours)
+    const recentLogins = users
+      .filter(u => u.lastLoginAt && new Date(u.lastLoginAt) > new Date(Date.now() - 24 * 60 * 60 * 1000))
+      .map(u => ({
+        userId: u.id,
+        userName: u.name,
+        lastLoginAt: u.lastLoginAt || new Date().toISOString()
+      }))
+      .sort((a, b) => new Date(b.lastLoginAt).getTime() - new Date(a.lastLoginAt).getTime())
+      .slice(0, 10); // Limit to 10 most recent
+
     const stats = {
       totalUsers,
       activeUsers,
       inactiveUsers,
-      roleDistribution: roleStats,
-      departmentDistribution: departmentStats,
-      recentRegistrations: users
-        .filter(u => new Date(u.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
-        .length,
+      usersByRole,
+      usersByDepartment,
+      recentLogins,
     };
 
     res.json({
