@@ -90,11 +90,12 @@ export interface UpdateCityData {
 
 export interface CreatePincodeData {
   code: string;
-  area: string;
+  area?: string; // For backward compatibility
+  areas?: string[]; // New multi-area support (area IDs)
   cityId: string;
-  cityName: string;
-  state: string;
-  country: string;
+  cityName?: string;
+  state?: string;
+  country?: string;
 }
 
 export interface UpdatePincodeData {
@@ -103,19 +104,11 @@ export interface UpdatePincodeData {
   cityId?: string;
 }
 
-export interface CreatePincodeAreaData {
-  name: string;
-  displayOrder?: number;
+export interface AddPincodeAreasData {
+  areaIds: string[];
 }
 
 export interface UpdatePincodeAreaData {
   name: string;
   displayOrder?: number;
-}
-
-export interface ReorderPincodeAreasData {
-  areaOrders: {
-    id: string;
-    displayOrder: number;
-  }[];
 }

@@ -31,13 +31,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { locationsService } from '@/services/locations';
+import { AreasMultiSelect } from './AreasMultiSelect';
 
 const createPincodeSchema = z.object({
   code: z.string()
     .min(6, 'Pincode must be 6 digits')
     .max(6, 'Pincode must be 6 digits')
     .regex(/^\d{6}$/, 'Pincode must contain only numbers'),
-  area: z.string().min(1, 'Area selection is required'),
+  areas: z.array(z.string()).min(1, 'At least one area must be selected').max(15, 'Maximum 15 areas allowed'),
   cityId: z.string().min(1, 'City selection is required'),
 });
 
@@ -55,7 +56,7 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
     resolver: zodResolver(createPincodeSchema),
     defaultValues: {
       code: '',
-      area: '',
+      areas: [],
       cityId: '',
     },
   });
@@ -67,12 +68,7 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
     enabled: open,
   });
 
-  // Fetch areas for the dropdown
-  const { data: areasData } = useQuery({
-    queryKey: ['areas'],
-    queryFn: () => locationsService.getAreas(),
-    enabled: open,
-  });
+  // Areas will be loaded by AreasMultiSelect component
 
   const createMutation = useMutation({
     mutationFn: (data: CreatePincodeFormData) => locationsService.createPincode(data),
@@ -97,21 +93,17 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
       return;
     }
 
-    // Prepare data with all required fields for backend
+    // Prepare data with areas for backend
     const pincodeData = {
       code: data.code,
-      area: data.area,
+      areas: data.areas, // Send area IDs
       cityId: data.cityId,
-      cityName: selectedCity.name,
-      state: selectedCity.state,
-      country: selectedCity.country,
     };
 
     createMutation.mutate(pincodeData);
   };
 
   const cities = citiesData?.data || [];
-  const areas = areasData?.data || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -149,26 +141,19 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
 
             <FormField
               control={form.control}
-              name="area"
+              name="areas"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Area</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={createMutation.isPending}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an area" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {areas.map((area) => (
-                        <SelectItem key={area.id || area.name} value={area.name}>
-                          {area.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Areas</FormLabel>
+                  <FormControl>
+                    <AreasMultiSelect
+                      selectedAreaIds={field.value}
+                      onAreasChange={field.onChange}
+                      disabled={createMutation.isPending}
+                    />
+                  </FormControl>
                   <FormDescription>
-                    Select the area for this pincode
+                    Select one or more areas for this pincode (max 15)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

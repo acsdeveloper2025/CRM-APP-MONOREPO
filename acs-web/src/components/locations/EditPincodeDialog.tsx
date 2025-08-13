@@ -32,13 +32,14 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { locationsService } from '@/services/locations';
 import { Pincode } from '@/types/location';
+import { AreasMultiSelect } from './AreasMultiSelect';
 
 const editPincodeSchema = z.object({
   code: z.string()
     .min(6, 'Pincode must be 6 digits')
     .max(6, 'Pincode must be 6 digits')
     .regex(/^\d{6}$/, 'Pincode must contain only numbers'),
-  area: z.string().min(1, 'Area name is required').max(100, 'Area name too long'),
+  areas: z.array(z.string()).min(1, 'At least one area must be selected').max(15, 'Maximum 15 areas allowed'),
   cityId: z.string().min(1, 'City selection is required'),
 });
 
@@ -57,7 +58,7 @@ export function EditPincodeDialog({ pincode, open, onOpenChange }: EditPincodeDi
     resolver: zodResolver(editPincodeSchema),
     defaultValues: {
       code: pincode.code,
-      area: pincode.area,
+      areas: pincode.areas?.map(area => area.id) || (pincode.area ? [] : []), // Convert areas to IDs or empty array
       cityId: pincode.cityId,
     },
   });
@@ -66,7 +67,7 @@ export function EditPincodeDialog({ pincode, open, onOpenChange }: EditPincodeDi
     if (pincode) {
       form.reset({
         code: pincode.code,
-        area: pincode.area,
+        areas: pincode.areas?.map(area => area.id) || (pincode.area ? [] : []), // Convert areas to IDs or empty array
         cityId: pincode.cityId,
       });
     }
@@ -133,13 +134,20 @@ export function EditPincodeDialog({ pincode, open, onOpenChange }: EditPincodeDi
 
             <FormField
               control={form.control}
-              name="area"
+              name="areas"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Area Name</FormLabel>
+                  <FormLabel>Areas</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter area name" {...field} />
+                    <AreasMultiSelect
+                      selectedAreaIds={field.value}
+                      onAreasChange={field.onChange}
+                      disabled={updateMutation.isPending}
+                    />
                   </FormControl>
+                  <FormDescription>
+                    Select one or more areas for this pincode (max 15)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

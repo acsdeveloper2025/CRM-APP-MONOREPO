@@ -27,17 +27,28 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
       SELECT
         p.id,
         p.code,
-        p.area,
         p.city_id as "cityId",
         c.name as "cityName",
         s.name as state,
         co.name as country,
         p.created_at as "createdAt",
-        p.updated_at as "updatedAt"
+        p.updated_at as "updatedAt",
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', a.id,
+              'name', a.name,
+              'displayOrder', pa.display_order
+            ) ORDER BY pa.display_order
+          ) FILTER (WHERE a.id IS NOT NULL),
+          '[]'::json
+        ) as areas
       FROM pincodes p
       JOIN cities c ON p.city_id = c.id
       JOIN states s ON c.state_id = s.id
       JOIN countries co ON c.country_id = co.id
+      LEFT JOIN pincode_areas pa ON p.id = pa.pincode_id
+      LEFT JOIN areas a ON pa.area_id = a.id
       WHERE 1=1
     `;
 
@@ -68,7 +79,8 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
       params.push(`%${search}%`);
     }
 
-    // No need to group by since we're not aggregating areas anymore
+    // Add GROUP BY clause for area aggregation
+    sql += ` GROUP BY p.id, p.code, p.city_id, c.name, s.name, co.name, p.created_at, p.updated_at`;
 
     // Apply sorting
     const sortDirection = sortOrder === 'desc' ? 'DESC' : 'ASC';
@@ -187,11 +199,11 @@ export const getPincodeById = async (req: AuthenticatedRequest, res: Response) =
         COALESCE(
           JSON_AGG(
             JSON_BUILD_OBJECT(
-              'id', pa.id,
-              'name', pa.area_name,
+              'id', a.id,
+              'name', a.name,
               'displayOrder', pa.display_order
             ) ORDER BY pa.display_order
-          ) FILTER (WHERE pa.id IS NOT NULL),
+          ) FILTER (WHERE a.id IS NOT NULL),
           '[]'::json
         ) as areas
       FROM pincodes p
@@ -199,6 +211,7 @@ export const getPincodeById = async (req: AuthenticatedRequest, res: Response) =
       JOIN states s ON c.state_id = s.id
       JOIN countries co ON c.country_id = co.id
       LEFT JOIN pincode_areas pa ON p.id = pa.pincode_id
+      LEFT JOIN areas a ON pa.area_id = a.id
       WHERE p.id = $1
       GROUP BY p.id, p.code, p.city_id, c.name, s.name, co.name, p.created_at, p.updated_at
     `;
@@ -239,6 +252,8 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
       cityId
     } = req.body;
 
+
+
     if (!code || !cityId) {
       return res.status(400).json({
         success: false,
@@ -248,11 +263,29 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
     }
 
     // Handle areas - support both single area (backward compatibility) and multiple areas
-    let areaList: string[] = [];
+    let areaIds: string[] = [];
+
     if (areas && Array.isArray(areas) && areas.length > 0) {
-      areaList = areas;
+      // New multi-area support
+      areaIds = areas;
+      if (areaIds.length > 15) {
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum 15 areas allowed per pincode',
+          error: { code: 'VALIDATION_ERROR' },
+        });
+      }
     } else if (area && typeof area === 'string') {
-      areaList = [area];
+      // Backward compatibility - convert area name to area ID
+      const areaResult = await query('SELECT id FROM areas WHERE name = $1', [area.trim()]);
+      if (areaResult.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Area not found. Please select a valid area.',
+          error: { code: 'INVALID_AREA' },
+        });
+      }
+      areaIds = [areaResult.rows[0].id];
     } else {
       return res.status(400).json({
         success: false,
@@ -261,20 +294,12 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    // Validate areas
-    if (areaList.length > 15) {
-      return res.status(400).json({
-        success: false,
-        message: 'Maximum 15 areas allowed per pincode',
-        error: { code: 'VALIDATION_ERROR' },
-      });
-    }
-
-    for (const areaName of areaList) {
-      if (!areaName || typeof areaName !== 'string' || areaName.trim().length < 2) {
+    // Validate area IDs
+    for (const areaId of areaIds) {
+      if (!areaId || typeof areaId !== 'string') {
         return res.status(400).json({
           success: false,
-          message: 'Each area name must be at least 2 characters',
+          message: 'Invalid area ID provided',
           error: { code: 'VALIDATION_ERROR' },
         });
       }
@@ -283,6 +308,7 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
     // Check if pincode already exists
     const existingPincode = await query('SELECT id FROM pincodes WHERE code = $1', [code]);
     if (existingPincode.rows.length > 0) {
+
       return res.status(400).json({
         success: false,
         message: 'Pincode already exists',
@@ -300,33 +326,51 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    // Create pincode in database with area
+    // Create pincode in database (without area field)
     const pincodeResult = await query(
-      'INSERT INTO pincodes (code, area, city_id) VALUES ($1, $2, $3) RETURNING id, code, area, city_id as "cityId", created_at as "createdAt", updated_at as "updatedAt"',
-      [code, areaList[0], cityId]
+      'INSERT INTO pincodes (code, city_id) VALUES ($1, $2) RETURNING id, code, city_id as "cityId", created_at as "createdAt", updated_at as "updatedAt"',
+      [code, cityId]
     );
 
     const newPincode = pincodeResult.rows[0];
 
-    // Simplified: area is already stored in the pincodes table
+    // Associate pincode with areas
+    for (let i = 0; i < areaIds.length; i++) {
+      await query(
+        'INSERT INTO pincode_areas (pincode_id, area_id, display_order) VALUES ($1, $2, $3)',
+        [newPincode.id, areaIds[i], i + 1]
+      );
+    }
 
-    // Get complete pincode data with city information
+    // Get complete pincode data with areas and city information
     const completeResult = await query(`
       SELECT
         p.id,
         p.code,
-        p.area,
         p.city_id as "cityId",
         c.name as "cityName",
         s.name as state,
         co.name as country,
         p.created_at as "createdAt",
-        p.updated_at as "updatedAt"
+        p.updated_at as "updatedAt",
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', a.id,
+              'name', a.name,
+              'displayOrder', pa.display_order
+            ) ORDER BY pa.display_order
+          ) FILTER (WHERE a.id IS NOT NULL),
+          '[]'::json
+        ) as areas
       FROM pincodes p
       JOIN cities c ON p.city_id = c.id
       JOIN states s ON c.state_id = s.id
       JOIN countries co ON c.country_id = co.id
+      LEFT JOIN pincode_areas pa ON p.id = pa.pincode_id
+      LEFT JOIN areas a ON pa.area_id = a.id
       WHERE p.id = $1
+      GROUP BY p.id, p.code, p.city_id, c.name, s.name, co.name, p.created_at, p.updated_at
     `, [newPincode.id]);
 
     const responseData = completeResult.rows[0];
@@ -334,7 +378,7 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
     logger.info(`Created new pincode: ${newPincode.id}`, {
       userId: req.user?.id,
       pincodeCode: code,
-      area: responseData.area,
+      areas: responseData.areas,
       cityName: responseData.cityName
     });
 
@@ -633,25 +677,14 @@ export const getPincodesByCity = async (req: AuthenticatedRequest, res: Response
 export const addPincodeAreas = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id: pincodeId } = req.params;
-    const { areas } = req.body;
+    const { areaIds } = req.body;
 
-    if (!areas || !Array.isArray(areas) || areas.length === 0) {
+    if (!areaIds || !Array.isArray(areaIds) || areaIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Areas array is required and must not be empty',
+        message: 'Area IDs array is required',
         error: { code: 'VALIDATION_ERROR' },
       });
-    }
-
-    // Validate area names
-    for (const area of areas) {
-      if (!area.name || typeof area.name !== 'string' || area.name.trim().length < 2) {
-        return res.status(400).json({
-          success: false,
-          message: 'Each area must have a valid name (minimum 2 characters)',
-          error: { code: 'VALIDATION_ERROR' },
-        });
-      }
     }
 
     // Check if pincode exists
@@ -664,14 +697,14 @@ export const addPincodeAreas = async (req: AuthenticatedRequest, res: Response) 
       });
     }
 
-    // Check current area count to enforce limit
+    // Get current area count
     const currentAreasResult = await query(
       'SELECT COUNT(*) as count FROM pincode_areas WHERE pincode_id = $1',
       [pincodeId]
     );
     const currentCount = parseInt(currentAreasResult.rows[0].count, 10);
 
-    if (currentCount + areas.length > 15) {
+    if (currentCount + areaIds.length > 15) {
       return res.status(400).json({
         success: false,
         message: 'Maximum 15 areas allowed per pincode',
@@ -679,25 +712,40 @@ export const addPincodeAreas = async (req: AuthenticatedRequest, res: Response) 
       });
     }
 
-    // Insert new areas
+    // Insert new area associations
     const insertedAreas = [];
-    for (let i = 0; i < areas.length; i++) {
-      const area = areas[i];
-      const displayOrder = area.displayOrder || (currentCount + i + 1);
+    for (let i = 0; i < areaIds.length; i++) {
+      const areaId = areaIds[i];
+      const displayOrder = currentCount + i + 1;
 
       try {
+        // Check if area exists
+        const areaCheck = await query('SELECT id, name FROM areas WHERE id = $1', [areaId]);
+        if (areaCheck.rows.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Area with ID ${areaId} not found`,
+            error: { code: 'INVALID_AREA' },
+          });
+        }
+
         const result = await query(
-          `INSERT INTO pincode_areas (pincode_id, area_name, display_order)
+          `INSERT INTO pincode_areas (pincode_id, area_id, display_order)
            VALUES ($1, $2, $3)
-           RETURNING id, area_name as name, display_order as "displayOrder", created_at as "createdAt"`,
-          [pincodeId, area.name.trim(), displayOrder]
+           RETURNING id, display_order as "displayOrder", created_at as "createdAt"`,
+          [pincodeId, areaId, displayOrder]
         );
-        insertedAreas.push(result.rows[0]);
+
+        insertedAreas.push({
+          ...result.rows[0],
+          id: areaCheck.rows[0].id,
+          name: areaCheck.rows[0].name
+        });
       } catch (error: any) {
         if (error.code === '23505') { // Unique constraint violation
           return res.status(400).json({
             success: false,
-            message: `Area "${area.name}" already exists for this pincode`,
+            message: `Area is already assigned to this pincode`,
             error: { code: 'DUPLICATE_AREA' },
           });
         }
@@ -726,101 +774,21 @@ export const addPincodeAreas = async (req: AuthenticatedRequest, res: Response) 
   }
 };
 
-// PUT /api/pincodes/:id/areas/:areaId - Update a specific area
-export const updatePincodeArea = async (req: AuthenticatedRequest, res: Response) => {
+// DELETE /api/pincodes/:id/areas/:areaId - Remove area from pincode
+export const removePincodeArea = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id: pincodeId, areaId } = req.params;
-    const { name, displayOrder } = req.body;
 
-    if (!name || typeof name !== 'string' || name.trim().length < 2) {
-      return res.status(400).json({
-        success: false,
-        message: 'Valid area name is required (minimum 2 characters)',
-        error: { code: 'VALIDATION_ERROR' },
-      });
-    }
-
-    // Check if area exists for this pincode
+    // Check if area is assigned to this pincode
     const areaCheck = await query(
-      'SELECT id FROM pincode_areas WHERE id = $1 AND pincode_id = $2',
-      [areaId, pincodeId]
+      'SELECT pa.id, a.name FROM pincode_areas pa JOIN areas a ON pa.area_id = a.id WHERE pa.pincode_id = $1 AND pa.area_id = $2',
+      [pincodeId, areaId]
     );
 
     if (areaCheck.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Area not found for this pincode',
-        error: { code: 'NOT_FOUND' },
-      });
-    }
-
-    // Update the area
-    const updateFields = ['area_name = $3'];
-    const params = [areaId, pincodeId, name.trim()];
-    let paramCount = 3;
-
-    if (displayOrder !== undefined) {
-      paramCount++;
-      updateFields.push(`display_order = $${paramCount}`);
-      params.push(displayOrder);
-    }
-
-    try {
-      const result = await query(
-        `UPDATE pincode_areas
-         SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $1 AND pincode_id = $2
-         RETURNING id, area_name as name, display_order as "displayOrder", updated_at as "updatedAt"`,
-        params
-      );
-
-      logger.info(`Updated area ${areaId} for pincode ${pincodeId}`, {
-        userId: req.user?.id,
-        pincodeId,
-        areaId,
-        newName: name
-      });
-
-      res.json({
-        success: true,
-        message: 'Area updated successfully',
-        data: result.rows[0],
-      });
-    } catch (error: any) {
-      if (error.code === '23505') { // Unique constraint violation
-        return res.status(400).json({
-          success: false,
-          message: `Area "${name}" already exists for this pincode`,
-          error: { code: 'DUPLICATE_AREA' },
-        });
-      }
-      throw error;
-    }
-  } catch (error) {
-    logger.error('Error updating pincode area:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update area',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// DELETE /api/pincodes/:id/areas/:areaId - Delete a specific area
-export const deletePincodeArea = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id: pincodeId, areaId } = req.params;
-
-    // Check if area exists for this pincode
-    const areaCheck = await query(
-      'SELECT id, area_name FROM pincode_areas WHERE id = $1 AND pincode_id = $2',
-      [areaId, pincodeId]
-    );
-
-    if (areaCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Area not found for this pincode',
+        message: 'Area not assigned to this pincode',
         error: { code: 'NOT_FOUND' },
       });
     }
@@ -835,17 +803,17 @@ export const deletePincodeArea = async (req: AuthenticatedRequest, res: Response
     if (areaCount <= 1) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot delete the last area. Pincode must have at least one area.',
+        message: 'Cannot remove the last area. Pincode must have at least one area.',
         error: { code: 'LAST_AREA_DELETION' },
       });
     }
 
-    const areaName = areaCheck.rows[0].area_name;
+    const areaName = areaCheck.rows[0].name;
 
-    // Delete the area
-    await query('DELETE FROM pincode_areas WHERE id = $1 AND pincode_id = $2', [areaId, pincodeId]);
+    // Remove the area assignment
+    await query('DELETE FROM pincode_areas WHERE pincode_id = $1 AND area_id = $2', [pincodeId, areaId]);
 
-    logger.info(`Deleted area ${areaId} (${areaName}) from pincode ${pincodeId}`, {
+    logger.info(`Removed area ${areaId} (${areaName}) from pincode ${pincodeId}`, {
       userId: req.user?.id,
       pincodeId,
       areaId,
@@ -854,76 +822,17 @@ export const deletePincodeArea = async (req: AuthenticatedRequest, res: Response
 
     res.json({
       success: true,
-      message: 'Area deleted successfully',
+      message: 'Area removed successfully',
     });
   } catch (error) {
-    logger.error('Error deleting pincode area:', error);
+    logger.error('Error removing pincode area:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete area',
+      message: 'Failed to remove area',
       error: { code: 'INTERNAL_ERROR' },
     });
   }
 };
 
-// PUT /api/pincodes/:id/areas/reorder - Reorder areas for a pincode
-export const reorderPincodeAreas = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id: pincodeId } = req.params;
-    const { areaOrders } = req.body;
 
-    if (!areaOrders || !Array.isArray(areaOrders) || areaOrders.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Area orders array is required',
-        error: { code: 'VALIDATION_ERROR' },
-      });
-    }
 
-    // Validate area orders format
-    for (const item of areaOrders) {
-      if (!item.id || typeof item.displayOrder !== 'number' || item.displayOrder < 1) {
-        return res.status(400).json({
-          success: false,
-          message: 'Each area order must have valid id and displayOrder (positive number)',
-          error: { code: 'VALIDATION_ERROR' },
-        });
-      }
-    }
-
-    // Update display orders in a transaction
-    await query('BEGIN');
-
-    try {
-      for (const item of areaOrders) {
-        await query(
-          'UPDATE pincode_areas SET display_order = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND pincode_id = $3',
-          [item.displayOrder, item.id, pincodeId]
-        );
-      }
-
-      await query('COMMIT');
-
-      logger.info(`Reordered ${areaOrders.length} areas for pincode ${pincodeId}`, {
-        userId: req.user?.id,
-        pincodeId,
-        areaOrders
-      });
-
-      res.json({
-        success: true,
-        message: 'Areas reordered successfully',
-      });
-    } catch (error) {
-      await query('ROLLBACK');
-      throw error;
-    }
-  } catch (error) {
-    logger.error('Error reordering pincode areas:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to reorder areas',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};

@@ -12,7 +12,8 @@ import type {
   CreateCityData,
   UpdateCityData,
   CreatePincodeData,
-  UpdatePincodeData
+  UpdatePincodeData,
+  AddPincodeAreasData
 } from '@/types/location';
 import type { ApiResponse, PaginationQuery } from '@/types/api';
 
@@ -201,19 +202,19 @@ export class LocationsService {
   }
 
   // Area operations
-  async getAreas(query: LocationQuery = {}): Promise<ApiResponse<PincodeArea[]>> {
+  async getAreas(query: LocationQuery = {}): Promise<ApiResponse<{ id: string; name: string; usageCount: number; createdAt: string; updatedAt: string }[]>> {
     return apiService.get('/areas', query);
   }
 
-  async getAreaById(id: string): Promise<ApiResponse<PincodeArea>> {
+  async getAreaById(id: string): Promise<ApiResponse<{ id: string; name: string; usageCount: number; createdAt: string; updatedAt: string }>> {
     return apiService.get(`/areas/${id}`);
   }
 
-  async createArea(data: { name: string }): Promise<ApiResponse<PincodeArea>> {
+  async createArea(data: { name: string }): Promise<ApiResponse<{ id: string; name: string; createdAt: string; updatedAt: string }>> {
     return apiService.post('/areas', data);
   }
 
-  async updateArea(id: string, data: { name: string; displayOrder?: number }): Promise<ApiResponse<PincodeArea>> {
+  async updateArea(id: string, data: { name: string }): Promise<ApiResponse<{ id: string; name: string; updatedAt: string }>> {
     return apiService.put(`/areas/${id}`, data);
   }
 
@@ -221,19 +222,18 @@ export class LocationsService {
     return apiService.delete(`/areas/${id}`);
   }
 
-  // Add areas to a pincode
-  async addPincodeAreas(pincodeId: string, data: { areas: { name: string; displayOrder?: number }[] }): Promise<ApiResponse<any>> {
+  // Get areas for dropdown/selection
+  async getStandaloneAreas(): Promise<ApiResponse<{ id: string; name: string }[]>> {
+    return apiService.get('/areas', { limit: 100 });
+  }
+
+  // Pincode area management
+  async addPincodeAreas(pincodeId: string, data: AddPincodeAreasData): Promise<ApiResponse<PincodeArea[]>> {
     return apiService.post(`/pincodes/${pincodeId}/areas`, data);
   }
 
-  // Get areas for dropdown/selection
-  async getAreasForSelection(query: { cityId?: string; search?: string } = {}): Promise<ApiResponse<PincodeArea[]>> {
-    return apiService.get('/areas', { ...query, limit: 100 });
-  }
-
-  // Get standalone areas for multi-select
-  async getStandaloneAreas(): Promise<ApiResponse<{ id: string; name: string }[]>> {
-    return apiService.get('/standalone-areas');
+  async removePincodeArea(pincodeId: string, areaId: string): Promise<ApiResponse<void>> {
+    return apiService.delete(`/pincodes/${pincodeId}/areas/${areaId}`);
   }
 }
 

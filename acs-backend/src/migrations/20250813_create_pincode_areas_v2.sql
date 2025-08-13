@@ -1,30 +1,32 @@
--- Migration: Create pincode_areas table for one-to-many relationship
--- Date: 2025-08-13
--- Description: Implement one-to-many pincode-area relationship
+-- Migration: Create pincode_areas table for multiple area assignments
+-- Description: Reintroduce pincode_areas table with improved design for multiple area support
+-- Created: 2025-08-13
 
--- Create pincode_areas table
+-- Create pincode_areas table for many-to-many relationship
 CREATE TABLE IF NOT EXISTS pincode_areas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     pincode_id UUID NOT NULL,
-    area_name VARCHAR(100) NOT NULL,
+    area_id UUID NOT NULL,
     display_order INTEGER DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
-    -- Foreign key constraint
+    -- Foreign key constraints
     CONSTRAINT fk_pincode_areas_pincode_id 
         FOREIGN KEY (pincode_id) 
         REFERENCES pincodes(id) 
         ON UPDATE CASCADE 
         ON DELETE CASCADE,
     
-    -- Unique constraint to prevent duplicate areas for same pincode
-    CONSTRAINT uk_pincode_areas_pincode_area 
-        UNIQUE (pincode_id, area_name),
+    CONSTRAINT fk_pincode_areas_area_id 
+        FOREIGN KEY (area_id) 
+        REFERENCES areas(id) 
+        ON UPDATE CASCADE 
+        ON DELETE CASCADE,
     
-    -- Check constraint for area name length
-    CONSTRAINT chk_pincode_areas_area_name_length 
-        CHECK (LENGTH(TRIM(area_name)) >= 2 AND LENGTH(TRIM(area_name)) <= 100),
+    -- Unique constraint to prevent duplicate area assignments
+    CONSTRAINT uk_pincode_areas_pincode_area 
+        UNIQUE (pincode_id, area_id),
     
     -- Check constraint for display order
     CONSTRAINT chk_pincode_areas_display_order 
@@ -35,13 +37,13 @@ CREATE TABLE IF NOT EXISTS pincode_areas (
 CREATE INDEX IF NOT EXISTS idx_pincode_areas_pincode_id 
     ON pincode_areas(pincode_id);
 
-CREATE INDEX IF NOT EXISTS idx_pincode_areas_area_name 
-    ON pincode_areas(area_name);
+CREATE INDEX IF NOT EXISTS idx_pincode_areas_area_id 
+    ON pincode_areas(area_id);
 
 CREATE INDEX IF NOT EXISTS idx_pincode_areas_pincode_order 
     ON pincode_areas(pincode_id, display_order);
 
--- Create trigger for updated_at timestamp
+-- Create trigger function for updated_at
 CREATE OR REPLACE FUNCTION update_pincode_areas_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -50,23 +52,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Create trigger
 CREATE TRIGGER update_pincode_areas_updated_at
     BEFORE UPDATE ON pincode_areas
     FOR EACH ROW
     EXECUTE FUNCTION update_pincode_areas_updated_at();
 
--- Migrate existing area data from pincodes table to pincode_areas table
-INSERT INTO pincode_areas (pincode_id, area_name, display_order)
+-- Migrate existing single area data from pincodes table to pincode_areas table
+INSERT INTO pincode_areas (pincode_id, area_id, display_order)
 SELECT 
-    id as pincode_id,
-    area as area_name,
+    p.id as pincode_id,
+    a.id as area_id,
     1 as display_order
-FROM pincodes
-WHERE area IS NOT NULL AND TRIM(area) != ''
-ON CONFLICT (pincode_id, area_name) DO NOTHING;
+FROM pincodes p
+JOIN areas a ON p.area = a.name
+WHERE p.area IS NOT NULL AND TRIM(p.area) != ''
+ON CONFLICT (pincode_id, area_id) DO NOTHING;
 
--- Add comment to document the migration
-COMMENT ON TABLE pincode_areas IS 'Stores multiple areas/localities for each pincode in a one-to-many relationship';
+-- Add comment to document the table purpose
+COMMENT ON TABLE pincode_areas IS 'Junction table for many-to-many relationship between pincodes and areas';
 COMMENT ON COLUMN pincode_areas.pincode_id IS 'Foreign key reference to pincodes table';
-COMMENT ON COLUMN pincode_areas.area_name IS 'Name of the area/locality within the pincode';
+COMMENT ON COLUMN pincode_areas.area_id IS 'Foreign key reference to areas table';
 COMMENT ON COLUMN pincode_areas.display_order IS 'Order for displaying areas (1-50)';

@@ -17,81 +17,36 @@ export const getAreas = async (req: AuthenticatedRequest, res: Response) => {
       sortOrder = 'asc'
     } = req.query;
 
-    // Build SQL query that combines both pincode areas and standalone areas
+    // Query areas with usage count from pincode_areas junction table
     let sql = `
-      WITH combined_areas AS (
-        -- Areas associated with pincodes
-        SELECT
-          pa.id,
-          pa.area_name as name,
-          pa.display_order as "displayOrder",
-          pa.created_at as "createdAt",
-          pa.updated_at as "updatedAt",
-          p.id as "pincodeId",
-          p.code as "pincodeCode",
-          c.id as "cityId",
-          c.name as "cityName",
-          s.name as state,
-          co.name as country,
-          'pincode' as area_type,
-          COUNT(pa2.id) OVER (PARTITION BY pa.area_name) as usage_count
-        FROM pincode_areas pa
-        JOIN pincodes p ON pa.pincode_id = p.id
-        JOIN cities c ON p.city_id = c.id
-        JOIN states s ON c.state_id = s.id
-        JOIN countries co ON c.country_id = co.id
-        LEFT JOIN pincode_areas pa2 ON pa.area_name = pa2.area_name
-
-        UNION ALL
-
-        -- Standalone areas
-        SELECT
-          a.id,
-          a.name,
-          NULL as "displayOrder",
-          a.created_at as "createdAt",
-          a.updated_at as "updatedAt",
-          NULL as "pincodeId",
-          NULL as "pincodeCode",
-          NULL as "cityId",
-          NULL as "cityName",
-          NULL as state,
-          NULL as country,
-          'standalone' as area_type,
-          0 as usage_count
-        FROM areas a
-      )
-      SELECT * FROM combined_areas
-      WHERE 1=1
+      SELECT
+        a.id,
+        a.name,
+        a.created_at as "createdAt",
+        a.updated_at as "updatedAt",
+        COALESCE(COUNT(pa.id), 0) as usage_count
+      FROM areas a
+      LEFT JOIN pincode_areas pa ON a.id = pa.area_id
     `;
 
     const params: any[] = [];
     let paramCount = 0;
+    const whereConditions: string[] = [];
 
-    // Apply filters
-    if (cityId) {
-      paramCount++;
-      sql += ` AND "cityId" = $${paramCount}`;
-      params.push(cityId);
-    }
-
-    if (state) {
-      paramCount++;
-      sql += ` AND state ILIKE $${paramCount}`;
-      params.push(`%${state}%`);
-    }
-
-    if (country) {
-      paramCount++;
-      sql += ` AND country = $${paramCount}`;
-      params.push(country);
-    }
-
+    // Apply search filter
     if (search) {
       paramCount++;
-      sql += ` AND name ILIKE $${paramCount}`;
+      whereConditions.push(`a.name ILIKE $${paramCount}`);
       params.push(`%${search}%`);
     }
+
+    // Add WHERE clause if needed
+    if (whereConditions.length > 0) {
+      sql += ` WHERE ${whereConditions.join(' AND ')}`;
+    }
+
+    // Add GROUP BY
+    sql += ` GROUP BY a.id, a.name, a.created_at, a.updated_at`;
 
     // Apply sorting
     const sortDirection = sortOrder === 'desc' ? 'DESC' : 'ASC';
@@ -100,11 +55,11 @@ export const getAreas = async (req: AuthenticatedRequest, res: Response) => {
     if (sortField === 'usageCount') {
       sql += ` ORDER BY usage_count ${sortDirection}`;
     } else if (sortField === 'createdAt') {
-      sql += ` ORDER BY created_at ${sortDirection}`;
+      sql += ` ORDER BY a.created_at ${sortDirection}`;
     } else if (sortField === 'name') {
-      sql += ` ORDER BY name ${sortDirection}`;
+      sql += ` ORDER BY a.name ${sortDirection}`;
     } else {
-      sql += ` ORDER BY name ${sortDirection}`;
+      sql += ` ORDER BY a.name ${sortDirection}`;
     }
 
     // Apply pagination
@@ -125,58 +80,25 @@ export const getAreas = async (req: AuthenticatedRequest, res: Response) => {
 
     // Get total count for pagination
     let countSql = `
-      WITH combined_areas AS (
-        SELECT pa.id FROM pincode_areas pa
-        JOIN pincodes p ON pa.pincode_id = p.id
-        JOIN cities c ON p.city_id = c.id
-        JOIN states s ON c.state_id = s.id
-        JOIN countries co ON c.country_id = co.id
-        WHERE 1=1
+      SELECT COUNT(*) as count
+      FROM areas a
     `;
 
     const countParams: any[] = [];
     let countParamCount = 0;
+    const countWhereConditions: string[] = [];
 
-    if (cityId) {
-      countParamCount++;
-      countSql += ` AND c.id = $${countParamCount}`;
-      countParams.push(cityId);
-    }
-
-    if (state) {
-      countParamCount++;
-      countSql += ` AND s.name ILIKE $${countParamCount}`;
-      countParams.push(`%${state}%`);
-    }
-
-    if (country) {
-      countParamCount++;
-      countSql += ` AND co.name = $${countParamCount}`;
-      countParams.push(country);
-    }
-
+    // Apply same search filter for count
     if (search) {
       countParamCount++;
-      countSql += ` AND pa.area_name ILIKE $${countParamCount}`;
+      countWhereConditions.push(`a.name ILIKE $${countParamCount}`);
       countParams.push(`%${search}%`);
     }
 
-    countSql += `
-        UNION ALL
-        SELECT a.id FROM areas a WHERE 1=1
-    `;
-
-    // Apply search filter for standalone areas
-    if (search) {
-      countParamCount++;
-      countSql += ` AND a.name ILIKE $${countParamCount}`;
-      countParams.push(`%${search}%`);
+    // Add WHERE clause if needed
+    if (countWhereConditions.length > 0) {
+      countSql += ` WHERE ${countWhereConditions.join(' AND ')}`;
     }
-
-    countSql += `
-      )
-      SELECT COUNT(*) as count FROM combined_areas
-    `;
 
     const countResult = await query<{ count: string }>(countSql, countParams);
     const totalCount = parseInt(countResult.rows[0].count, 10);
@@ -241,26 +163,18 @@ export const getAreaById = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Query area with associated pincode information
+    // Query area with usage count
     const sql = `
-      SELECT 
-        pa.id,
-        pa.area_name as name,
-        pa.display_order as "displayOrder",
-        pa.created_at as "createdAt",
-        pa.updated_at as "updatedAt",
-        p.id as "pincodeId",
-        p.code as "pincodeCode",
-        c.id as "cityId",
-        c.name as "cityName",
-        s.name as state,
-        co.name as country
-      FROM pincode_areas pa
-      JOIN pincodes p ON pa.pincode_id = p.id
-      JOIN cities c ON p.city_id = c.id
-      JOIN states s ON c.state_id = s.id
-      JOIN countries co ON c.country_id = co.id
-      WHERE pa.id = $1
+      SELECT
+        a.id,
+        a.name,
+        a.created_at as "createdAt",
+        a.updated_at as "updatedAt",
+        COUNT(pa.id) as usage_count
+      FROM areas a
+      LEFT JOIN pincode_areas pa ON a.id = pa.area_id
+      WHERE a.id = $1
+      GROUP BY a.id, a.name, a.created_at, a.updated_at
     `;
 
     const result = await query(sql, [id]);
@@ -370,8 +284,8 @@ export const updateArea = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Check if area exists
-    const areaCheck = await query('SELECT id, pincode_id FROM pincode_areas WHERE id = $1', [id]);
-    
+    const areaCheck = await query('SELECT id, name FROM areas WHERE id = $1', [id]);
+
     if (areaCheck.rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -380,37 +294,27 @@ export const updateArea = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Check for duplicate area name within the same pincode
+    // Check for duplicate area name
     const duplicateCheck = await query(
-      'SELECT id FROM pincode_areas WHERE area_name = $1 AND pincode_id = $2 AND id != $3',
-      [name.trim(), areaCheck.rows[0].pincode_id, id]
+      'SELECT id FROM areas WHERE name = $1 AND id != $2',
+      [name.trim(), id]
     );
 
     if (duplicateCheck.rows.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Area name already exists for this pincode',
+        message: 'Area name already exists',
         error: { code: 'DUPLICATE_AREA' },
       });
     }
 
     // Update the area
-    const updateFields = ['area_name = $3'];
-    const params = [id, areaCheck.rows[0].pincode_id, name.trim()];
-    let paramCount = 3;
-
-    if (displayOrder !== undefined) {
-      paramCount++;
-      updateFields.push(`display_order = $${paramCount}`);
-      params.push(displayOrder);
-    }
-
     const result = await query(
-      `UPDATE pincode_areas 
-       SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1 AND pincode_id = $2
-       RETURNING id, area_name as name, display_order as "displayOrder", updated_at as "updatedAt"`,
-      params
+      `UPDATE areas
+       SET name = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING id, name, updated_at as "updatedAt"`,
+      [id, name.trim()]
     );
 
     logger.info(`Updated area ${id}`, { 
@@ -439,53 +343,13 @@ export const deleteArea = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    // First check if it's a pincode area
-    const pincodeAreaCheck = await query(
-      'SELECT id, area_name, pincode_id FROM pincode_areas WHERE id = $1',
-      [id]
-    );
-
-    if (pincodeAreaCheck.rows.length > 0) {
-      // It's a pincode area - check if this is the last area for the pincode
-      const areaCountResult = await query(
-        'SELECT COUNT(*) as count FROM pincode_areas WHERE pincode_id = $1',
-        [pincodeAreaCheck.rows[0].pincode_id]
-      );
-      const areaCount = parseInt(areaCountResult.rows[0].count, 10);
-
-      if (areaCount <= 1) {
-        return res.status(400).json({
-          success: false,
-          message: 'Cannot delete the last area. Pincode must have at least one area.',
-          error: { code: 'LAST_AREA_DELETION' },
-        });
-      }
-
-      const areaName = pincodeAreaCheck.rows[0].area_name;
-
-      // Delete the pincode area
-      await query('DELETE FROM pincode_areas WHERE id = $1', [id]);
-
-      logger.info(`Deleted pincode area ${id} (${areaName})`, {
-        userId: req.user?.id,
-        areaId: id,
-        areaName,
-        type: 'pincode_area'
-      });
-
-      return res.json({
-        success: true,
-        message: 'Area deleted successfully',
-      });
-    }
-
-    // Check if it's a standalone area
-    const standaloneAreaCheck = await query(
+    // Check if area exists
+    const areaCheck = await query(
       'SELECT id, name FROM areas WHERE id = $1',
       [id]
     );
 
-    if (standaloneAreaCheck.rows.length === 0) {
+    if (areaCheck.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Area not found',
@@ -493,9 +357,24 @@ export const deleteArea = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    const areaName = standaloneAreaCheck.rows[0].name;
+    const areaName = areaCheck.rows[0].name;
 
-    // Delete the standalone area
+    // Check if area is in use by any pincodes
+    const usageCheck = await query(
+      'SELECT COUNT(*) as count FROM pincode_areas WHERE area_id = $1',
+      [id]
+    );
+    const usageCount = parseInt(usageCheck.rows[0].count, 10);
+
+    if (usageCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete area "${areaName}" as it is assigned to ${usageCount} pincode(s)`,
+        error: { code: 'AREA_IN_USE' },
+      });
+    }
+
+    // Delete the area
     await query('DELETE FROM areas WHERE id = $1', [id]);
 
     logger.info(`Deleted standalone area ${id} (${areaName})`, {

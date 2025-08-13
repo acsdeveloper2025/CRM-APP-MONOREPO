@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { locationsService } from '@/services/locations';
 import { Pincode } from '@/types/location';
 import { EditPincodeDialog } from './EditPincodeDialog';
+import { InlineAreaManager } from './InlineAreaManager';
 
 interface PincodesTableProps {
   data: Pincode[];
@@ -133,24 +134,7 @@ export function PincodesTable({ data, isLoading }: PincodesTableProps) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {pincode.areas && pincode.areas.length > 0 ? (
-                      pincode.areas
-                        .sort((a, b) => a.displayOrder - b.displayOrder)
-                        .map((area) => (
-                          <Badge key={area.id} variant="outline" className="text-xs">
-                            {area.name}
-                          </Badge>
-                        ))
-                    ) : (
-                      // Fallback for backward compatibility
-                      pincode.area && (
-                        <Badge variant="outline" className="text-xs">
-                          {pincode.area}
-                        </Badge>
-                      )
-                    )}
-                  </div>
+                  <InlineAreaManager pincode={pincode} />
                 </TableCell>
                 <TableCell>
                   {pincode.cityName ? (

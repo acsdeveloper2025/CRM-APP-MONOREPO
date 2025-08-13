@@ -12,9 +12,7 @@ import {
   bulkImportPincodes,
   getPincodesByCity,
   addPincodeAreas,
-  updatePincodeArea,
-  deletePincodeArea,
-  reorderPincodeAreas
+  removePincodeArea
 } from '@/controllers/pincodesController';
 
 const router = express.Router();
@@ -33,17 +31,16 @@ const createPincodeValidation = [
   body('area')
     .optional()
     .trim()
-    .isLength({ min: 1, max: 200 })
-    .withMessage('Area name must be between 1 and 200 characters'),
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Area name must be between 2 and 100 characters'),
   body('areas')
     .optional()
     .isArray({ min: 1, max: 15 })
-    .withMessage('Areas must be an array with 1-15 items'),
+    .withMessage('Areas must be an array with 1-15 area IDs'),
   body('areas.*')
     .optional()
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Each area name must be between 2 and 100 characters'),
+    .isUUID()
+    .withMessage('Each area must be a valid UUID'),
   body('cityId')
     .trim()
     .notEmpty()
@@ -289,47 +286,15 @@ router.delete('/:id',
   deletePincode
 );
 
-// Area management routes
+// Area management validation schemas
 const addAreasValidation = [
   param('id').trim().notEmpty().withMessage('Pincode ID is required'),
-  body('areas')
+  body('areaIds')
     .isArray({ min: 1, max: 15 })
-    .withMessage('Areas array is required (1-15 areas)'),
-  body('areas.*.name')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Area name must be between 2 and 100 characters'),
-  body('areas.*.displayOrder')
-    .optional()
-    .isInt({ min: 1, max: 50 })
-    .withMessage('Display order must be between 1 and 50'),
-];
-
-const updateAreaValidation = [
-  param('id').trim().notEmpty().withMessage('Pincode ID is required'),
-  param('areaId').trim().notEmpty().withMessage('Area ID is required'),
-  body('name')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Area name must be between 2 and 100 characters'),
-  body('displayOrder')
-    .optional()
-    .isInt({ min: 1, max: 50 })
-    .withMessage('Display order must be between 1 and 50'),
-];
-
-const reorderAreasValidation = [
-  param('id').trim().notEmpty().withMessage('Pincode ID is required'),
-  body('areaOrders')
-    .isArray({ min: 1 })
-    .withMessage('Area orders array is required'),
-  body('areaOrders.*.id')
-    .trim()
-    .notEmpty()
-    .withMessage('Area ID is required'),
-  body('areaOrders.*.displayOrder')
-    .isInt({ min: 1, max: 50 })
-    .withMessage('Display order must be between 1 and 50'),
+    .withMessage('Area IDs array is required (1-15 areas)'),
+  body('areaIds.*')
+    .isUUID()
+    .withMessage('Each area ID must be a valid UUID'),
 ];
 
 // POST /api/pincodes/:id/areas - Add areas to a pincode
@@ -339,28 +304,14 @@ router.post('/:id/areas',
   addPincodeAreas
 );
 
-// PUT /api/pincodes/:id/areas/:areaId - Update a specific area
-router.put('/:id/areas/:areaId',
-  updateAreaValidation,
-  validate,
-  updatePincodeArea
-);
-
-// DELETE /api/pincodes/:id/areas/:areaId - Delete a specific area
+// DELETE /api/pincodes/:id/areas/:areaId - Remove area from pincode
 router.delete('/:id/areas/:areaId',
   [
     param('id').trim().notEmpty().withMessage('Pincode ID is required'),
-    param('areaId').trim().notEmpty().withMessage('Area ID is required')
+    param('areaId').isUUID().withMessage('Area ID must be a valid UUID')
   ],
   validate,
-  deletePincodeArea
-);
-
-// PUT /api/pincodes/:id/areas/reorder - Reorder areas for a pincode
-router.put('/:id/areas/reorder',
-  reorderAreasValidation,
-  validate,
-  reorderPincodeAreas
+  removePincodeArea
 );
 
 export default router;

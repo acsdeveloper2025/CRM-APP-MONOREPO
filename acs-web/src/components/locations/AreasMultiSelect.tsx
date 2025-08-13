@@ -12,6 +12,13 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -38,23 +45,47 @@ export function AreasMultiSelect({
   error,
 }: AreasMultiSelectProps) {
   const [open, setOpen] = React.useState(false);
+  const [searchValue, setSearchValue] = React.useState('');
 
   // Fetch all available areas
-  const { data: areasData, isLoading } = useQuery({
+  const { data: areasData, isLoading, error: queryError } = useQuery({
     queryKey: ['standalone-areas'],
     queryFn: () => locationsService.getStandaloneAreas(),
   });
 
-  const areas = areasData?.data || [];
-  const selectedAreas = areas.filter(area => selectedAreaIds.includes(area.id));
+  const allAreas = areasData?.data || [];
+
+  // Filter areas based on search
+  const areas = React.useMemo(() => {
+    if (!searchValue.trim()) {
+      return allAreas;
+    }
+    return allAreas.filter(area =>
+      area.name.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [allAreas, searchValue]);
+
+  const selectedAreas = allAreas.filter(area => selectedAreaIds.includes(area.id));
+
+  // Debug logging (reduced)
+  React.useEffect(() => {
+    if (queryError) {
+      console.error('AreasMultiSelect Error:', queryError);
+    }
+  }, [queryError]);
 
   const handleSelect = (areaId: string) => {
     if (selectedAreaIds.includes(areaId)) {
       // Remove area
-      onAreasChange(selectedAreaIds.filter(id => id !== areaId));
+      const newSelection = selectedAreaIds.filter(id => id !== areaId);
+      onAreasChange(newSelection);
     } else {
-      // Add area
-      onAreasChange([...selectedAreaIds, areaId]);
+      // Add area (check max limit)
+      if (selectedAreaIds.length >= 15) {
+        return; // Maximum limit reached
+      }
+      const newSelection = [...selectedAreaIds, areaId];
+      onAreasChange(newSelection);
     }
   };
 
@@ -79,34 +110,63 @@ export function AreasMultiSelect({
           >
             {selectedAreaIds.length === 0
               ? "Select areas..."
-              : `${selectedAreaIds.length} area${selectedAreaIds.length === 1 ? '' : 's'} selected`
+              : `${selectedAreaIds.length} area${selectedAreaIds.length === 1 ? '' : 's'} selected${selectedAreaIds.length >= 15 ? ' (max)' : ''}`
             }
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" align="start">
-          <Command>
-            <CommandInput placeholder="Search areas..." />
-            <CommandList>
+          <Command shouldFilter={false}>
+            <div className="flex items-center border-b px-3">
+              <CommandInput
+                placeholder="Search areas..."
+                value={searchValue}
+                onValueChange={setSearchValue}
+                className="flex-1"
+              />
+              {searchValue && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-transparent"
+                  onClick={() => setSearchValue('')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <CommandList className="max-h-64">
               <CommandEmpty>
-                {isLoading ? "Loading areas..." : "No areas found."}
+                {isLoading ? "Loading areas..." : queryError ? `Error: ${queryError.message}` : searchValue ? `No areas found matching "${searchValue}"` : "No areas found"}
               </CommandEmpty>
               <CommandGroup>
-                {areas.map((area) => (
-                  <CommandItem
-                    key={area.id}
-                    value={area.name}
-                    onSelect={() => handleSelect(area.id)}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        selectedAreaIds.includes(area.id) ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {area.name}
-                  </CommandItem>
-                ))}
+                {!isLoading && areas.length > 0 && (
+                  <div className="text-xs text-muted-foreground px-2 py-1 border-b">
+                    {areas.length} area{areas.length === 1 ? '' : 's'} {searchValue ? `matching "${searchValue}"` : 'available'}
+                  </div>
+                )}
+                {areas.map((area) => {
+                  const isSelected = selectedAreaIds.includes(area.id);
+                  return (
+                    <CommandItem
+                      key={area.id}
+                      value={area.name}
+                      className="cursor-pointer"
+                      onSelect={() => {
+                        handleSelect(area.id);
+                        // Keep the popover open for multi-selection
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          isSelected ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {area.name}
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </CommandList>
           </Command>
