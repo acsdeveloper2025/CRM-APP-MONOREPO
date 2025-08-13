@@ -197,6 +197,13 @@ export const navigationItems: NavigationItem[] = [
     roles: ['ADMIN'],
   },
   {
+    id: 'role-management',
+    label: 'Role & Department Management',
+    href: '/role-management',
+    icon: Shield,
+    roles: ['ADMIN'],
+  },
+  {
     id: 'realtime',
     label: 'Real-time Features',
     href: '/realtime',

@@ -31,6 +31,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { usersService } from '@/services/users';
+import { rolesService } from '@/services/roles';
+import { departmentsService } from '@/services/departments';
 import type { Role } from '@/types/auth';
 
 const createUserSchema = z.object({
@@ -38,12 +40,10 @@ const createUserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').max(50, 'Username too long'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['ADMIN', 'BACKEND', 'BANK', 'FIELD'] as const, {
-    message: 'Role is required',
-  }),
+  role_id: z.string().min(1, 'Role is required'),
+  department_id: z.string().min(1, 'Department is required'),
   employeeId: z.string().min(1, 'Employee ID is required'),
   designation: z.string().min(1, 'Designation is required'),
-  department: z.string().min(1, 'Department is required'),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -63,17 +63,24 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       username: '',
       email: '',
       password: '',
-      role: 'FIELD',
+      role_id: '',
+      department_id: '',
       employeeId: '',
       designation: '',
-      department: '',
     },
+  });
+
+  // Fetch roles for dropdown
+  const { data: rolesData } = useQuery({
+    queryKey: ['roles', 'active'],
+    queryFn: () => rolesService.getActiveRoles(),
+    enabled: open,
   });
 
   // Fetch departments for dropdown
   const { data: departmentsData } = useQuery({
-    queryKey: ['departments'],
-    queryFn: () => usersService.getDepartments(),
+    queryKey: ['departments', 'active'],
+    queryFn: () => departmentsService.getActiveDepartments(),
     enabled: open,
   });
 
@@ -95,6 +102,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     createMutation.mutate(data);
   };
 
+  const roles = rolesData?.data || [];
   const departments = departmentsData?.data || [];
 
   return (
@@ -173,7 +181,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="role"
+                name="role_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
@@ -184,10 +192,11 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="ADMIN">Admin</SelectItem>
-                        <SelectItem value="BACKEND">Backend</SelectItem>
-                        <SelectItem value="BANK">Bank</SelectItem>
-                        <SelectItem value="FIELD">Field</SelectItem>
+                        {roles.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -227,7 +236,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
               <FormField
                 control={form.control}
-                name="department"
+                name="department_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department</FormLabel>
@@ -239,8 +248,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                       </FormControl>
                       <SelectContent>
                         {departments.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept}
+                          <SelectItem key={dept.id} value={dept.id}>
+                            {dept.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

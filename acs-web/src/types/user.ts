@@ -91,6 +91,88 @@ export interface UserStats {
   }[];
 }
 
+// Role and Department Management Types
+export interface Permission {
+  create: boolean;
+  read: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
+export interface RolePermissions {
+  users: Permission;
+  roles: Permission;
+  departments: Permission;
+  locations: Permission;
+  clients: Permission;
+  cases: Permission;
+  reports: Permission;
+  settings: Permission;
+}
+
+export interface RoleData {
+  id: string;
+  name: string;
+  description?: string;
+  permissions: RolePermissions;
+  is_system_role: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  created_by_name?: string;
+  updated_by_name?: string;
+  user_count: number;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  description?: string;
+  department_head_id?: string;
+  department_head_name?: string;
+  parent_department_id?: string;
+  parent_department_name?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  created_by_name?: string;
+  updated_by_name?: string;
+  user_count: number;
+  subdepartment_count: number;
+}
+
+export interface CreateRoleRequest {
+  name: string;
+  description?: string;
+  permissions: RolePermissions;
+}
+
+export interface UpdateRoleRequest {
+  name?: string;
+  description?: string;
+  permissions?: RolePermissions;
+  is_active?: boolean;
+}
+
+export interface CreateDepartmentRequest {
+  name: string;
+  description?: string;
+  department_head_id?: string;
+  parent_department_id?: string;
+}
+
+export interface UpdateDepartmentRequest {
+  name?: string;
+  description?: string;
+  department_head_id?: string;
+  parent_department_id?: string;
+  is_active?: boolean;
+}
+
 export interface UserSession {
   id: string;
   userId: string;

@@ -1,0 +1,250 @@
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { MoreHorizontal, Edit, Trash2, Shield, Users, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { rolesService } from '@/services/roles';
+import { RoleData } from '@/types/user';
+import { formatDistanceToNow } from 'date-fns';
+
+interface RolesTableProps {
+  onEditRole?: (role: RoleData) => void;
+}
+
+export function RolesTable({ onEditRole }: RolesTableProps) {
+  const [search, setSearch] = useState('');
+  const [deleteRole, setDeleteRole] = useState<RoleData | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: rolesData, isLoading } = useQuery({
+    queryKey: ['roles', { search }],
+    queryFn: () => rolesService.getRoles({ search, limit: 100 }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (roleId: string) => rolesService.deleteRole(roleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      toast.success('Role deleted successfully');
+      setDeleteRole(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete role');
+      setDeleteRole(null);
+    },
+  });
+
+  const roles = rolesData?.data || [];
+
+  const handleDeleteRole = (role: RoleData) => {
+    setDeleteRole(role);
+  };
+
+  const confirmDelete = () => {
+    if (deleteRole) {
+      deleteMutation.mutate(deleteRole.id);
+    }
+  };
+
+  const getPermissionCount = (permissions: any) => {
+    if (!permissions) return 0;
+    let count = 0;
+    Object.values(permissions).forEach((resource: any) => {
+      if (resource && typeof resource === 'object') {
+        Object.values(resource).forEach((permission) => {
+          if (permission === true) count++;
+        });
+      }
+    });
+    return count;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="text-sm text-muted-foreground">Loading roles...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center space-x-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search roles..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Role</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Users</TableHead>
+              <TableHead>Permissions</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="w-[70px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {roles.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8">
+                  <div className="text-muted-foreground">
+                    {search ? `No roles found matching "${search}"` : 'No roles found'}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              roles.map((role) => (
+                <TableRow key={role.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      {role.is_system_role && (
+                        <Shield className="h-4 w-4 text-blue-500" />
+                      )}
+                      <div>
+                        <div className="font-medium">{role.name}</div>
+                        {role.is_system_role && (
+                          <div className="text-xs text-muted-foreground">System Role</div>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-xs truncate" title={role.description}>
+                      {role.description || '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={role.is_system_role ? 'default' : 'secondary'}>
+                      {role.is_system_role ? 'System' : 'Custom'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>{role.user_count}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {getPermissionCount(role.permissions)} permissions
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={role.is_active ? 'default' : 'secondary'}>
+                      {role.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDistanceToNow(new Date(role.created_at), { addSuffix: true })}
+                    </div>
+                    {role.created_by_name && (
+                      <div className="text-xs text-muted-foreground">
+                        by {role.created_by_name}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onEditRole?.(role)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        {!role.is_system_role && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteRole(role)}
+                              className="text-destructive"
+                              disabled={role.user_count > 0}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <AlertDialog open={!!deleteRole} onOpenChange={() => setDeleteRole(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Role</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the role "{deleteRole?.name}"? This action cannot be undone.
+              {deleteRole?.user_count && deleteRole.user_count > 0 && (
+                <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
+                  This role is assigned to {deleteRole.user_count} user(s) and cannot be deleted.
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending || (deleteRole?.user_count || 0) > 0}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

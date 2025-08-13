@@ -1,0 +1,254 @@
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { MoreHorizontal, Edit, Trash2, Users, Building, Search, Crown } from 'lucide-react';
+import { toast } from 'sonner';
+import { departmentsService } from '@/services/departments';
+import { Department } from '@/types/user';
+import { formatDistanceToNow } from 'date-fns';
+
+interface DepartmentsTableProps {
+  onEditDepartment?: (department: Department) => void;
+}
+
+export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
+  const [search, setSearch] = useState('');
+  const [deleteDepartment, setDeleteDepartment] = useState<Department | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: departmentsData, isLoading } = useQuery({
+    queryKey: ['departments', { search }],
+    queryFn: () => departmentsService.getDepartments({ search, limit: 100 }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (departmentId: string) => departmentsService.deleteDepartment(departmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+      toast.success('Department deleted successfully');
+      setDeleteDepartment(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete department');
+      setDeleteDepartment(null);
+    },
+  });
+
+  const departments = departmentsData?.data || [];
+
+  const handleDeleteDepartment = (department: Department) => {
+    setDeleteDepartment(department);
+  };
+
+  const confirmDelete = () => {
+    if (deleteDepartment) {
+      deleteMutation.mutate(deleteDepartment.id);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="text-sm text-muted-foreground">Loading departments...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center space-x-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search departments..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Department</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Head</TableHead>
+              <TableHead>Parent</TableHead>
+              <TableHead>Users</TableHead>
+              <TableHead>Subdepartments</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="w-[70px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {departments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-8">
+                  <div className="text-muted-foreground">
+                    {search ? `No departments found matching "${search}"` : 'No departments found'}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              departments.map((department) => (
+                <TableRow key={department.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Building className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">{department.name}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-xs truncate" title={department.description}>
+                      {department.description || '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {department.department_head_name ? (
+                      <div className="flex items-center space-x-1">
+                        <Crown className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm">{department.department_head_name}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">No head assigned</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {department.parent_department_name ? (
+                      <Badge variant="outline">
+                        {department.parent_department_name}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">Top level</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>{department.user_count}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <Building className="h-4 w-4 text-muted-foreground" />
+                      <span>{department.subdepartment_count}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={department.is_active ? 'default' : 'secondary'}>
+                      {department.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDistanceToNow(new Date(department.created_at), { addSuffix: true })}
+                    </div>
+                    {department.created_by_name && (
+                      <div className="text-xs text-muted-foreground">
+                        by {department.created_by_name}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onEditDepartment?.(department)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteDepartment(department)}
+                          className="text-destructive"
+                          disabled={department.user_count > 0 || department.subdepartment_count > 0}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <AlertDialog open={!!deleteDepartment} onOpenChange={() => setDeleteDepartment(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Department</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the department "{deleteDepartment?.name}"? This action cannot be undone.
+              {deleteDepartment && (deleteDepartment.user_count > 0 || deleteDepartment.subdepartment_count > 0) && (
+                <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
+                  This department cannot be deleted because it has:
+                  {deleteDepartment.user_count > 0 && (
+                    <div>• {deleteDepartment.user_count} assigned user(s)</div>
+                  )}
+                  {deleteDepartment.subdepartment_count > 0 && (
+                    <div>• {deleteDepartment.subdepartment_count} subdepartment(s)</div>
+                  )}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={
+                deleteMutation.isPending || 
+                (deleteDepartment?.user_count || 0) > 0 || 
+                (deleteDepartment?.subdepartment_count || 0) > 0
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
