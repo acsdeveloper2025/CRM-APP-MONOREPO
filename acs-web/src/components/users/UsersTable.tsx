@@ -39,6 +39,7 @@ import { EditUserDialog } from './EditUserDialog';
 import { UserDetailsDialog } from './UserDetailsDialog';
 import { ResetPasswordDialog } from './ResetPasswordDialog';
 import { DeviceManagementDialog } from './DeviceManagementDialog';
+import { getRoleBadge } from '@/utils/roleUtils';
 
 interface UsersTableProps {
   data: User[];
@@ -139,16 +140,9 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
     }
   };
 
-  const getRoleBadge = (role: string) => {
-    const roleConfig = {
-      ADMIN: { variant: 'default' as const, label: 'Admin' },
-      BACKEND: { variant: 'secondary' as const, label: 'Backend' },
-      BANK: { variant: 'outline' as const, label: 'Bank' },
-      FIELD: { variant: 'outline' as const, label: 'Field' },
-    };
-    
-    const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.FIELD;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  // Use the centralized role badge utility
+  const getUserRoleBadge = (role: string) => {
+    return getRoleBadge(role);
   };
 
   const getStatusBadge = (isActive: boolean) => {
@@ -271,7 +265,7 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    {getRoleBadge(user.role)}
+                    {getUserRoleBadge(user.role)}
                     {(user.role === 'FIELD' || user.role === 'FIELD_AGENT' || user.role_name === 'Field Agent') && (
                       <div className="flex items-center">
                         {user.device_id || user.deviceId ? (

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RolePermission } from '@/types/user';
+import { getRoleBadge, getRoleIcon } from '@/utils/roleUtils';
 
 interface RolePermissionsTableProps {
   data: RolePermission[];
@@ -53,16 +54,9 @@ export function RolePermissionsTable({ data, isLoading }: RolePermissionsTablePr
     );
   }
 
-  const getRoleBadge = (role: string) => {
-    const roleConfig = {
-      ADMIN: { variant: 'default' as const, label: 'Admin' },
-      BACKEND: { variant: 'secondary' as const, label: 'Backend' },
-      BANK: { variant: 'outline' as const, label: 'Bank' },
-      FIELD: { variant: 'outline' as const, label: 'Field' },
-    };
-    
-    const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.FIELD;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  // Use the centralized role badge utility
+  const getRoleDisplayBadge = (role: string) => {
+    return getRoleBadge(role);
   };
 
   // Group permissions by module
@@ -82,8 +76,8 @@ export function RolePermissionsTable({ data, isLoading }: RolePermissionsTablePr
         <Card key={rolePermission.role}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Shield className="h-5 w-5" />
-              {getRoleBadge(rolePermission.role)}
+              {getRoleIcon(rolePermission.role, 'lg')}
+              {getRoleDisplayBadge(rolePermission.role)}
               <span>Permissions</span>
             </CardTitle>
             <CardDescription>

@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { rolesService } from '@/services/roles';
 import { RoleData } from '@/types/user';
 import { formatDistanceToNow } from 'date-fns';
+import { getRoleIcon } from '@/utils/roleUtils';
 
 interface RolesTableProps {
   onEditRole?: (role: RoleData) => void;
@@ -143,9 +144,7 @@ export function RolesTable({ onEditRole }: RolesTableProps) {
                 <TableRow key={role.id}>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      {role.is_system_role && (
-                        <Shield className="h-4 w-4 text-blue-500" />
-                      )}
+                      {getRoleIcon(role.name, 'md')}
                       <div>
                         <div className="font-medium">{role.name}</div>
                         {role.is_system_role && (
