@@ -33,6 +33,7 @@ import { toast } from 'sonner';
 import { usersService } from '@/services/users';
 import { rolesService } from '@/services/roles';
 import { departmentsService } from '@/services/departments';
+import { designationsService } from '@/services/designations';
 import type { Role } from '@/types/auth';
 
 const createUserSchema = z.object({
@@ -43,7 +44,7 @@ const createUserSchema = z.object({
   role_id: z.string().min(1, 'Role is required'),
   department_id: z.string().min(1, 'Department is required'),
   employeeId: z.string().min(1, 'Employee ID is required'),
-  designation: z.string().min(1, 'Designation is required'),
+  designation_id: z.string().min(1, 'Designation is required'),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -66,7 +67,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       role_id: '',
       department_id: '',
       employeeId: '',
-      designation: '',
+      designation_id: '',
     },
   });
 
@@ -81,6 +82,13 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   const { data: departmentsData } = useQuery({
     queryKey: ['departments', 'active'],
     queryFn: () => departmentsService.getActiveDepartments(),
+    enabled: open,
+  });
+
+  // Fetch designations for dropdown
+  const { data: designationsData } = useQuery({
+    queryKey: ['designations', 'active'],
+    queryFn: () => designationsService.getActiveDesignations(),
     enabled: open,
   });
 
@@ -104,6 +112,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
   const roles = rolesData?.data || [];
   const departments = departmentsData?.data || [];
+  const designations = designationsData?.data || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -222,13 +231,24 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="designation"
+                name="designation_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Designation</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter designation" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select designation" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {designations.map((designation) => (
+                          <SelectItem key={designation.id} value={designation.id}>
+                            {designation.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

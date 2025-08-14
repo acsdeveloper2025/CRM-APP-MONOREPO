@@ -66,6 +66,32 @@ export class AuthService {
     const user = this.getCurrentUser();
     return user ? roles.includes(user.role) : false;
   }
+
+  async refreshUserData(): Promise<User | null> {
+    try {
+      const token = this.getToken();
+      if (!token) return null;
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          localStorage.setItem('auth_user', JSON.stringify(result.data));
+          return result.data;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+      return null;
+    }
+  }
 }
 
 export const authService = new AuthService();

@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { usersService } from '@/services/users';
+import { rolesService } from '@/services/roles';
 import { UsersTable } from '@/components/users/UsersTable';
 import { UserActivitiesTable } from '@/components/users/UserActivitiesTable';
 import { UserSessionsTable } from '@/components/users/UserSessionsTable';
@@ -81,6 +82,12 @@ export function UsersPage() {
   const { data: departmentsData } = useQuery({
     queryKey: ['departments'],
     queryFn: () => usersService.getDepartments(),
+  });
+
+  // Fetch roles for filter
+  const { data: rolesData } = useQuery({
+    queryKey: ['roles', 'active'],
+    queryFn: () => rolesService.getActiveRoles(),
   });
 
   const handleExportUsers = async (format: 'CSV' | 'EXCEL' = 'EXCEL') => {
@@ -169,6 +176,7 @@ export function UsersPage() {
 
   const stats = getTabStats();
   const departments = Array.isArray(departmentsData?.data) ? departmentsData.data : [];
+  const roles = Array.isArray(rolesData?.data) ? rolesData.data : [];
 
   return (
     <div className="space-y-6">
@@ -285,10 +293,11 @@ export function UsersPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Roles</SelectItem>
-                        <SelectItem value="ADMIN">Admin</SelectItem>
-                        <SelectItem value="BACKEND">Backend</SelectItem>
-                        <SelectItem value="BANK">Bank</SelectItem>
-                        <SelectItem value="FIELD">Field</SelectItem>
+                        {roles.map((role) => (
+                          <SelectItem key={role.id} value={role.name}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
 
@@ -299,8 +308,8 @@ export function UsersPage() {
                       <SelectContent>
                         <SelectItem value="all">All Departments</SelectItem>
                         {departments.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept}
+                          <SelectItem key={dept.id} value={dept.name}>
+                            {dept.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

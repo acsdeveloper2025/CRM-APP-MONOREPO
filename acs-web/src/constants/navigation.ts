@@ -7,6 +7,7 @@ import {
   Receipt,
   BarChart3,
   UserCog,
+  Users,
   CheckSquare,
   Settings,
   Wifi,
@@ -20,7 +21,11 @@ export interface NavigationItem {
   label: string;
   href: string;
   icon: any;
-  roles: Role[];
+  roles?: Role[]; // Made optional for backward compatibility
+  permission?: {
+    resource: string;
+    action: string;
+  };
   children?: NavigationItem[];
 }
 
@@ -30,42 +35,42 @@ export const navigationItems: NavigationItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['ADMIN', 'BACKEND', 'BANK'],
+    roles: ['ADMIN', 'BACKEND', 'BANK'], // Keep for backward compatibility
   },
   {
     id: 'cases',
     label: 'Case Management',
     href: '/cases',
     icon: FileText,
-    roles: ['ADMIN', 'BACKEND'],
+    permission: { resource: 'cases', action: 'read' },
     children: [
       {
         id: 'cases-list',
         label: 'All Cases',
         href: '/cases',
         icon: FileText,
-        roles: ['ADMIN', 'BACKEND'],
+        permission: { resource: 'cases', action: 'read' },
       },
       {
         id: 'cases-new',
         label: 'Create New Case',
         href: '/cases/new',
         icon: Plus,
-        roles: ['ADMIN', 'BACKEND'],
+        permission: { resource: 'cases', action: 'create' },
       },
       {
         id: 'cases-completed',
         label: 'Completed Cases',
         href: '/cases/completed',
         icon: CheckCircle,
-        roles: ['ADMIN', 'BACKEND'],
+        permission: { resource: 'cases', action: 'read' },
       },
       {
         id: 'cases-pending',
         label: 'Pending Review',
         href: '/cases/pending',
         icon: CheckSquare,
-        roles: ['ADMIN', 'BACKEND'],
+        permission: { resource: 'cases', action: 'read' },
       },
     ],
   },
@@ -74,28 +79,28 @@ export const navigationItems: NavigationItem[] = [
     label: 'Client Management',
     href: '/clients',
     icon: Building2,
-    roles: ['ADMIN'],
+    permission: { resource: 'clients', action: 'read' },
     children: [
       {
         id: 'clients-list',
         label: 'Clients',
         href: '/clients',
         icon: Building2,
-        roles: ['ADMIN'],
+        permission: { resource: 'clients', action: 'read' },
       },
       {
         id: 'products',
         label: 'Products',
         href: '/products',
         icon: Settings,
-        roles: ['ADMIN'],
+        permission: { resource: 'clients', action: 'read' },
       },
       {
         id: 'verification-types',
         label: 'Verification Types',
         href: '/verification-types',
         icon: CheckSquare,
-        roles: ['ADMIN'],
+        permission: { resource: 'clients', action: 'read' },
       },
     ],
   },
@@ -104,42 +109,42 @@ export const navigationItems: NavigationItem[] = [
     label: 'Location Management',
     href: '/locations',
     icon: MapPin,
-    roles: ['ADMIN'],
+    permission: { resource: 'locations', action: 'read' },
     children: [
       {
         id: 'countries',
         label: 'Countries',
         href: '/locations?tab=countries',
         icon: MapPin,
-        roles: ['ADMIN'],
+        permission: { resource: 'locations', action: 'read' },
       },
       {
         id: 'states',
         label: 'States',
         href: '/locations?tab=states',
         icon: MapPin,
-        roles: ['ADMIN'],
+        permission: { resource: 'locations', action: 'read' },
       },
       {
         id: 'cities',
         label: 'Cities',
         href: '/locations?tab=cities',
         icon: MapPin,
-        roles: ['ADMIN'],
+        permission: { resource: 'locations', action: 'read' },
       },
       {
         id: 'pincodes',
         label: 'Pincodes',
         href: '/locations?tab=pincodes',
         icon: MapPin,
-        roles: ['ADMIN'],
+        permission: { resource: 'locations', action: 'read' },
       },
       {
         id: 'areas',
         label: 'Areas',
         href: '/locations?tab=areas',
         icon: MapPin,
-        roles: ['ADMIN'],
+        permission: { resource: 'locations', action: 'read' },
       },
     ],
   },
@@ -148,21 +153,21 @@ export const navigationItems: NavigationItem[] = [
     label: 'Billing & Commission',
     href: '/billing',
     icon: Receipt,
-    roles: ['ADMIN', 'BACKEND'],
+    permission: { resource: 'reports', action: 'read' }, // Using reports permission for billing
     children: [
       {
         id: 'invoices',
         label: 'Invoices',
         href: '/invoices',
         icon: Receipt,
-        roles: ['ADMIN', 'BACKEND'],
+        permission: { resource: 'reports', action: 'read' },
       },
       {
         id: 'commissions',
         label: 'Commissions',
         href: '/commissions',
         icon: BarChart3,
-        roles: ['ADMIN', 'BACKEND'],
+        permission: { resource: 'reports', action: 'read' },
       },
     ],
   },
@@ -171,57 +176,66 @@ export const navigationItems: NavigationItem[] = [
     label: 'Reports & MIS',
     href: '/reports',
     icon: BarChart3,
-    roles: ['ADMIN', 'BACKEND', 'BANK'],
+    permission: { resource: 'reports', action: 'read' },
     children: [
       {
         id: 'bank-bills',
         label: 'Bank Bills',
         href: '/reports/bank-bills',
         icon: Receipt,
-        roles: ['BANK'],
+        permission: { resource: 'reports', action: 'read' },
       },
       {
         id: 'mis-dashboard',
         label: 'MIS Dashboard',
         href: '/reports/mis',
         icon: BarChart3,
-        roles: ['ADMIN', 'BACKEND'],
+        permission: { resource: 'reports', action: 'read' },
       },
     ],
   },
   {
-    id: 'users',
+    id: 'user-management',
     label: 'User Management',
-    href: '/users',
+    href: '#',
     icon: UserCog,
-    roles: ['ADMIN'],
-  },
-  {
-    id: 'role-management',
-    label: 'Role & Department Management',
-    href: '/role-management',
-    icon: Shield,
-    roles: ['ADMIN'],
+    permission: { resource: 'users', action: 'read' },
+    children: [
+      {
+        id: 'users',
+        label: 'Users',
+        href: '/users',
+        icon: Users,
+        permission: { resource: 'users', action: 'read' },
+      },
+      {
+        id: 'role-management',
+        label: 'Roles & Departments',
+        href: '/role-management',
+        icon: Shield,
+        permission: { resource: 'roles', action: 'read' },
+      },
+    ],
   },
   {
     id: 'realtime',
     label: 'Real-time Features',
     href: '/realtime',
     icon: Wifi,
-    roles: ['ADMIN', 'BACKEND'],
+    permission: { resource: 'cases', action: 'read' }, // Using cases permission for realtime features
   },
   {
     id: 'forms',
     label: 'Form Viewer',
     href: '/forms',
     icon: FileText,
-    roles: ['ADMIN', 'BACKEND'],
+    permission: { resource: 'cases', action: 'read' }, // Using cases permission for forms
   },
   {
     id: 'security-ux',
     label: 'Security & UX',
     href: '/security-ux',
     icon: Shield,
-    roles: ['ADMIN'],
+    permission: { resource: 'settings', action: 'read' },
   },
 ];

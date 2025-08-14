@@ -1,48 +1,9 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import { query } from '@/config/database';
 import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from '@/middleware/auth';
 import type { Role } from '@/types/auth';
-
-// Mock data for demonstration (replace with actual database operations)
-let users: any[] = [
-  {
-    id: 'user_1',
-    name: 'John Doe',
-    username: 'john.doe',
-    email: 'john.doe@example.com',
-    role: 'ADMIN',
-    department: 'IT',
-    designation: 'System Administrator',
-    phone: '+1234567890',
-    isActive: true,
-    profilePhotoUrl: null,
-    firstName: 'John',
-    lastName: 'Doe',
-    lastLoginAt: new Date().toISOString(),
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'user_2',
-    name: 'Jane Smith',
-    username: 'jane.smith',
-    email: 'jane.smith@example.com',
-    role: 'MANAGER',
-    department: 'Operations',
-    designation: 'Operations Manager',
-    phone: '+1234567891',
-    isActive: true,
-    profilePhotoUrl: null,
-    firstName: 'Jane',
-    lastName: 'Smith',
-    lastLoginAt: new Date().toISOString(),
-    createdAt: '2024-01-02T00:00:00.000Z',
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-let userActivities: any[] = [];
-let userSessions: any[] = [];
 
 // GET /api/users - List users with pagination and filters
 export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
@@ -58,43 +19,85 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
       sortOrder = 'asc' 
     } = req.query;
 
-    let filteredUsers = [...users];
+    // Build the WHERE clause
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
 
-    // Apply filters
     if (role) {
-      filteredUsers = filteredUsers.filter(user => user.role === role);
+      conditions.push(`u.role = $${paramIndex++}`);
+      params.push(role);
     }
+
     if (department) {
-      filteredUsers = filteredUsers.filter(user => user.department === department);
+      conditions.push(`d.name ILIKE $${paramIndex++}`);
+      params.push(`%${department}%`);
     }
+
     if (isActive !== undefined) {
-      filteredUsers = filteredUsers.filter(user => user.isActive === (isActive === 'true'));
+      conditions.push(`u.is_active = $${paramIndex++}`);
+      params.push(isActive === 'true');
     }
+
     if (search) {
-      const searchTerm = (search as string).toLowerCase();
-      filteredUsers = filteredUsers.filter(user => 
-        user.name.toLowerCase().includes(searchTerm) ||
-        user.email.toLowerCase().includes(searchTerm) ||
-        user.username.toLowerCase().includes(searchTerm)
-      );
+      conditions.push(`(
+        u.name ILIKE $${paramIndex} OR 
+        u.email ILIKE $${paramIndex} OR 
+        u.username ILIKE $${paramIndex}
+      )`);
+      params.push(`%${search}%`);
+      paramIndex++;
     }
 
-    // Apply sorting
-    filteredUsers.sort((a, b) => {
-      const aValue = a[sortBy as string];
-      const bValue = b[sortBy as string];
-      if (sortOrder === 'desc') {
-        return bValue > aValue ? 1 : -1;
-      }
-      return aValue > bValue ? 1 : -1;
-    });
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Apply pagination
-    const startIndex = ((page as number) - 1) * (limit as number);
-    const endIndex = startIndex + (limit as number);
-    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+    // Validate sortBy to prevent SQL injection
+    const validSortColumns = ['name', 'username', 'email', 'role', 'created_at', 'updated_at'];
+    const safeSortBy = validSortColumns.includes(sortBy as string) ? sortBy : 'name';
+    const safeSortOrder = sortOrder === 'desc' ? 'DESC' : 'ASC';
 
-    logger.info(`Retrieved ${paginatedUsers.length} users`, { 
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM users u
+      LEFT JOIN departments d ON u.department_id = d.id
+      ${whereClause}
+    `;
+    const countResult = await query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total);
+
+    // Get paginated results
+    const offset = (Number(page) - 1) * Number(limit);
+    const usersQuery = `
+      SELECT 
+        u.id,
+        u.name,
+        u.username,
+        u.email,
+        u.phone,
+        u.role,
+        u.role_id,
+        u.department_id,
+        u."employeeId",
+        u.designation,
+        u.is_active,
+        u.last_login,
+        u.created_at,
+        u.updated_at,
+        r.name as role_name,
+        d.name as department_name
+      FROM users u
+      LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN departments d ON u.department_id = d.id
+      ${whereClause}
+      ORDER BY u.${safeSortBy} ${safeSortOrder}
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+    
+    params.push(Number(limit), offset);
+    const usersResult = await query(usersQuery, params);
+
+    logger.info(`Retrieved ${usersResult.rows.length} users`, { 
       userId: req.user?.id,
       filters: { role, department, isActive, search },
       pagination: { page, limit }
@@ -102,19 +105,19 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({
       success: true,
-      data: paginatedUsers,
+      data: usersResult.rows,
       pagination: {
         page: Number(page),
         limit: Number(limit),
-        total: filteredUsers.length,
-        totalPages: Math.ceil(filteredUsers.length / (limit as number)),
+        total,
+        totalPages: Math.ceil(total / Number(limit)),
       },
     });
   } catch (error) {
-    logger.error('Error retrieving users:', error);
+    logger.error('Error fetching users:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to retrieve users',
+      message: 'Failed to fetch users',
       error: { code: 'INTERNAL_ERROR' },
     });
   }
@@ -124,9 +127,37 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
 export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const user = users.find(u => u.id === id);
+    
+    const userQuery = `
+      SELECT 
+        u.id,
+        u.name,
+        u.username,
+        u.email,
+        u.phone,
+        u.role,
+        u.role_id,
+        u.department_id,
+        u."employeeId",
+        u.designation,
+        u.is_active,
+        u.last_login,
+        u.created_at,
+        u.updated_at,
+        r.name as role_name,
+        r.description as role_description,
+        r.permissions as role_permissions,
+        d.name as department_name,
+        d.description as department_description
+      FROM users u
+      LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN departments d ON u.department_id = d.id
+      WHERE u.id = $1
+    `;
+    
+    const result = await query(userQuery, [id]);
 
-    if (!user) {
+    if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
@@ -134,17 +165,15 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    logger.info(`Retrieved user ${id}`, { userId: req.user?.id });
-
     res.json({
       success: true,
-      data: user,
+      data: result.rows[0],
     });
   } catch (error) {
-    logger.error('Error retrieving user:', error);
+    logger.error('Error fetching user:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to retrieve user',
+      message: 'Failed to fetch user',
       error: { code: 'INTERNAL_ERROR' },
     });
   }
@@ -153,20 +182,47 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
 // POST /api/users - Create new user
 export const createUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { 
-      name, 
-      username, 
-      email, 
-      role, 
-      department, 
-      designation, 
-      phone, 
-      isActive = true 
+    const {
+      name,
+      username,
+      email,
+      password,
+      role_id,
+      department_id,
+      employeeId,
+      designation,
+      phone,
+      isActive = true,
+      // Legacy fields for backward compatibility
+      role,
+      department
     } = req.body;
 
+    // Validate required fields
+    if (!name || !username || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, username, email, and password are required',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    if (!role_id && !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Role is required',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
     // Check if username or email already exists
-    const existingUser = users.find(u => u.username === username || u.email === email);
-    if (existingUser) {
+    const existingUserQuery = `
+      SELECT id FROM users 
+      WHERE username = $1 OR email = $2
+    `;
+    const existingUser = await query(existingUserQuery, [username, email]);
+    
+    if (existingUser.rows.length > 0) {
       return res.status(400).json({
         success: false,
         message: 'Username or email already exists',
@@ -174,26 +230,35 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Create new user
-    const newUser = {
-      id: `user_${Date.now()}`,
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user in database
+    const createUserQuery = `
+      INSERT INTO users (
+        name, username, email, password, "passwordHash", role, role_id, department_id,
+        "employeeId", designation, phone, is_active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING id, name, username, email, role, role_id, department_id,
+                "employeeId", designation, phone, is_active, created_at, updated_at
+    `;
+
+    const result = await query(createUserQuery, [
       name,
       username,
       email,
-      role,
-      department,
-      designation,
-      phone,
-      isActive,
-      profilePhotoUrl: null,
-      firstName: name.split(' ')[0],
-      lastName: name.split(' ').slice(1).join(' '),
-      lastLoginAt: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      hashedPassword, // password column
+      hashedPassword, // passwordHash column
+      role || 'USER', // Default role for backward compatibility
+      role_id || null,
+      department_id || null,
+      employeeId || null,
+      designation || null,
+      phone || null,
+      isActive
+    ]);
 
-    users.push(newUser);
+    const newUser = result.rows[0];
 
     logger.info(`Created new user: ${newUser.id}`, { 
       userId: req.user?.id,
@@ -222,8 +287,11 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const userIndex = users.findIndex(u => u.id === id);
-    if (userIndex === -1) {
+    // Check if user exists
+    const userExistsQuery = `SELECT id FROM users WHERE id = $1`;
+    const userExists = await query(userExistsQuery, [id]);
+
+    if (userExists.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
@@ -233,10 +301,13 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
 
     // Check for duplicate username/email if being updated
     if (updateData.username || updateData.email) {
-      const existingUser = users.find(u => 
-        u.id !== id && (u.username === updateData.username || u.email === updateData.email)
-      );
-      if (existingUser) {
+      const duplicateQuery = `
+        SELECT id FROM users
+        WHERE id != $1 AND (username = $2 OR email = $3)
+      `;
+      const duplicate = await query(duplicateQuery, [id, updateData.username, updateData.email]);
+
+      if (duplicate.rows.length > 0) {
         return res.status(400).json({
           success: false,
           message: 'Username or email already exists',
@@ -245,23 +316,49 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
-    // Update user
-    const updatedUser = {
-      ...users[userIndex],
-      ...updateData,
-      updatedAt: new Date().toISOString(),
-    };
+    // Build update query dynamically
+    const updateFields: string[] = [];
+    const updateParams: any[] = [];
+    let paramIndex = 1;
 
-    users[userIndex] = updatedUser;
+    const allowedFields = ['name', 'username', 'email', 'phone', 'role', 'role_id', 'department_id', 'employeeId', 'designation', 'is_active'];
 
-    logger.info(`Updated user: ${id}`, { 
+    for (const field of allowedFields) {
+      if (updateData[field] !== undefined) {
+        updateFields.push(`${field === 'employeeId' ? '"employeeId"' : field} = $${paramIndex++}`);
+        updateParams.push(updateData[field]);
+      }
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid fields to update',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
+    updateParams.push(id);
+
+    const updateQuery = `
+      UPDATE users
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING id, name, username, email, role, role_id, department_id,
+                "employeeId", designation, phone, is_active, created_at, updated_at
+    `;
+
+    const result = await query(updateQuery, updateParams);
+
+    logger.info(`Updated user: ${id}`, {
       userId: req.user?.id,
-      changes: Object.keys(updateData)
+      updatedFields: Object.keys(updateData)
     });
 
     res.json({
       success: true,
-      data: updatedUser,
+      data: result.rows[0],
       message: 'User updated successfully',
     });
   } catch (error) {
@@ -279,8 +376,11 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    const userIndex = users.findIndex(u => u.id === id);
-    if (userIndex === -1) {
+    // Check if user exists
+    const userExistsQuery = `SELECT id, username FROM users WHERE id = $1`;
+    const userExists = await query(userExistsQuery, [id]);
+
+    if (userExists.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
@@ -288,21 +388,22 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Prevent self-deletion
-    if (id === req.user?.id) {
+    // Prevent deletion of admin user
+    if (userExists.rows[0].username === 'admin') {
       return res.status(400).json({
         success: false,
-        message: 'Cannot delete your own account',
-        error: { code: 'SELF_DELETE_FORBIDDEN' },
+        message: 'Cannot delete admin user',
+        error: { code: 'FORBIDDEN_OPERATION' },
       });
     }
 
-    const deletedUser = users[userIndex];
-    users.splice(userIndex, 1);
+    // Delete user
+    const deleteQuery = `DELETE FROM users WHERE id = $1`;
+    await query(deleteQuery, [id]);
 
-    logger.info(`Deleted user: ${id}`, { 
+    logger.info(`Deleted user: ${id}`, {
       userId: req.user?.id,
-      deletedUserEmail: deletedUser.email
+      deletedUsername: userExists.rows[0].username
     });
 
     res.json({
@@ -324,8 +425,16 @@ export const activateUser = async (req: AuthenticatedRequest, res: Response) => 
   try {
     const { id } = req.params;
 
-    const userIndex = users.findIndex(u => u.id === id);
-    if (userIndex === -1) {
+    const updateQuery = `
+      UPDATE users
+      SET is_active = true, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING id, name, username, is_active
+    `;
+
+    const result = await query(updateQuery, [id]);
+
+    if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
@@ -333,14 +442,11 @@ export const activateUser = async (req: AuthenticatedRequest, res: Response) => 
       });
     }
 
-    users[userIndex].isActive = true;
-    users[userIndex].updatedAt = new Date().toISOString();
-
     logger.info(`Activated user: ${id}`, { userId: req.user?.id });
 
     res.json({
       success: true,
-      data: users[userIndex],
+      data: result.rows[0],
       message: 'User activated successfully',
     });
   } catch (error) {
@@ -357,10 +463,17 @@ export const activateUser = async (req: AuthenticatedRequest, res: Response) => 
 export const deactivateUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
 
-    const userIndex = users.findIndex(u => u.id === id);
-    if (userIndex === -1) {
+    const updateQuery = `
+      UPDATE users
+      SET is_active = false, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING id, name, username, is_active
+    `;
+
+    const result = await query(updateQuery, [id]);
+
+    if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
@@ -368,26 +481,11 @@ export const deactivateUser = async (req: AuthenticatedRequest, res: Response) =
       });
     }
 
-    // Prevent self-deactivation
-    if (id === req.user?.id) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot deactivate your own account',
-        error: { code: 'SELF_DEACTIVATE_FORBIDDEN' },
-      });
-    }
-
-    users[userIndex].isActive = false;
-    users[userIndex].updatedAt = new Date().toISOString();
-
-    logger.info(`Deactivated user: ${id}`, { 
-      userId: req.user?.id,
-      reason
-    });
+    logger.info(`Deactivated user: ${id}`, { userId: req.user?.id });
 
     res.json({
       success: true,
-      data: users[userIndex],
+      data: result.rows[0],
       message: 'User deactivated successfully',
     });
   } catch (error) {
@@ -413,18 +511,33 @@ export const searchUsers = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    const searchTerm = (q as string).toLowerCase();
-    const filteredUsers = users.filter(user =>
-      user.name.toLowerCase().includes(searchTerm) ||
-      user.email.toLowerCase().includes(searchTerm) ||
-      user.username.toLowerCase().includes(searchTerm) ||
-      user.department?.toLowerCase().includes(searchTerm) ||
-      user.designation?.toLowerCase().includes(searchTerm)
-    );
+    const searchQuery = `
+      SELECT
+        u.id,
+        u.name,
+        u.username,
+        u.email,
+        u.role,
+        d.name as department_name,
+        u.designation,
+        u.is_active
+      FROM users u
+      LEFT JOIN departments d ON u.department_id = d.id
+      WHERE
+        u.name ILIKE $1 OR
+        u.email ILIKE $1 OR
+        u.username ILIKE $1 OR
+        d.name ILIKE $1 OR
+        u.designation ILIKE $1
+      ORDER BY u.name
+      LIMIT 50
+    `;
+
+    const result = await query(searchQuery, [`%${q}%`]);
 
     res.json({
       success: true,
-      data: filteredUsers,
+      data: result.rows,
     });
   } catch (error) {
     logger.error('Error searching users:', error);
@@ -439,195 +552,138 @@ export const searchUsers = async (req: AuthenticatedRequest, res: Response) => {
 // GET /api/users/stats - Get user statistics
 export const getUserStats = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const totalUsers = users.length;
-    const activeUsers = users.filter(u => u.isActive).length;
-    const inactiveUsers = totalUsers - activeUsers;
+    // Get basic user counts
+    const userCountsQuery = `
+      SELECT
+        COUNT(*) as total_users,
+        COUNT(CASE WHEN is_active = true THEN 1 END) as active_users,
+        COUNT(CASE WHEN is_active = false THEN 1 END) as inactive_users
+      FROM users
+    `;
+    const userCounts = await query(userCountsQuery);
 
-    const roleStats = users.reduce((acc, user) => {
-      acc[user.role] = (acc[user.role] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    // Get users by role
+    const roleStatsQuery = `
+      SELECT
+        COALESCE(r.name, u.role) as role,
+        COUNT(*) as count
+      FROM users u
+      LEFT JOIN roles r ON u.role_id = r.id
+      GROUP BY COALESCE(r.name, u.role)
+      ORDER BY count DESC
+    `;
+    const roleStats = await query(roleStatsQuery);
 
-    const departmentStats = users.reduce((acc, user) => {
-      if (user.department) {
-        acc[user.department] = (acc[user.department] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
+    // Get users by department
+    const departmentStatsQuery = `
+      SELECT
+        COALESCE(d.name, 'No Department') as department,
+        COUNT(*) as count
+      FROM users u
+      LEFT JOIN departments d ON u.department_id = d.id
+      GROUP BY d.name
+      ORDER BY count DESC
+    `;
+    const departmentStats = await query(departmentStatsQuery);
 
-    // Convert role stats to expected format
-    const usersByRole = Object.entries(roleStats).map(([role, count]) => ({
-      role: role as any,
-      count
-    }));
-
-    // Convert department stats to expected format
-    const usersByDepartment = Object.entries(departmentStats).map(([department, count]) => ({
-      department,
-      count
-    }));
-
-    // Get recent logins (last 24 hours)
-    const recentLogins = users
-      .filter(u => u.lastLoginAt && new Date(u.lastLoginAt) > new Date(Date.now() - 24 * 60 * 60 * 1000))
-      .map(u => ({
-        userId: u.id,
-        userName: u.name,
-        lastLoginAt: u.lastLoginAt || new Date().toISOString()
-      }))
-      .sort((a, b) => new Date(b.lastLoginAt).getTime() - new Date(a.lastLoginAt).getTime())
-      .slice(0, 10); // Limit to 10 most recent
-
-    const stats = {
-      totalUsers,
-      activeUsers,
-      inactiveUsers,
-      usersByRole,
-      usersByDepartment,
-      recentLogins,
-    };
-
-    res.json({
-      success: true,
-      data: stats,
-    });
-  } catch (error) {
-    logger.error('Error getting user stats:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get user statistics',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// GET /api/users/departments - Get departments list
-export const getDepartments = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const departments = [...new Set(users.map(u => u.department).filter(Boolean))];
-
-    res.json({
-      success: true,
-      data: departments,
-    });
-  } catch (error) {
-    logger.error('Error getting departments:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get departments',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// GET /api/users/designations - Get designations list
-export const getDesignations = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const designations = [...new Set(users.map(u => u.designation).filter(Boolean))];
-
-    res.json({
-      success: true,
-      data: designations,
-    });
-  } catch (error) {
-    logger.error('Error getting designations:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get designations',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// POST /api/users/bulk-operation - Bulk user operations
-export const bulkUserOperation = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { userIds, operation, data } = req.body;
-
-    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'User IDs array is required',
-        error: { code: 'MISSING_USER_IDS' },
-      });
-    }
-
-    let successCount = 0;
-    let failedCount = 0;
-    const errors: string[] = [];
-
-    for (const userId of userIds) {
-      try {
-        const userIndex = users.findIndex(u => u.id === userId);
-        if (userIndex === -1) {
-          failedCount++;
-          errors.push(`User ${userId} not found`);
-          continue;
-        }
-
-        switch (operation) {
-          case 'activate':
-            users[userIndex].isActive = true;
-            break;
-          case 'deactivate':
-            if (userId === req.user?.id) {
-              failedCount++;
-              errors.push(`Cannot deactivate your own account`);
-              continue;
-            }
-            users[userIndex].isActive = false;
-            break;
-          case 'delete':
-            if (userId === req.user?.id) {
-              failedCount++;
-              errors.push(`Cannot delete your own account`);
-              continue;
-            }
-            users.splice(userIndex, 1);
-            break;
-          case 'change_role':
-            if (data?.role) {
-              users[userIndex].role = data.role;
-            }
-            break;
-          default:
-            failedCount++;
-            errors.push(`Unknown operation: ${operation}`);
-            continue;
-        }
-
-        if (operation !== 'delete') {
-          users[userIndex].updatedAt = new Date().toISOString();
-        }
-        successCount++;
-      } catch (error) {
-        failedCount++;
-        errors.push(`Error processing user ${userId}: ${error}`);
-      }
-    }
-
-    logger.info(`Bulk operation ${operation} completed`, {
-      userId: req.user?.id,
-      successCount,
-      failedCount,
-      operation
-    });
+    const stats = userCounts.rows[0];
 
     res.json({
       success: true,
       data: {
-        success: successCount,
-        failed: failedCount,
-        errors
+        totalUsers: parseInt(stats.total_users),
+        activeUsers: parseInt(stats.active_users),
+        inactiveUsers: parseInt(stats.inactive_users),
+        usersByRole: roleStats.rows,
+        usersByDepartment: departmentStats.rows,
+        recentLogins: 0, // TODO: Implement when login tracking is added
       },
-      message: `Bulk operation completed: ${successCount} successful, ${failedCount} failed`,
     });
   } catch (error) {
-    logger.error('Error in bulk user operation:', error);
+    logger.error('Error fetching user stats:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to perform bulk operation',
+      message: 'Failed to fetch user statistics',
       error: { code: 'INTERNAL_ERROR' },
     });
   }
+};
+
+// GET /api/users/departments - Get departments for user management
+export const getDepartments = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const departmentsQuery = `
+      SELECT id, name, description
+      FROM departments
+      WHERE is_active = true
+      ORDER BY name
+    `;
+
+    const result = await query(departmentsQuery);
+
+    res.json({
+      success: true,
+      data: result.rows,
+    });
+  } catch (error) {
+    logger.error('Error fetching departments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch departments',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// GET /api/users/designations - Get designations for user management
+export const getDesignations = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const designationsQuery = `
+      SELECT id, name, description
+      FROM designations
+      WHERE is_active = true
+      ORDER BY name
+    `;
+
+    const result = await query(designationsQuery);
+
+    res.json({
+      success: true,
+      data: result.rows,
+    });
+  } catch (error) {
+    logger.error('Error fetching designations:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch designations',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// Placeholder functions for activities and sessions (to be implemented)
+export const getUserActivities = async (req: AuthenticatedRequest, res: Response) => {
+  res.json({
+    success: true,
+    data: [],
+    pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+    message: 'User activities feature coming soon',
+  });
+};
+
+export const getUserSessions = async (req: AuthenticatedRequest, res: Response) => {
+  res.json({
+    success: true,
+    data: [],
+    pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+    message: 'User sessions feature coming soon',
+  });
+};
+
+export const bulkUserOperation = async (req: AuthenticatedRequest, res: Response) => {
+  res.status(501).json({
+    success: false,
+    message: 'Bulk operations feature coming soon',
+    error: { code: 'NOT_IMPLEMENTED' },
+  });
 };

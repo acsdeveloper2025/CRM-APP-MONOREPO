@@ -40,20 +40,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const user = authService.getCurrentUser();
 
         if (token && user) {
-          // Verify token is still valid by making a test API call
+          // Refresh user data to get latest permissions
           try {
-            // Test the token with a simple API call
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/user/profile`, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            });
-
-            if (response.ok) {
-              // Token is valid
+            const refreshedUser = await authService.refreshUserData();
+            if (refreshedUser) {
+              // Token is valid and user data refreshed
               setState({
-                user,
+                user: refreshedUser,
                 token,
                 isAuthenticated: true,
                 isLoading: false,
@@ -109,13 +102,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.login(credentials);
       
       if (response.success && response.data) {
+        // Refresh user data to get latest permissions
+        const refreshedUser = await authService.refreshUserData();
+
         setState({
-          user: response.data.user,
+          user: refreshedUser || response.data.user,
           token: response.data.tokens.accessToken,
           isAuthenticated: true,
           isLoading: false,
         });
-        
+
         toast.success('Login successful!');
         return true;
       } else {

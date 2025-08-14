@@ -30,46 +30,40 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { designationsService } from '@/services/designations';
 import { departmentsService } from '@/services/departments';
-import { usersService } from '@/services/users';
-import { CreateDepartmentRequest } from '@/types/user';
+import { CreateDesignationRequest } from '@/types/user';
 
-const createDepartmentSchema = z.object({
-  name: z.string().min(1, 'Department name is required').max(100, 'Department name too long'),
+const createDesignationSchema = z.object({
+  name: z.string().min(1, 'Designation name is required').max(100, 'Designation name too long'),
   description: z.string().max(500, 'Description too long').optional(),
-  department_head_id: z.string().optional(),
-  parent_department_id: z.string().optional(),
+  department_id: z.string().optional(),
+  is_active: z.boolean(),
 });
 
-type CreateDepartmentFormData = z.infer<typeof createDepartmentSchema>;
+type CreateDesignationFormData = z.infer<typeof createDesignationSchema>;
 
-interface CreateDepartmentDialogProps {
+interface CreateDesignationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentDialogProps) {
+export function CreateDesignationDialog({ open, onOpenChange }: CreateDesignationDialogProps) {
   const queryClient = useQueryClient();
 
-  const form = useForm<CreateDepartmentFormData>({
-    resolver: zodResolver(createDepartmentSchema),
+  const form = useForm<CreateDesignationFormData>({
+    resolver: zodResolver(createDesignationSchema),
     defaultValues: {
       name: '',
       description: '',
-      department_head_id: '__none__',
-      parent_department_id: '__none__',
+      department_id: '',
+      is_active: true,
     },
   });
 
-  // Fetch users for department head selection
-  const { data: usersData } = useQuery({
-    queryKey: ['users', 'active'],
-    queryFn: () => usersService.getUsers({ isActive: true, limit: 100 }),
-    enabled: open,
-  });
-
-  // Fetch departments for parent selection
+  // Fetch departments for selection
   const { data: departmentsData } = useQuery({
     queryKey: ['departments', 'active'],
     queryFn: () => departmentsService.getActiveDepartments(),
@@ -77,47 +71,37 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateDepartmentRequest) => {
-      // Remove empty strings to send null values
-      const cleanData = {
-        ...data,
-        department_head_id: data.department_head_id || undefined,
-        parent_department_id: data.parent_department_id || undefined,
-      };
-      return departmentsService.createDepartment(cleanData);
-    },
+    mutationFn: (data: CreateDesignationRequest) => designationsService.createDesignation(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] }); // Refresh user stats
-      toast.success('Department created successfully');
+      queryClient.invalidateQueries({ queryKey: ['designations'] });
+      toast.success('Designation created successfully');
       form.reset();
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create department');
+      toast.error(error.response?.data?.message || 'Failed to create designation');
     },
   });
 
-  const onSubmit = (data: CreateDepartmentFormData) => {
-    // Convert placeholder values back to null/undefined for API
-    const submitData = {
-      ...data,
-      department_head_id: data.department_head_id === '__none__' ? undefined : data.department_head_id,
-      parent_department_id: data.parent_department_id === '__none__' ? undefined : data.parent_department_id,
+  const onSubmit = (data: CreateDesignationFormData) => {
+    const submitData: CreateDesignationRequest = {
+      name: data.name,
+      description: data.description || undefined,
+      department_id: data.department_id === "__all__" ? undefined : data.department_id || undefined,
+      is_active: data.is_active,
     };
     createMutation.mutate(submitData);
   };
 
-  const users = usersData?.data || [];
   const departments = departmentsData?.data || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Department</DialogTitle>
+          <DialogTitle>Create New Designation</DialogTitle>
           <DialogDescription>
-            Add a new department to organize your team structure.
+            Add a new designation to your organization. Designations can be associated with specific departments or be available across all departments.
           </DialogDescription>
         </DialogHeader>
 
@@ -129,9 +113,9 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Department Name</FormLabel>
+                    <FormLabel>Designation Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Sales" {...field} />
+                      <Input placeholder="e.g., Software Engineer" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -140,18 +124,18 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
 
               <FormField
                 control={form.control}
-                name="parent_department_id"
+                name="department_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Parent Department</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel>Department</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select parent department (optional)" />
+                          <SelectValue placeholder="Select department (optional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="__none__">No parent department</SelectItem>
+                        <SelectItem value="__all__">All departments</SelectItem>
                         {departments.map((dept) => (
                           <SelectItem key={dept.id} value={dept.id}>
                             {dept.name}
@@ -160,7 +144,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Choose a parent department to create a hierarchical structure
+                      Leave empty to make this designation available across all departments
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -176,12 +160,15 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Brief description of this department's responsibilities..."
+                      placeholder="Brief description of this designation's responsibilities and role..."
                       className="resize-none"
                       rows={3}
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Provide a clear description of the designation's role and responsibilities
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -189,29 +176,21 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
 
             <FormField
               control={form.control}
-              name="department_head_id"
+              name="is_active"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Department Head</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select department head (optional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="__none__">No department head assigned</SelectItem>
-                      {users.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name} ({user.username})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Assign a user to manage this department
-                  </FormDescription>
-                  <FormMessage />
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Active Status</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Enable this designation for use in user assignments
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />
@@ -226,7 +205,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
                 Cancel
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Creating...' : 'Create Department'}
+                {createMutation.isPending ? 'Creating...' : 'Create Designation'}
               </Button>
             </DialogFooter>
           </form>

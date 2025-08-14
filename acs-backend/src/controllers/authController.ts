@@ -151,3 +151,89 @@ export const registerDevice = async (req: Request, res: Response): Promise<void>
     throw error;
   }
 };
+
+// Get current user information
+export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+        error: { code: 'UNAUTHORIZED' }
+      });
+      return;
+    }
+
+    // Get user details with role and department information
+    const userQuery = `
+      SELECT
+        u.id,
+        u.name,
+        u.username,
+        u.email,
+        u.role,
+        u.role_id,
+        u.department_id,
+        u."employeeId",
+        u.designation,
+        u.department,
+        u."profilePhotoUrl",
+        u.is_active,
+        u.last_login,
+        u.created_at,
+        r.name as role_name,
+        r.permissions as role_permissions,
+        d.name as department_name
+      FROM users u
+      LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN departments d ON u.department_id = d.id
+      WHERE u.id = $1
+    `;
+
+    const result = await query(userQuery, [req.user.id]);
+
+    if (result.rows.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'USER_NOT_FOUND' }
+      });
+      return;
+    }
+
+    const userData = result.rows[0];
+
+    const response: ApiResponse<any> = {
+      success: true,
+      message: 'User information retrieved successfully',
+      data: {
+        id: userData.id,
+        name: userData.name,
+        username: userData.username,
+        email: userData.email,
+        role: userData.role,
+        roleId: userData.role_id,
+        roleName: userData.role_name,
+        permissions: userData.role_permissions,
+        departmentId: userData.department_id,
+        departmentName: userData.department_name,
+        employeeId: userData.employeeId,
+        designation: userData.designation,
+        department: userData.department, // Legacy field
+        profilePhotoUrl: userData.profilePhotoUrl,
+        isActive: userData.is_active,
+        lastLogin: userData.last_login,
+        createdAt: userData.created_at,
+      }
+    };
+
+    res.json(response);
+  } catch (error) {
+    logger.error('Error getting current user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get user information',
+      error: { code: 'INTERNAL_ERROR' }
+    });
+  }
+};

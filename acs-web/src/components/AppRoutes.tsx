@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { PermissionProtectedRoute } from '@/components/auth/PermissionProtectedRoute';
 import { Layout } from '@/components/layout/Layout';
 
 // Import all page components
@@ -161,9 +162,11 @@ export const AppRoutes: React.FC = () => {
         path="/role-management"
         element={
           <ProtectedRoute requiredRoles={['ADMIN']}>
-            <Layout>
-              <RoleManagementPage />
-            </Layout>
+            <PermissionProtectedRoute resource="roles" action="read">
+              <Layout>
+                <RoleManagementPage />
+              </Layout>
+            </PermissionProtectedRoute>
           </ProtectedRoute>
         }
       />

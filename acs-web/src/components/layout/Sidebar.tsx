@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { navigationItems } from '@/constants/navigation';
 import type { NavigationItem } from '@/constants/navigation';
 import { cn } from '@/utils/cn';
@@ -13,6 +14,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { hasAnyRole } = useAuth();
+  const { hasPermission } = usePermissions();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -25,26 +27,56 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   const isItemVisible = (item: NavigationItem) => {
-    return hasAnyRole(item.roles);
+    // Check permission-based access first
+    if (item.permission) {
+      const hasAccess = hasPermission(item.permission.resource, item.permission.action);
+      if (!hasAccess) return false;
+    }
+    // Fallback to role-based access for backward compatibility
+    else if (item.roles && !hasAnyRole(item.roles)) {
+      return false;
+    }
+
+    // For parent items with children, check if at least one child is visible
+    if (item.children && item.children.length > 0) {
+      return item.children.some(child => isItemVisible(child));
+    }
+
+    return true;
   };
 
-  const isItemActive = (href: string) => {
-    return location.pathname === href || location.pathname.startsWith(href + '/');
+  const isItemActive = (item: NavigationItem): boolean => {
+    // Direct match
+    if (location.pathname === item.href || location.pathname.startsWith(item.href + '/')) {
+      return true;
+    }
+
+    // Check if any child is active (for parent items)
+    if (item.children && item.children.length > 0) {
+      return item.children.some(child =>
+        location.pathname === child.href || location.pathname.startsWith(child.href + '/')
+      );
+    }
+
+    return false;
   };
 
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     if (!isItemVisible(item)) return null;
 
     const hasChildren = item.children && item.children.length > 0;
-    const isExpanded = expandedItems.includes(item.id);
-    const isActive = isItemActive(item.href);
+    const isActive = isItemActive(item);
+
+    // Auto-expand if any child is active
+    const shouldAutoExpand = hasChildren && item.children?.some(child => isItemActive(child));
+    const isExpanded = expandedItems.includes(item.id) || shouldAutoExpand;
 
     return (
       <div key={item.id}>
         <div
           className={cn(
             'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
-            level > 0 && 'ml-4',
+            level > 0 && 'ml-6 mr-2 border-l-2 border-border pl-4',
             isActive
               ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-sm'

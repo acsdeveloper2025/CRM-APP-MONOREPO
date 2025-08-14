@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { login, logout, registerDevice } from '@/controllers/authController';
+import { login, logout, registerDevice, getCurrentUser } from '@/controllers/authController';
 import { authenticateToken } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
 // Removed authRateLimit import - no rate limiting for auth routes
@@ -57,6 +57,7 @@ const deviceRegistrationValidation = [
 // Routes
 router.post('/login', validate(loginValidation), login);
 router.post('/logout', authenticateToken, logout);
+router.get('/me', authenticateToken, getCurrentUser);
 router.post('/device/register', validate(deviceRegistrationValidation), registerDevice);
 
 export default router;

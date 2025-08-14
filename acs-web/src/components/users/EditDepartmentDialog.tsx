@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,37 +30,54 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { departmentsService } from '@/services/departments';
 import { usersService } from '@/services/users';
-import { CreateDepartmentRequest } from '@/types/user';
+import { UpdateDepartmentRequest, Department } from '@/types/user';
 
-const createDepartmentSchema = z.object({
+const updateDepartmentSchema = z.object({
   name: z.string().min(1, 'Department name is required').max(100, 'Department name too long'),
   description: z.string().max(500, 'Description too long').optional(),
   department_head_id: z.string().optional(),
   parent_department_id: z.string().optional(),
+  is_active: z.boolean(),
 });
 
-type CreateDepartmentFormData = z.infer<typeof createDepartmentSchema>;
+type UpdateDepartmentFormData = z.infer<typeof updateDepartmentSchema>;
 
-interface CreateDepartmentDialogProps {
+interface EditDepartmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  department: Department | null;
 }
 
-export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentDialogProps) {
+export function EditDepartmentDialog({ open, onOpenChange, department }: EditDepartmentDialogProps) {
   const queryClient = useQueryClient();
 
-  const form = useForm<CreateDepartmentFormData>({
-    resolver: zodResolver(createDepartmentSchema),
+  const form = useForm<UpdateDepartmentFormData>({
+    resolver: zodResolver(updateDepartmentSchema),
     defaultValues: {
       name: '',
       description: '',
       department_head_id: '__none__',
       parent_department_id: '__none__',
+      is_active: true,
     },
   });
+
+  // Update form when department changes
+  useEffect(() => {
+    if (department) {
+      form.reset({
+        name: department.name,
+        description: department.description || '',
+        department_head_id: department.department_head_id || '__none__',
+        parent_department_id: department.parent_department_id || '__none__',
+        is_active: department.is_active,
+      });
+    }
+  }, [department, form]);
 
   // Fetch users for department head selection
   const { data: usersData } = useQuery({
@@ -69,55 +86,57 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
     enabled: open,
   });
 
-  // Fetch departments for parent selection
+  // Fetch departments for parent selection (excluding current department)
   const { data: departmentsData } = useQuery({
     queryKey: ['departments', 'active'],
     queryFn: () => departmentsService.getActiveDepartments(),
     enabled: open,
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data: CreateDepartmentRequest) => {
+  const updateMutation = useMutation({
+    mutationFn: (data: UpdateDepartmentRequest) => {
+      if (!department) throw new Error('No department selected');
       // Remove empty strings to send null values
       const cleanData = {
         ...data,
         department_head_id: data.department_head_id || undefined,
         parent_department_id: data.parent_department_id || undefined,
       };
-      return departmentsService.createDepartment(cleanData);
+      return departmentsService.updateDepartment(department.id, cleanData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
       queryClient.invalidateQueries({ queryKey: ['users'] }); // Refresh user stats
-      toast.success('Department created successfully');
-      form.reset();
+      toast.success('Department updated successfully');
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create department');
+      toast.error(error.response?.data?.message || 'Failed to update department');
     },
   });
 
-  const onSubmit = (data: CreateDepartmentFormData) => {
+  const onSubmit = (data: UpdateDepartmentFormData) => {
     // Convert placeholder values back to null/undefined for API
     const submitData = {
       ...data,
       department_head_id: data.department_head_id === '__none__' ? undefined : data.department_head_id,
       parent_department_id: data.parent_department_id === '__none__' ? undefined : data.parent_department_id,
     };
-    createMutation.mutate(submitData);
+    updateMutation.mutate(submitData);
   };
 
   const users = usersData?.data || [];
-  const departments = departmentsData?.data || [];
+  const departments = departmentsData?.data?.filter(d => d.id !== department?.id) || [];
+
+  if (!department) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Department</DialogTitle>
+          <DialogTitle>Edit Department: {department.name}</DialogTitle>
           <DialogDescription>
-            Add a new department to organize your team structure.
+            Modify department information and organizational structure.
           </DialogDescription>
         </DialogHeader>
 
@@ -144,7 +163,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parent Department</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select parent department (optional)" />
@@ -193,7 +212,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Department Head</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select department head (optional)" />
@@ -216,17 +235,38 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="is_active"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Active Status</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Enable or disable this department
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={createMutation.isPending}
+                disabled={updateMutation.isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Creating...' : 'Create Department'}
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? 'Updating...' : 'Update Department'}
               </Button>
             </DialogFooter>
           </form>

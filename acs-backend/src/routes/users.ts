@@ -36,14 +36,32 @@ const createUserValidation = [
     .isEmail()
     .withMessage('Valid email is required')
     .normalizeEmail(),
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters'),
+  // Support both new role_id and legacy role fields
+  body('role_id')
+    .optional()
+    .isUUID()
+    .withMessage('Role ID must be a valid UUID'),
   body('role')
+    .optional()
     .isIn(['ADMIN', 'MANAGER', 'FIELD', 'VIEWER'])
     .withMessage('Role must be one of: ADMIN, MANAGER, FIELD, VIEWER'),
+  body('department_id')
+    .optional()
+    .isUUID()
+    .withMessage('Department ID must be a valid UUID'),
   body('department')
     .optional()
     .trim()
     .isLength({ max: 100 })
     .withMessage('Department must be less than 100 characters'),
+  body('employeeId')
+    .optional()
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage('Employee ID must be less than 50 characters'),
   body('designation')
     .optional()
     .trim()
@@ -58,6 +76,13 @@ const createUserValidation = [
     .optional()
     .isBoolean()
     .withMessage('isActive must be a boolean'),
+  // Custom validation to ensure either role_id or role is provided
+  body().custom((value, { req }) => {
+    if (!req.body.role_id && !req.body.role) {
+      throw new Error('Either role_id or role must be provided');
+    }
+    return true;
+  }),
 ];
 
 const updateUserValidation = [

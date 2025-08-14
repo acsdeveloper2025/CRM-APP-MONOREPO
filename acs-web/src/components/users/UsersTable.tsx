@@ -267,24 +267,24 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                 </TableCell>
                 <TableCell>
                   <div>
-                    <div className="font-medium">{user.department}</div>
+                    <div className="font-medium">{user.department_name || 'No Department'}</div>
                     <div className="text-sm text-muted-foreground">{user.designation}</div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  {getStatusBadge(user.isActive)}
+                  {getStatusBadge(user.is_active ?? user.isActive ?? false)}
                 </TableCell>
                 <TableCell>
-                  {user.lastLoginAt ? (
+                  {(user.last_login || user.lastLoginAt) ? (
                     <div className="text-sm">
-                      {new Date(user.lastLoginAt).toLocaleDateString()}
+                      {new Date(user.last_login || user.lastLoginAt!).toLocaleDateString()}
                     </div>
                   ) : (
                     <span className="text-sm text-muted-foreground">Never</span>
                   )}
                 </TableCell>
                 <TableCell>
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {new Date(user.created_at || user.createdAt!).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

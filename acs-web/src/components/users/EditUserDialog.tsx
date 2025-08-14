@@ -31,15 +31,18 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { usersService } from '@/services/users';
+import { rolesService } from '@/services/roles';
+import { departmentsService } from '@/services/departments';
+import { designationsService } from '@/services/designations';
 import { User } from '@/types/user';
 
 const editUserSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
   email: z.string().email('Invalid email address'),
-  role: z.enum(['ADMIN', 'BACKEND', 'BANK', 'FIELD'] as const),
+  role_id: z.string().min(1, 'Role is required'),
   employeeId: z.string().min(1, 'Employee ID is required'),
-  designation: z.string().min(1, 'Designation is required'),
-  department: z.string().min(1, 'Department is required'),
+  designation_id: z.string().min(1, 'Designation is required'),
+  department_id: z.string().min(1, 'Department is required'),
   isActive: z.boolean(),
 });
 
@@ -59,12 +62,33 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     defaultValues: {
       name: user.name,
       email: user.email,
-      role: user.role,
+      role_id: user.role_id || '',
       employeeId: user.employeeId,
-      designation: user.designation,
-      department: user.department,
-      isActive: user.isActive,
+      designation_id: user.designation_id || '',
+      department_id: user.department_id || '',
+      isActive: user.is_active ?? user.isActive ?? false,
     },
+  });
+
+  // Fetch roles for dropdown
+  const { data: rolesData } = useQuery({
+    queryKey: ['roles', 'active'],
+    queryFn: () => rolesService.getActiveRoles(),
+    enabled: open,
+  });
+
+  // Fetch departments for dropdown
+  const { data: departmentsData } = useQuery({
+    queryKey: ['departments', 'active'],
+    queryFn: () => departmentsService.getActiveDepartments(),
+    enabled: open,
+  });
+
+  // Fetch designations for dropdown
+  const { data: designationsData } = useQuery({
+    queryKey: ['designations', 'active'],
+    queryFn: () => designationsService.getActiveDesignations(),
+    enabled: open,
   });
 
   useEffect(() => {
@@ -72,20 +96,14 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       form.reset({
         name: user.name,
         email: user.email,
-        role: user.role,
+        role_id: user.role_id || '',
         employeeId: user.employeeId,
-        designation: user.designation,
-        department: user.department,
-        isActive: user.isActive,
+        designation_id: user.designation_id || '',
+        department_id: user.department_id || '',
+        isActive: user.is_active ?? user.isActive ?? false,
       });
     }
   }, [user, form]);
-
-  const { data: departmentsData } = useQuery({
-    queryKey: ['departments'],
-    queryFn: () => usersService.getDepartments(),
-    enabled: open,
-  });
 
   const updateMutation = useMutation({
     mutationFn: (data: EditUserFormData) => usersService.updateUser(user.id, data),
@@ -103,7 +121,9 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     updateMutation.mutate(data);
   };
 
+  const roles = rolesData?.data || [];
   const departments = departmentsData?.data || [];
+  const designations = designationsData?.data || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,7 +168,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="role"
+                name="role_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
@@ -159,10 +179,11 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="ADMIN">Admin</SelectItem>
-                        <SelectItem value="BACKEND">Backend</SelectItem>
-                        <SelectItem value="BANK">Bank</SelectItem>
-                        <SelectItem value="FIELD">Field</SelectItem>
+                        {roles.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -188,13 +209,24 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="designation"
+                name="designation_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Designation</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter designation" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select designation" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {designations.map((designation) => (
+                          <SelectItem key={designation.id} value={designation.id}>
+                            {designation.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -202,7 +234,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
 
               <FormField
                 control={form.control}
-                name="department"
+                name="department_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department</FormLabel>
@@ -214,8 +246,8 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                       </FormControl>
                       <SelectContent>
                         {departments.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept}
+                          <SelectItem key={dept.id} value={dept.id}>
+                            {dept.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

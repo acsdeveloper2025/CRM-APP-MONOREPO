@@ -6,10 +6,22 @@ export interface User {
   username: string;
   email: string;
   role: Role;
+  roleId?: string;
+  roleName?: string;
+  permissions?: {
+    [resource: string]: {
+      [action: string]: boolean;
+    };
+  };
   employeeId: string;
   designation: string;
   department: string;
+  departmentId?: string;
+  departmentName?: string;
   profilePhotoUrl?: string;
+  isActive?: boolean;
+  lastLogin?: string;
+  createdAt?: string;
 }
 
 export interface LoginRequest {

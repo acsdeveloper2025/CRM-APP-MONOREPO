@@ -9,14 +9,22 @@ export interface User {
   email: string;
   phone?: string;
   role: Role;
+  role_id?: string;
+  role_name?: string;
   employeeId: string;
   designation: string;
-  department: string;
+  department?: string; // Legacy field for backward compatibility
+  department_id?: string;
+  department_name?: string;
   profilePhotoUrl?: string;
-  isActive: boolean;
+  isActive?: boolean;
+  is_active?: boolean; // API uses snake_case
   lastLoginAt?: string;
-  createdAt: string;
-  updatedAt: string;
+  last_login?: string; // API uses snake_case
+  createdAt?: string;
+  created_at?: string; // API uses snake_case
+  updatedAt?: string;
+  updated_at?: string; // API uses snake_case
   createdBy?: string;
   updatedBy?: string;
 }
@@ -170,6 +178,34 @@ export interface UpdateDepartmentRequest {
   description?: string;
   department_head_id?: string;
   parent_department_id?: string;
+  is_active?: boolean;
+}
+
+// Designation types
+export interface Designation {
+  id: string;
+  name: string;
+  description?: string;
+  department_id?: string;
+  department_name?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by_name?: string;
+  updated_by_name?: string;
+}
+
+export interface CreateDesignationRequest {
+  name: string;
+  description?: string;
+  department_id?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateDesignationRequest {
+  name?: string;
+  description?: string;
+  department_id?: string;
   is_active?: boolean;
 }
 
