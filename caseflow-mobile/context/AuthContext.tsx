@@ -7,7 +7,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (username: string, password: string) => Promise<{
+    success: boolean;
+    error?: string;
+    errorCode?: string;
+    requiresDeviceAuth?: boolean;
+  }>;
   logout: () => void;
   updateUserProfile: (updates: Partial<Pick<User, 'profilePhotoUrl'>>) => Promise<void>;
 }
@@ -57,7 +62,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => clearTimeout(timeoutId);
   }, []);
 
-  const login = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (username: string, password: string): Promise<{
+    success: boolean;
+    error?: string;
+    errorCode?: string;
+    requiresDeviceAuth?: boolean;
+  }> => {
     setIsLoading(true);
 
     try {
@@ -98,9 +108,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: true };
       } else {
         setIsLoading(false);
+
+        // Check for device authentication specific errors
+        const errorCode = response.error?.code;
+        const isDeviceAuthError = errorCode === 'DEVICE_ID_REQUIRED' ||
+                                  errorCode === 'NO_DEVICE_REGISTERED' ||
+                                  errorCode === 'DEVICE_NOT_AUTHORIZED';
+
         return {
           success: false,
-          error: response.error?.message || 'Login failed. Please check your credentials.'
+          error: response.error?.message || 'Login failed. Please check your credentials.',
+          errorCode: errorCode,
+          requiresDeviceAuth: isDeviceAuthError
         };
       }
     } catch (error) {

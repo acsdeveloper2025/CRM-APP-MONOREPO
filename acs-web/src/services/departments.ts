@@ -55,19 +55,9 @@ class DepartmentsService {
     return response;
   }
 
-  // Get top-level departments (no parent)
-  async getTopLevelDepartments(): Promise<PaginatedResponse<Department>> {
-    return this.getDepartments({ parentId: null, includeInactive: false, limit: 100 });
-  }
-
   // Get active departments for dropdowns
   async getActiveDepartments(): Promise<PaginatedResponse<Department>> {
     return this.getDepartments({ includeInactive: false, limit: 100 });
-  }
-
-  // Get subdepartments of a parent department
-  async getSubdepartments(parentId: string): Promise<PaginatedResponse<Department>> {
-    return this.getDepartments({ parentId, includeInactive: false, limit: 100 });
   }
 }
 

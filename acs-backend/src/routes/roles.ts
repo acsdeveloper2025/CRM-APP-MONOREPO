@@ -2,7 +2,7 @@ import express from 'express';
 import { auth, requirePermission } from '../middleware/auth';
 import {
   getRoles,
-  getRoleById,
+  getRole,
   createRole,
   updateRole,
   deleteRole
@@ -17,7 +17,7 @@ router.use(auth);
 router.get('/', requirePermission('roles', 'read'), getRoles);
 
 // GET /api/roles/:id - Get role by ID
-router.get('/:id', requirePermission('roles', 'read'), getRoleById);
+router.get('/:id', requirePermission('roles', 'read'), getRole);
 
 // POST /api/roles - Create new role
 router.post('/', requirePermission('roles', 'create'), createRole);

@@ -39,7 +39,6 @@ const createDepartmentSchema = z.object({
   name: z.string().min(1, 'Department name is required').max(100, 'Department name too long'),
   description: z.string().max(500, 'Description too long').optional(),
   department_head_id: z.string().optional(),
-  parent_department_id: z.string().optional(),
 });
 
 type CreateDepartmentFormData = z.infer<typeof createDepartmentSchema>;
@@ -58,7 +57,6 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
       name: '',
       description: '',
       department_head_id: '__none__',
-      parent_department_id: '__none__',
     },
   });
 
@@ -69,12 +67,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
     enabled: open,
   });
 
-  // Fetch departments for parent selection
-  const { data: departmentsData } = useQuery({
-    queryKey: ['departments', 'active'],
-    queryFn: () => departmentsService.getActiveDepartments(),
-    enabled: open,
-  });
+
 
   const createMutation = useMutation({
     mutationFn: (data: CreateDepartmentRequest) => {
@@ -82,19 +75,47 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
       const cleanData = {
         ...data,
         department_head_id: data.department_head_id || undefined,
-        parent_department_id: data.parent_department_id || undefined,
       };
       return departmentsService.createDepartment(cleanData);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] });
+    onSuccess: (data) => {
+      // Invalidate all department-related queries
+      queryClient.invalidateQueries({
+        queryKey: ['departments'],
+        exact: false // This will invalidate all queries that start with ['departments']
+      });
+
+      // Specifically invalidate the active departments query used in this dialog
+      queryClient.invalidateQueries({
+        queryKey: ['departments', 'active']
+      });
+
       queryClient.invalidateQueries({ queryKey: ['users'] }); // Refresh user stats
+
+      // Also refetch the departments queries immediately
+      queryClient.refetchQueries({
+        queryKey: ['departments'],
+        exact: false
+      });
+
       toast.success('Department created successfully');
       form.reset();
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create department');
+      const errorMessage = error.response?.data?.message || 'Failed to create department';
+      const errorCode = error.response?.data?.error?.code;
+
+      // Show specific error messages for different error types
+      if (errorCode === 'DUPLICATE_DEPARTMENT_NAME') {
+        toast.error('A department with this name already exists. Please choose a different name.');
+      } else if (errorCode === 'VALIDATION_ERROR') {
+        toast.error('Please check all required fields and try again.');
+      } else {
+        toast.error(errorMessage);
+      }
+
+      console.error('Department creation error:', error.response?.data || error);
     },
   });
 
@@ -103,13 +124,13 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
     const submitData = {
       ...data,
       department_head_id: data.department_head_id === '__none__' ? undefined : data.department_head_id,
-      parent_department_id: data.parent_department_id === '__none__' ? undefined : data.parent_department_id,
     };
+
+
     createMutation.mutate(submitData);
   };
 
   const users = usersData?.data || [];
-  const departments = departmentsData?.data || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -133,39 +154,15 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
                     <FormControl>
                       <Input placeholder="e.g., Sales" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="parent_department_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parent Department</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select parent department (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="__none__">No parent department</SelectItem>
-                        {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
-                            {dept.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                     <FormDescription>
-                      Choose a parent department to create a hierarchical structure
+                      Must be unique across all departments
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+
             </div>
 
             <FormField

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDebouncedSearch } from '@/hooks/useDebounce';
 import {
   Table,
   TableBody,
@@ -29,7 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, Edit, Trash2, Users, Building, Search, Crown } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Users, Building, Search, Crown, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { departmentsService } from '@/services/departments';
 import { Department } from '@/types/user';
@@ -40,14 +41,22 @@ interface DepartmentsTableProps {
 }
 
 export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
-  const [search, setSearch] = useState('');
+  const { searchValue, debouncedSearchValue, setSearchValue, isSearching } = useDebouncedSearch('', 300);
   const [deleteDepartment, setDeleteDepartment] = useState<Department | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: departmentsData, isLoading } = useQuery({
-    queryKey: ['departments', { search }],
-    queryFn: () => departmentsService.getDepartments({ search, limit: 100 }),
+  const { data: departmentsData, isLoading, error } = useQuery({
+    queryKey: ['departments', { search: debouncedSearchValue }],
+    queryFn: () => departmentsService.getDepartments({ search: debouncedSearchValue, limit: 100 }),
+    staleTime: 0, // Always refetch
+    refetchOnWindowFocus: true,
   });
+
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['departments'] });
+    queryClient.refetchQueries({ queryKey: ['departments'] });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (departmentId: string) => departmentsService.deleteDepartment(departmentId),
@@ -89,11 +98,26 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search departments..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
             className="pl-8"
           />
+          {isSearching && (
+            <div className="absolute right-2 top-2.5">
+              <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleManualRefresh}
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       <div className="rounded-md border">
@@ -103,9 +127,7 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
               <TableHead>Department</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Head</TableHead>
-              <TableHead>Parent</TableHead>
               <TableHead>Users</TableHead>
-              <TableHead>Subdepartments</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-[70px]"></TableHead>
@@ -114,9 +136,9 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
           <TableBody>
             {departments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <div className="text-muted-foreground">
-                    {search ? `No departments found matching "${search}"` : 'No departments found'}
+                    {debouncedSearchValue ? `No departments found matching "${debouncedSearchValue}"` : 'No departments found'}
                   </div>
                 </TableCell>
               </TableRow>
@@ -146,27 +168,14 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
                       <span className="text-muted-foreground text-sm">No head assigned</span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    {department.parent_department_name ? (
-                      <Badge variant="outline">
-                        {department.parent_department_name}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">Top level</span>
-                    )}
-                  </TableCell>
+
                   <TableCell>
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span>{department.user_count}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <Building className="h-4 w-4 text-muted-foreground" />
-                      <span>{department.subdepartment_count}</span>
-                    </div>
-                  </TableCell>
+
                   <TableCell>
                     <Badge variant={department.is_active ? 'default' : 'secondary'}>
                       {department.is_active ? 'Active' : 'Inactive'}
@@ -199,7 +208,7 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
                         <DropdownMenuItem
                           onClick={() => handleDeleteDepartment(department)}
                           className="text-destructive"
-                          disabled={department.user_count > 0 || department.subdepartment_count > 0}
+                          disabled={department.user_count > 0}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
@@ -220,14 +229,11 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
             <AlertDialogTitle>Delete Department</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the department "{deleteDepartment?.name}"? This action cannot be undone.
-              {deleteDepartment && (deleteDepartment.user_count > 0 || deleteDepartment.subdepartment_count > 0) && (
+              {deleteDepartment && deleteDepartment.user_count > 0 && (
                 <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
                   This department cannot be deleted because it has:
                   {deleteDepartment.user_count > 0 && (
                     <div>• {deleteDepartment.user_count} assigned user(s)</div>
-                  )}
-                  {deleteDepartment.subdepartment_count > 0 && (
-                    <div>• {deleteDepartment.subdepartment_count} subdepartment(s)</div>
                   )}
                 </div>
               )}
@@ -238,9 +244,8 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={
-                deleteMutation.isPending || 
-                (deleteDepartment?.user_count || 0) > 0 || 
-                (deleteDepartment?.subdepartment_count || 0) > 0
+                deleteMutation.isPending ||
+                (deleteDepartment?.user_count || 0) > 0
               }
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

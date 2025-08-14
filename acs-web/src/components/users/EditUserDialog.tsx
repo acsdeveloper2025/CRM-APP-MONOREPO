@@ -43,6 +43,7 @@ const editUserSchema = z.object({
   employeeId: z.string().min(1, 'Employee ID is required'),
   designation_id: z.string().min(1, 'Designation is required'),
   department_id: z.string().min(1, 'Department is required'),
+  device_id: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -66,6 +67,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       employeeId: user.employeeId,
       designation_id: user.designation_id || '',
       department_id: user.department_id || '',
+      device_id: user.device_id || user.deviceId || '',
       isActive: user.is_active ?? user.isActive ?? false,
     },
   });
@@ -118,12 +120,41 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   });
 
   const onSubmit = (data: EditUserFormData) => {
+    // Validate device_id for field agents
+    const submittedRole = roles.find((role: any) => role.id === data.role_id);
+    const isSubmittedFieldAgent = submittedRole?.name === 'Field Agent' || submittedRole?.name === 'FIELD_AGENT' || submittedRole?.name === 'FIELD';
+
+    if (isSubmittedFieldAgent && !data.device_id) {
+      form.setError('device_id', {
+        type: 'manual',
+        message: 'Device ID is required for field agents',
+      });
+      return;
+    }
+
+    if (isSubmittedFieldAgent && data.device_id) {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(data.device_id)) {
+        form.setError('device_id', {
+          type: 'manual',
+          message: 'Device ID must be a valid UUID format',
+        });
+        return;
+      }
+    }
+
     updateMutation.mutate(data);
   };
 
   const roles = rolesData?.data || [];
   const departments = departmentsData?.data || [];
   const designations = designationsData?.data || [];
+
+  // Watch the selected role to determine if device_id field should be shown
+  const selectedRoleId = form.watch('role_id');
+  const selectedRole = roles.find((role: any) => role.id === selectedRoleId);
+  const isFieldAgent = selectedRole?.name === 'Field Agent' || selectedRole?.name === 'FIELD_AGENT' || selectedRole?.name === 'FIELD';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -257,6 +288,29 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                 )}
               />
             </div>
+
+            {/* Device ID field - only show for field agents */}
+            {isFieldAgent && (
+              <FormField
+                control={form.control}
+                name="device_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Device ID <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter device UUID (e.g., 123e4567-e89b-12d3-a456-426614174000)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-sm text-muted-foreground">
+                      Required for field agents. Must be a valid UUID format.
+                    </p>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

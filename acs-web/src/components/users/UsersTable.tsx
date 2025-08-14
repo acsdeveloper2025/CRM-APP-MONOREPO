@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, Edit, Trash2, UserCheck, UserX, Eye, Shield, Key } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, UserCheck, UserX, Eye, Shield, Key, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -38,6 +38,7 @@ import { User } from '@/types/user';
 import { EditUserDialog } from './EditUserDialog';
 import { UserDetailsDialog } from './UserDetailsDialog';
 import { ResetPasswordDialog } from './ResetPasswordDialog';
+import { DeviceManagementDialog } from './DeviceManagementDialog';
 
 interface UsersTableProps {
   data: User[];
@@ -50,6 +51,7 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  const [showDeviceManagementDialog, setShowDeviceManagementDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
@@ -119,6 +121,11 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
   const handleResetPassword = (user: User) => {
     setSelectedUser(user);
     setShowResetPasswordDialog(true);
+  };
+
+  const handleDeviceManagement = (user: User) => {
+    setSelectedUser(user);
+    setShowDeviceManagementDialog(true);
   };
 
   const handleDelete = (user: User) => {
@@ -263,7 +270,24 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {getRoleBadge(user.role)}
+                  <div className="flex items-center gap-2">
+                    {getRoleBadge(user.role)}
+                    {(user.role === 'FIELD' || user.role === 'FIELD_AGENT' || user.role_name === 'Field Agent') && (
+                      <div className="flex items-center">
+                        {user.device_id || user.deviceId ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
+                            <Smartphone className="h-3 w-3 mr-1" />
+                            Device
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs">
+                            <Smartphone className="h-3 w-3 mr-1" />
+                            No Device
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div>
@@ -307,6 +331,10 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                       <DropdownMenuItem onClick={() => handleResetPassword(user)}>
                         <Key className="mr-2 h-4 w-4" />
                         Reset Password
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDeviceManagement(user)}>
+                        <Smartphone className="mr-2 h-4 w-4" />
+                        Device Management
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {user.isActive ? (
@@ -365,6 +393,15 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
           user={selectedUser}
           open={showResetPasswordDialog}
           onOpenChange={setShowResetPasswordDialog}
+        />
+      )}
+
+      {/* Device Management Dialog */}
+      {selectedUser && (
+        <DeviceManagementDialog
+          user={selectedUser}
+          open={showDeviceManagementDialog}
+          onOpenChange={setShowDeviceManagementDialog}
         />
       )}
 

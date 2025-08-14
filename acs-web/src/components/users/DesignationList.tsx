@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  Edit, 
-  Trash2, 
-  Search, 
+import { useDebouncedSearch } from '@/hooks/useDebounce';
+import {
+  Edit,
+  Trash2,
+  Search,
   Filter,
   Building2,
   Users,
   Calendar,
   CheckCircle,
-  XCircle
+  XCircle,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,7 +53,7 @@ interface DesignationListProps {
 }
 
 export function DesignationList({ onEdit }: DesignationListProps) {
-  const [search, setSearch] = useState('');
+  const { searchValue, debouncedSearchValue, setSearchValue, isSearching } = useDebouncedSearch('', 300);
   const [departmentFilter, setDepartmentFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [deleteConfirm, setDeleteConfirm] = useState<Designation | null>(null);
@@ -59,9 +61,9 @@ export function DesignationList({ onEdit }: DesignationListProps) {
 
   // Fetch designations
   const { data: designationsData, isLoading } = useQuery({
-    queryKey: ['designations', search, departmentFilter, statusFilter],
+    queryKey: ['designations', debouncedSearchValue, departmentFilter, statusFilter],
     queryFn: () => designationsService.getDesignations({
-      search: search || undefined,
+      search: debouncedSearchValue || undefined,
       departmentId: departmentFilter === '__all__' || departmentFilter === '__none__' || !departmentFilter ? undefined : departmentFilter,
       isActive: statusFilter === '__all__' || !statusFilter ? undefined : statusFilter === 'active',
       limit: 50,
@@ -128,10 +130,15 @@ export function DesignationList({ onEdit }: DesignationListProps) {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search designations..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
                 className="pl-10"
               />
+              {isSearching && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
             </div>
             
             <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
@@ -177,7 +184,7 @@ export function DesignationList({ onEdit }: DesignationListProps) {
               <Users className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-2 text-sm font-semibold text-muted-foreground">No designations found</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                {search || departmentFilter || statusFilter
+                {debouncedSearchValue || departmentFilter || statusFilter
                   ? 'Try adjusting your filters'
                   : 'Get started by creating a new designation'}
               </p>

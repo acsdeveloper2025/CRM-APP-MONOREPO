@@ -2,6 +2,7 @@ import AsyncStorage from '../polyfills/AsyncStorage';
 import { getEnvironmentConfig, getApiConfig } from '../config/environment';
 import { User } from '../types';
 import { tokenManager } from '../utils/tokenManager';
+import DeviceService from './deviceService';
 
 export interface LoginRequest {
   username: string;
@@ -57,25 +58,47 @@ class AuthService {
   private refreshTokenPromise: Promise<string | null> | null = null;
 
   /**
-   * Generate a unique device ID
+   * Get device UUID for authentication
    */
   private async getDeviceId(): Promise<string> {
-    let deviceId = await AsyncStorage.getItem('device_id');
-    
-    if (!deviceId) {
-      // Generate a unique device ID
-      deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      await AsyncStorage.setItem('device_id', deviceId);
+    try {
+      const deviceService = DeviceService.getInstance();
+      return await deviceService.getDeviceUUID();
+    } catch (error) {
+      console.error('Error getting device UUID:', error);
+      // Fallback to legacy device ID if new service fails
+      let deviceId = await AsyncStorage.getItem('device_id');
+
+      if (!deviceId) {
+        // Generate a fallback device ID
+        deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await AsyncStorage.setItem('device_id', deviceId);
+      }
+
+      return deviceId;
     }
-    
-    return deviceId;
   }
 
   /**
    * Get device information
    */
-  private getDeviceInfo() {
-    // In a real React Native app, you would use react-native-device-info
+  private async getDeviceInfo() {
+    try {
+      const deviceService = DeviceService.getInstance();
+      const registrationInfo = await deviceService.getDeviceRegistrationInfo();
+
+      if (registrationInfo) {
+        return {
+          platform: registrationInfo.platform,
+          version: registrationInfo.appVersion,
+          model: registrationInfo.model || 'Unknown',
+        };
+      }
+    } catch (error) {
+      console.error('Error getting device info:', error);
+    }
+
+    // Fallback to basic device info
     return {
       platform: 'web', // or 'ios', 'android'
       version: this.config.app.version,
@@ -144,7 +167,7 @@ class AuthService {
   async login(username: string, password: string): Promise<LoginResponse> {
     try {
       const deviceId = await this.getDeviceId();
-      const deviceInfo = this.getDeviceInfo();
+      const deviceInfo = await this.getDeviceInfo();
 
       const loginRequest: LoginRequest = {
         username: username.trim(),

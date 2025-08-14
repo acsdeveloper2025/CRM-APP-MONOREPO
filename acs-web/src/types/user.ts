@@ -17,6 +17,8 @@ export interface User {
   department_id?: string;
   department_name?: string;
   profilePhotoUrl?: string;
+  device_id?: string; // Device ID for field agents
+  deviceId?: string; // Alternative camelCase format
   isActive?: boolean;
   is_active?: boolean; // API uses snake_case
   lastLoginAt?: string;
@@ -34,20 +36,28 @@ export interface CreateUserData {
   username: string;
   email: string;
   password: string;
-  role: Role;
+  role?: Role; // Legacy field for backward compatibility
+  role_id?: string; // New role system
   employeeId: string;
-  designation: string;
-  department: string;
+  designation?: string; // Legacy field
+  designation_id?: string; // New designation system
+  department?: string; // Legacy field
+  department_id?: string; // New department system
+  device_id?: string; // Device ID for field agents
   profilePhotoUrl?: string;
 }
 
 export interface UpdateUserData {
   name?: string;
   email?: string;
-  role?: Role;
+  role?: Role; // Legacy field
+  role_id?: string; // New role system
   employeeId?: string;
-  designation?: string;
-  department?: string;
+  designation?: string; // Legacy field
+  designation_id?: string; // New designation system
+  department?: string; // Legacy field
+  department_id?: string; // New department system
+  device_id?: string; // Device ID for field agents
   profilePhotoUrl?: string;
   isActive?: boolean;
 }
@@ -170,14 +180,12 @@ export interface CreateDepartmentRequest {
   name: string;
   description?: string;
   department_head_id?: string;
-  parent_department_id?: string;
 }
 
 export interface UpdateDepartmentRequest {
   name?: string;
   description?: string;
   department_head_id?: string;
-  parent_department_id?: string;
   is_active?: boolean;
 }
 

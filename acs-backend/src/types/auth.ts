@@ -26,6 +26,7 @@ export interface LoginResponse {
       designation: string;
       department: string;
       profilePhotoUrl?: string;
+      deviceId?: string;
     };
     tokens: {
       accessToken: string;

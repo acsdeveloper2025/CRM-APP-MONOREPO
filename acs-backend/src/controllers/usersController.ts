@@ -4,6 +4,7 @@ import { query } from '@/config/database';
 import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from '@/middleware/auth';
 import type { Role } from '@/types/auth';
+import DeviceAuthLogger from '@/services/deviceAuthLogger';
 
 // GET /api/users - List users with pagination and filters
 export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
@@ -192,6 +193,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       employeeId,
       designation,
       phone,
+      device_id,
       isActive = true,
       // Legacy fields for backward compatibility
       role,
@@ -211,6 +213,49 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({
         success: false,
         message: 'Role is required',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    // Validate device_id for field agents
+    if (role === 'FIELD' || role === 'FIELD_AGENT') {
+      if (!device_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Device ID is required for field agents',
+          error: { code: 'VALIDATION_ERROR' },
+        });
+      }
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(device_id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Device ID must be a valid UUID format',
+          error: { code: 'VALIDATION_ERROR' },
+        });
+      }
+
+      // Check if device_id is already in use
+      const existingDeviceQuery = `
+        SELECT id, username FROM users
+        WHERE device_id = $1
+      `;
+      const existingDevice = await query(existingDeviceQuery, [device_id]);
+
+      if (existingDevice.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Device ID is already registered to user: ${existingDevice.rows[0].username}`,
+          error: { code: 'DEVICE_ALREADY_REGISTERED' },
+        });
+      }
+    } else if (device_id) {
+      // Non-field agents should not have device_id
+      return res.status(400).json({
+        success: false,
+        message: 'Device ID can only be set for field agents',
         error: { code: 'VALIDATION_ERROR' },
       });
     }
@@ -237,10 +282,10 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     const createUserQuery = `
       INSERT INTO users (
         name, username, email, password, "passwordHash", role, role_id, department_id,
-        "employeeId", designation, phone, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        "employeeId", designation, phone, device_id, is_active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING id, name, username, email, role, role_id, department_id,
-                "employeeId", designation, phone, is_active, created_at, updated_at
+                "employeeId", designation, phone, device_id, is_active, created_at, updated_at
     `;
 
     const result = await query(createUserQuery, [
@@ -255,6 +300,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       employeeId || null,
       designation || null,
       phone || null,
+      device_id || null,
       isActive
     ]);
 
@@ -316,12 +362,56 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
+    // Validate device_id if being updated
+    if (updateData.device_id !== undefined) {
+      // Get current user data to check role
+      const currentUserQuery = `SELECT role, device_id FROM users WHERE id = $1`;
+      const currentUser = await query(currentUserQuery, [id]);
+      const userRole = updateData.role || currentUser.rows[0]?.role;
+
+      if (userRole === 'FIELD' || userRole === 'FIELD_AGENT') {
+        if (updateData.device_id) {
+          // Validate UUID format
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(updateData.device_id)) {
+            return res.status(400).json({
+              success: false,
+              message: 'Device ID must be a valid UUID format',
+              error: { code: 'VALIDATION_ERROR' },
+            });
+          }
+
+          // Check if device_id is already in use by another user
+          const existingDeviceQuery = `
+            SELECT id, username FROM users
+            WHERE device_id = $1 AND id != $2
+          `;
+          const existingDevice = await query(existingDeviceQuery, [updateData.device_id, id]);
+
+          if (existingDevice.rows.length > 0) {
+            return res.status(400).json({
+              success: false,
+              message: `Device ID is already registered to user: ${existingDevice.rows[0].username}`,
+              error: { code: 'DEVICE_ALREADY_REGISTERED' },
+            });
+          }
+        }
+      } else if (updateData.device_id) {
+        // Non-field agents should not have device_id
+        return res.status(400).json({
+          success: false,
+          message: 'Device ID can only be set for field agents',
+          error: { code: 'VALIDATION_ERROR' },
+        });
+      }
+    }
+
     // Build update query dynamically
     const updateFields: string[] = [];
     const updateParams: any[] = [];
     let paramIndex = 1;
 
-    const allowedFields = ['name', 'username', 'email', 'phone', 'role', 'role_id', 'department_id', 'employeeId', 'designation', 'is_active'];
+    const allowedFields = ['name', 'username', 'email', 'phone', 'role', 'role_id', 'department_id', 'employeeId', 'designation', 'device_id', 'is_active'];
 
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {
@@ -346,10 +436,53 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
       SET ${updateFields.join(', ')}
       WHERE id = $${paramIndex}
       RETURNING id, name, username, email, role, role_id, department_id,
-                "employeeId", designation, phone, is_active, created_at, updated_at
+                "employeeId", designation, phone, device_id, is_active, created_at, updated_at
     `;
 
+    // Get current user data before update for logging
+    const currentUserQuery = `SELECT username, device_id FROM users WHERE id = $1`;
+    const currentUserResult = await query(currentUserQuery, [id]);
+    const currentUser = currentUserResult.rows[0];
+
     const result = await query(updateQuery, updateParams);
+    const updatedUser = result.rows[0];
+
+    // Log device management changes
+    if (updateData.device_id !== undefined && currentUser) {
+      const deviceAuthLogger = DeviceAuthLogger.getInstance();
+      const oldDeviceId = currentUser.device_id;
+      const newDeviceId = updateData.device_id;
+
+      if (oldDeviceId && !newDeviceId) {
+        // Device reset
+        await deviceAuthLogger.logDeviceReset(
+          id,
+          currentUser.username,
+          oldDeviceId,
+          req.user?.id || 'unknown',
+          req.user?.username || 'unknown'
+        );
+      } else if (!oldDeviceId && newDeviceId) {
+        // Device registration
+        await deviceAuthLogger.logDeviceRegistration(
+          id,
+          currentUser.username,
+          newDeviceId,
+          req.user?.id || 'unknown',
+          req.user?.username || 'unknown'
+        );
+      } else if (oldDeviceId && newDeviceId && oldDeviceId !== newDeviceId) {
+        // Device update
+        await deviceAuthLogger.logDeviceUpdate(
+          id,
+          currentUser.username,
+          oldDeviceId,
+          newDeviceId,
+          req.user?.id || 'unknown',
+          req.user?.username || 'unknown'
+        );
+      }
+    }
 
     logger.info(`Updated user: ${id}`, {
       userId: req.user?.id,
@@ -358,7 +491,7 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({
       success: true,
-      data: result.rows[0],
+      data: updatedUser,
       message: 'User updated successfully',
     });
   } catch (error) {

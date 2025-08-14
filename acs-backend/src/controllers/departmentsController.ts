@@ -52,8 +52,7 @@ export const getDepartments = async (req: AuthenticatedRequest, res: Response) =
         pd.name as parent_department_name,
         u1.name as created_by_name,
         u2.name as updated_by_name,
-        (SELECT COUNT(*) FROM users WHERE department_id = d.id) as user_count,
-        (SELECT COUNT(*) FROM departments WHERE parent_department_id = d.id) as subdepartment_count
+        (SELECT COUNT(*) FROM users WHERE department_id = d.id) as user_count
       FROM departments d
       LEFT JOIN users dh ON d.department_head_id = dh.id
       LEFT JOIN departments pd ON d.parent_department_id = pd.id
@@ -111,8 +110,7 @@ export const getDepartmentById = async (req: AuthenticatedRequest, res: Response
         pd.name as parent_department_name,
         u1.name as created_by_name,
         u2.name as updated_by_name,
-        (SELECT COUNT(*) FROM users WHERE department_id = d.id) as user_count,
-        (SELECT COUNT(*) FROM departments WHERE parent_department_id = d.id) as subdepartment_count
+        (SELECT COUNT(*) FROM users WHERE department_id = d.id) as user_count
       FROM departments d
       LEFT JOIN users dh ON d.department_head_id = dh.id
       LEFT JOIN departments pd ON d.parent_department_id = pd.id
@@ -148,7 +146,7 @@ export const getDepartmentById = async (req: AuthenticatedRequest, res: Response
 // POST /api/departments - Create new department
 export const createDepartment = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, description, department_head_id, parent_department_id } = req.body;
+    const { name, description, department_head_id } = req.body;
 
     // Validate required fields
     if (!name) {
@@ -181,22 +179,12 @@ export const createDepartment = async (req: AuthenticatedRequest, res: Response)
       }
     }
 
-    // Validate parent department exists
-    if (parent_department_id) {
-      const parentExists = await query('SELECT id FROM departments WHERE id = $1', [parent_department_id]);
-      if (parentExists.rows.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Parent department not found',
-          error: { code: 'INVALID_PARENT_DEPARTMENT' }
-        });
-      }
-    }
+
 
     // Create department
     const createQuery = `
-      INSERT INTO departments (name, description, department_head_id, parent_department_id, created_by)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO departments (name, description, department_head_id, created_by)
+      VALUES ($1, $2, $3, $4)
       RETURNING *
     `;
 
@@ -204,7 +192,6 @@ export const createDepartment = async (req: AuthenticatedRequest, res: Response)
       name,
       description || null,
       department_head_id || null,
-      parent_department_id || null,
       req.user?.id
     ]);
 
@@ -233,7 +220,7 @@ export const createDepartment = async (req: AuthenticatedRequest, res: Response)
 export const updateDepartment = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, department_head_id, parent_department_id, is_active } = req.body;
+    const { name, description, department_head_id, is_active } = req.body;
 
     // Check if department exists
     const existingDepartment = await query('SELECT * FROM departments WHERE id = $1', [id]);
@@ -269,25 +256,7 @@ export const updateDepartment = async (req: AuthenticatedRequest, res: Response)
       }
     }
 
-    // Validate parent department exists and prevent circular reference
-    if (parent_department_id) {
-      if (parent_department_id === id) {
-        return res.status(400).json({
-          success: false,
-          message: 'Department cannot be its own parent',
-          error: { code: 'CIRCULAR_REFERENCE' }
-        });
-      }
 
-      const parentExists = await query('SELECT id FROM departments WHERE id = $1', [parent_department_id]);
-      if (parentExists.rows.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Parent department not found',
-          error: { code: 'INVALID_PARENT_DEPARTMENT' }
-        });
-      }
-    }
 
     // Update department
     const updateQuery = `
@@ -296,11 +265,10 @@ export const updateDepartment = async (req: AuthenticatedRequest, res: Response)
         name = COALESCE($1, name),
         description = COALESCE($2, description),
         department_head_id = COALESCE($3, department_head_id),
-        parent_department_id = COALESCE($4, parent_department_id),
-        is_active = COALESCE($5, is_active),
-        updated_by = $6,
+        is_active = COALESCE($4, is_active),
+        updated_by = $5,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $7
+      WHERE id = $6
       RETURNING *
     `;
 
@@ -308,7 +276,6 @@ export const updateDepartment = async (req: AuthenticatedRequest, res: Response)
       name || null,
       description !== undefined ? description : null,
       department_head_id !== undefined ? department_head_id : null,
-      parent_department_id !== undefined ? parent_department_id : null,
       is_active !== undefined ? is_active : null,
       req.user?.id,
       id

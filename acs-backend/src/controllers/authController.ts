@@ -6,6 +6,8 @@ import { config } from '@/config';
 import { logger } from '@/config/logger';
 import { createError } from '@/middleware/errorHandler';
 import { AuthenticatedRequest } from '@/middleware/auth';
+import DeviceAuthLogger from '@/services/deviceAuthLogger';
+import { recordDeviceAuthFailure, recordDeviceAuthSuccess } from '@/middleware/deviceAuthRateLimit';
 import {
   LoginRequest,
   LoginResponse,
@@ -23,7 +25,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // Find user by username
     const userRes = await query(
-      `SELECT id, name, username, email, "passwordHash", role, "employeeId", designation, department, "profilePhotoUrl"
+      `SELECT id, name, username, email, "passwordHash", role, "employeeId", designation, department, "profilePhotoUrl", device_id
        FROM users WHERE username = $1`,
       [username]
     );
@@ -40,6 +42,93 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!isPasswordValid) {
       logger.warn('Login failed: Invalid password', { username });
       throw createError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
+    }
+
+    // Device authentication for field agents
+    const deviceAuthLogger = DeviceAuthLogger.getInstance();
+    const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+    const userAgent = req.get('User-Agent') || 'unknown';
+
+    if (user.role === 'FIELD' || user.role === 'FIELD_AGENT') {
+      if (!deviceId) {
+        logger.warn('Login failed: Device ID required for field agent', { username, role: user.role });
+
+        // Log device authentication failure
+        await deviceAuthLogger.logDeviceAuthFailure(
+          username,
+          'none',
+          'DEVICE_ID_REQUIRED',
+          'Device ID is required for field agents',
+          clientIp,
+          userAgent
+        );
+
+        // Record rate limit failure
+        recordDeviceAuthFailure(req, username);
+
+        throw createError('Device ID is required for field agents', 400, 'DEVICE_ID_REQUIRED');
+      }
+
+      if (!user.device_id) {
+        logger.warn('Login failed: No device registered for field agent', { username, role: user.role });
+
+        // Log device authentication failure
+        await deviceAuthLogger.logDeviceAuthFailure(
+          username,
+          deviceId,
+          'NO_DEVICE_REGISTERED',
+          'No device registered for this field agent',
+          clientIp,
+          userAgent
+        );
+
+        // Record rate limit failure
+        recordDeviceAuthFailure(req, username);
+
+        throw createError('No device registered for this field agent. Please contact administrator.', 403, 'NO_DEVICE_REGISTERED');
+      }
+
+      if (user.device_id !== deviceId) {
+        logger.warn('Login failed: Device ID mismatch', {
+          username,
+          role: user.role,
+          registeredDeviceId: user.device_id,
+          providedDeviceId: deviceId
+        });
+
+        // Log device authentication failure
+        await deviceAuthLogger.logDeviceAuthFailure(
+          username,
+          deviceId,
+          'DEVICE_NOT_AUTHORIZED',
+          'Device not authorized - device ID mismatch',
+          clientIp,
+          userAgent
+        );
+
+        // Record rate limit failure
+        recordDeviceAuthFailure(req, username);
+
+        throw createError('Device not authorized. Please use your registered device or contact administrator.', 403, 'DEVICE_NOT_AUTHORIZED');
+      }
+
+      logger.info('Field agent device authentication successful', {
+        username,
+        role: user.role,
+        deviceId
+      });
+
+      // Log successful device authentication
+      await deviceAuthLogger.logDeviceAuthSuccess(
+        user.id,
+        username,
+        deviceId,
+        clientIp,
+        userAgent
+      );
+
+      // Record successful authentication for rate limiting
+      recordDeviceAuthSuccess(req, username);
     }
 
     // Generate tokens
@@ -178,6 +267,7 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): 
         u.designation,
         u.department,
         u."profilePhotoUrl",
+        u.device_id,
         u.is_active,
         u.last_login,
         u.created_at,
@@ -221,6 +311,7 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): 
         designation: userData.designation,
         department: userData.department, // Legacy field
         profilePhotoUrl: userData.profilePhotoUrl,
+        deviceId: userData.device_id,
         isActive: userData.is_active,
         lastLogin: userData.last_login,
         createdAt: userData.created_at,

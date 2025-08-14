@@ -1,77 +1,53 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
-import { logger } from '../utils/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
 
 // GET /api/roles - Get all roles with pagination and filtering
 export const getRoles = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const {
-      page = 1,
-      limit = 20,
-      search = '',
-      includeInactive = 'false',
-      systemRolesOnly = 'false'
-    } = req.query;
-
-    const offset = (Number(page) - 1) * Number(limit);
-    const whereConditions: string[] = [];
-    const params: any[] = [];
-    let paramCount = 0;
-
-    // Search filter
-    if (search) {
-      paramCount++;
-      whereConditions.push(`(name ILIKE $${paramCount} OR description ILIKE $${paramCount})`);
-      params.push(`%${search}%`);
+    const { search = '', limit = 20, page = 1 } = req.query;
+    
+    let rolesQuery: string;
+    let countQuery: string;
+    let params: any[] = [];
+    
+    if (search && search.toString().trim()) {
+      // Search query
+      rolesQuery = `
+        SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count
+        FROM roles r
+        WHERE r.is_active = true AND (r.name ILIKE $1 OR COALESCE(r.description, '') ILIKE $1)
+        ORDER BY r.name
+        LIMIT $2 OFFSET $3
+      `;
+      countQuery = `
+        SELECT COUNT(*) as total 
+        FROM roles r 
+        WHERE r.is_active = true AND (r.name ILIKE $1 OR COALESCE(r.description, '') ILIKE $1)
+      `;
+      params = [`%${search}%`, Number(limit), (Number(page) - 1) * Number(limit)];
+    } else {
+      // No search query
+      rolesQuery = `
+        SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count
+        FROM roles r
+        WHERE r.is_active = true
+        ORDER BY r.name
+        LIMIT $1 OFFSET $2
+      `;
+      countQuery = `
+        SELECT COUNT(*) as total 
+        FROM roles r 
+        WHERE r.is_active = true
+      `;
+      params = [Number(limit), (Number(page) - 1) * Number(limit)];
     }
-
-    // Active filter
-    if (includeInactive !== 'true') {
-      paramCount++;
-      whereConditions.push(`r.is_active = $${paramCount}`);
-      params.push(true);
-    }
-
-    // System roles filter
-    if (systemRolesOnly === 'true') {
-      paramCount++;
-      whereConditions.push(`r.is_system_role = $${paramCount}`);
-      params.push(true);
-    }
-
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-
-    // Get roles with pagination
-    const rolesQuery = `
-      SELECT 
-        r.*,
-        u1.name as created_by_name,
-        u2.name as updated_by_name,
-        (SELECT COUNT(*) FROM users WHERE role_id = r.id) as user_count
-      FROM roles r
-      LEFT JOIN users u1 ON r.created_by = u1.id
-      LEFT JOIN users u2 ON r.updated_by = u2.id
-      ${whereClause}
-      ORDER BY r.name
-      LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
-    `;
-
-    params.push(Number(limit), offset);
+    
     const rolesResult = await query(rolesQuery, params);
-
-    // Get total count
-    const countQuery = `SELECT COUNT(*) as total FROM roles r ${whereClause}`;
-    const countResult = await query(countQuery, params.slice(0, paramCount));
+    const countParams = search && search.toString().trim() ? [`%${search}%`] : [];
+    const countResult = await query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].total);
-
-    logger.info('Retrieved roles', {
-      userId: req.user?.id,
-      filters: { search, includeInactive, systemRolesOnly },
-      pagination: { page, limit },
-      total
-    });
-
+    
     res.json({
       success: true,
       data: rolesResult.rows,
@@ -79,11 +55,12 @@ export const getRoles = async (req: AuthenticatedRequest, res: Response) => {
         page: Number(page),
         limit: Number(limit),
         total,
-        pages: Math.ceil(total / Number(limit))
+        totalPages: Math.ceil(total / Number(limit))
       }
     });
+
   } catch (error) {
-    logger.error('Error retrieving roles:', error);
+    console.error('Error retrieving roles:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve roles',
@@ -92,8 +69,8 @@ export const getRoles = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-// GET /api/roles/:id - Get role by ID
-export const getRoleById = async (req: AuthenticatedRequest, res: Response) => {
+// GET /api/roles/:id - Get a specific role
+export const getRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -123,8 +100,9 @@ export const getRoleById = async (req: AuthenticatedRequest, res: Response) => {
       success: true,
       data: result.rows[0]
     });
+
   } catch (error) {
-    logger.error('Error retrieving role:', error);
+    console.error('Error retrieving role:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve role',
@@ -133,17 +111,17 @@ export const getRoleById = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-// POST /api/roles - Create new role
+// POST /api/roles - Create a new role
 export const createRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, description, permissions } = req.body;
+    const { name, description, permissions, is_system_role = false } = req.body;
 
     // Validate required fields
     if (!name || !permissions) {
       return res.status(400).json({
         success: false,
         message: 'Name and permissions are required',
-        error: { code: 'VALIDATION_ERROR' }
+        error: { code: 'MISSING_REQUIRED_FIELDS' }
       });
     }
 
@@ -159,8 +137,8 @@ export const createRole = async (req: AuthenticatedRequest, res: Response) => {
 
     // Create role
     const createQuery = `
-      INSERT INTO roles (name, description, permissions, created_by)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO roles (name, description, permissions, is_system_role, created_by)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `;
 
@@ -168,22 +146,18 @@ export const createRole = async (req: AuthenticatedRequest, res: Response) => {
       name,
       description || null,
       JSON.stringify(permissions),
+      is_system_role,
       req.user?.id
     ]);
-
-    logger.info('Created new role', {
-      userId: req.user?.id,
-      roleId: result.rows[0].id,
-      roleName: name
-    });
 
     res.status(201).json({
       success: true,
       data: result.rows[0],
       message: 'Role created successfully'
     });
+
   } catch (error) {
-    logger.error('Error creating role:', error);
+    console.error('Error creating role:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create role',
@@ -192,7 +166,7 @@ export const createRole = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-// PUT /api/roles/:id - Update role
+// PUT /api/roles/:id - Update a role
 export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -208,19 +182,10 @@ export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Check if it's a system role and prevent certain modifications
-    if (existingRole.rows[0].is_system_role && name !== existingRole.rows[0].name) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot modify system role name',
-        error: { code: 'SYSTEM_ROLE_PROTECTED' }
-      });
-    }
-
-    // Check if new name already exists (if name is being changed)
+    // Check if new name conflicts with existing role (if name is being changed)
     if (name && name !== existingRole.rows[0].name) {
-      const duplicateRole = await query('SELECT id FROM roles WHERE name = $1 AND id != $2', [name, id]);
-      if (duplicateRole.rows.length > 0) {
+      const nameConflict = await query('SELECT id FROM roles WHERE name = $1 AND id != $2', [name, id]);
+      if (nameConflict.rows.length > 0) {
         return res.status(400).json({
           success: false,
           message: 'Role name already exists',
@@ -252,19 +217,14 @@ export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
       id
     ]);
 
-    logger.info('Updated role', {
-      userId: req.user?.id,
-      roleId: id,
-      roleName: result.rows[0].name
-    });
-
     res.json({
       success: true,
       data: result.rows[0],
       message: 'Role updated successfully'
     });
+
   } catch (error) {
-    logger.error('Error updating role:', error);
+    console.error('Error updating role:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update role',
@@ -273,7 +233,7 @@ export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-// DELETE /api/roles/:id - Delete role
+// DELETE /api/roles/:id - Delete a role
 export const deleteRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -288,40 +248,35 @@ export const deleteRole = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Prevent deletion of system roles
+    // Check if role is a system role
     if (existingRole.rows[0].is_system_role) {
       return res.status(400).json({
         success: false,
         message: 'Cannot delete system role',
-        error: { code: 'SYSTEM_ROLE_PROTECTED' }
+        error: { code: 'SYSTEM_ROLE_DELETE_FORBIDDEN' }
       });
     }
 
-    // Check if role is in use
-    const usageCheck = await query('SELECT COUNT(*) as count FROM users WHERE role_id = $1', [id]);
-    if (parseInt(usageCheck.rows[0].count) > 0) {
+    // Check if role has assigned users
+    const usersWithRole = await query('SELECT COUNT(*) as count FROM users WHERE role_id = $1', [id]);
+    if (parseInt(usersWithRole.rows[0].count) > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot delete role that is assigned to users',
-        error: { code: 'ROLE_IN_USE' }
+        message: 'Cannot delete role with assigned users',
+        error: { code: 'ROLE_HAS_USERS' }
       });
     }
 
     // Delete role
     await query('DELETE FROM roles WHERE id = $1', [id]);
 
-    logger.info('Deleted role', {
-      userId: req.user?.id,
-      roleId: id,
-      roleName: existingRole.rows[0].name
-    });
-
     res.json({
       success: true,
       message: 'Role deleted successfully'
     });
+
   } catch (error) {
-    logger.error('Error deleting role:', error);
+    console.error('Error deleting role:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete role',
