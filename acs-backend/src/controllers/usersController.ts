@@ -190,6 +190,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       password,
       role_id,
       department_id,
+      designation_id,
       employeeId,
       designation,
       phone,
@@ -200,6 +201,12 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       department
     } = req.body;
 
+    // Convert empty strings to null for UUID fields
+    const cleanRoleId = role_id && role_id.trim() !== '' ? role_id : null;
+    const cleanDepartmentId = department_id && department_id.trim() !== '' ? department_id : null;
+    const cleanDesignationId = designation_id && designation_id.trim() !== '' ? designation_id : null;
+    const cleanDeviceId = device_id && device_id.trim() !== '' ? device_id : null;
+
     // Validate required fields
     if (!name || !username || !email || !password) {
       return res.status(400).json({
@@ -209,7 +216,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    if (!role_id && !role) {
+    if (!cleanRoleId && !role) {
       return res.status(400).json({
         success: false,
         message: 'Role is required',
@@ -217,9 +224,24 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
+    // Determine if user is a field agent by checking role_id or legacy role field
+    let isFieldAgent = false;
+    if (cleanRoleId) {
+      // Look up role name from role_id
+      const roleQuery = `SELECT name FROM roles WHERE id = $1 AND is_active = true`;
+      const roleResult = await query(roleQuery, [cleanRoleId]);
+      if (roleResult.rows.length > 0) {
+        const roleName = roleResult.rows[0].name;
+        isFieldAgent = roleName === 'FIELD_AGENT' || roleName === 'FIELD';
+      }
+    } else if (role) {
+      // Use legacy role field
+      isFieldAgent = role === 'FIELD' || role === 'FIELD_AGENT';
+    }
+
     // Validate device_id for field agents
-    if (role === 'FIELD' || role === 'FIELD_AGENT') {
-      if (!device_id) {
+    if (isFieldAgent) {
+      if (!cleanDeviceId) {
         return res.status(400).json({
           success: false,
           message: 'Device ID is required for field agents',
@@ -229,7 +251,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
 
       // Validate UUID format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(device_id)) {
+      if (!uuidRegex.test(cleanDeviceId)) {
         return res.status(400).json({
           success: false,
           message: 'Device ID must be a valid UUID format',
@@ -242,7 +264,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
         SELECT id, username FROM users
         WHERE device_id = $1
       `;
-      const existingDevice = await query(existingDeviceQuery, [device_id]);
+      const existingDevice = await query(existingDeviceQuery, [cleanDeviceId]);
 
       if (existingDevice.rows.length > 0) {
         return res.status(400).json({
@@ -251,7 +273,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
           error: { code: 'DEVICE_ALREADY_REGISTERED' },
         });
       }
-    } else if (device_id) {
+    } else if (cleanDeviceId) {
       // Non-field agents should not have device_id
       return res.status(400).json({
         success: false,
@@ -281,10 +303,10 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     // Create new user in database
     const createUserQuery = `
       INSERT INTO users (
-        name, username, email, password, "passwordHash", role, role_id, department_id,
+        name, username, email, password, "passwordHash", role, role_id, department_id, designation_id,
         "employeeId", designation, phone, device_id, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-      RETURNING id, name, username, email, role, role_id, department_id,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      RETURNING id, name, username, email, role, role_id, department_id, designation_id,
                 "employeeId", designation, phone, device_id, is_active, created_at, updated_at
     `;
 
@@ -295,12 +317,13 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       hashedPassword, // password column
       hashedPassword, // passwordHash column
       role || 'USER', // Default role for backward compatibility
-      role_id || null,
-      department_id || null,
+      cleanRoleId,
+      cleanDepartmentId,
+      cleanDesignationId,
       employeeId || null,
       designation || null,
       phone || null,
-      device_id || null,
+      cleanDeviceId,
       isActive
     ]);
 

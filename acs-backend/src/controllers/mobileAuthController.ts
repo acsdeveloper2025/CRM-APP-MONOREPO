@@ -81,7 +81,7 @@ export class MobileAuthController {
       }
 
       // Check if device exists or register new device
-      const devRes = await query(`SELECT * FROM devices WHERE "deviceId" = $1`, [deviceId]);
+      const devRes = await query(`SELECT * FROM devices WHERE device_id = $1`, [deviceId]);
       let device: any = devRes.rows[0];
 
       let deviceRegistered = true;
@@ -94,8 +94,8 @@ export class MobileAuthController {
 
         // Register new device (requires approval for FIELD users)
         const insertDev = await query(
-          `INSERT INTO devices (id, "deviceId", "userId", platform, model, "osVersion", "appVersion", "pushToken", "isActive", "lastActiveAt", "isApproved", "authCode", "authCodeExpiresAt", "registeredAt")
-           VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, true, CURRENT_TIMESTAMP, $8, $9, $10, CURRENT_TIMESTAMP)
+          `INSERT INTO devices (device_id, user_id, platform, model, osversion, app_version, pushtoken, isactive, lastactiveat, isapproved, authcode, authcodeexpiresat, registeredat)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true, CURRENT_TIMESTAMP, $8, $9, $10, CURRENT_TIMESTAMP)
            RETURNING *`,
           [
             deviceId,
@@ -116,13 +116,13 @@ export class MobileAuthController {
       } else {
         // Update existing device
         await query(
-          `UPDATE devices SET platform = $1, model = $2, "osVersion" = $3, "appVersion" = $4, "pushToken" = $5, "isActive" = true, "lastActiveAt" = CURRENT_TIMESTAMP WHERE id = $6`,
+          `UPDATE devices SET platform = $1, model = $2, osversion = $3, app_version = $4, pushtoken = $5, isactive = true, lastactiveat = CURRENT_TIMESTAMP WHERE id = $6`,
           [
             deviceInfo?.platform || device.platform,
             deviceInfo?.model || device.model,
-            deviceInfo?.osVersion || device.osVersion,
-            deviceInfo?.appVersion || device.appVersion,
-            deviceInfo?.pushToken || device.pushToken,
+            deviceInfo?.osVersion || device.osversion,
+            deviceInfo?.appVersion || device.app_version,
+            deviceInfo?.pushToken || device.pushtoken,
             device.id,
           ]
         );
@@ -134,18 +134,18 @@ export class MobileAuthController {
       }
 
       // Check device limit per user
-      const cntRes = await query(`SELECT COUNT(*)::int as count FROM devices WHERE "userId" = $1 AND "isActive" = true`, [user.id]);
+      const cntRes = await query(`SELECT COUNT(*)::int as count FROM devices WHERE user_id = $1 AND isactive = true`, [user.id]);
       const userDeviceCount = Number(cntRes.rows[0]?.count || 0);
 
       if (userDeviceCount > config.mobile.maxDevicesPerUser) {
         // Deactivate oldest device
         const oldestRes = await query(
-          `SELECT id FROM devices WHERE "userId" = $1 AND "isActive" = true AND id <> $2 ORDER BY "lastActiveAt" ASC LIMIT 1`,
+          `SELECT id FROM devices WHERE user_id = $1 AND isactive = true AND id <> $2 ORDER BY lastactiveat ASC LIMIT 1`,
           [user.id, device.id]
         );
         const oldestDevice = oldestRes.rows[0];
         if (oldestDevice) {
-          await query(`UPDATE devices SET "isActive" = false WHERE id = $1`, [oldestDevice.id]);
+          await query(`UPDATE devices SET isactive = false WHERE id = $1`, [oldestDevice.id]);
         }
       }
 
@@ -173,8 +173,8 @@ export class MobileAuthController {
 
       // Store refresh token
       await query(
-        `INSERT INTO refresh_tokens (id, token, "userId", "deviceId", "expiresAt", "createdAt") VALUES (gen_random_uuid()::text, $1, $2, $3, $4, CURRENT_TIMESTAMP)`,
-        [refreshToken, user.id, device.deviceId, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)]
+        `INSERT INTO refresh_tokens (token, user_id, device_id, expires_at, created_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
+        [refreshToken, user.id, device.device_id, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)]
       );
 
       // Check for app version compatibility
@@ -263,8 +263,8 @@ export class MobileAuthController {
       // Check if refresh token exists in database
       const storedRes = await query(
         `SELECT rt.token, u.id as user_id, u.username, u.role
-         FROM refresh_tokens rt JOIN users u ON u.id = rt."userId"
-         WHERE rt.token = $1 AND rt."userId" = $2 AND rt."deviceId" = $3 AND rt."expiresAt" > CURRENT_TIMESTAMP
+         FROM refresh_tokens rt JOIN users u ON u.id = rt.user_id
+         WHERE rt.token = $1 AND rt.user_id = $2 AND rt.device_id = $3 AND rt.expires_at > CURRENT_TIMESTAMP
          LIMIT 1`,
         [refreshToken, decoded.userId, decoded.deviceId]
       );
@@ -321,8 +321,8 @@ export class MobileAuthController {
 
       if (deviceId) {
         // Invalidate refresh tokens for this device
-        await query(`DELETE FROM refresh_tokens WHERE "userId" = $1 AND "deviceId" = $2`, [userId, deviceId]);
-        await query(`UPDATE devices SET "isActive" = false, "lastActiveAt" = CURRENT_TIMESTAMP WHERE "userId" = $1 AND "deviceId" = $2`, [userId, deviceId]);
+        await query(`DELETE FROM refresh_tokens WHERE user_id = $1 AND device_id = $2`, [userId, deviceId]);
+        await query(`UPDATE devices SET is_active = false, last_active_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND device_id = $2`, [userId, deviceId]);
       }
 
       await createAuditLog({
@@ -432,7 +432,7 @@ export class MobileAuthController {
       const userId = (req as any).user?.userId;
 
       await query(
-        `UPDATE devices SET "pushToken" = $1, "notificationsEnabled" = $2, "notificationPreferences" = $3 WHERE "userId" = $4 AND "deviceId" = $5`,
+        `UPDATE devices SET push_token = $1, notifications_enabled = $2, notification_preferences = $3 WHERE user_id = $4 AND device_id = $5`,
         [pushToken, enabled, preferences ? JSON.stringify(preferences) : null, userId, deviceId]
       );
 
@@ -485,10 +485,10 @@ export class MobileAuthController {
   static async getPendingDevices(req: Request, res: Response) {
     try {
       const pendingRes = await query(
-        `SELECT d.*, u.id as u_id, u.name as u_name, u.username as u_username, u."employeeId" as u_employeeId, u.role as u_role
-         FROM devices d JOIN users u ON u.id = d."userId"
-         WHERE d."isApproved" = false AND d."authCode" IS NOT NULL
-         ORDER BY d."registeredAt" DESC`
+        `SELECT d.*, u.id as u_id, u.name as u_name, u.username as u_username, u.employee_id as u_employeeId, u.role as u_role
+         FROM devices d JOIN users u ON u.id = d.user_id
+         WHERE d.is_approved = false AND d.auth_code IS NOT NULL
+         ORDER BY d.registered_at DESC`
       );
       const pendingDevices = pendingRes.rows.map((r: any) => ({
         ...r,
@@ -521,12 +521,12 @@ export class MobileAuthController {
       const adminUserId = (req as any).user?.userId;
 
       await query(
-        `UPDATE devices SET "isApproved" = true, "approvedAt" = CURRENT_TIMESTAMP, "approvedBy" = $1, "authCode" = NULL, "authCodeExpiresAt" = NULL WHERE id = $2`,
+        `UPDATE devices SET is_approved = true, approved_at = CURRENT_TIMESTAMP, approved_by = $1, auth_code = NULL, auth_code_expires_at = NULL WHERE id = $2`,
         [adminUserId, deviceId]
       );
       const devRes = await query(
-        `SELECT d.*, u.name as u_name, u.username as u_username, u."employeeId" as u_employeeId
-         FROM devices d JOIN users u ON u.id = d."userId" WHERE d.id = $1`,
+        `SELECT d.*, u.name as u_name, u.username as u_username, u.employee_id as u_employeeId
+         FROM devices d JOIN users u ON u.id = d.user_id WHERE d.id = $1`,
         [deviceId]
       );
       const device = devRes.rows[0];
@@ -577,12 +577,12 @@ export class MobileAuthController {
       const adminUserId = (req as any).user?.userId;
 
       await query(
-        `UPDATE devices SET "rejectedAt" = CURRENT_TIMESTAMP, "rejectedBy" = $1, "rejectionReason" = $2, "authCode" = NULL, "authCodeExpiresAt" = NULL, "isActive" = false WHERE id = $3`,
+        `UPDATE devices SET rejected_at = CURRENT_TIMESTAMP, rejected_by = $1, rejection_reason = $2, auth_code = NULL, auth_code_expires_at = NULL, is_active = false WHERE id = $3`,
         [adminUserId, reason, deviceId]
       );
       const devRes2 = await query(
-        `SELECT d.*, u.name as u_name, u.username as u_username, u."employeeId" as u_employeeId
-         FROM devices d JOIN users u ON u.id = d."userId" WHERE d.id = $1`,
+        `SELECT d.*, u.name as u_name, u.username as u_username, u.employee_id as u_employeeId
+         FROM devices d JOIN users u ON u.id = d.user_id WHERE d.id = $1`,
         [deviceId]
       );
       const device = devRes2.rows[0];
@@ -625,7 +625,7 @@ export class MobileAuthController {
     try {
       const { userId } = req.params;
 
-      const devs = await query(`SELECT * FROM devices WHERE "userId" = $1 ORDER BY "lastActiveAt" DESC`, [userId]);
+      const devs = await query(`SELECT * FROM devices WHERE user_id = $1 ORDER BY last_active_at DESC`, [userId]);
       const devices = devs.rows;
 
       res.json({

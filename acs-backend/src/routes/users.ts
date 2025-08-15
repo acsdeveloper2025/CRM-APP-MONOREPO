@@ -42,16 +42,44 @@ const createUserValidation = [
   // Support both new role_id and legacy role fields
   body('role_id')
     .optional()
-    .isUUID()
-    .withMessage('Role ID must be a valid UUID'),
+    .custom((value) => {
+      if (value && value.trim() !== '') {
+        // If provided and not empty, must be a valid UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(value)) {
+          throw new Error('Role ID must be a valid UUID');
+        }
+      }
+      return true;
+    }),
   body('role')
     .optional()
     .isIn(['ADMIN', 'MANAGER', 'FIELD', 'VIEWER'])
     .withMessage('Role must be one of: ADMIN, MANAGER, FIELD, VIEWER'),
   body('department_id')
     .optional()
-    .isUUID()
-    .withMessage('Department ID must be a valid UUID'),
+    .custom((value) => {
+      if (value && value.trim() !== '') {
+        // If provided and not empty, must be a valid UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(value)) {
+          throw new Error('Department ID must be a valid UUID');
+        }
+      }
+      return true;
+    }),
+  body('designation_id')
+    .optional()
+    .custom((value) => {
+      if (value && value.trim() !== '') {
+        // If provided and not empty, must be a valid UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(value)) {
+          throw new Error('Designation ID must be a valid UUID');
+        }
+      }
+      return true;
+    }),
   body('department')
     .optional()
     .trim()
@@ -78,7 +106,10 @@ const createUserValidation = [
     .withMessage('isActive must be a boolean'),
   // Custom validation to ensure either role_id or role is provided
   body().custom((value, { req }) => {
-    if (!req.body.role_id && !req.body.role) {
+    const hasRoleId = req.body.role_id && req.body.role_id.trim() !== '';
+    const hasRole = req.body.role && req.body.role.trim() !== '';
+
+    if (!hasRoleId && !hasRole) {
       throw new Error('Either role_id or role must be provided');
     }
     return true;

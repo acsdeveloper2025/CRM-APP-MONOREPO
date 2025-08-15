@@ -23,13 +23,11 @@
     "port:check": "lsof -i:3000 || echo 'Port 3000 is available'",
     "port:kill": "lsof -ti:3000 | xargs kill -9 || echo 'No process found on port 3000'",
     "services:check": "echo 'Checking required services...' && lsof -i:5432 && lsof -i:6379 && echo 'All services running'",
-    "start:force": "npm run port:kill && npm run build && npm start"
-  },
-  "_moduleAliases": {
-    "@": "dist",
+    "start:force": "npm run port:kill && npm run build && npm start",
     "db:studio": "echo 'no-op (prisma removed)'",
     "db:reset": "node scripts/reset-db.js"
   },
+
   "repository": {
     "type": "git",
     "url": "git+https://github.com/acsdeveloper2025/acs-backend.git"

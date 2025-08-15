@@ -41,10 +41,10 @@ const createUserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').max(50, 'Username too long'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role_id: z.string().min(1, 'Role is required'),
-  department_id: z.string().min(1, 'Department is required'),
-  employeeId: z.string().min(1, 'Employee ID is required'),
-  designation_id: z.string().min(1, 'Designation is required'),
+  role_id: z.string().optional(),
+  department_id: z.string().optional(),
+  employeeId: z.string().optional(),
+  designation_id: z.string().optional(),
   device_id: z.string().optional(),
 });
 
@@ -98,7 +98,18 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   const selectedRoleId = form.watch('role_id');
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateUserFormData) => usersService.createUser(data),
+    mutationFn: (data: CreateUserFormData) => {
+      // Convert empty strings to undefined for optional fields
+      const cleanData = {
+        ...data,
+        role_id: data.role_id || undefined,
+        department_id: data.department_id || undefined,
+        designation_id: data.designation_id || undefined,
+        employeeId: data.employeeId || undefined,
+        device_id: data.device_id || undefined,
+      };
+      return usersService.createUser(cleanData as any);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user-stats'] });

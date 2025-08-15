@@ -36,8 +36,8 @@ export const config = {
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   redisPassword: process.env.REDIS_PASSWORD || '',
   
-  // CORS
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  // CORS - Support both web app (5173) and mobile app (5174)
+  corsOrigin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5174'],
   
   // Rate Limiting
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
