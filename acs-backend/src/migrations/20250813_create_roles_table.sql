@@ -18,12 +18,12 @@ CREATE TABLE IF NOT EXISTS roles (
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_roles_name ON roles(name);
-CREATE INDEX IF NOT EXISTS idx_roles_is_active ON roles(is_active);
-CREATE INDEX IF NOT EXISTS idx_roles_is_system_role ON roles(is_system_role);
+CREATE INDEX IF NOT EXISTS idx_roles_is_active ON roles("isActive");
+CREATE INDEX IF NOT EXISTS idx_roles_is_system_role ON roles("isSystemRole");
 CREATE INDEX IF NOT EXISTS idx_roles_permissions ON roles USING GIN(permissions);
 
 -- Insert default system roles
-INSERT INTO roles (name, description, permissions, is_system_role, is_active) VALUES
+INSERT INTO roles (name, description, permissions, "isSystemRole", "isActive") VALUES
 (
     'ADMIN',
     'System Administrator with full access to all features',
@@ -87,7 +87,8 @@ INSERT INTO roles (name, description, permissions, is_system_role, is_active) VA
     }',
     true,
     true
-);
+)
+ON CONFLICT (name) DO NOTHING;
 
 -- Add trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_roles_updated_at()
@@ -98,6 +99,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_roles_updated_at ON roles;
 CREATE TRIGGER update_roles_updated_at
     BEFORE UPDATE ON roles
     FOR EACH ROW

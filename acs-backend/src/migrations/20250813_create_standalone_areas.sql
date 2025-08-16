@@ -26,6 +26,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_areas_updated_at ON areas;
 CREATE TRIGGER update_areas_updated_at
     BEFORE UPDATE ON areas
     FOR EACH ROW

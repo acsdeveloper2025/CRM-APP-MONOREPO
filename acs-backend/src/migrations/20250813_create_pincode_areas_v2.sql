@@ -34,14 +34,14 @@ CREATE TABLE IF NOT EXISTS pincode_areas (
 );
 
 -- Create indexes for optimal performance
-CREATE INDEX IF NOT EXISTS idx_pincode_areas_pincode_id 
-    ON pincode_areas(pincode_id);
+CREATE INDEX IF NOT EXISTS idx_pincode_areas_pincode_id
+    ON pincode_areas("pincodeId");
 
-CREATE INDEX IF NOT EXISTS idx_pincode_areas_area_id 
-    ON pincode_areas(area_id);
+CREATE INDEX IF NOT EXISTS idx_pincode_areas_area_id
+    ON pincode_areas("areaId");
 
-CREATE INDEX IF NOT EXISTS idx_pincode_areas_pincode_order 
-    ON pincode_areas(pincode_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_pincode_areas_pincode_order
+    ON pincode_areas("pincodeId", "displayOrder");
 
 -- Create trigger function for updated_at
 CREATE OR REPLACE FUNCTION update_pincode_areas_updated_at()
@@ -52,25 +52,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger
+-- Create trigger (drop existing first to avoid conflicts)
+DROP TRIGGER IF EXISTS update_pincode_areas_updated_at ON pincode_areas;
 CREATE TRIGGER update_pincode_areas_updated_at
     BEFORE UPDATE ON pincode_areas
     FOR EACH ROW
     EXECUTE FUNCTION update_pincode_areas_updated_at();
 
 -- Migrate existing single area data from pincodes table to pincode_areas table
-INSERT INTO pincode_areas (pincode_id, area_id, display_order)
-SELECT 
+INSERT INTO pincode_areas ("pincodeId", "areaId", "displayOrder")
+SELECT
     p.id as pincode_id,
     a.id as area_id,
     1 as display_order
 FROM pincodes p
 JOIN areas a ON p.area = a.name
 WHERE p.area IS NOT NULL AND TRIM(p.area) != ''
-ON CONFLICT (pincode_id, area_id) DO NOTHING;
+ON CONFLICT ("pincodeId", "areaId") DO NOTHING;
 
 -- Add comment to document the table purpose
 COMMENT ON TABLE pincode_areas IS 'Junction table for many-to-many relationship between pincodes and areas';
-COMMENT ON COLUMN pincode_areas.pincode_id IS 'Foreign key reference to pincodes table';
-COMMENT ON COLUMN pincode_areas.area_id IS 'Foreign key reference to areas table';
-COMMENT ON COLUMN pincode_areas.display_order IS 'Order for displaying areas (1-50)';
+COMMENT ON COLUMN pincode_areas."pincodeId" IS 'Foreign key reference to pincodes table';
+COMMENT ON COLUMN pincode_areas."areaId" IS 'Foreign key reference to areas table';
+COMMENT ON COLUMN pincode_areas."displayOrder" IS 'Order for displaying areas (1-50)';

@@ -5,24 +5,24 @@
 -- Add device_id column to users table
 DO $$ 
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'users' AND column_name = 'device_id') THEN
-        ALTER TABLE users ADD COLUMN device_id UUID;
-        
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'users' AND column_name = 'deviceId') THEN
+        ALTER TABLE users ADD COLUMN "deviceId" UUID;
+
         -- Add comment to explain the field purpose
-        COMMENT ON COLUMN users.device_id IS 'Unique device identifier for field agents mobile device authentication';
-        
-        -- Create index for device_id for performance
-        CREATE INDEX IF NOT EXISTS idx_users_device_id ON users(device_id);
-        
+        COMMENT ON COLUMN users."deviceId" IS 'Unique device identifier for field agents mobile device authentication';
+
+        -- Create index for deviceId for performance
+        CREATE INDEX IF NOT EXISTS idx_users_device_id ON users("deviceId");
+
         -- Add unique constraint to ensure one device per user (field agents only)
-        -- Note: This allows NULL values, so non-field agents can have NULL device_id
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_users_device_id_unique 
-            ON users(device_id) WHERE device_id IS NOT NULL;
+        -- Note: This allows NULL values, so non-field agents can have NULL deviceId
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_users_device_id_unique
+            ON users("deviceId") WHERE "deviceId" IS NOT NULL;
             
-        RAISE NOTICE 'Added device_id column to users table';
+        RAISE NOTICE 'Added deviceId column to users table';
     ELSE
-        RAISE NOTICE 'device_id column already exists in users table';
+        RAISE NOTICE 'deviceId column already exists in users table';
     END IF;
 END $$;
 
@@ -30,23 +30,23 @@ END $$;
 -- First, let's check if we have a role system in place
 DO $$
 BEGIN
-    -- Check if we have role_id column (new system) or role column (legacy)
-    IF EXISTS (SELECT 1 FROM information_schema.columns 
-               WHERE table_name = 'users' AND column_name = 'role_id') THEN
-        -- New role system with role_id foreign key
+    -- Check if we have roleId column (new system) or role column (legacy)
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_name = 'users' AND column_name = 'roleId') THEN
+        -- New role system with roleId foreign key
         -- We'll add the constraint after we identify the FIELD_AGENT role ID
-        RAISE NOTICE 'Role system detected with role_id foreign key';
+        RAISE NOTICE 'Role system detected with roleId foreign key';
     ELSIF EXISTS (SELECT 1 FROM information_schema.columns 
                   WHERE table_name = 'users' AND column_name = 'role') THEN
         -- Legacy role system with role string
-        -- Add constraint to ensure device_id is only set for FIELD role
+        -- Add constraint to ensure deviceId is only set for FIELD role
         ALTER TABLE users DROP CONSTRAINT IF EXISTS chk_users_device_id_field_only;
-        ALTER TABLE users ADD CONSTRAINT chk_users_device_id_field_only 
+        ALTER TABLE users ADD CONSTRAINT chk_users_device_id_field_only
             CHECK (
-                (device_id IS NULL) OR 
-                (device_id IS NOT NULL AND role IN ('FIELD', 'FIELD_AGENT'))
+                ("deviceId" IS NULL) OR
+                ("deviceId" IS NOT NULL AND role IN ('FIELD', 'FIELD_AGENT'))
             );
-        RAISE NOTICE 'Added constraint to ensure device_id is only for field agents';
+        RAISE NOTICE 'Added constraint to ensure deviceId is only for field agents';
     END IF;
 END $$;
 
@@ -54,14 +54,14 @@ END $$;
 CREATE OR REPLACE FUNCTION validate_device_id()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- If device_id is being set, validate it's a proper UUID format
-    IF NEW.device_id IS NOT NULL THEN
+    -- If deviceId is being set, validate it's a proper UUID format
+    IF NEW."deviceId" IS NOT NULL THEN
         -- Check if it's a valid UUID format
         BEGIN
             -- Try to cast to UUID to validate format
-            PERFORM NEW.device_id::UUID;
+            PERFORM NEW."deviceId"::UUID;
         EXCEPTION WHEN invalid_text_representation THEN
-            RAISE EXCEPTION 'device_id must be a valid UUID format';
+            RAISE EXCEPTION 'deviceId must be a valid UUID format';
         END;
     END IF;
     
@@ -80,8 +80,8 @@ CREATE TRIGGER validate_device_id_trigger
 CREATE OR REPLACE FUNCTION log_device_id_changes()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Log device_id changes for security auditing
-    IF (TG_OP = 'UPDATE' AND OLD.device_id IS DISTINCT FROM NEW.device_id) THEN
+    -- Log deviceId changes for security auditing
+    IF (TG_OP = 'UPDATE' AND OLD."deviceId" IS DISTINCT FROM NEW."deviceId") THEN
         INSERT INTO audit_logs (
             user_id,
             action,

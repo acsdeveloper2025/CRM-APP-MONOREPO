@@ -5,23 +5,24 @@
 -- Add designation_id column to users table
 DO $$ 
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'users' AND column_name = 'designation_id') THEN
-        ALTER TABLE users ADD COLUMN designation_id UUID;
-        
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'users' AND column_name = 'designationId') THEN
+        ALTER TABLE users ADD COLUMN "designationId" UUID;
+
         -- Add comment to explain the field purpose
-        COMMENT ON COLUMN users.designation_id IS 'Foreign key reference to designations table';
+        COMMENT ON COLUMN users."designationId" IS 'Foreign key reference to designations table';
+
+        -- Create index for designationId for performance
+        CREATE INDEX IF NOT EXISTS idx_users_designation_id ON users("designationId");
+
+        -- Add foreign key constraint to designations table (drop existing first)
+        ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_designation_id;
+        ALTER TABLE users ADD CONSTRAINT fk_users_designation_id
+            FOREIGN KEY ("designationId") REFERENCES designations(id) ON DELETE SET NULL;
         
-        -- Create index for designation_id for performance
-        CREATE INDEX IF NOT EXISTS idx_users_designation_id ON users(designation_id);
-        
-        -- Add foreign key constraint to designations table
-        ALTER TABLE users ADD CONSTRAINT fk_users_designation_id 
-            FOREIGN KEY (designation_id) REFERENCES designations(id) ON DELETE SET NULL;
-        
-        RAISE NOTICE 'Added designation_id column to users table';
+        RAISE NOTICE 'Added designationId column to users table';
     ELSE
-        RAISE NOTICE 'designation_id column already exists in users table';
+        RAISE NOTICE 'designationId column already exists in users table';
     END IF;
 END $$;
 
@@ -34,12 +35,12 @@ SELECT
     u.username,
     u.email,
     u.phone,
-    u.is_active,
-    u.last_login,
-    u.device_id,
-    u.designation_id,
-    u.created_at,
-    u.updated_at,
+    u."isActive",
+    u."lastLogin",
+    u."deviceId",
+    u."designationId",
+    u."createdAt",
+    u."updatedAt",
     r.id as role_id,
     r.name as role_name,
     r.description as role_description,
@@ -52,10 +53,10 @@ SELECT
     des.name as designation_name,
     des.description as designation_description
 FROM users u
-LEFT JOIN roles r ON u.role_id = r.id
-LEFT JOIN departments d ON u.department_id = d.id
-LEFT JOIN users dh ON d.department_head_id = dh.id
-LEFT JOIN designations des ON u.designation_id = des.id;
+LEFT JOIN roles r ON u."roleId" = r.id
+LEFT JOIN departments d ON u."departmentId" = d.id
+LEFT JOIN users dh ON d."departmentHeadId" = dh.id
+LEFT JOIN designations des ON u."designationId" = des.id;
 
 -- Grant necessary permissions
 GRANT SELECT ON user_details TO PUBLIC;
