@@ -4,7 +4,7 @@ import { migrateCasesVerificationOutcomes, isDeprecatedOutcome } from '../utils/
 import { apiClient } from './apiClient';
 import { getEnvironmentConfig } from '../config/environment';
 
-const LOCAL_STORAGE_KEY = 'caseflow_cases';
+const LOCAL_STORAGE_KEY = 'caseflowCases';
 
 // API interfaces
 export interface CaseListParams {

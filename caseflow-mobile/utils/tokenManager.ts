@@ -22,10 +22,10 @@ export interface DecodedToken {
 
 class TokenManager {
   private config = getEnvironmentConfig();
-  private readonly ACCESS_TOKEN_KEY = 'access_token';
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
-  private readonly TOKEN_EXPIRES_AT_KEY = 'token_expires_at';
-  private readonly TOKEN_TYPE_KEY = 'token_type';
+  private readonly ACCESS_TOKEN_KEY = 'accessToken';
+  private readonly REFRESH_TOKEN_KEY = 'refreshToken';
+  private readonly TOKEN_EXPIRES_AT_KEY = 'tokenExpiresAt';
+  private readonly TOKEN_TYPE_KEY = 'tokenType';
 
   /**
    * Store token data

@@ -3,7 +3,7 @@
  * This service handles user-defined priorities for In Progress cases only
  */
 
-const PRIORITY_STORAGE_KEY = 'case_priorities';
+const PRIORITY_STORAGE_KEY = 'casePriorities';
 
 export interface CasePriority {
   caseId: string;

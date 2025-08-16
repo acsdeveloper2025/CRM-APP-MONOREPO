@@ -67,12 +67,12 @@ class AuthService {
     } catch (error) {
       console.error('Error getting device UUID:', error);
       // Fallback to legacy device ID if new service fails
-      let deviceId = await AsyncStorage.getItem('device_id');
+      let deviceId = await AsyncStorage.getItem('deviceId');
 
       if (!deviceId) {
         // Generate a fallback device ID
         deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        await AsyncStorage.setItem('device_id', deviceId);
+        await AsyncStorage.setItem('deviceId', deviceId);
       }
 
       return deviceId;
@@ -217,7 +217,7 @@ class AuthService {
    */
   async logout(): Promise<LogoutResponse> {
     try {
-      const refreshToken = await AsyncStorage.getItem('refresh_token');
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
       
       if (refreshToken) {
         // Call logout endpoint to invalidate tokens on server
