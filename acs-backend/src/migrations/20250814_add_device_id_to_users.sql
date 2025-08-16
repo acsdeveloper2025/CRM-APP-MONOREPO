@@ -95,11 +95,11 @@ BEGIN
             'DEVICE_ID_CHANGE',
             'USER',
             COALESCE(NEW.id, OLD.id),
-            jsonb_build_object('device_id', OLD.device_id),
-            jsonb_build_object('device_id', NEW.device_id),
+            jsonb_build_object('deviceId', OLD."deviceId"),
+            jsonb_build_object('deviceId', NEW."deviceId"),
             CURRENT_TIMESTAMP
         );
-    ELSIF (TG_OP = 'INSERT' AND NEW.device_id IS NOT NULL) THEN
+    ELSIF (TG_OP = 'INSERT' AND NEW."deviceId" IS NOT NULL) THEN
         INSERT INTO audit_logs (
             user_id,
             action,
@@ -112,7 +112,7 @@ BEGIN
             'DEVICE_ID_SET',
             'USER',
             NEW.id,
-            jsonb_build_object('device_id', NEW.device_id),
+            jsonb_build_object('deviceId', NEW."deviceId"),
             CURRENT_TIMESTAMP
         );
     END IF;
@@ -137,11 +137,11 @@ SELECT
     u.username,
     u.email,
     u.phone,
-    u.is_active,
-    u.last_login,
-    u.device_id,
-    u.created_at,
-    u.updated_at,
+    u."isActive",
+    u."lastLogin",
+    u."deviceId",
+    u."createdAt",
+    u."updatedAt",
     r.id as role_id,
     r.name as role_name,
     r.description as role_description,
@@ -151,9 +151,9 @@ SELECT
     d.description as department_description,
     dh.name as department_head_name
 FROM users u
-LEFT JOIN roles r ON u.role_id = r.id
-LEFT JOIN departments d ON u.department_id = d.id
-LEFT JOIN users dh ON d.department_head_id = dh.id;
+LEFT JOIN roles r ON u."roleId" = r.id
+LEFT JOIN departments d ON u."departmentId" = d.id
+LEFT JOIN users dh ON d."departmentHeadId" = dh.id;
 
 -- Grant necessary permissions
 GRANT SELECT ON user_details TO PUBLIC;
@@ -161,5 +161,5 @@ GRANT SELECT ON user_details TO PUBLIC;
 -- Final notice
 DO $$
 BEGIN
-    RAISE NOTICE 'Migration completed: Added device_id field to users table with proper constraints and audit logging';
+    RAISE NOTICE 'Migration completed: Added deviceId field to users table with proper constraints and audit logging';
 END $$;

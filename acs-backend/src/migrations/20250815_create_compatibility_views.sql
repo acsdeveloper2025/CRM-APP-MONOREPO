@@ -29,10 +29,10 @@ FROM users;
 
 -- Cases Legacy View
 CREATE VIEW cases_legacy AS
-SELECT 
+SELECT
     id,
-    title,
-    description,
+    "caseNumber" as title,  -- Use caseNumber as title for legacy compatibility
+    "applicantName" as description,
     status,
     priority,
     "caseNumber" as case_number,
