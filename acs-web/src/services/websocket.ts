@@ -81,7 +81,7 @@ class WebSocketService {
         resolve();
       });
 
-      this.socket.on('connect_error', (error) => {
+      this.socket.on('connect_error' as any, (error: any) => {
         this.state.isConnecting = false;
         this.state.error = error.message;
         this.eventHandlers.onError?.(error.message);

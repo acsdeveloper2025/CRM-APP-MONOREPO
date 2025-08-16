@@ -202,7 +202,7 @@ function logErrorToService(appError: AppError, originalError: any) {
 
 function getUserId(): string | null {
   try {
-    const user = localStorage.getItem('auth_user');
+    const user = localStorage.getItem('authUser');
     return user ? JSON.parse(user).id : null;
   } catch {
     return null;

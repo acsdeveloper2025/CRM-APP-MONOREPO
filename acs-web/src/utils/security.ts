@@ -169,7 +169,7 @@ export class SecurityUtils {
 
   // Data masking for logging
   static maskSensitiveData(data: any): any {
-    const sensitiveFields = ['password', 'token', 'secret', 'key', 'ssn', 'credit_card'];
+    const sensitiveFields = ['password', 'token', 'secret', 'key', 'ssn', 'creditCard'];
     
     if (typeof data !== 'object' || data === null) {
       return data;

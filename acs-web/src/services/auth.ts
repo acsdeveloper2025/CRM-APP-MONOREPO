@@ -82,7 +82,7 @@ export class AuthService {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
-          localStorage.setItem('auth_user', JSON.stringify(result.data));
+          localStorage.setItem('authUser', JSON.stringify(result.data));
           return result.data;
         }
       }

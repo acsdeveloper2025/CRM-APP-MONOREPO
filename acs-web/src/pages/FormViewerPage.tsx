@@ -228,7 +228,7 @@ export function FormViewerPage() {
       },
       {
         id: 'signature-1',
-        name: 'applicant_signature.png',
+        name: 'applicantSignature.png',
         type: 'signature',
         url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
         size: 15360,

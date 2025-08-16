@@ -84,7 +84,7 @@ class BackgroundTaskManager {
   private async registerDefaultTasks(): Promise<void> {
     // Data cleanup task
     this.registerTask({
-      id: 'data_cleanup',
+      id: 'dataCleanup',
       name: 'Data Cleanup',
       interval: 24 * 60 * 60 * 1000, // 24 hours
       lastRun: 0,
@@ -98,7 +98,7 @@ class BackgroundTaskManager {
 
     // Health check task
     this.registerTask({
-      id: 'health_check',
+      id: 'healthCheck',
       name: 'App Health Check',
       interval: 60 * 60 * 1000, // 1 hour
       lastRun: 0,
@@ -111,7 +111,7 @@ class BackgroundTaskManager {
 
     // Cache optimization task
     this.registerTask({
-      id: 'cache_optimization',
+      id: 'cacheOptimization',
       name: 'Cache Optimization',
       interval: 6 * 60 * 60 * 1000, // 6 hours
       lastRun: 0,
@@ -228,7 +228,7 @@ class BackgroundTaskManager {
         this.startAllTasks();
         
         // Run immediate health check when app becomes active
-        this.runTaskImmediately('health_check');
+        this.runTaskImmediately('healthCheck');
       } else {
         console.log('📱 App became inactive - stopping background tasks');
         this.stopAllTasks();
@@ -248,18 +248,18 @@ class BackgroundTaskManager {
     LocalNotifications.addListener('localNotificationReceived', (notification) => {
       const action = notification.extra?.action;
       
-      if (action === 'cleanup_check') {
+      if (action === 'cleanupCheck') {
         console.log('🔔 Cleanup notification received - running cleanup');
-        this.runTaskImmediately('data_cleanup');
+        this.runTaskImmediately('dataCleanup');
       }
     });
 
     LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
       const action = notificationAction.notification.extra?.action;
       
-      if (action === 'cleanup_check') {
+      if (action === 'cleanupCheck') {
         console.log('🔔 Cleanup action performed - running cleanup');
-        this.runTaskImmediately('data_cleanup');
+        this.runTaskImmediately('dataCleanup');
       }
     });
   }
@@ -312,7 +312,7 @@ class BackgroundTaskManager {
         if (memUsage > 0.8) {
           console.warn('⚠️ High memory usage detected:', memUsage);
           // Trigger cache cleanup
-          await this.runTaskImmediately('cache_optimization');
+          await this.runTaskImmediately('cacheOptimization');
         }
       }
 
@@ -374,7 +374,7 @@ class BackgroundTaskManager {
           attachments: undefined,
           actionTypeId: '',
           extra: {
-            action: 'suggest_cleanup'
+            action: 'suggestCleanup'
           }
         }]
       });
@@ -395,7 +395,7 @@ class BackgroundTaskManager {
     const totalTasks = this.tasks.size;
     const enabledTasks = Array.from(this.tasks.values()).filter(task => task.enabled).length;
     const runningTasks = this.intervalIds.size;
-    const healthCheckTask = this.tasks.get('health_check');
+    const healthCheckTask = this.tasks.get('healthCheck');
     
     return {
       totalTasks,
