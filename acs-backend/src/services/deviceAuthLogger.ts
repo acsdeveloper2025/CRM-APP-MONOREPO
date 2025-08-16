@@ -279,8 +279,8 @@ class DeviceAuthLogger {
         SELECT
           "eventType",
           COUNT(*) as count,
-          COUNT(CASE WHEN ("eventDetails"->>'success')::boolean = true THEN 1 END) as success_count,
-          COUNT(CASE WHEN ("eventDetails"->>'success')::boolean = false THEN 1 END) as failure_count
+          COUNT(CASE WHEN ("eventDetails"->>'success')::boolean = true THEN 1 END) as "successCount",
+          COUNT(CASE WHEN ("eventDetails"->>'success')::boolean = false THEN 1 END) as "failureCount"
         FROM device_auth_logs
         WHERE "createdAt" >= NOW() - INTERVAL '${days} days'
         GROUP BY "eventType"
