@@ -281,35 +281,40 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_clients_code ON clients(code);
 CREATE INDEX IF NOT EXISTS idx_products_code ON products(code);
 CREATE INDEX IF NOT EXISTS idx_verification_types_code ON verification_types(code);
-CREATE INDEX IF NOT EXISTS idx_cases_case_number ON cases(case_number);
-CREATE INDEX IF NOT EXISTS idx_cases_client_id ON cases(client_id);
+CREATE INDEX IF NOT EXISTS idx_cases_case_number ON cases("caseNumber");
+CREATE INDEX IF NOT EXISTS idx_cases_client_id ON cases("clientId");
 CREATE INDEX IF NOT EXISTS idx_cases_status ON cases(status);
-CREATE INDEX IF NOT EXISTS idx_cases_assigned_to ON cases(assigned_to);
-CREATE INDEX IF NOT EXISTS idx_cases_created_by ON cases(created_by);
-CREATE INDEX IF NOT EXISTS idx_attachments_case_id ON attachments(case_id);
-CREATE INDEX IF NOT EXISTS idx_locations_case_id ON locations(case_id);
-CREATE INDEX IF NOT EXISTS idx_devices_user_id ON devices(user_id);
-CREATE INDEX IF NOT EXISTS idx_devices_device_id ON devices(device_id);
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_notification_tokens_user_id ON notification_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_entity_type ON audit_logs(entity_type);
-CREATE INDEX IF NOT EXISTS idx_auto_saves_case_id ON auto_saves(case_id);
-CREATE INDEX IF NOT EXISTS idx_background_sync_queue_user_id ON background_sync_queue(user_id);
+CREATE INDEX IF NOT EXISTS idx_cases_assigned_to ON cases("assignedTo");
+CREATE INDEX IF NOT EXISTS idx_cases_created_by ON cases("createdBy");
+CREATE INDEX IF NOT EXISTS idx_attachments_case_id ON attachments("caseId");
+CREATE INDEX IF NOT EXISTS idx_locations_case_id ON locations("caseId");
+CREATE INDEX IF NOT EXISTS idx_devices_user_id ON devices("userId");
+CREATE INDEX IF NOT EXISTS idx_devices_device_id ON devices("deviceId");
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens("userId");
+CREATE INDEX IF NOT EXISTS idx_notification_tokens_user_id ON notification_tokens("userId");
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs("userId");
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity_type ON audit_logs("entityType");
+CREATE INDEX IF NOT EXISTS idx_auto_saves_case_id ON auto_saves("caseId");
+CREATE INDEX IF NOT EXISTS idx_background_sync_queue_user_id ON background_sync_queue("userId");
 CREATE INDEX IF NOT EXISTS idx_background_sync_queue_status ON background_sync_queue(status);
 
--- Create triggers for updated_at columns
+-- Create triggers for updated_at columns (drop existing first to avoid conflicts)
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_clients_updated_at ON clients;
 CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_products_updated_at ON products;
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_verification_types_updated_at ON verification_types;
 CREATE TRIGGER update_verification_types_updated_at BEFORE UPDATE ON verification_types
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_cases_updated_at ON cases;
 CREATE TRIGGER update_cases_updated_at BEFORE UPDATE ON cases
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

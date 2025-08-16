@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS departments (
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_departments_name ON departments(name);
-CREATE INDEX IF NOT EXISTS idx_departments_is_active ON departments(is_active);
-CREATE INDEX IF NOT EXISTS idx_departments_head ON departments(department_head_id);
-CREATE INDEX IF NOT EXISTS idx_departments_parent ON departments(parent_department_id);
+CREATE INDEX IF NOT EXISTS idx_departments_is_active ON departments("isActive");
+CREATE INDEX IF NOT EXISTS idx_departments_head ON departments("departmentHeadId");
+CREATE INDEX IF NOT EXISTS idx_departments_parent ON departments("parentDepartmentId");
 
 -- Add foreign key constraints (will be added after users table is updated)
 -- ALTER TABLE departments ADD CONSTRAINT fk_departments_head 
@@ -29,7 +29,7 @@ CREATE INDEX IF NOT EXISTS idx_departments_parent ON departments(parent_departme
 --     FOREIGN KEY (parent_department_id) REFERENCES departments(id) ON DELETE SET NULL;
 
 -- Insert default departments
-INSERT INTO departments (name, description, is_active) VALUES
+INSERT INTO departments (name, description, "isActive") VALUES
 ('IT', 'Information Technology department responsible for system administration and technical support', true),
 ('Operations', 'Operations department handling day-to-day business operations and field activities', true),
 ('Sales', 'Sales department responsible for client acquisition and relationship management', true),
@@ -37,7 +37,8 @@ INSERT INTO departments (name, description, is_active) VALUES
 ('Human Resources', 'Human resources department managing employee relations and organizational development', true),
 ('Finance', 'Finance department handling accounting, budgeting, and financial operations', true),
 ('Legal', 'Legal department providing legal counsel and compliance oversight', true),
-('Marketing', 'Marketing department responsible for brand promotion and market analysis', true);
+('Marketing', 'Marketing department responsible for brand promotion and market analysis', true)
+ON CONFLICT (name) DO NOTHING;
 
 -- Add trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_departments_updated_at()
@@ -48,11 +49,21 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_departments_updated_at ON departments;
 CREATE TRIGGER update_departments_updated_at
     BEFORE UPDATE ON departments
     FOR EACH ROW
     EXECUTE FUNCTION update_departments_updated_at();
 
--- Add check constraint to prevent self-referencing parent departments
-ALTER TABLE departments ADD CONSTRAINT chk_departments_no_self_parent 
-    CHECK (id != parent_department_id);
+-- Add check constraint to prevent self-referencing parent departments (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'chk_departments_no_self_parent'
+        AND conrelid = 'departments'::regclass
+    ) THEN
+        ALTER TABLE departments ADD CONSTRAINT chk_departments_no_self_parent
+            CHECK (id != "parentDepartmentId");
+    END IF;
+END $$;
