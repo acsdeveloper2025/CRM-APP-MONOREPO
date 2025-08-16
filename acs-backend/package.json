@@ -50,6 +50,9 @@
     "url": "https://github.com/acsdeveloper2025/acs-backend/issues"
   },
   "homepage": "https://github.com/acsdeveloper2025/acs-backend#readme",
+  "_moduleAliases": {
+    "@": "dist"
+  },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
