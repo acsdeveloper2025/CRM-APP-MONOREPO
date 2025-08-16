@@ -3,9 +3,9 @@ import { setEnabled as setLogEnabled } from './utils/logger';
 
 // Polyfill Alert for web compatibility
 import AlertPolyfill from './polyfills/Alert';
+import * as ReactNative from 'react-native';
 if (typeof window !== 'undefined') {
   // Patch React Native's Alert for web
-  const ReactNative = require('react-native');
   if (ReactNative && ReactNative.Alert) {
     ReactNative.Alert.alert = AlertPolyfill.alert;
   }
