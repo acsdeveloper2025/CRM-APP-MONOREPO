@@ -19,5 +19,9 @@ export default tseslint.config([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      camelcase: ['error', { properties: 'never', ignoreDestructuring: true, ignoreImports: true }],
+      'id-match': ['error', '^[a-z][a-zA-Z0-9]*$', { properties: false, onlyDeclarations: true, ignoreDestructuring: true }],
+    },
   },
 ])

@@ -35,5 +35,7 @@ module.exports = {
     'no-var': 'error',
     'object-shorthand': 'error',
     'prefer-template': 'error',
+    camelcase: ['error', { properties: 'never', ignoreDestructuring: true, ignoreImports: true }],
+    'id-match': ['error', '^[a-z][a-zA-Z0-9]*$', { properties: false, onlyDeclarations: true, ignoreDestructuring: true }],
   },
 };

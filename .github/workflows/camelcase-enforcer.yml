@@ -1,0 +1,52 @@
+name: CamelCase Enforcer
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  lint-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies (backend)
+        working-directory: acs-backend
+        run: npm ci
+
+      - name: Install dependencies (web)
+        working-directory: acs-web
+        run: npm ci
+
+      - name: Install dependencies (mobile)
+        working-directory: caseflow-mobile
+        run: npm ci
+
+      - name: Lint backend
+        working-directory: acs-backend
+        run: npm run lint
+
+      - name: Lint web
+        working-directory: acs-web
+        run: npm run lint
+
+      - name: Lint mobile
+        working-directory: caseflow-mobile
+        run: npm run lint
+
+      - name: Snake_case scan
+        run: |
+          set -e
+          ALLOWLIST_REGEX="(react-day-picker|caption_label|nav_button|head_row|head_cell|day_selected|day_today|day_outside|day_disabled|day_hidden|connect_error|formatted_address|address_components|long_name|short_name|street_number|postal_code|display_name|house_number|client_products|client_verification_types|pincode_areas|verification_types|refresh_tokens|audit_logs|auto_saves)"
+          echo "Scanning for snake_case across repo with allowlist: $ALLOWLIST_REGEX"
+          ! grep -RInE "\\b[a-z]+_[a-z0-9]+\\b" \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git \
+            --exclude=*.png --exclude=*.jpg --exclude=*.svg --exclude=*.map \
+            . | grep -Ev "$ALLOWLIST_REGEX" || (echo "Snake_case violations found" && exit 1)
+

@@ -75,6 +75,8 @@ export default [
       'prefer-const': 'warn',
       'no-var': 'warn',
       'no-undef': 'off', // Disable since we're using TypeScript
+      camelcase: ['error', { properties: 'never', ignoreDestructuring: true, ignoreImports: true }],
+      'id-match': ['error', '^[a-z][a-zA-Z0-9]*$', { properties: false, onlyDeclarations: true, ignoreDestructuring: true }],
     },
     settings: {
       react: {
