@@ -398,7 +398,7 @@ class DataCleanupService {
           attachments: undefined,
           actionTypeId: '',
           extra: {
-            action: 'cleanup_check'
+            action: 'cleanupCheck'
           }
         }]
       });
