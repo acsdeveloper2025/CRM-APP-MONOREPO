@@ -81,7 +81,8 @@ BEGIN
   END IF;
 END $$;
 
--- Record migration
-INSERT INTO migrations (filename, "executedAt")
-VALUES ('20250816_standardize_devices_table_columns.sql', CURRENT_TIMESTAMP);
+-- Record migration (supply id as filename for PK compliance)
+INSERT INTO migrations (id, filename, "executedAt")
+VALUES ('20250816_standardize_devices_table_columns.sql', '20250816_standardize_devices_table_columns.sql', CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;
 
