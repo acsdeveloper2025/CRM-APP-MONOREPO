@@ -57,7 +57,7 @@ export function DeviceManagementDialog({
   const form = useForm<DeviceManagementFormData>({
     resolver: zodResolver(deviceManagementSchema),
     defaultValues: {
-      deviceId: user.deviceId || user.device_id || '',
+      deviceId: user.deviceId || '',
     },
   });
 
@@ -106,9 +106,9 @@ export function DeviceManagementDialog({
     form.setValue('deviceId', uuid);
   };
 
-  const isFieldAgent = user.role === 'FIELD' || user.role === 'FIELD_AGENT' || 
-                      user.roleName === 'Field Agent' || user.role_name === 'FIELD_AGENT';
-  const currentDeviceId = user.deviceId || user.device_id;
+  const isFieldAgent = user.role === 'FIELD' || user.role === 'FIELD_AGENT' ||
+                      user.roleName === 'Field Agent';
+  const currentDeviceId = user.deviceId;
   const hasDeviceId = Boolean(currentDeviceId);
 
   return (

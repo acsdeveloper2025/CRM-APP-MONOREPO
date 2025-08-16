@@ -359,8 +359,8 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
 
       const data = await response.json();
 
-      if (data && data.display_name) {
-        return data.displayName;
+      if (data && (data.displayName || data.display_name)) {
+        return data.displayName || data.display_name;
       } else {
         throw new Error('Address not found');
       }

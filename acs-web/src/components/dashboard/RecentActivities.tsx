@@ -6,7 +6,7 @@ import { FileText, CheckSquare, Receipt, UserCheck } from 'lucide-react';
 
 interface RecentActivity {
   id: string;
-  type: 'case_assigned' | 'case_completed' | 'case_approved' | 'invoice_generated';
+  type: 'caseAssigned' | 'caseCompleted' | 'caseApproved' | 'invoiceGenerated';
   title: string;
   description: string;
   timestamp: string;
@@ -23,13 +23,13 @@ interface RecentActivitiesProps {
 
 const getActivityIcon = (type: string) => {
   switch (type) {
-    case 'case_assigned':
+    case 'caseAssigned':
       return FileText;
-    case 'case_completed':
+    case 'caseCompleted':
       return CheckSquare;
-    case 'case_approved':
+    case 'caseApproved':
       return UserCheck;
-    case 'invoice_generated':
+    case 'invoiceGenerated':
       return Receipt;
     default:
       return FileText;
@@ -38,11 +38,11 @@ const getActivityIcon = (type: string) => {
 
 const getActivityColor = (type: string) => {
   switch (type) {
-    case 'case_assigned':
+    case 'caseAssigned':
       return 'bg-blue-100 text-blue-800';
-    case 'case_completed':
+    case 'caseCompleted':
       return 'bg-green-100 text-green-800';
-    case 'case_approved':
+    case 'caseApproved':
       return 'bg-purple-100 text-purple-800';
     case 'invoice_generated':
       return 'bg-yellow-100 text-yellow-800';

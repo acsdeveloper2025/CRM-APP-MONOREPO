@@ -56,7 +56,7 @@ export class ReportsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/bank-bills/${id}/download`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
     });
     return response.blob();
@@ -87,7 +87,7 @@ export class ReportsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/mis-reports/${id}/download?format=${format}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
     });
     return response.blob();
@@ -132,7 +132,7 @@ export class ReportsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/mis-reports/bulk-download?format=${format}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ reportIds }),
@@ -154,7 +154,7 @@ export class ReportsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/bank-bills/export?format=${format}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(query),

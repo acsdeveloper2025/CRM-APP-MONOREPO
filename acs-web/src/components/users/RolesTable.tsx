@@ -147,7 +147,7 @@ export function RolesTable({ onEditRole }: RolesTableProps) {
                       {getRoleIcon(role.name, 'md')}
                       <div>
                         <div className="font-medium">{role.name}</div>
-                        {role.is_system_role && (
+                        {role.isSystemRole && (
                           <div className="text-xs text-muted-foreground">System Role</div>
                         )}
                       </div>
@@ -202,7 +202,7 @@ export function RolesTable({ onEditRole }: RolesTableProps) {
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        {!role.is_system_role && (
+                        {!role.isSystemRole && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem

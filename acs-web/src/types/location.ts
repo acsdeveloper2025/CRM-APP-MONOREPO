@@ -16,7 +16,7 @@ export interface State {
   createdAt: string;
   updatedAt: string;
   cities?: City[];
-  city_count?: number;
+  cityCount?: number;
 }
 
 export interface City {
@@ -27,7 +27,7 @@ export interface City {
   createdAt: string;
   updatedAt: string;
   pincodes?: Pincode[];
-  pincode_count?: number;
+  pincodeCount?: number;
 }
 
 export interface PincodeArea {

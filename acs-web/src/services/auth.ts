@@ -7,8 +7,8 @@ export class AuthService {
 
     if (response.success && response.data) {
       // Store token and user data
-      localStorage.setItem('auth_token', response.data.tokens.accessToken);
-      localStorage.setItem('auth_refresh_token', response.data.tokens.refreshToken);
+      localStorage.setItem('accessToken', response.data.tokens.accessToken);
+      localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
       localStorage.setItem('auth_user', JSON.stringify(response.data.user));
     }
 
@@ -27,8 +27,8 @@ export class AuthService {
       console.error('Logout API call failed:', error);
     } finally {
       // Clear local storage
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_refresh_token');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('auth_user');
     }
   }
@@ -48,7 +48,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    return localStorage.getItem('accessToken');
   }
 
   isAuthenticated(): boolean {

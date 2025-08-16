@@ -13,8 +13,8 @@ export interface DeviceInfo {
 class DeviceAuthManager {
   private static instance: DeviceAuthManager;
   private deviceInfo: DeviceInfo | null = null;
-  private readonly DEVICE_ID_KEY = 'caseflow_device_id';
-  private readonly DEVICE_INFO_KEY = 'caseflow_device_info';
+  private readonly DEVICE_ID_KEY = 'caseflowDeviceId';
+  private readonly DEVICE_INFO_KEY = 'caseflowDeviceInfo';
 
   private constructor() {}
 

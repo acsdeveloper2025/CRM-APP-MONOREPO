@@ -147,7 +147,7 @@ export function CitiesTable({ data, isLoading }: CitiesTableProps) {
                   <div className="flex items-center space-x-1">
                     <MapPin className="h-3 w-3 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      {city.pincode_count || 0} pincodes
+                      {city.pincodeCount || 0} pincodes
                     </span>
                   </div>
                 </TableCell>

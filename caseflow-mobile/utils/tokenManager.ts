@@ -41,8 +41,6 @@ class TokenManager {
         [this.TOKEN_TYPE_KEY, tokenData.tokenType || 'Bearer'],
       ]);
 
-      // Legacy support
-      await AsyncStorage.setItem('auth_token', tokenData.accessToken);
     } catch (error) {
       console.error('Error storing tokens:', error);
       throw new Error('Failed to store authentication tokens');
@@ -242,7 +240,6 @@ class TokenManager {
         this.REFRESH_TOKEN_KEY,
         this.TOKEN_EXPIRES_AT_KEY,
         this.TOKEN_TYPE_KEY,
-        'auth_token', // Legacy support
       ]);
     } catch (error) {
       console.error('Error clearing tokens:', error);

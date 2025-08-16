@@ -50,7 +50,7 @@ export const DashboardPage: React.FC = () => {
   const mockActivities = [
     {
       id: '1',
-      type: 'case_assigned' as const,
+      type: 'caseAssigned' as const,
       title: 'New case assigned',
       description: 'Case #1234 assigned to John Doe',
       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
@@ -58,7 +58,7 @@ export const DashboardPage: React.FC = () => {
     },
     {
       id: '2',
-      type: 'case_completed' as const,
+      type: 'caseCompleted' as const,
       title: 'Case completed',
       description: 'Residence verification completed for Case #1235',
       timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
@@ -66,7 +66,7 @@ export const DashboardPage: React.FC = () => {
     },
     {
       id: '3',
-      type: 'case_approved' as const,
+      type: 'caseApproved' as const,
       title: 'Case approved',
       description: 'Case #1236 approved after review',
       timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),

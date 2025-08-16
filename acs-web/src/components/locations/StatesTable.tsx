@@ -129,7 +129,7 @@ export function StatesTable({ data, isLoading }: StatesTableProps) {
                 <TableCell>{state.country}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">
-                    {state.city_count || 0} cities
+                    {state.cityCount || 0} cities
                   </Badge>
                 </TableCell>
                 <TableCell>

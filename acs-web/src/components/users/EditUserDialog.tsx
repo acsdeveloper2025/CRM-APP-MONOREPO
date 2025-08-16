@@ -98,11 +98,11 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       form.reset({
         name: user.name,
         email: user.email,
-        roleId: user.roleId || user.role_id || '',
+        roleId: user.roleId || '',
         employeeId: user.employeeId,
-        designationId: user.designationId || user.designation_id || '',
-        departmentId: user.departmentId || user.department_id || '',
-        isActive: user.isActive ?? user.is_active ?? false,
+        designationId: user.designationId || '',
+        departmentId: user.departmentId || '',
+        isActive: user.isActive ?? false,
       });
     }
   }, [user, form]);

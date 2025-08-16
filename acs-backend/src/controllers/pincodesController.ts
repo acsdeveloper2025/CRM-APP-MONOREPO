@@ -120,6 +120,7 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
       JOIN states s ON c."stateId" = s.id
       JOIN countries co ON c."countryId" = co.id
       LEFT JOIN pincode_areas pa ON p.id = pa."pincodeId"
+      LEFT JOIN areas a ON pa."areaId" = a.id
       WHERE 1=1
     `;
     const countParams: any[] = [];
@@ -143,7 +144,7 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
         p.code ILIKE $${countParamCount} OR
         c.name ILIKE $${countParamCount} OR
         s.name ILIKE $${countParamCount} OR
-        pa.area_name ILIKE $${countParamCount}
+        a.name ILIKE $${countParamCount}
       )`;
       countParams.push(`%${search}%`);
     }

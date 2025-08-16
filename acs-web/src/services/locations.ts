@@ -141,7 +141,7 @@ export class LocationsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cities/bulk-import`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
       body: formData,
     });
@@ -156,7 +156,7 @@ export class LocationsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/pincodes/bulk-import`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
       body: formData,
     });
@@ -172,7 +172,7 @@ export class LocationsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/countries/bulk-import`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
       body: formData,
     });
@@ -188,7 +188,7 @@ export class LocationsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/states/bulk-import`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
       body: formData,
     });
