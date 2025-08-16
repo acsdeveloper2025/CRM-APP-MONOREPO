@@ -25,7 +25,9 @@ const ProfileScreen = lazy(() => import('./screens/ProfileScreen'));
 const DigitalIdCardScreen = lazy(() => import('./screens/DigitalIdCardScreen'));
 
 const AppNavigator: React.FC = () => {
+  console.log('🔄 AppNavigator: Component rendering...');
   const { isAuthenticated, isLoading } = useAuth();
+  console.log('🔐 AppNavigator: Auth state -', { isAuthenticated, isLoading });
 
   // Initialize services on app start
   useEffect(() => {

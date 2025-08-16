@@ -1,5 +1,15 @@
 import './index.css';
 import { setEnabled as setLogEnabled } from './utils/logger';
+
+// Polyfill Alert for web compatibility
+import AlertPolyfill from './polyfills/Alert';
+if (typeof window !== 'undefined') {
+  // Patch React Native's Alert for web
+  const ReactNative = require('react-native');
+  if (ReactNative && ReactNative.Alert) {
+    ReactNative.Alert.alert = AlertPolyfill.alert;
+  }
+}
 // Disable verbose logs in production
 if (import.meta && import.meta.env && import.meta.env.PROD) {
   setLogEnabled(false);
@@ -21,6 +31,22 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
+console.log('🚀 CaseFlow Mobile: Starting application...');
+
 const container = document.getElementById('root');
-const root = createRoot(container!);
-root.render(<App />);
+if (!container) {
+  console.error('❌ Root container not found!');
+  throw new Error('Root container not found');
+}
+
+console.log('✅ Root container found, creating React root...');
+const root = createRoot(container);
+
+try {
+  console.log('✅ Rendering App component...');
+  root.render(<App />);
+  console.log('✅ App component rendered successfully!');
+} catch (error) {
+  console.error('❌ Error rendering App:', error);
+  throw error;
+}

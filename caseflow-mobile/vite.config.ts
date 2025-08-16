@@ -26,7 +26,6 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
           'react-native': 'react-native-web',
-          'react-native-svg': 'react-native-svg-web',
           '@react-native-async-storage/async-storage': path.resolve(__dirname, 'polyfills/AsyncStorage.ts'),
           'expo-clipboard': path.resolve(__dirname, 'polyfills/Clipboard.ts'),
         },
