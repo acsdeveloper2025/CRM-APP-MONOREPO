@@ -581,7 +581,7 @@ export class MobileAuthController {
         [adminUserId, reason, deviceId]
       );
       const devRes2 = await query(
-        `SELECT d.*, u.name as u_name, u.username as u_username, u.employee_id as u_employeeId
+        `SELECT d.*, u.name as u_name, u.username as u_username, u."employeeId" as u_employeeId
          FROM devices d JOIN users u ON u.id = d."userId" WHERE d.id = $1`,
         [deviceId]
       );
