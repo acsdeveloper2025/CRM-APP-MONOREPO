@@ -31,7 +31,7 @@ import {
   AlertTriangle,
   RefreshCw
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import toast from 'react-hot-toast';
 import { devicesApi } from '@/services/api';
 
 interface Device {
@@ -66,7 +66,6 @@ export const DeviceManagement: React.FC = () => {
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showActionDialog, setShowActionDialog] = useState(false);
-  const { toast } = useToast();
 
   const fetchDevices = async () => {
     try {
@@ -80,11 +79,7 @@ export const DeviceManagement: React.FC = () => {
       setPendingDevices(pendingDevicesRes.data.devices);
     } catch (error) {
       console.error('Error fetching devices:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch devices',
-        variant: 'destructive',
-      });
+      toast.error('Failed to fetch devices');
     } finally {
       setLoading(false);
     }
@@ -100,16 +95,10 @@ export const DeviceManagement: React.FC = () => {
     try {
       if (actionType === 'approve') {
         await devicesApi.approveDevice(selectedDevice.id);
-        toast({
-          title: 'Success',
-          description: `Device approved for ${selectedDevice.userName}`,
-        });
+        toast.success(`Device approved for ${selectedDevice.userName}`);
       } else {
         await devicesApi.rejectDevice(selectedDevice.id, rejectionReason);
-        toast({
-          title: 'Success',
-          description: `Device rejected for ${selectedDevice.userName}`,
-        });
+        toast.success(`Device rejected for ${selectedDevice.userName}`);
       }
       
       // Refresh data
@@ -122,11 +111,7 @@ export const DeviceManagement: React.FC = () => {
       setRejectionReason('');
     } catch (error) {
       console.error('Error processing device action:', error);
-      toast({
-        title: 'Error',
-        description: `Failed to ${actionType} device`,
-        variant: 'destructive',
-      });
+      toast.error(`Failed to ${actionType} device`);
     }
   };
 
