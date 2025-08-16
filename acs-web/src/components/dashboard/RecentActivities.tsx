@@ -44,7 +44,7 @@ const getActivityColor = (type: string) => {
       return 'bg-green-100 text-green-800';
     case 'caseApproved':
       return 'bg-purple-100 text-purple-800';
-    case 'invoice_generated':
+    case 'invoiceGenerated':
       return 'bg-yellow-100 text-yellow-800';
     default:
       return 'bg-gray-100 text-gray-800';
