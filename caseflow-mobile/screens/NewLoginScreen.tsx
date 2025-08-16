@@ -172,7 +172,7 @@ const NewLoginScreen: React.FC = () => {
                   fontWeight: '600',
                   marginBottom: 6
                 }}>
-                  Username <Text style={{ color: '#ef4444' }}>*</Text>
+                  Username<Text style={{ color: '#ef4444' }}> *</Text>
                 </Text>
                 <TextInput
                   style={{
@@ -202,7 +202,7 @@ const NewLoginScreen: React.FC = () => {
                   fontWeight: '600',
                   marginBottom: 6
                 }}>
-                  Password <Text style={{ color: '#ef4444' }}>*</Text>
+                  Password<Text style={{ color: '#ef4444' }}> *</Text>
                 </Text>
                 <TextInput
                   style={{
