@@ -104,7 +104,7 @@ export const getProductById = async (req: AuthenticatedRequest, res: Response) =
 
 // POST /api/products - Create new product
 export const createProduct = async (req: AuthenticatedRequest, res: Response) => {
-  console.log('🚀 createProduct called with body:', JSON.stringify(req.body, null, 2));
+
   try {
     const {
       name,
