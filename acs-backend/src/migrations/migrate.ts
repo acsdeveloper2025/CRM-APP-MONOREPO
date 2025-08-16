@@ -46,13 +46,17 @@ async function recordMigration(migration: Migration): Promise<void> {
 
 // Load migration files
 function loadMigrations(): Migration[] {
-  const migrations: Migration[] = [
-    {
-      id: '001_create_location_tables',
-      filename: '001_create_location_tables.sql',
-      sql: readFileSync(join(__dirname, '001_create_location_tables.sql'), 'utf8')
-    }
-  ];
+  // Dynamically load all .sql migrations from src/migrations at runtime
+  const fs = require('fs');
+  const path = require('path');
+  const dir = __dirname; // dist/migrations
+  const files: string[] = fs.readdirSync(dir).filter((f: string) => f.endsWith('.sql'));
+
+  const migrations: Migration[] = files.sort().map((filename: string) => {
+    const id = filename.replace('.sql', '');
+    const sql = readFileSync(join(dir, filename), 'utf8');
+    return { id, filename, sql };
+  });
 
   return migrations;
 }
