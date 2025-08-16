@@ -52,7 +52,7 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
       const prodMapRes = await query(
         `SELECT cp."clientId", p.id, p.name, p.code
          FROM client_products cp JOIN products p ON p.id = cp."productId"
-         WHERE cp."clientId" = ANY($1::text[])`,
+         WHERE cp."clientId" = ANY($1::uuid[])`,
         [clientIds]
       );
       prodMapRes.rows.forEach(r => {
@@ -64,7 +64,7 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
       const vtMapRes = await query(
         `SELECT cvt."clientId", vt.id, vt.name, vt.code
          FROM client_verification_types cvt JOIN verification_types vt ON vt.id = cvt."verificationTypeId"
-         WHERE cvt."clientId" = ANY($1::text[])`,
+         WHERE cvt."clientId" = ANY($1::uuid[])`,
         [clientIds]
       );
       vtMapRes.rows.forEach(r => {
@@ -74,12 +74,12 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
       });
 
       const casesRes = await query(
-        `SELECT id, title, status, "clientId" FROM cases WHERE "clientId" = ANY($1::text[])`,
+        `SELECT id, "caseNumber", status, "clientId" FROM cases WHERE "clientId" = ANY($1::uuid[])`,
         [clientIds]
       );
       casesRes.rows.forEach(r => {
         const arr = casesByClient.get(r.clientId) || [];
-        arr.push({ id: r.id, title: r.title, status: r.status });
+        arr.push({ id: r.id, caseNumber: r.caseNumber, status: r.status });
         casesByClient.set(r.clientId, arr);
       });
     }
@@ -143,7 +143,7 @@ export const getClientById = async (req: AuthenticatedRequest, res: Response) =>
       `SELECT vt.id, vt.name, vt.code FROM client_verification_types cvt JOIN verification_types vt ON vt.id = cvt."verificationTypeId" WHERE cvt."clientId" = $1`,
       [id]
     );
-    const casesRes2 = await query(`SELECT id, title, status FROM cases WHERE "clientId" = $1`, [id]);
+    const casesRes2 = await query(`SELECT id, "caseNumber", status FROM cases WHERE "clientId" = $1`, [id]);
 
     // Transform response data
     const responseData = {
@@ -191,7 +191,7 @@ export const createClient = async (req: AuthenticatedRequest, res: Response) => 
 
     // Verify products exist if provided
     if (productIds.length > 0) {
-      const prodCheck = await query(`SELECT id FROM products WHERE id = ANY($1::text[])`, [productIds]);
+      const prodCheck = await query(`SELECT id FROM products WHERE id = ANY($1::uuid[])`, [productIds]);
       if (prodCheck.rowCount !== productIds.length) {
         return res.status(400).json({
           success: false,
@@ -213,7 +213,7 @@ export const createClient = async (req: AuthenticatedRequest, res: Response) => 
       if (productIds.length > 0) {
         const uniqueProductIds = Array.from(new Set(productIds));
         // Verify products
-        const prodCheck = await cx.query(`SELECT id FROM products WHERE id = ANY($1::text[])`, [uniqueProductIds]);
+        const prodCheck = await cx.query(`SELECT id FROM products WHERE id = ANY($1::uuid[])`, [uniqueProductIds]);
         if (prodCheck.rowCount !== uniqueProductIds.length) {
           throw Object.assign(new Error('One or more products not found'), { code: 'PRODUCTS_NOT_FOUND' });
         }
@@ -228,7 +228,7 @@ export const createClient = async (req: AuthenticatedRequest, res: Response) => 
       if (verificationTypeIds.length > 0) {
         const uniqueVerificationTypeIds = Array.from(new Set(verificationTypeIds));
         // Verify verification types exist
-        const vtCheck = await cx.query(`SELECT id FROM verification_types WHERE id = ANY($1::text[])`, [uniqueVerificationTypeIds]);
+        const vtCheck = await cx.query(`SELECT id FROM verification_types WHERE id = ANY($1::uuid[])`, [uniqueVerificationTypeIds]);
         if (vtCheck.rowCount !== uniqueVerificationTypeIds.length) {
           throw Object.assign(new Error('One or more verification types not found'), { code: 'VERIFICATION_TYPES_NOT_FOUND' });
         }
@@ -329,12 +329,12 @@ export const updateClient = async (req: AuthenticatedRequest, res: Response) => 
       if (Array.isArray(updateData.productIds)) {
         const ids = updateData.productIds;
         if (ids.length > 0) {
-          const prodCheck = await cx.query(`SELECT id FROM products WHERE id = ANY($1::text[])`, [ids]);
+          const prodCheck = await cx.query(`SELECT id FROM products WHERE id = ANY($1::uuid[])`, [ids]);
           if (prodCheck.rowCount !== ids.length) {
             throw Object.assign(new Error('One or more products not found'), { code: 'PRODUCTS_NOT_FOUND' });
           }
         }
-        await cx.query(`DELETE FROM client_products WHERE "clientId" = $1 AND "productId" <> ALL($2::text[])`, [id, ids]);
+        await cx.query(`DELETE FROM client_products WHERE "clientId" = $1 AND "productId" <> ALL($2::uuid[])`, [id, ids]);
         for (const pid of Array.from(new Set(ids))) {
           await cx.query(
             `INSERT INTO client_products (id, "clientId", "productId", "isActive", "createdAt")
@@ -349,12 +349,12 @@ export const updateClient = async (req: AuthenticatedRequest, res: Response) => 
       if (Array.isArray(updateData.verificationTypeIds)) {
         const ids = updateData.verificationTypeIds;
         if (ids.length > 0) {
-          const vtCheck = await cx.query(`SELECT id FROM verification_types WHERE id = ANY($1::text[])`, [ids]);
+          const vtCheck = await cx.query(`SELECT id FROM verification_types WHERE id = ANY($1::uuid[])`, [ids]);
           if (vtCheck.rowCount !== ids.length) {
             throw Object.assign(new Error('One or more verification types not found'), { code: 'VERIFICATION_TYPES_NOT_FOUND' });
           }
         }
-        await cx.query(`DELETE FROM client_verification_types WHERE "clientId" = $1 AND "verificationTypeId" <> ALL($2::text[])`, [id, ids]);
+        await cx.query(`DELETE FROM client_verification_types WHERE "clientId" = $1 AND "verificationTypeId" <> ALL($2::uuid[])`, [id, ids]);
         for (const vt of Array.from(new Set(ids))) {
           await cx.query(
             `INSERT INTO client_verification_types (id, "clientId", "verificationTypeId", "isActive", "createdAt")
