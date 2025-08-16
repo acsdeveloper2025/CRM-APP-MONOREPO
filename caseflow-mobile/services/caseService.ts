@@ -516,7 +516,7 @@ class CaseService {
 
   private async markForSync(caseId: string, action: 'create' | 'update' | 'delete', data?: any): Promise<void> {
     try {
-      const syncQueue = await AsyncStorage.getItem('sync_queue') || '[]';
+      const syncQueue = await AsyncStorage.getItem('syncQueue') || '[]';
       const queue = JSON.parse(syncQueue);
 
       const syncItem = {
@@ -529,7 +529,7 @@ class CaseService {
       };
 
       queue.push(syncItem);
-      await AsyncStorage.setItem('sync_queue', JSON.stringify(queue));
+      await AsyncStorage.setItem('syncQueue', JSON.stringify(queue));
     } catch (error) {
       console.error('Error marking for sync:', error);
     }
@@ -633,7 +633,7 @@ class CaseService {
         return { success: false, syncedCount: 0, errors: ['No internet connection'] };
       }
 
-      const syncQueue = await AsyncStorage.getItem('sync_queue') || '[]';
+      const syncQueue = await AsyncStorage.getItem('syncQueue') || '[]';
       const queue = JSON.parse(syncQueue);
 
       if (queue.length === 0) {
@@ -684,7 +684,7 @@ class CaseService {
       }
 
       // Update sync queue with remaining items
-      await AsyncStorage.setItem('sync_queue', JSON.stringify(remainingQueue));
+      await AsyncStorage.setItem('syncQueue', JSON.stringify(remainingQueue));
 
       // Refresh local data from server
       if (syncedCount > 0) {
