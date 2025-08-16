@@ -204,8 +204,8 @@ const bulkOperationValidation = [
     .isString()
     .withMessage('Each user ID must be a string'),
   body('operation')
-    .isIn(['activate', 'deactivate', 'delete', 'change_role'])
-    .withMessage('Operation must be one of: activate, deactivate, delete, change_role'),
+    .isIn(['activate', 'deactivate', 'delete', 'changeRole'])
+    .withMessage('Operation must be one of: activate, deactivate, delete, changeRole'),
   body('data')
     .optional()
     .isObject()

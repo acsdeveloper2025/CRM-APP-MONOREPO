@@ -264,7 +264,7 @@ export interface UserProfile {
 
 export interface BulkUserOperation {
   userIds: string[];
-  operation: 'activate' | 'deactivate' | 'delete' | 'change_role';
+  operation: 'activate' | 'deactivate' | 'delete' | 'changeRole';
   data?: {
     role?: Role;
     reason?: string;

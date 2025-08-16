@@ -261,7 +261,7 @@ export interface FormValidation {
 
 export interface FormCondition {
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than';
+  operator: 'equals' | 'notEquals' | 'contains' | 'notContains' | 'greaterThan' | 'lessThan';
   value: any;
 }
 

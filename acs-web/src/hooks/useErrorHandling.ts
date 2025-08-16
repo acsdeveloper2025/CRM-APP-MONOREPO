@@ -210,10 +210,10 @@ function getUserId(): string | null {
 }
 
 function getSessionId(): string {
-  let sessionId = sessionStorage.getItem('session_id');
+  let sessionId = sessionStorage.getItem('sessionId');
   if (!sessionId) {
     sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    sessionStorage.setItem('session_id', sessionId);
+    sessionStorage.setItem('sessionId', sessionId);
   }
   return sessionId;
 }

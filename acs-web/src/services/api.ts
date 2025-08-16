@@ -40,7 +40,7 @@ class ApiService {
         if (error.response?.status === 401) {
           // Token expired or invalid
           localStorage.removeItem('accessToken');
-          localStorage.removeItem('auth_user');
+          localStorage.removeItem('authUser');
           window.location.href = '/login';
         }
         return Promise.reject(error);

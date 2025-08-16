@@ -9,7 +9,7 @@ export class AuthService {
       // Store token and user data
       localStorage.setItem('accessToken', response.data.tokens.accessToken);
       localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
-      localStorage.setItem('auth_user', JSON.stringify(response.data.user));
+      localStorage.setItem('authUser', JSON.stringify(response.data.user));
     }
 
     return {
@@ -29,12 +29,12 @@ export class AuthService {
       // Clear local storage
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      localStorage.removeItem('auth_user');
+      localStorage.removeItem('authUser');
     }
   }
 
   getCurrentUser(): User | null {
-    const userStr = localStorage.getItem('auth_user');
+    const userStr = localStorage.getItem('authUser');
     if (userStr) {
       try {
         return JSON.parse(userStr);

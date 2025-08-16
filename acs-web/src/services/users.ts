@@ -179,7 +179,7 @@ export class UsersService {
   async bulkChangeRole(userIds: string[], role: Role): Promise<ApiResponse<{ success: number; failed: number }>> {
     return this.bulkUserOperation({
       userIds,
-      operation: 'change_role',
+      operation: 'changeRole',
       data: { role },
     });
   }
