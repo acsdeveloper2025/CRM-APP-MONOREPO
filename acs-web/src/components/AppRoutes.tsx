@@ -25,6 +25,7 @@ import { SecurityUXPage } from '@/pages/SecurityUXPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProductsPage } from '@/pages/ProductsPage';
 import { VerificationTypesPage } from '@/pages/VerificationTypesPage';
+import { DeviceManagementPage } from '@/pages/DeviceManagementPage';
 
 // Default route component that handles authentication-based redirects
 const DefaultRoute: React.FC = () => {
@@ -186,6 +187,16 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute requiredRoles={['ADMIN']}>
             <Layout>
               <SecurityUXPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/devices"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <Layout>
+              <DeviceManagementPage />
             </Layout>
           </ProtectedRoute>
         }

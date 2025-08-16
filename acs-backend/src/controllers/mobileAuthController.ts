@@ -31,9 +31,13 @@ export class MobileAuthController {
         });
       }
 
-      // Find user
+      // Find user with role information
       const userRes = await query(
-        `SELECT id, name, username, email, "passwordHash", role, "employeeId", designation, department, "profilePhotoUrl" FROM users WHERE username = $1`,
+        `SELECT u.id, u.name, u.username, u.email, u."passwordHash", u.role, u."roleId", u."employeeId", u.designation, u.department, u."profilePhotoUrl",
+                r.name as "roleName", r.permissions
+         FROM users u
+         LEFT JOIN roles r ON u."roleId" = r.id
+         WHERE u.username = $1`,
         [username]
       );
       const user = userRes.rows[0];
@@ -88,11 +92,14 @@ export class MobileAuthController {
       let deviceNeedsApproval = false;
 
       if (!device) {
-        // Generate authentication code for new device
-        const authCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const authCodeExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        // Check if user is a field agent (needs device approval)
+        const isFieldAgent = user.roleName === 'FIELD_AGENT' || user.role === 'FIELD' || user.role === 'FIELD_AGENT';
 
-        // Register new device (requires approval for FIELD users)
+        // Generate authentication code for new device (only for field agents)
+        const authCode = isFieldAgent ? Math.random().toString(36).substring(2, 8).toUpperCase() : null;
+        const authCodeExpiresAt = isFieldAgent ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null; // 24 hours
+
+        // Register new device
         const insertDev = await query(
           `INSERT INTO devices ("deviceId", "userId", platform, model, "osVersion", "appVersion", "pushToken", "isActive", "lastActiveAt", "isApproved", "authCode", "authCodeExpiresAt", "registeredAt")
            VALUES ($1, $2, $3, $4, $5, $6, $7, true, CURRENT_TIMESTAMP, $8, $9, $10, CURRENT_TIMESTAMP)
@@ -100,19 +107,35 @@ export class MobileAuthController {
           [
             deviceId,
             user.id,
-            deviceInfo?.platform || 'ANDROID', // Default to ANDROID if not specified
+            deviceInfo?.platform || 'ANDROID',
             deviceInfo?.model || 'Unknown',
             deviceInfo?.osVersion || 'Unknown',
             deviceInfo?.appVersion || 'Unknown',
             deviceInfo?.pushToken || null,
-            user.role !== 'FIELD',
-            user.role === 'FIELD' ? authCode : null,
-            user.role === 'FIELD' ? authCodeExpiresAt : null,
+            !isFieldAgent, // Auto-approve non-field agents, require approval for field agents
+            authCode,
+            authCodeExpiresAt,
           ]
         );
         device = insertDev.rows[0];
         deviceRegistered = false;
-        deviceNeedsApproval = user.role === 'FIELD';
+        deviceNeedsApproval = isFieldAgent;
+
+        // Log device registration for audit
+        await createAuditLog({
+          action: 'DEVICE_REGISTERED',
+          entityType: 'DEVICE',
+          entityId: device.id,
+          details: {
+            deviceId,
+            platform: deviceInfo?.platform || 'ANDROID',
+            model: deviceInfo?.model || 'Unknown',
+            isFieldAgent,
+            needsApproval: deviceNeedsApproval
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+        });
       } else {
         // Update existing device
         await query(
@@ -127,10 +150,31 @@ export class MobileAuthController {
           ]
         );
 
-        // Check if device is approved for field users
-        if (user.role === 'FIELD' && !device.isApproved) {
+        // Check if device is approved for field agents
+        const isFieldAgent = user.roleName === 'FIELD_AGENT' || user.role === 'FIELD' || user.role === 'FIELD_AGENT';
+        if (isFieldAgent && !device.isApproved) {
           deviceNeedsApproval = true;
         }
+      }
+
+      // Check if field agent device needs approval
+      if (deviceNeedsApproval && !device.isApproved) {
+        return res.status(403).json({
+          success: false,
+          message: 'Device registration pending approval',
+          error: {
+            code: 'DEVICE_APPROVAL_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+          data: {
+            deviceAuthentication: {
+              isApproved: false,
+              needsApproval: true,
+              authCode: device.authCode,
+              authCodeExpiresAt: device.authCodeExpiresAt,
+            },
+          },
+        });
       }
 
       // Check device limit per user

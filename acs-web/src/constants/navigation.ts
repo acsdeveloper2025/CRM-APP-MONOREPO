@@ -13,7 +13,8 @@ import {
   Wifi,
   Shield,
   Plus,
-  CheckCircle
+  CheckCircle,
+  Smartphone
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -214,6 +215,13 @@ export const navigationItems: NavigationItem[] = [
         href: '/role-management',
         icon: Shield,
         permission: { resource: 'roles', action: 'read' },
+      },
+      {
+        id: 'devices',
+        label: 'Device Management',
+        href: '/devices',
+        icon: Smartphone,
+        permission: { resource: 'users', action: 'read' },
       },
     ],
   },

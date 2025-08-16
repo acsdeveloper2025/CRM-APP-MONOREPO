@@ -25,6 +25,7 @@ const DeviceRegistration: React.FC<DeviceRegistrationProps> = ({
   const [isCopying, setIsCopying] = useState<boolean>(false);
   const [showDeviceId, setShowDeviceId] = useState<boolean>(false);
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
+  const [deviceStatus, setDeviceStatus] = useState<'pending' | 'approved' | 'rejected' | 'unknown'>('unknown');
 
   const deviceService = DeviceService.getInstance();
 
@@ -32,22 +33,48 @@ const DeviceRegistration: React.FC<DeviceRegistrationProps> = ({
     initializeDeviceRegistration();
   }, []);
 
+  const checkDeviceStatus = async (deviceId: string) => {
+    try {
+      // This would typically call the backend to check device approval status
+      // For now, we'll simulate the status based on device registration
+      // In a real implementation, you'd call an API endpoint
+
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // For demo purposes, assume device is pending approval for field agents
+      // In production, this would be an actual API call to check status
+      setDeviceStatus('pending');
+
+      return 'pending';
+    } catch (error) {
+      console.error('Error checking device status:', error);
+      setDeviceStatus('unknown');
+      return 'unknown';
+    }
+  };
+
   const initializeDeviceRegistration = async () => {
     try {
       setIsLoading(true);
-      
+
       // Check if device is already registered
       const registered = await deviceService.isDeviceRegistered();
       setIsRegistered(registered);
-      
+
       // Get device UUID
       const uuid = await deviceService.getDeviceUUID();
       setDeviceUUID(uuid);
-      
+
       // Get registration info
       const info = await deviceService.getDeviceRegistrationInfo();
       setRegistrationInfo(info);
-      
+
+      // Check device approval status
+      if (uuid && uuid !== 'Error generating device UUID') {
+        await checkDeviceStatus(uuid);
+      }
+
       // Notify parent component if registration is complete
       if (registered && onRegistrationComplete) {
         onRegistrationComplete(uuid);
@@ -107,23 +134,7 @@ const DeviceRegistration: React.FC<DeviceRegistrationProps> = ({
     }
   };
 
-  const handleSetTestDeviceId = async () => {
-    try {
-      // Set the device ID to match the one in the database for mobileuser1
-      const testDeviceId = 'c665a14e-408b-4fb1-81c3-b941d5bced8d';
-      await deviceService.setDeviceUUID(testDeviceId);
 
-      // Refresh the component
-      await initializeDeviceRegistration();
-
-      setCopyFeedback('Test Device ID set!');
-      setTimeout(() => setCopyFeedback(''), 3000);
-    } catch (error) {
-      console.error('Error setting test device ID:', error);
-      setCopyFeedback('Error setting test Device ID');
-      setTimeout(() => setCopyFeedback(''), 3000);
-    }
-  };
 
   const handleRegenerateDeviceId = async () => {
     Alert.alert(
@@ -153,6 +164,58 @@ const DeviceRegistration: React.FC<DeviceRegistrationProps> = ({
         }
       ]
     );
+  };
+
+  const getStatusIndicator = () => {
+    switch (deviceStatus) {
+      case 'approved':
+        return (
+          <View style={{
+            backgroundColor: '#10b981',
+            borderRadius: 6,
+            padding: 8,
+            marginBottom: 12,
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}>
+            <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: 'bold' }}>
+              ✅ Device Approved
+            </Text>
+          </View>
+        );
+      case 'pending':
+        return (
+          <View style={{
+            backgroundColor: '#f59e0b',
+            borderRadius: 6,
+            padding: 8,
+            marginBottom: 12,
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}>
+            <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: 'bold' }}>
+              ⏳ Pending Admin Approval
+            </Text>
+          </View>
+        );
+      case 'rejected':
+        return (
+          <View style={{
+            backgroundColor: '#ef4444',
+            borderRadius: 6,
+            padding: 8,
+            marginBottom: 12,
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}>
+            <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: 'bold' }}>
+              ❌ Device Rejected
+            </Text>
+          </View>
+        );
+      default:
+        return null;
+    }
   };
 
   const formatDeviceUUID = (uuid: string) => {
@@ -204,6 +267,9 @@ const DeviceRegistration: React.FC<DeviceRegistrationProps> = ({
           </View>
         )}
       </View>
+
+      {/* Device Status Indicator */}
+      {getStatusIndicator()}
 
       {/* Registration Status */}
       {registrationInfo && (
@@ -364,27 +430,6 @@ const DeviceRegistration: React.FC<DeviceRegistrationProps> = ({
               fontWeight: 'bold'
             }}>
               {isCopying ? 'Copying...' : 'Copy UUID'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Test Device ID Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: '#10b981',
-              borderRadius: 6,
-              padding: 10,
-              alignItems: 'center',
-              minWidth: 70
-            }}
-            onPress={handleSetTestDeviceId}
-            disabled={isLoading}
-          >
-            <Text style={{
-              color: '#ffffff',
-              fontSize: 11,
-              fontWeight: '600'
-            }}>
-              Set Test ID
             </Text>
           </TouchableOpacity>
 

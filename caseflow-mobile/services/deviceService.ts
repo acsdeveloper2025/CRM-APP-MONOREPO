@@ -236,24 +236,6 @@ class DeviceService {
   }
 
   /**
-   * Set a specific device UUID (for testing purposes)
-   */
-  public async setDeviceUUID(deviceUUID: string): Promise<void> {
-    try {
-      if (!this.isValidUUID(deviceUUID)) {
-        throw new Error('Invalid UUID format');
-      }
-
-      await AsyncStorage.setItem(this.DEVICE_UUID_KEY, deviceUUID);
-      await this.createDeviceRegistration(deviceUUID);
-      console.log('Device UUID set for testing:', deviceUUID);
-    } catch (error) {
-      console.error('Error setting device UUID:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Reset device registration (for admin/testing purposes)
    */
   public async resetDeviceRegistration(): Promise<void> {
