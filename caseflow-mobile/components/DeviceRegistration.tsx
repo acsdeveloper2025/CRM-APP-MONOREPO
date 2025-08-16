@@ -107,6 +107,24 @@ const DeviceRegistration: React.FC<DeviceRegistrationProps> = ({
     }
   };
 
+  const handleSetTestDeviceId = async () => {
+    try {
+      // Set the device ID to match the one in the database for mobileuser1
+      const testDeviceId = 'c665a14e-408b-4fb1-81c3-b941d5bced8d';
+      await deviceService.setDeviceUUID(testDeviceId);
+
+      // Refresh the component
+      await initializeDeviceRegistration();
+
+      setCopyFeedback('Test Device ID set!');
+      setTimeout(() => setCopyFeedback(''), 3000);
+    } catch (error) {
+      console.error('Error setting test device ID:', error);
+      setCopyFeedback('Error setting test Device ID');
+      setTimeout(() => setCopyFeedback(''), 3000);
+    }
+  };
+
   const handleRegenerateDeviceId = async () => {
     Alert.alert(
       'Regenerate Device UUID',
@@ -346,6 +364,27 @@ const DeviceRegistration: React.FC<DeviceRegistrationProps> = ({
               fontWeight: 'bold'
             }}>
               {isCopying ? 'Copying...' : 'Copy UUID'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Test Device ID Button */}
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#10b981',
+              borderRadius: 6,
+              padding: 10,
+              alignItems: 'center',
+              minWidth: 70
+            }}
+            onPress={handleSetTestDeviceId}
+            disabled={isLoading}
+          >
+            <Text style={{
+              color: '#ffffff',
+              fontSize: 11,
+              fontWeight: '600'
+            }}>
+              Set Test ID
             </Text>
           </TouchableOpacity>
 
