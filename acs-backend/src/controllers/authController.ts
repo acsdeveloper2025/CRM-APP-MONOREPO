@@ -152,6 +152,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       expiresIn: '7d',
     } as any);
 
+    // Update user's lastLogin timestamp
+    await query(
+      `UPDATE users SET "lastLogin" = CURRENT_TIMESTAMP WHERE id = $1`,
+      [user.id]
+    );
+
     // Log successful login
     await query(
       `INSERT INTO audit_logs (id, "userId", action, "entityType", "newValues", "ipAddress", "userAgent", "createdAt")
