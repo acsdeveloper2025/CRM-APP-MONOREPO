@@ -166,7 +166,7 @@ export class ReportsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/mis-reports/export?format=${format}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(query),

@@ -78,7 +78,7 @@ export function DeviceManagementDialog({
   };
 
   const handleCopyDeviceId = async () => {
-    const deviceId = user.deviceId || user.device_id;
+    const deviceId = user.deviceId;
     if (!deviceId) return;
 
     try {

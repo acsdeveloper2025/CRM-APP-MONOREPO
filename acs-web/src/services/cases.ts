@@ -83,7 +83,7 @@ export class CasesService {
   async downloadAttachment(id: string): Promise<Blob> {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/attachments/${id}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
     });
     return response.blob();
