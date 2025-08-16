@@ -100,7 +100,7 @@ export class MobileAuthController {
           [
             deviceId,
             user.id,
-            deviceInfo?.platform || 'UNKNOWN',
+            deviceInfo?.platform || 'ANDROID', // Default to ANDROID if not specified
             deviceInfo?.model || 'Unknown',
             deviceInfo?.osVersion || 'Unknown',
             deviceInfo?.appVersion || 'Unknown',
