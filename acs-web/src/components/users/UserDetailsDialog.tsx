@@ -171,7 +171,7 @@ export function UserDetailsDialog({ user, open, onOpenChange }: UserDetailsDialo
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">Last Login</h4>
                   <p className="text-sm mt-1">
-                    {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
+                    {(user.lastLogin || user.lastLoginAt) ? new Date(user.lastLogin || user.lastLoginAt!).toLocaleString() : 'Never'}
                   </p>
                 </div>
               </div>

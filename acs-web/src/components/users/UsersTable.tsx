@@ -295,7 +295,7 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                 <TableCell>
                   {(user.lastLogin || user.lastLoginAt) ? (
                     <div className="text-sm">
-                      {new Date(user.lastLogin || user.lastLoginAt!).toLocaleDateString()}
+                      {new Date(user.lastLogin || user.lastLoginAt!).toLocaleString()}
                     </div>
                   ) : (
                     <span className="text-sm text-muted-foreground">Never</span>
