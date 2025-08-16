@@ -15,4 +15,24 @@ export default defineConfig({
     strictPort: true, // Fail if port 5173 is not available instead of trying other ports
     host: true, // Allow external connections
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "ui-vendor": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-label",
+            "@radix-ui/react-select",
+            "@radix-ui/react-tooltip",
+            "lucide-react",
+          ],
+          "data-vendor": ["@tanstack/react-query"],
+        },
+      },
+    },
+    sourcemap: false,
+    chunkSizeWarningLimit: 1200,
+  },
 })
