@@ -302,7 +302,7 @@ export class MobileLocationController {
       }
 
       const locRes = await query(
-        `SELECT l.id, l.latitude, l.longitude, l.accuracy, l.timestamp, l.source, c.id as case_id, c.title, c."customerName"
+        `SELECT l.id, l.latitude, l.longitude, l.accuracy, l.timestamp, l.source, c.id as "caseId", c.title, c."customerName"
          FROM locations l JOIN cases c ON c.id = l."caseId"
          WHERE l."caseId" = $1 ORDER BY l.timestamp DESC`,
         [caseId]
@@ -315,7 +315,7 @@ export class MobileLocationController {
         accuracy: location.accuracy,
         timestamp: new Date(location.timestamp).toISOString(),
         source: location.source,
-        case: { id: location.case_id, title: location.title, customerName: location.customerName },
+        case: { id: location.caseId, title: location.title, customerName: location.customerName },
       }));
 
       res.json({
@@ -385,7 +385,7 @@ export class MobileLocationController {
       }
 
       const vals: any[] = [];
-      let sql = `SELECT l.id, l.latitude, l.longitude, l.accuracy, l.timestamp, l.source, c.id as case_id, c.title, c."customerName" FROM locations l JOIN cases c ON c.id = l."caseId"`;
+      let sql = `SELECT l.id, l.latitude, l.longitude, l.accuracy, l.timestamp, l.source, c.id as "caseId", c.title, c."customerName" FROM locations l JOIN cases c ON c.id = l."caseId"`;
       const wh: string[] = [];
       if (where.caseId) { vals.push(where.caseId); wh.push(`l."caseId" = $${vals.length}`); }
       if (where.timestamp?.gte) { vals.push(where.timestamp.gte); wh.push(`l.timestamp >= $${vals.length}`); }

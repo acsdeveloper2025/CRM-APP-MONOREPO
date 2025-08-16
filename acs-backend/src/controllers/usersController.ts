@@ -36,7 +36,7 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     if (isActive !== undefined) {
-      conditions.push(`u.is_active = $${paramIndex++}`);
+      conditions.push(`u."isActive" = $${paramIndex++}`);
       params.push(isActive === 'true');
     }
 
@@ -53,7 +53,7 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Validate sortBy to prevent SQL injection
-    const validSortColumns = ['name', 'username', 'email', 'role', 'created_at', 'updated_at'];
+    const validSortColumns = ['name', 'username', 'email', 'role', 'createdAt', 'updatedAt'];
     const safeSortBy = validSortColumns.includes(sortBy as string) ? sortBy : 'name';
     const safeSortOrder = sortOrder === 'desc' ? 'DESC' : 'ASC';
 
@@ -61,7 +61,7 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM users u
-      LEFT JOIN departments d ON u.department_id = d.id
+      LEFT JOIN departments d ON u."departmentId" = d.id
       ${whereClause}
     `;
     const countResult = await query(countQuery, params);
@@ -70,26 +70,26 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
     // Get paginated results
     const offset = (Number(page) - 1) * Number(limit);
     const usersQuery = `
-      SELECT 
+      SELECT
         u.id,
         u.name,
         u.username,
         u.email,
         u.phone,
         u.role,
-        u.role_id,
-        u.department_id,
+        u."roleId",
+        u."departmentId",
         u."employeeId",
         u.designation,
-        u.is_active,
-        u.last_login,
-        u.created_at,
-        u.updated_at,
-        r.name as role_name,
-        d.name as department_name
+        u."isActive",
+        u."lastLogin",
+        u."createdAt",
+        u."updatedAt",
+        r.name as "roleName",
+        d.name as "departmentName"
       FROM users u
-      LEFT JOIN roles r ON u.role_id = r.id
-      LEFT JOIN departments d ON u.department_id = d.id
+      LEFT JOIN roles r ON u."roleId" = r.id
+      LEFT JOIN departments d ON u."departmentId" = d.id
       ${whereClause}
       ORDER BY u.${safeSortBy} ${safeSortOrder}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -130,29 +130,29 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     
     const userQuery = `
-      SELECT 
+      SELECT
         u.id,
         u.name,
         u.username,
         u.email,
         u.phone,
         u.role,
-        u.role_id,
-        u.department_id,
+        u."roleId",
+        u."departmentId",
         u."employeeId",
         u.designation,
-        u.is_active,
-        u.last_login,
-        u.created_at,
-        u.updated_at,
-        r.name as role_name,
-        r.description as role_description,
-        r.permissions as role_permissions,
-        d.name as department_name,
-        d.description as department_description
+        u."isActive",
+        u."lastLogin",
+        u."createdAt",
+        u."updatedAt",
+        r.name as "roleName",
+        r.description as "roleDescription",
+        r.permissions as "rolePermissions",
+        d.name as "departmentName",
+        d.description as "departmentDescription"
       FROM users u
-      LEFT JOIN roles r ON u.role_id = r.id
-      LEFT JOIN departments d ON u.department_id = d.id
+      LEFT JOIN roles r ON u."roleId" = r.id
+      LEFT JOIN departments d ON u."departmentId" = d.id
       WHERE u.id = $1
     `;
     
@@ -188,13 +188,13 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       username,
       email,
       password,
-      role_id,
-      department_id,
-      designation_id,
+      roleId,
+      departmentId,
+      designationId,
       employeeId,
       designation,
       phone,
-      device_id,
+      deviceId,
       isActive = true,
       // Legacy fields for backward compatibility
       role,
@@ -202,10 +202,10 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     } = req.body;
 
     // Convert empty strings to null for UUID fields
-    const cleanRoleId = role_id && role_id.trim() !== '' ? role_id : null;
-    const cleanDepartmentId = department_id && department_id.trim() !== '' ? department_id : null;
-    const cleanDesignationId = designation_id && designation_id.trim() !== '' ? designation_id : null;
-    const cleanDeviceId = device_id && device_id.trim() !== '' ? device_id : null;
+    const cleanRoleId = roleId && roleId.trim() !== '' ? roleId : null;
+    const cleanDepartmentId = departmentId && departmentId.trim() !== '' ? departmentId : null;
+    const cleanDesignationId = designationId && designationId.trim() !== '' ? designationId : null;
+    const cleanDeviceId = deviceId && deviceId.trim() !== '' ? deviceId : null;
 
     // Validate required fields
     if (!name || !username || !email || !password) {
@@ -224,11 +224,11 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Determine if user is a field agent by checking role_id or legacy role field
+    // Determine if user is a field agent by checking roleId or legacy role field
     let isFieldAgent = false;
     if (cleanRoleId) {
-      // Look up role name from role_id
-      const roleQuery = `SELECT name FROM roles WHERE id = $1 AND is_active = true`;
+      // Look up role name from roleId
+      const roleQuery = `SELECT name FROM roles WHERE id = $1 AND "isActive" = true`;
       const roleResult = await query(roleQuery, [cleanRoleId]);
       if (roleResult.rows.length > 0) {
         const roleName = roleResult.rows[0].name;
@@ -239,7 +239,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       isFieldAgent = role === 'FIELD' || role === 'FIELD_AGENT';
     }
 
-    // Validate device_id for field agents
+    // Validate deviceId for field agents
     if (isFieldAgent) {
       if (!cleanDeviceId) {
         return res.status(400).json({
@@ -259,10 +259,10 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
         });
       }
 
-      // Check if device_id is already in use
+      // Check if deviceId is already in use
       const existingDeviceQuery = `
         SELECT id, username FROM users
-        WHERE device_id = $1
+        WHERE "deviceId" = $1
       `;
       const existingDevice = await query(existingDeviceQuery, [cleanDeviceId]);
 
@@ -274,7 +274,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
         });
       }
     } else if (cleanDeviceId) {
-      // Non-field agents should not have device_id
+      // Non-field agents should not have deviceId
       return res.status(400).json({
         success: false,
         message: 'Device ID can only be set for field agents',
@@ -303,11 +303,11 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     // Create new user in database
     const createUserQuery = `
       INSERT INTO users (
-        name, username, email, password, "passwordHash", role, role_id, department_id, designation_id,
-        "employeeId", designation, phone, device_id, is_active
+        name, username, email, password, "passwordHash", role, "roleId", "departmentId", "designationId",
+        "employeeId", designation, phone, "deviceId", "isActive"
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-      RETURNING id, name, username, email, role, role_id, department_id, designation_id,
-                "employeeId", designation, phone, device_id, is_active, created_at, updated_at
+      RETURNING id, name, username, email, role, "roleId", "departmentId", "designationId",
+                "employeeId", designation, phone, "deviceId", "isActive", "createdAt", "updatedAt"
     `;
 
     const result = await query(createUserQuery, [
@@ -385,18 +385,18 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
-    // Validate device_id if being updated
-    if (updateData.device_id !== undefined) {
+    // Validate deviceId if being updated
+    if (updateData.deviceId !== undefined) {
       // Get current user data to check role
-      const currentUserQuery = `SELECT role, device_id FROM users WHERE id = $1`;
+      const currentUserQuery = `SELECT role, "deviceId" FROM users WHERE id = $1`;
       const currentUser = await query(currentUserQuery, [id]);
       const userRole = updateData.role || currentUser.rows[0]?.role;
 
       if (userRole === 'FIELD' || userRole === 'FIELD_AGENT') {
-        if (updateData.device_id) {
+        if (updateData.deviceId) {
           // Validate UUID format
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-          if (!uuidRegex.test(updateData.device_id)) {
+          if (!uuidRegex.test(updateData.deviceId)) {
             return res.status(400).json({
               success: false,
               message: 'Device ID must be a valid UUID format',
@@ -404,12 +404,12 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
             });
           }
 
-          // Check if device_id is already in use by another user
+          // Check if deviceId is already in use by another user
           const existingDeviceQuery = `
             SELECT id, username FROM users
-            WHERE device_id = $1 AND id != $2
+            WHERE "deviceId" = $1 AND id != $2
           `;
-          const existingDevice = await query(existingDeviceQuery, [updateData.device_id, id]);
+          const existingDevice = await query(existingDeviceQuery, [updateData.deviceId, id]);
 
           if (existingDevice.rows.length > 0) {
             return res.status(400).json({
@@ -419,8 +419,8 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
             });
           }
         }
-      } else if (updateData.device_id) {
-        // Non-field agents should not have device_id
+      } else if (updateData.deviceId) {
+        // Non-field agents should not have deviceId
         return res.status(400).json({
           success: false,
           message: 'Device ID can only be set for field agents',
@@ -434,11 +434,12 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
     const updateParams: any[] = [];
     let paramIndex = 1;
 
-    const allowedFields = ['name', 'username', 'email', 'phone', 'role', 'role_id', 'department_id', 'employeeId', 'designation', 'device_id', 'is_active'];
+    const allowedFields = ['name', 'username', 'email', 'phone', 'role', 'roleId', 'departmentId', 'employeeId', 'designation', 'deviceId', 'isActive'];
 
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {
-        updateFields.push(`${field === 'employeeId' ? '"employeeId"' : field} = $${paramIndex++}`);
+        const column = ['employeeId','roleId','departmentId','deviceId','isActive','lastLogin','createdAt','updatedAt'].includes(field) ? `"${field}"` : field;
+        updateFields.push(`${column} = $${paramIndex++}`);
         updateParams.push(updateData[field]);
       }
     }
@@ -451,19 +452,19 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
+    updateFields.push(`"updatedAt" = CURRENT_TIMESTAMP`);
     updateParams.push(id);
 
     const updateQuery = `
       UPDATE users
       SET ${updateFields.join(', ')}
       WHERE id = $${paramIndex}
-      RETURNING id, name, username, email, role, role_id, department_id,
-                "employeeId", designation, phone, device_id, is_active, created_at, updated_at
+      RETURNING id, name, username, email, role, "roleId", "departmentId",
+                "employeeId", designation, phone, "deviceId", "isActive", "createdAt", "updatedAt"
     `;
 
     // Get current user data before update for logging
-    const currentUserQuery = `SELECT username, device_id FROM users WHERE id = $1`;
+    const currentUserQuery = `SELECT username, "deviceId" FROM users WHERE id = $1`;
     const currentUserResult = await query(currentUserQuery, [id]);
     const currentUser = currentUserResult.rows[0];
 
@@ -471,10 +472,10 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
     const updatedUser = result.rows[0];
 
     // Log device management changes
-    if (updateData.device_id !== undefined && currentUser) {
+    if (updateData.deviceId !== undefined && currentUser) {
       const deviceAuthLogger = DeviceAuthLogger.getInstance();
-      const oldDeviceId = currentUser.device_id;
-      const newDeviceId = updateData.device_id;
+      const oldDeviceId = currentUser.deviceId;
+      const newDeviceId = updateData.deviceId;
 
       if (oldDeviceId && !newDeviceId) {
         // Device reset
@@ -583,9 +584,9 @@ export const activateUser = async (req: AuthenticatedRequest, res: Response) => 
 
     const updateQuery = `
       UPDATE users
-      SET is_active = true, updated_at = CURRENT_TIMESTAMP
+      SET "isActive" = true, "updatedAt" = CURRENT_TIMESTAMP
       WHERE id = $1
-      RETURNING id, name, username, is_active
+      RETURNING id, name, username, "isActive"
     `;
 
     const result = await query(updateQuery, [id]);
@@ -622,9 +623,9 @@ export const deactivateUser = async (req: AuthenticatedRequest, res: Response) =
 
     const updateQuery = `
       UPDATE users
-      SET is_active = false, updated_at = CURRENT_TIMESTAMP
+      SET "isActive" = false, "updatedAt" = CURRENT_TIMESTAMP
       WHERE id = $1
-      RETURNING id, name, username, is_active
+      RETURNING id, name, username, "isActive"
     `;
 
     const result = await query(updateQuery, [id]);
@@ -674,11 +675,11 @@ export const searchUsers = async (req: AuthenticatedRequest, res: Response) => {
         u.username,
         u.email,
         u.role,
-        d.name as department_name,
+        d.name as "departmentName",
         u.designation,
-        u.is_active
+        u."isActive"
       FROM users u
-      LEFT JOIN departments d ON u.department_id = d.id
+      LEFT JOIN departments d ON u."departmentId" = d.id
       WHERE
         u.name ILIKE $1 OR
         u.email ILIKE $1 OR
@@ -711,9 +712,9 @@ export const getUserStats = async (req: AuthenticatedRequest, res: Response) => 
     // Get basic user counts
     const userCountsQuery = `
       SELECT
-        COUNT(*) as total_users,
-        COUNT(CASE WHEN is_active = true THEN 1 END) as active_users,
-        COUNT(CASE WHEN is_active = false THEN 1 END) as inactive_users
+        COUNT(*) as "totalUsers",
+        COUNT(CASE WHEN "isActive" = true THEN 1 END) as "activeUsers",
+        COUNT(CASE WHEN "isActive" = false THEN 1 END) as "inactiveUsers"
       FROM users
     `;
     const userCounts = await query(userCountsQuery);
@@ -724,7 +725,7 @@ export const getUserStats = async (req: AuthenticatedRequest, res: Response) => 
         COALESCE(r.name, u.role) as role,
         COUNT(*) as count
       FROM users u
-      LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN roles r ON u."roleId" = r.id
       GROUP BY COALESCE(r.name, u.role)
       ORDER BY count DESC
     `;
@@ -736,7 +737,7 @@ export const getUserStats = async (req: AuthenticatedRequest, res: Response) => 
         COALESCE(d.name, 'No Department') as department,
         COUNT(*) as count
       FROM users u
-      LEFT JOIN departments d ON u.department_id = d.id
+      LEFT JOIN departments d ON u."departmentId" = d.id
       GROUP BY d.name
       ORDER BY count DESC
     `;
@@ -747,9 +748,9 @@ export const getUserStats = async (req: AuthenticatedRequest, res: Response) => 
     res.json({
       success: true,
       data: {
-        totalUsers: parseInt(stats.total_users),
-        activeUsers: parseInt(stats.active_users),
-        inactiveUsers: parseInt(stats.inactive_users),
+        totalUsers: parseInt(stats.totalUsers),
+        activeUsers: parseInt(stats.activeUsers),
+        inactiveUsers: parseInt(stats.inactiveUsers),
         usersByRole: roleStats.rows,
         usersByDepartment: departmentStats.rows,
         recentLogins: 0, // TODO: Implement when login tracking is added
@@ -771,7 +772,7 @@ export const getDepartments = async (req: AuthenticatedRequest, res: Response) =
     const departmentsQuery = `
       SELECT id, name, description
       FROM departments
-      WHERE is_active = true
+      WHERE "isActive" = true
       ORDER BY name
     `;
 
@@ -797,7 +798,7 @@ export const getDesignations = async (req: AuthenticatedRequest, res: Response) 
     const designationsQuery = `
       SELECT id, name, description
       FROM designations
-      WHERE is_active = true
+      WHERE "isActive" = true
       ORDER BY name
     `;
 

@@ -39,11 +39,11 @@ import { User } from '@/types/user';
 const editUserSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
   email: z.string().email('Invalid email address'),
-  role_id: z.string().min(1, 'Role is required'),
+  roleId: z.string().min(1, 'Role is required'),
   employeeId: z.string().min(1, 'Employee ID is required'),
-  designation_id: z.string().min(1, 'Designation is required'),
-  department_id: z.string().min(1, 'Department is required'),
-  device_id: z.string().optional(),
+  designationId: z.string().min(1, 'Designation is required'),
+  departmentId: z.string().min(1, 'Department is required'),
+  deviceId: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -63,12 +63,12 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     defaultValues: {
       name: user.name,
       email: user.email,
-      role_id: user.role_id || '',
+      roleId: user.roleId || '',
       employeeId: user.employeeId,
-      designation_id: user.designation_id || '',
-      department_id: user.department_id || '',
-      device_id: user.device_id || user.deviceId || '',
-      isActive: user.is_active ?? user.isActive ?? false,
+      designationId: user.designationId || '',
+      departmentId: user.departmentId || '',
+      deviceId: user.deviceId || '',
+      isActive: user.isActive ?? false,
     },
   });
 
@@ -98,11 +98,11 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       form.reset({
         name: user.name,
         email: user.email,
-        role_id: user.role_id || '',
+        roleId: user.roleId || user.role_id || '',
         employeeId: user.employeeId,
-        designation_id: user.designation_id || '',
-        department_id: user.department_id || '',
-        isActive: user.is_active ?? user.isActive ?? false,
+        designationId: user.designationId || user.designation_id || '',
+        departmentId: user.departmentId || user.department_id || '',
+        isActive: user.isActive ?? user.is_active ?? false,
       });
     }
   }, [user, form]);
@@ -120,23 +120,23 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   });
 
   const onSubmit = (data: EditUserFormData) => {
-    // Validate device_id for field agents
-    const submittedRole = roles.find((role: any) => role.id === data.role_id);
+    // Validate deviceId for field agents
+    const submittedRole = roles.find((role: any) => role.id === data.roleId);
     const isSubmittedFieldAgent = submittedRole?.name === 'Field Agent' || submittedRole?.name === 'FIELD_AGENT' || submittedRole?.name === 'FIELD';
 
-    if (isSubmittedFieldAgent && !data.device_id) {
-      form.setError('device_id', {
+    if (isSubmittedFieldAgent && !data.deviceId) {
+      form.setError('deviceId', {
         type: 'manual',
         message: 'Device ID is required for field agents',
       });
       return;
     }
 
-    if (isSubmittedFieldAgent && data.device_id) {
+    if (isSubmittedFieldAgent && data.deviceId) {
       // Validate UUID format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(data.device_id)) {
-        form.setError('device_id', {
+      if (!uuidRegex.test(data.deviceId)) {
+        form.setError('deviceId', {
           type: 'manual',
           message: 'Device ID must be a valid UUID format',
         });
@@ -151,8 +151,8 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   const departments = departmentsData?.data || [];
   const designations = designationsData?.data || [];
 
-  // Watch the selected role to determine if device_id field should be shown
-  const selectedRoleId = form.watch('role_id');
+  // Watch the selected role to determine if deviceId field should be shown
+  const selectedRoleId = form.watch('roleId');
   const selectedRole = roles.find((role: any) => role.id === selectedRoleId);
   const isFieldAgent = selectedRole?.name === 'Field Agent' || selectedRole?.name === 'FIELD_AGENT' || selectedRole?.name === 'FIELD';
 
@@ -199,7 +199,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="role_id"
+                name="roleId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
@@ -240,7 +240,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="designation_id"
+                name="designationId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Designation</FormLabel>
@@ -265,7 +265,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
 
               <FormField
                 control={form.control}
-                name="department_id"
+                name="departmentId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department</FormLabel>
@@ -293,7 +293,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             {isFieldAgent && (
               <FormField
                 control={form.control}
-                name="device_id"
+                name="deviceId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Device ID <span className="text-red-500">*</span></FormLabel>

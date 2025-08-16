@@ -39,8 +39,8 @@ const createUserValidation = [
   body('password')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters'),
-  // Support both new role_id and legacy role fields
-  body('role_id')
+  // Support both new roleId and legacy role fields
+  body('roleId')
     .optional()
     .custom((value) => {
       if (value && value.trim() !== '') {
@@ -56,7 +56,7 @@ const createUserValidation = [
     .optional()
     .isIn(['ADMIN', 'MANAGER', 'FIELD', 'VIEWER'])
     .withMessage('Role must be one of: ADMIN, MANAGER, FIELD, VIEWER'),
-  body('department_id')
+  body('departmentId')
     .optional()
     .custom((value) => {
       if (value && value.trim() !== '') {
@@ -68,7 +68,7 @@ const createUserValidation = [
       }
       return true;
     }),
-  body('designation_id')
+  body('designationId')
     .optional()
     .custom((value) => {
       if (value && value.trim() !== '') {
@@ -104,13 +104,13 @@ const createUserValidation = [
     .optional()
     .isBoolean()
     .withMessage('isActive must be a boolean'),
-  // Custom validation to ensure either role_id or role is provided
+  // Custom validation to ensure either roleId or role is provided
   body().custom((value, { req }) => {
-    const hasRoleId = req.body.role_id && req.body.role_id.trim() !== '';
+    const hasRoleId = req.body.roleId && req.body.roleId.trim() !== '';
     const hasRole = req.body.role && req.body.role.trim() !== '';
 
     if (!hasRoleId && !hasRole) {
-      throw new Error('Either role_id or role must be provided');
+      throw new Error('Either roleId or role must be provided');
     }
     return true;
   }),

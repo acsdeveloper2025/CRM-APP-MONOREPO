@@ -9,24 +9,20 @@ export interface User {
   email: string;
   phone?: string;
   role: Role;
-  role_id?: string;
-  role_name?: string;
+  roleId?: string;
+  roleName?: string;
   employeeId: string;
   designation: string;
-  department?: string; // Legacy field for backward compatibility
-  department_id?: string;
-  department_name?: string;
+  department?: string; // Legacy display field
+  departmentId?: string;
+  departmentName?: string;
   profilePhotoUrl?: string;
-  device_id?: string; // Device ID for field agents
-  deviceId?: string; // Alternative camelCase format
+  deviceId?: string; // Device ID for field agents
   isActive?: boolean;
-  is_active?: boolean; // API uses snake_case
-  lastLoginAt?: string;
-  last_login?: string; // API uses snake_case
+  lastLogin?: string;
+  lastLoginAt?: string; // Some views may still use lastLoginAt
   createdAt?: string;
-  created_at?: string; // API uses snake_case
   updatedAt?: string;
-  updated_at?: string; // API uses snake_case
   createdBy?: string;
   updatedBy?: string;
 }
@@ -36,28 +32,28 @@ export interface CreateUserData {
   username: string;
   email: string;
   password: string;
-  role?: Role; // Legacy field for backward compatibility
-  role_id?: string; // New role system
+  role?: Role; // Legacy display only
+  roleId?: string; // New role system
   employeeId: string;
-  designation?: string; // Legacy field
-  designation_id?: string; // New designation system
-  department?: string; // Legacy field
-  department_id?: string; // New department system
-  device_id?: string; // Device ID for field agents
+  designation?: string; // Legacy display only
+  designationId?: string; // New designation system
+  department?: string; // Legacy display only
+  departmentId?: string; // New department system
+  deviceId?: string; // Device ID for field agents
   profilePhotoUrl?: string;
 }
 
 export interface UpdateUserData {
   name?: string;
   email?: string;
-  role?: Role; // Legacy field
-  role_id?: string; // New role system
+  role?: Role; // Legacy display only
+  roleId?: string; // New role system
   employeeId?: string;
-  designation?: string; // Legacy field
-  designation_id?: string; // New designation system
-  department?: string; // Legacy field
-  department_id?: string; // New department system
-  device_id?: string; // Device ID for field agents
+  designation?: string; // Legacy display only
+  designationId?: string; // New designation system
+  department?: string; // Legacy display only
+  departmentId?: string; // New department system
+  deviceId?: string; // Device ID for field agents
   profilePhotoUrl?: string;
   isActive?: boolean;
 }
@@ -133,34 +129,31 @@ export interface RoleData {
   name: string;
   description?: string;
   permissions: RolePermissions;
-  is_system_role: boolean;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  created_by?: string;
-  updated_by?: string;
-  created_by_name?: string;
-  updated_by_name?: string;
-  user_count: number;
+  isSystemRole: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdByName?: string;
+  updatedByName?: string;
+  userCount: number;
 }
 
 export interface Department {
   id: string;
   name: string;
   description?: string;
-  department_head_id?: string;
-  department_head_name?: string;
-  parent_department_id?: string;
-  parent_department_name?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  created_by?: string;
-  updated_by?: string;
-  created_by_name?: string;
-  updated_by_name?: string;
-  user_count: number;
-  subdepartment_count: number;
+  departmentHeadId?: string;
+  departmentHeadName?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdByName?: string;
+  updatedByName?: string;
+  userCount: number;
 }
 
 export interface CreateRoleRequest {
@@ -173,20 +166,20 @@ export interface UpdateRoleRequest {
   name?: string;
   description?: string;
   permissions?: RolePermissions;
-  is_active?: boolean;
+  isActive?: boolean;
 }
 
 export interface CreateDepartmentRequest {
   name: string;
   description?: string;
-  department_head_id?: string;
+  departmentHeadId?: string;
 }
 
 export interface UpdateDepartmentRequest {
   name?: string;
   description?: string;
-  department_head_id?: string;
-  is_active?: boolean;
+  departmentHeadId?: string;
+  isActive?: boolean;
 }
 
 // Designation types
@@ -194,27 +187,27 @@ export interface Designation {
   id: string;
   name: string;
   description?: string;
-  department_id?: string;
-  department_name?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  created_by_name?: string;
-  updated_by_name?: string;
+  departmentId?: string;
+  departmentName?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdByName?: string;
+  updatedByName?: string;
 }
 
 export interface CreateDesignationRequest {
   name: string;
   description?: string;
-  department_id?: string;
-  is_active?: boolean;
+  departmentId?: string;
+  isActive?: boolean;
 }
 
 export interface UpdateDesignationRequest {
   name?: string;
   description?: string;
-  department_id?: string;
-  is_active?: boolean;
+  departmentId?: string;
+  isActive?: boolean;
 }
 
 export interface UserSession {

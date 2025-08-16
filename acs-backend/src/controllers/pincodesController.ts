@@ -27,28 +27,28 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
       SELECT
         p.id,
         p.code,
-        p.city_id as "cityId",
+        p."cityId" as "cityId",
         c.name as "cityName",
         s.name as state,
         co.name as country,
-        p.created_at as "createdAt",
-        p.updated_at as "updatedAt",
+        p."createdAt" as "createdAt",
+        p."updatedAt" as "updatedAt",
         COALESCE(
           JSON_AGG(
             JSON_BUILD_OBJECT(
               'id', a.id,
               'name', a.name,
-              'displayOrder', pa.display_order
-            ) ORDER BY pa.display_order
+              'displayOrder', pa."displayOrder"
+            ) ORDER BY pa."displayOrder"
           ) FILTER (WHERE a.id IS NOT NULL),
           '[]'::json
         ) as areas
       FROM pincodes p
-      JOIN cities c ON p.city_id = c.id
-      JOIN states s ON c.state_id = s.id
-      JOIN countries co ON c.country_id = co.id
-      LEFT JOIN pincode_areas pa ON p.id = pa.pincode_id
-      LEFT JOIN areas a ON pa.area_id = a.id
+      JOIN cities c ON p."cityId" = c.id
+      JOIN states s ON c."stateId" = s.id
+      JOIN countries co ON c."countryId" = co.id
+      LEFT JOIN pincode_areas pa ON p.id = pa."pincodeId"
+      LEFT JOIN areas a ON pa."areaId" = a.id
       WHERE 1=1
     `;
 
@@ -58,7 +58,7 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
     // Apply filters
     if (cityId) {
       paramCount++;
-      sql += ` AND p.city_id = $${paramCount}`;
+      sql += ` AND p."cityId" = $${paramCount}`;
       params.push(cityId);
     }
 
@@ -80,7 +80,7 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Add GROUP BY clause for area aggregation
-    sql += ` GROUP BY p.id, p.code, p.city_id, c.name, s.name, co.name, p.created_at, p.updated_at`;
+    sql += ` GROUP BY p.id, p.code, p."cityId", c.name, s.name, co.name, p."createdAt", p."updatedAt"`;
 
     // Apply sorting
     const sortDirection = sortOrder === 'desc' ? 'DESC' : 'ASC';
@@ -116,10 +116,10 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
     let countSql = `
       SELECT COUNT(DISTINCT p.id)
       FROM pincodes p
-      JOIN cities c ON p.city_id = c.id
-      JOIN states s ON c.state_id = s.id
-      JOIN countries co ON c.country_id = co.id
-      LEFT JOIN pincode_areas pa ON p.id = pa.pincode_id
+      JOIN cities c ON p."cityId" = c.id
+      JOIN states s ON c."stateId" = s.id
+      JOIN countries co ON c."countryId" = co.id
+      LEFT JOIN pincode_areas pa ON p.id = pa."pincodeId"
       WHERE 1=1
     `;
     const countParams: any[] = [];
@@ -127,7 +127,7 @@ export const getPincodes = async (req: AuthenticatedRequest, res: Response) => {
 
     if (cityId) {
       countParamCount++;
-      countSql += ` AND p.city_id = $${countParamCount}`;
+      countSql += ` AND p."cityId" = $${countParamCount}`;
       countParams.push(cityId);
     }
 
@@ -190,30 +190,30 @@ export const getPincodeById = async (req: AuthenticatedRequest, res: Response) =
       SELECT
         p.id,
         p.code,
-        p.city_id as "cityId",
+        p."cityId" as "cityId",
         c.name as "cityName",
         s.name as state,
         co.name as country,
-        p.created_at as "createdAt",
-        p.updated_at as "updatedAt",
+        p."createdAt" as "createdAt",
+        p."updatedAt" as "updatedAt",
         COALESCE(
           JSON_AGG(
             JSON_BUILD_OBJECT(
               'id', a.id,
               'name', a.name,
-              'displayOrder', pa.display_order
-            ) ORDER BY pa.display_order
+              'displayOrder', pa."displayOrder"
+            ) ORDER BY pa."displayOrder"
           ) FILTER (WHERE a.id IS NOT NULL),
           '[]'::json
         ) as areas
       FROM pincodes p
-      JOIN cities c ON p.city_id = c.id
-      JOIN states s ON c.state_id = s.id
-      JOIN countries co ON c.country_id = co.id
-      LEFT JOIN pincode_areas pa ON p.id = pa.pincode_id
-      LEFT JOIN areas a ON pa.area_id = a.id
+      JOIN cities c ON p."cityId" = c.id
+      JOIN states s ON c."stateId" = s.id
+      JOIN countries co ON c."countryId" = co.id
+      LEFT JOIN pincode_areas pa ON p.id = pa."pincodeId"
+      LEFT JOIN areas a ON pa."areaId" = a.id
       WHERE p.id = $1
-      GROUP BY p.id, p.code, p.city_id, c.name, s.name, co.name, p.created_at, p.updated_at
+      GROUP BY p.id, p.code, p."cityId", c.name, s.name, co.name, p."createdAt", p."updatedAt"
     `;
 
     const result = await query(sql, [id]);
@@ -328,7 +328,7 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
 
     // Create pincode in database (without area field)
     const pincodeResult = await query(
-      'INSERT INTO pincodes (code, city_id) VALUES ($1, $2) RETURNING id, code, city_id as "cityId", created_at as "createdAt", updated_at as "updatedAt"',
+      'INSERT INTO pincodes (code, "cityId") VALUES ($1, $2) RETURNING id, code, "cityId" as "cityId", "createdAt" as "createdAt", "updatedAt" as "updatedAt"',
       [code, cityId]
     );
 
@@ -337,7 +337,7 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
     // Associate pincode with areas
     for (let i = 0; i < areaIds.length; i++) {
       await query(
-        'INSERT INTO pincode_areas (pincode_id, area_id, display_order) VALUES ($1, $2, $3)',
+        'INSERT INTO pincode_areas ("pincodeId", "areaId", "displayOrder") VALUES ($1, $2, $3)',
         [newPincode.id, areaIds[i], i + 1]
       );
     }
@@ -347,30 +347,30 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
       SELECT
         p.id,
         p.code,
-        p.city_id as "cityId",
+        p."cityId" as "cityId",
         c.name as "cityName",
         s.name as state,
         co.name as country,
-        p.created_at as "createdAt",
-        p.updated_at as "updatedAt",
+        p."createdAt" as "createdAt",
+        p."updatedAt" as "updatedAt",
         COALESCE(
           JSON_AGG(
             JSON_BUILD_OBJECT(
               'id', a.id,
               'name', a.name,
-              'displayOrder', pa.display_order
-            ) ORDER BY pa.display_order
+              'displayOrder', pa."displayOrder"
+            ) ORDER BY pa."displayOrder"
           ) FILTER (WHERE a.id IS NOT NULL),
           '[]'::json
         ) as areas
       FROM pincodes p
-      JOIN cities c ON p.city_id = c.id
-      JOIN states s ON c.state_id = s.id
-      JOIN countries co ON c.country_id = co.id
-      LEFT JOIN pincode_areas pa ON p.id = pa.pincode_id
-      LEFT JOIN areas a ON pa.area_id = a.id
+      JOIN cities c ON p."cityId" = c.id
+      JOIN states s ON c."stateId" = s.id
+      JOIN countries co ON c."countryId" = co.id
+      LEFT JOIN pincode_areas pa ON p.id = pa."pincodeId"
+      LEFT JOIN areas a ON pa."areaId" = a.id
       WHERE p.id = $1
-      GROUP BY p.id, p.code, p.city_id, c.name, s.name, co.name, p.created_at, p.updated_at
+      GROUP BY p.id, p.code, p."cityId", c.name, s.name, co.name, p."createdAt", p."updatedAt"
     `, [newPincode.id]);
 
     const responseData = completeResult.rows[0];
@@ -452,7 +452,7 @@ export const updatePincode = async (req: AuthenticatedRequest, res: Response) =>
 
     if (updateData.cityId) {
       paramCount++;
-      updateFields.push(`city_id = $${paramCount}`);
+      updateFields.push(`"cityId" = $${paramCount}`);
       updateValues.push(updateData.cityId);
     }
 
@@ -464,9 +464,9 @@ export const updatePincode = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    // Add updated_at
+    // Add updatedAt
     paramCount++;
-    updateFields.push(`updated_at = $${paramCount}`);
+    updateFields.push(`"updatedAt" = $${paramCount}`);
     updateValues.push(new Date());
 
     // Add id for WHERE clause
@@ -494,9 +494,9 @@ export const updatePincode = async (req: AuthenticatedRequest, res: Response) =>
         id: updatedPincode.id,
         code: updatedPincode.code,
         area: updatedPincode.area,
-        cityId: updatedPincode.city_id,
-        createdAt: updatedPincode.created_at,
-        updatedAt: updatedPincode.updated_at,
+        cityId: updatedPincode.cityId,
+        createdAt: updatedPincode.createdAt,
+        updatedAt: updatedPincode.updatedAt,
       },
       message: 'Pincode updated successfully',
     });
@@ -574,16 +574,16 @@ export const searchPincodes = async (req: AuthenticatedRequest, res: Response) =
         p.id,
         p.code,
         p.area,
-        p.city_id as "cityId",
+        p."cityId" as "cityId",
         c.name as "cityName",
         s.name as state,
         co.name as country,
-        p.created_at as "createdAt",
-        p.updated_at as "updatedAt"
+        p."createdAt" as "createdAt",
+        p."updatedAt" as "updatedAt"
       FROM pincodes p
-      JOIN cities c ON p.city_id = c.id
-      JOIN states s ON c.state_id = s.id
-      JOIN countries co ON c.country_id = co.id
+      JOIN cities c ON p."cityId" = c.id
+      JOIN states s ON c."stateId" = s.id
+      JOIN countries co ON c."countryId" = co.id
       WHERE
         LOWER(p.code) LIKE $1 OR
         LOWER(p.area) LIKE $1 OR
@@ -639,17 +639,17 @@ export const getPincodesByCity = async (req: AuthenticatedRequest, res: Response
         p.id,
         p.code,
         p.area,
-        p.city_id as "cityId",
+        p."cityId" as "cityId",
         c.name as "cityName",
         s.name as state,
         co.name as country,
-        p.created_at as "createdAt",
-        p.updated_at as "updatedAt"
+        p."createdAt" as "createdAt",
+        p."updatedAt" as "updatedAt"
       FROM pincodes p
-      JOIN cities c ON p.city_id = c.id
-      JOIN states s ON c.state_id = s.id
-      JOIN countries co ON c.country_id = co.id
-      WHERE p.city_id = $1
+      JOIN cities c ON p."cityId" = c.id
+      JOIN states s ON c."stateId" = s.id
+      JOIN countries co ON c."countryId" = co.id
+      WHERE p."cityId" = $1
       ORDER BY p.code
       LIMIT $2
     `, [cityId, limitNum]);
@@ -699,7 +699,7 @@ export const addPincodeAreas = async (req: AuthenticatedRequest, res: Response) 
 
     // Get current area count
     const currentAreasResult = await query(
-      'SELECT COUNT(*) as count FROM pincode_areas WHERE pincode_id = $1',
+      'SELECT COUNT(*) as count FROM pincode_areas WHERE "pincodeId" = $1',
       [pincodeId]
     );
     const currentCount = parseInt(currentAreasResult.rows[0].count, 10);
@@ -730,9 +730,9 @@ export const addPincodeAreas = async (req: AuthenticatedRequest, res: Response) 
         }
 
         const result = await query(
-          `INSERT INTO pincode_areas (pincode_id, area_id, display_order)
+          `INSERT INTO pincode_areas ("pincodeId", "areaId", "displayOrder")
            VALUES ($1, $2, $3)
-           RETURNING id, display_order as "displayOrder", created_at as "createdAt"`,
+           RETURNING id, "displayOrder" as "displayOrder", "createdAt" as "createdAt"`,
           [pincodeId, areaId, displayOrder]
         );
 
@@ -781,7 +781,7 @@ export const removePincodeArea = async (req: AuthenticatedRequest, res: Response
 
     // Check if area is assigned to this pincode
     const areaCheck = await query(
-      'SELECT pa.id, a.name FROM pincode_areas pa JOIN areas a ON pa.area_id = a.id WHERE pa.pincode_id = $1 AND pa.area_id = $2',
+      'SELECT pa.id, a.name FROM pincode_areas pa JOIN areas a ON pa."areaId" = a.id WHERE pa."pincodeId" = $1 AND pa."areaId" = $2',
       [pincodeId, areaId]
     );
 
@@ -795,7 +795,7 @@ export const removePincodeArea = async (req: AuthenticatedRequest, res: Response
 
     // Check if this is the last area (prevent deletion if it would leave pincode with no areas)
     const areaCountResult = await query(
-      'SELECT COUNT(*) as count FROM pincode_areas WHERE pincode_id = $1',
+      'SELECT COUNT(*) as count FROM pincode_areas WHERE "pincodeId" = $1',
       [pincodeId]
     );
     const areaCount = parseInt(areaCountResult.rows[0].count, 10);
@@ -811,7 +811,7 @@ export const removePincodeArea = async (req: AuthenticatedRequest, res: Response
     const areaName = areaCheck.rows[0].name;
 
     // Remove the area assignment
-    await query('DELETE FROM pincode_areas WHERE pincode_id = $1 AND area_id = $2', [pincodeId, areaId]);
+    await query('DELETE FROM pincode_areas WHERE "pincodeId" = $1 AND "areaId" = $2', [pincodeId, areaId]);
 
     logger.info(`Removed area ${areaId} (${areaName}) from pincode ${pincodeId}`, {
       userId: req.user?.id,
@@ -833,6 +833,9 @@ export const removePincodeArea = async (req: AuthenticatedRequest, res: Response
     });
   }
 };
+
+
+
 
 
 

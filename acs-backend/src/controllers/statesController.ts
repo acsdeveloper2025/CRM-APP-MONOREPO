@@ -24,16 +24,16 @@ export const getStates = async (req: AuthenticatedRequest, res: Response) => {
         s.name,
         s.code,
         co.name as country,
-        s.created_at as "createdAt",
-        s.updated_at as "updatedAt",
-        COALESCE(c.city_count, 0) as city_count
+        s."createdAt",
+        s."updatedAt",
+        COALESCE(c."cityCount", 0) as "cityCount"
       FROM states s
-      JOIN countries co ON s.country_id = co.id
+      JOIN countries co ON s."countryId" = co.id
       LEFT JOIN (
-        SELECT state_id, COUNT(*) as city_count
+        SELECT "stateId", COUNT(*) as "cityCount"
         FROM cities
-        GROUP BY state_id
-      ) c ON s.id = c.state_id
+        GROUP BY "stateId"
+      ) c ON s.id = c."stateId"
       WHERE 1=1
     `;
 
@@ -83,7 +83,7 @@ export const getStates = async (req: AuthenticatedRequest, res: Response) => {
     let countSql = `
       SELECT COUNT(*)
       FROM states s
-      JOIN countries co ON s.country_id = co.id
+      JOIN countries co ON s."countryId" = co.id
       WHERE 1=1
     `;
     const countParams: any[] = [];
@@ -139,9 +139,9 @@ export const getStateById = async (req: AuthenticatedRequest, res: Response) => 
     const { id } = req.params;
 
     const result = await query(
-      `SELECT s.id, s.name, s.code, c.name as country, s.created_at as "createdAt", s.updated_at as "updatedAt"
+      `SELECT s.id, s.name, s.code, c.name as country, s."createdAt", s."updatedAt"
        FROM states s
-       JOIN countries c ON s.country_id = c.id
+       JOIN countries c ON s."countryId" = c.id
        WHERE s.id = $1`,
       [id]
     );
@@ -182,7 +182,7 @@ export const createState = async (req: AuthenticatedRequest, res: Response) => {
 
     logger.info('Creating state with data:', { name, code, country, userId: req.user?.id });
 
-    // Get country_id from country name
+    // Get countryId from country name
     const countryResult = await query(
       'SELECT id FROM countries WHERE name = $1',
       [country]
@@ -201,7 +201,7 @@ export const createState = async (req: AuthenticatedRequest, res: Response) => {
 
     // Check if state code already exists in this country
     const existingStateResult = await query(
-      'SELECT id FROM states WHERE code = $1 AND country_id = $2',
+      'SELECT id FROM states WHERE code = $1 AND "countryId" = $2',
       [code.toUpperCase(), countryId]
     );
 
@@ -216,7 +216,7 @@ export const createState = async (req: AuthenticatedRequest, res: Response) => {
 
     // Create new state in database
     const result = await query(
-      'INSERT INTO states (name, code, country_id) VALUES ($1, $2, $3) RETURNING *',
+      'INSERT INTO states (name, code, "countryId") VALUES ($1, $2, $3) RETURNING *',
       [name, code.toUpperCase(), countryId]
     );
 
@@ -235,8 +235,8 @@ export const createState = async (req: AuthenticatedRequest, res: Response) => {
         name: newState.name,
         code: newState.code,
         country: country,
-        createdAt: newState.created_at,
-        updatedAt: newState.updated_at,
+        createdAt: newState.createdAt,
+        updatedAt: newState.updatedAt,
       },
       message: 'State created successfully',
     });
@@ -258,7 +258,7 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
 
     // Check if state exists
     const existingResult = await query(
-      'SELECT s.*, c.name as country FROM states s JOIN countries c ON s.country_id = c.id WHERE s.id = $1',
+      'SELECT s.*, c.name as country FROM states s JOIN countries c ON s."countryId" = c.id WHERE s.id = $1',
       [id]
     );
 
@@ -274,9 +274,9 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
 
     // Check for duplicate code if being updated
     if (updateData.code) {
-      let countryId = existingState.country_id;
+      let countryId = existingState.countryId;
 
-      // If country is being updated, get new country_id
+      // If country is being updated, get new countryId
       if (updateData.country && updateData.country !== existingState.country) {
         const countryResult = await query('SELECT id FROM countries WHERE name = $1', [updateData.country]);
         if (countryResult.rows.length === 0) {
@@ -290,7 +290,7 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
       }
 
       const duplicateResult = await query(
-        'SELECT id FROM states WHERE id != $1 AND code = $2 AND country_id = $3',
+        'SELECT id FROM states WHERE id != $1 AND code = $2 AND "countryId" = $3',
         [id, updateData.code.toUpperCase(), countryId]
       );
 
@@ -324,7 +324,7 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
       const countryResult = await query('SELECT id FROM countries WHERE name = $1', [updateData.country]);
       if (countryResult.rows.length > 0) {
         paramCount++;
-        updateFields.push(`country_id = $${paramCount}`);
+        updateFields.push(`"countryId" = $${paramCount}`);
         updateValues.push(countryResult.rows[0].id);
       }
     }
@@ -337,9 +337,9 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Add updated_at
+    // Add updatedAt
     paramCount++;
-    updateFields.push(`updated_at = $${paramCount}`);
+    updateFields.push(`"updatedAt" = $${paramCount}`);
     updateValues.push(new Date());
 
     // Add id for WHERE clause
@@ -358,9 +358,9 @@ export const updateState = async (req: AuthenticatedRequest, res: Response) => {
 
     // Get the updated state with country name
     const finalResult = await query(
-      `SELECT s.id, s.name, s.code, c.name as country, s.created_at as "createdAt", s.updated_at as "updatedAt"
+      `SELECT s.id, s.name, s.code, c.name as country, s."createdAt", s."updatedAt"
        FROM states s
-       JOIN countries c ON s.country_id = c.id
+       JOIN countries c ON s."countryId" = c.id
        WHERE s.id = $1`,
       [id]
     );
@@ -395,7 +395,7 @@ export const deleteState = async (req: AuthenticatedRequest, res: Response) => {
     const existingResult = await query(
       `SELECT s.id, s.name, s.code, c.name as country
        FROM states s
-       JOIN countries c ON s.country_id = c.id
+       JOIN countries c ON s."countryId" = c.id
        WHERE s.id = $1`,
       [id]
     );
@@ -412,7 +412,7 @@ export const deleteState = async (req: AuthenticatedRequest, res: Response) => {
 
     // Check if state is being used by cities
     const citiesResult = await query(
-      'SELECT COUNT(*) as count FROM cities WHERE state_id = $1',
+      'SELECT COUNT(*) as count FROM cities WHERE "stateId" = $1',
       [id]
     );
 
@@ -459,7 +459,7 @@ export const getStatesStats = async (req: AuthenticatedRequest, res: Response) =
     const countryResult = await query(`
       SELECT c.name as country, COUNT(s.id) as count
       FROM countries c
-      LEFT JOIN states s ON c.id = s.country_id
+      LEFT JOIN states s ON c.id = s."countryId"
       GROUP BY c.id, c.name
       HAVING COUNT(s.id) > 0
       ORDER BY c.name

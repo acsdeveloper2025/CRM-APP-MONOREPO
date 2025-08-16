@@ -159,10 +159,10 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {department.department_head_name ? (
+                    {department.departmentHeadName ? (
                       <div className="flex items-center space-x-1">
                         <Crown className="h-4 w-4 text-yellow-500" />
-                        <span className="text-sm">{department.department_head_name}</span>
+                        <span className="text-sm">{department.departmentHeadName}</span>
                       </div>
                     ) : (
                       <span className="text-muted-foreground text-sm">No head assigned</span>
@@ -172,22 +172,22 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
                   <TableCell>
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>{department.user_count}</span>
+                      <span>{department.userCount}</span>
                     </div>
                   </TableCell>
 
                   <TableCell>
-                    <Badge variant={department.is_active ? 'default' : 'secondary'}>
-                      {department.is_active ? 'Active' : 'Inactive'}
+                    <Badge variant={department.isActive ? 'default' : 'secondary'}>
+                      {department.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(department.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(department.createdAt), { addSuffix: true })}
                     </div>
-                    {department.created_by_name && (
+                    {department.createdByName && (
                       <div className="text-xs text-muted-foreground">
-                        by {department.created_by_name}
+                        by {department.createdByName}
                       </div>
                     )}
                   </TableCell>
@@ -208,7 +208,7 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
                         <DropdownMenuItem
                           onClick={() => handleDeleteDepartment(department)}
                           className="text-destructive"
-                          disabled={department.user_count > 0}
+                          disabled={department.userCount > 0}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
@@ -229,11 +229,11 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
             <AlertDialogTitle>Delete Department</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the department "{deleteDepartment?.name}"? This action cannot be undone.
-              {deleteDepartment && deleteDepartment.user_count > 0 && (
+              {deleteDepartment && deleteDepartment.userCount > 0 && (
                 <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
                   This department cannot be deleted because it has:
-                  {deleteDepartment.user_count > 0 && (
-                    <div>• {deleteDepartment.user_count} assigned user(s)</div>
+                  {deleteDepartment.userCount > 0 && (
+                    <div>• {deleteDepartment.userCount} assigned user(s)</div>
                   )}
                 </div>
               )}
@@ -245,7 +245,7 @@ export function DepartmentsTable({ onEditDepartment }: DepartmentsTableProps) {
               onClick={confirmDelete}
               disabled={
                 deleteMutation.isPending ||
-                (deleteDepartment?.user_count || 0) > 0
+                (deleteDepartment?.userCount || 0) > 0
               }
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

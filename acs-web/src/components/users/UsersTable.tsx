@@ -266,9 +266,9 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     {getUserRoleBadge(user.role)}
-                    {(user.role === 'FIELD' || user.role === 'FIELD_AGENT' || user.role_name === 'Field Agent') && (
+                    {(user.role === 'FIELD' || user.role === 'FIELD_AGENT' || user.roleName === 'Field Agent') && (
                       <div className="flex items-center">
-                        {user.device_id || user.deviceId ? (
+                        {user.deviceId ? (
                           <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
                             <Smartphone className="h-3 w-3 mr-1" />
                             Device
@@ -285,24 +285,24 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                 </TableCell>
                 <TableCell>
                   <div>
-                    <div className="font-medium">{user.department_name || 'No Department'}</div>
+                    <div className="font-medium">{user.departmentName || 'No Department'}</div>
                     <div className="text-sm text-muted-foreground">{user.designation}</div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  {getStatusBadge(user.is_active ?? user.isActive ?? false)}
+                  {getStatusBadge(user.isActive ?? false)}
                 </TableCell>
                 <TableCell>
-                  {(user.last_login || user.lastLoginAt) ? (
+                  {(user.lastLogin || user.lastLoginAt) ? (
                     <div className="text-sm">
-                      {new Date(user.last_login || user.lastLoginAt!).toLocaleDateString()}
+                      {new Date(user.lastLogin || user.lastLoginAt!).toLocaleDateString()}
                     </div>
                   ) : (
                     <span className="text-sm text-muted-foreground">Never</span>
                   )}
                 </TableCell>
                 <TableCell>
-                  {new Date(user.created_at || user.createdAt!).toLocaleDateString()}
+                  {new Date(user.createdAt!).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

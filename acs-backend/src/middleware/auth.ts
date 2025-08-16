@@ -124,11 +124,11 @@ export const auth = async (req: AuthenticatedRequest, res: Response, next: NextF
             u.id,
             u.username,
             u.role,
-            u.role_id,
-            r.name as role_name,
+            u."roleId",
+            r.name as "roleName",
             r.permissions
           FROM users u
-          LEFT JOIN roles r ON u.role_id = r.id
+          LEFT JOIN roles r ON u."roleId" = r.id
           WHERE u.id = $1
         `;
 
@@ -136,12 +136,12 @@ export const auth = async (req: AuthenticatedRequest, res: Response, next: NextF
 
         if (result.rows.length > 0) {
           const userData = result.rows[0];
-          req.user.roleId = userData.role_id;
+          req.user.roleId = userData.roleId;
           req.user.permissions = userData.permissions || {};
 
-          // If user has a role_id, use the database role permissions
+          // If user has a roleId, use the database role permissions
           // Otherwise fall back to the legacy role system
-          if (userData.role_id && userData.permissions) {
+          if (userData.roleId && userData.permissions) {
             req.user.permissions = userData.permissions;
           }
         }

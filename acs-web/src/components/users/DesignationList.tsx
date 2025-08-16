@@ -214,29 +214,29 @@ export function DesignationList({ onEdit }: DesignationListProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {designation.department_name ? (
+                        {designation.departmentName ? (
                           <div className="flex items-center gap-1">
                             <Building2 className="h-4 w-4 text-muted-foreground" />
-                            {designation.department_name}
+                            {designation.departmentName}
                           </div>
                         ) : (
                           <span className="text-muted-foreground">All departments</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={designation.is_active ? 'default' : 'secondary'}>
-                          {designation.is_active ? (
+                        <Badge variant={designation.isActive ? 'default' : 'secondary'}>
+                          {designation.isActive ? (
                             <CheckCircle className="h-3 w-3 mr-1" />
                           ) : (
                             <XCircle className="h-3 w-3 mr-1" />
                           )}
-                          {designation.is_active ? 'Active' : 'Inactive'}
+                          {designation.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
-                          {formatDate(designation.created_at)}
+                          {formatDate(designation.createdAt)}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">

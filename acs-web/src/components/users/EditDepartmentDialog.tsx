@@ -39,9 +39,8 @@ import { UpdateDepartmentRequest, Department } from '@/types/user';
 const updateDepartmentSchema = z.object({
   name: z.string().min(1, 'Department name is required').max(100, 'Department name too long'),
   description: z.string().max(500, 'Description too long').optional(),
-  department_head_id: z.string().optional(),
-  parent_department_id: z.string().optional(),
-  is_active: z.boolean(),
+  departmentHeadId: z.string().optional(),
+  isActive: z.boolean(),
 });
 
 type UpdateDepartmentFormData = z.infer<typeof updateDepartmentSchema>;
@@ -60,9 +59,8 @@ export function EditDepartmentDialog({ open, onOpenChange, department }: EditDep
     defaultValues: {
       name: '',
       description: '',
-      department_head_id: '__none__',
-      parent_department_id: '__none__',
-      is_active: true,
+      departmentHeadId: '__none__',
+      isActive: true,
     },
   });
 
@@ -72,9 +70,8 @@ export function EditDepartmentDialog({ open, onOpenChange, department }: EditDep
       form.reset({
         name: department.name,
         description: department.description || '',
-        department_head_id: department.department_head_id || '__none__',
-        parent_department_id: department.parent_department_id || '__none__',
-        is_active: department.is_active,
+        departmentHeadId: department.departmentHeadId || '__none__',
+        isActive: department.isActive,
       });
     }
   }, [department, form]);
@@ -87,11 +84,7 @@ export function EditDepartmentDialog({ open, onOpenChange, department }: EditDep
   });
 
   // Fetch departments for parent selection (excluding current department)
-  const { data: departmentsData } = useQuery({
-    queryKey: ['departments', 'active'],
-    queryFn: () => departmentsService.getActiveDepartments(),
-    enabled: open,
-  });
+  // Parent department selection removed as per requirements
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateDepartmentRequest) => {
@@ -99,8 +92,7 @@ export function EditDepartmentDialog({ open, onOpenChange, department }: EditDep
       // Remove empty strings to send null values
       const cleanData = {
         ...data,
-        department_head_id: data.department_head_id || undefined,
-        parent_department_id: data.parent_department_id || undefined,
+        departmentHeadId: data.departmentHeadId || undefined,
       };
       return departmentsService.updateDepartment(department.id, cleanData);
     },
@@ -119,14 +111,12 @@ export function EditDepartmentDialog({ open, onOpenChange, department }: EditDep
     // Convert placeholder values back to null/undefined for API
     const submitData = {
       ...data,
-      department_head_id: data.department_head_id === '__none__' ? undefined : data.department_head_id,
-      parent_department_id: data.parent_department_id === '__none__' ? undefined : data.parent_department_id,
+      departmentHeadId: data.departmentHeadId === '__none__' ? undefined : data.departmentHeadId,
     };
     updateMutation.mutate(submitData);
   };
 
   const users = usersData?.data || [];
-  const departments = departmentsData?.data?.filter(d => d.id !== department?.id) || [];
 
   if (!department) return null;
 
@@ -157,34 +147,6 @@ export function EditDepartmentDialog({ open, onOpenChange, department }: EditDep
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="parent_department_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parent Department</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select parent department (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="__none__">No parent department</SelectItem>
-                        {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
-                            {dept.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Choose a parent department to create a hierarchical structure
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <FormField
@@ -208,7 +170,7 @@ export function EditDepartmentDialog({ open, onOpenChange, department }: EditDep
 
             <FormField
               control={form.control}
-              name="department_head_id"
+              name="departmentHeadId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Department Head</FormLabel>
@@ -237,7 +199,7 @@ export function EditDepartmentDialog({ open, onOpenChange, department }: EditDep
 
             <FormField
               control={form.control}
-              name="is_active"
+              name="isActive"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">

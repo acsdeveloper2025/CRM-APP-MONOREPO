@@ -10,8 +10,7 @@ export const getDepartments = async (req: AuthenticatedRequest, res: Response) =
       page = 1,
       limit = 20,
       search = '',
-      includeInactive = 'false',
-      parentId = null
+      includeInactive = 'false'
     } = req.query;
 
     const offset = (Number(page) - 1) * Number(limit);
@@ -29,17 +28,8 @@ export const getDepartments = async (req: AuthenticatedRequest, res: Response) =
     // Active filter
     if (includeInactive !== 'true') {
       paramCount++;
-      whereConditions.push(`d.is_active = $${paramCount}`);
+      whereConditions.push(`d."isActive" = $${paramCount}`);
       params.push(true);
-    }
-
-    // Parent department filter
-    if (parentId) {
-      paramCount++;
-      whereConditions.push(`d.parent_department_id = $${paramCount}`);
-      params.push(parentId);
-    } else if (parentId === null) {
-      whereConditions.push(`d.parent_department_id IS NULL`);
     }
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -48,16 +38,14 @@ export const getDepartments = async (req: AuthenticatedRequest, res: Response) =
     const departmentsQuery = `
       SELECT 
         d.*,
-        dh.name as department_head_name,
-        pd.name as parent_department_name,
-        u1.name as created_by_name,
-        u2.name as updated_by_name,
-        (SELECT COUNT(*) FROM users WHERE department_id = d.id) as user_count
+        dh.name as "departmentHeadName",
+        u1.name as "createdByName",
+        u2.name as "updatedByName",
+        (SELECT COUNT(*) FROM users WHERE "departmentId" = d.id) as "userCount"
       FROM departments d
-      LEFT JOIN users dh ON d.department_head_id = dh.id
-      LEFT JOIN departments pd ON d.parent_department_id = pd.id
-      LEFT JOIN users u1 ON d.created_by = u1.id
-      LEFT JOIN users u2 ON d.updated_by = u2.id
+      LEFT JOIN users dh ON d."departmentHeadId" = dh.id
+      LEFT JOIN users u1 ON d."createdBy" = u1.id
+      LEFT JOIN users u2 ON d."updatedBy" = u2.id
       ${whereClause}
       ORDER BY d.name
       LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
@@ -73,7 +61,7 @@ export const getDepartments = async (req: AuthenticatedRequest, res: Response) =
 
     logger.info('Retrieved departments', {
       userId: req.user?.id,
-      filters: { search, includeInactive, parentId },
+      filters: { search, includeInactive },
       pagination: { page, limit },
       total
     });
@@ -106,16 +94,14 @@ export const getDepartmentById = async (req: AuthenticatedRequest, res: Response
     const departmentQuery = `
       SELECT 
         d.*,
-        dh.name as department_head_name,
-        pd.name as parent_department_name,
-        u1.name as created_by_name,
-        u2.name as updated_by_name,
-        (SELECT COUNT(*) FROM users WHERE department_id = d.id) as user_count
+        dh.name as "departmentHeadName",
+        u1.name as "createdByName",
+        u2.name as "updatedByName",
+        (SELECT COUNT(*) FROM users WHERE "departmentId" = d.id) as "userCount"
       FROM departments d
-      LEFT JOIN users dh ON d.department_head_id = dh.id
-      LEFT JOIN departments pd ON d.parent_department_id = pd.id
-      LEFT JOIN users u1 ON d.created_by = u1.id
-      LEFT JOIN users u2 ON d.updated_by = u2.id
+      LEFT JOIN users dh ON d."departmentHeadId" = dh.id
+      LEFT JOIN users u1 ON d."createdBy" = u1.id
+      LEFT JOIN users u2 ON d."updatedBy" = u2.id
       WHERE d.id = $1
     `;
 
@@ -146,7 +132,7 @@ export const getDepartmentById = async (req: AuthenticatedRequest, res: Response
 // POST /api/departments - Create new department
 export const createDepartment = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, description, department_head_id } = req.body;
+    const { name, description, departmentHeadId } = req.body;
 
     // Validate required fields
     if (!name) {
@@ -168,8 +154,8 @@ export const createDepartment = async (req: AuthenticatedRequest, res: Response)
     }
 
     // Validate department head exists
-    if (department_head_id) {
-      const headExists = await query('SELECT id FROM users WHERE id = $1', [department_head_id]);
+    if (departmentHeadId) {
+      const headExists = await query('SELECT id FROM users WHERE id = $1', [departmentHeadId]);
       if (headExists.rows.length === 0) {
         return res.status(400).json({
           success: false,
@@ -183,7 +169,7 @@ export const createDepartment = async (req: AuthenticatedRequest, res: Response)
 
     // Create department
     const createQuery = `
-      INSERT INTO departments (name, description, department_head_id, created_by)
+      INSERT INTO departments (name, description, "departmentHeadId", "createdBy")
       VALUES ($1, $2, $3, $4)
       RETURNING *
     `;
@@ -191,7 +177,7 @@ export const createDepartment = async (req: AuthenticatedRequest, res: Response)
     const result = await query(createQuery, [
       name,
       description || null,
-      department_head_id || null,
+      departmentHeadId || null,
       req.user?.id
     ]);
 
@@ -220,7 +206,7 @@ export const createDepartment = async (req: AuthenticatedRequest, res: Response)
 export const updateDepartment = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, department_head_id, is_active } = req.body;
+    const { name, description, departmentHeadId, isActive } = req.body;
 
     // Check if department exists
     const existingDepartment = await query('SELECT * FROM departments WHERE id = $1', [id]);
@@ -245,8 +231,8 @@ export const updateDepartment = async (req: AuthenticatedRequest, res: Response)
     }
 
     // Validate department head exists
-    if (department_head_id) {
-      const headExists = await query('SELECT id FROM users WHERE id = $1', [department_head_id]);
+    if (departmentHeadId) {
+      const headExists = await query('SELECT id FROM users WHERE id = $1', [departmentHeadId]);
       if (headExists.rows.length === 0) {
         return res.status(400).json({
           success: false,
@@ -264,10 +250,10 @@ export const updateDepartment = async (req: AuthenticatedRequest, res: Response)
       SET
         name = COALESCE($1, name),
         description = COALESCE($2, description),
-        department_head_id = COALESCE($3, department_head_id),
-        is_active = COALESCE($4, is_active),
-        updated_by = $5,
-        updated_at = CURRENT_TIMESTAMP
+        "departmentHeadId" = COALESCE($3, "departmentHeadId"),
+        "isActive" = COALESCE($4, "isActive"),
+        "updatedBy" = $5,
+        "updatedAt" = CURRENT_TIMESTAMP
       WHERE id = $6
       RETURNING *
     `;
@@ -275,8 +261,8 @@ export const updateDepartment = async (req: AuthenticatedRequest, res: Response)
     const result = await query(updateQuery, [
       name || null,
       description !== undefined ? description : null,
-      department_head_id !== undefined ? department_head_id : null,
-      is_active !== undefined ? is_active : null,
+      departmentHeadId !== undefined ? departmentHeadId : null,
+      isActive !== undefined ? isActive : null,
       req.user?.id,
       id
     ]);
@@ -318,7 +304,7 @@ export const deleteDepartment = async (req: AuthenticatedRequest, res: Response)
     }
 
     // Check if department is in use by users
-    const usageCheck = await query('SELECT COUNT(*) as count FROM users WHERE department_id = $1', [id]);
+    const usageCheck = await query('SELECT COUNT(*) as count FROM users WHERE "departmentId" = $1', [id]);
     if (parseInt(usageCheck.rows[0].count) > 0) {
       return res.status(400).json({
         success: false,
@@ -327,15 +313,6 @@ export const deleteDepartment = async (req: AuthenticatedRequest, res: Response)
       });
     }
 
-    // Check if department has subdepartments
-    const subdepartmentCheck = await query('SELECT COUNT(*) as count FROM departments WHERE parent_department_id = $1', [id]);
-    if (parseInt(subdepartmentCheck.rows[0].count) > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete department that has subdepartments',
-        error: { code: 'DEPARTMENT_HAS_SUBDEPARTMENTS' }
-      });
-    }
 
     // Delete department
     await query('DELETE FROM departments WHERE id = $1', [id]);

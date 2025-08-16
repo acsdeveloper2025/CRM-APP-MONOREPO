@@ -10,7 +10,7 @@ import {
   deleteCity,
   getCitiesStats
 } from '@/controllers/citiesController';
-import { getPincodesByCity } from '@/controllers/pincodesController';
+import * as PincodesController from '../controllers/pincodesController';
 
 const router = express.Router();
 
@@ -130,7 +130,7 @@ router.get('/:id/pincodes',
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
   ], 
   validate, 
-  getPincodesByCity
+  PincodesController.getPincodesByCity
 );
 
 export default router;

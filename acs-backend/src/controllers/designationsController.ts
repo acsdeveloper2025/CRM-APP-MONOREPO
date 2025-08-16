@@ -29,14 +29,14 @@ export const getDesignations = async (req: Request, res: Response) => {
 
     // Active status filter
     if (isActive !== undefined) {
-      whereConditions.push(`d.is_active = $${paramIndex}`);
+      whereConditions.push(`d."isActive" = $${paramIndex}`);
       queryParams.push(isActive === 'true');
       paramIndex++;
     }
 
     // Department filter
     if (departmentId) {
-      whereConditions.push(`d.department_id = $${paramIndex}`);
+      whereConditions.push(`d."departmentId" = $${paramIndex}`);
       queryParams.push(departmentId);
       paramIndex++;
     }
@@ -48,17 +48,17 @@ export const getDesignations = async (req: Request, res: Response) => {
         d.id,
         d.name,
         d.description,
-        d.department_id,
-        dept.name as department_name,
-        d.is_active,
-        d.created_at,
-        d.updated_at,
-        creator.name as created_by_name,
-        updater.name as updated_by_name
+        d."departmentId",
+        dept.name as "departmentName",
+        d."isActive",
+        d."createdAt",
+        d."updatedAt",
+        creator.name as "createdByName",
+        updater.name as "updatedByName"
       FROM designations d
-      LEFT JOIN departments dept ON d.department_id = dept.id
-      LEFT JOIN users creator ON d.created_by = creator.id
-      LEFT JOIN users updater ON d.updated_by = updater.id
+      LEFT JOIN departments dept ON d."departmentId" = dept.id
+      LEFT JOIN users creator ON d."createdBy" = creator.id
+      LEFT JOIN users updater ON d."updatedBy" = updater.id
       ${whereClause}
       ORDER BY d.name ASC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -69,7 +69,7 @@ export const getDesignations = async (req: Request, res: Response) => {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM designations d
-      LEFT JOIN departments dept ON d.department_id = dept.id
+      LEFT JOIN departments dept ON d."departmentId" = dept.id
       ${whereClause}
     `;
 
@@ -113,17 +113,17 @@ export const getDesignationById = async (req: Request, res: Response) => {
         d.id,
         d.name,
         d.description,
-        d.department_id,
-        dept.name as department_name,
-        d.is_active,
-        d.created_at,
-        d.updated_at,
-        creator.name as created_by_name,
-        updater.name as updated_by_name
+        d."departmentId",
+        dept.name as "departmentName",
+        d."isActive",
+        d."createdAt",
+        d."updatedAt",
+        creator.name as "createdByName",
+        updater.name as "updatedByName"
       FROM designations d
-      LEFT JOIN departments dept ON d.department_id = dept.id
-      LEFT JOIN users creator ON d.created_by = creator.id
-      LEFT JOIN users updater ON d.updated_by = updater.id
+      LEFT JOIN departments dept ON d."departmentId" = dept.id
+      LEFT JOIN users creator ON d."createdBy" = creator.id
+      LEFT JOIN users updater ON d."updatedBy" = updater.id
       WHERE d.id = $1
     `;
 
@@ -154,7 +154,7 @@ export const getDesignationById = async (req: Request, res: Response) => {
 // Create designation
 export const createDesignation = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, description, department_id, is_active = true } = req.body;
+    const { name, description, departmentId, isActive = true } = req.body;
     const userId = req.user?.id;
 
     // Check if designation name already exists
@@ -172,16 +172,16 @@ export const createDesignation = async (req: AuthenticatedRequest, res: Response
     }
 
     const createQuery = `
-      INSERT INTO designations (name, description, department_id, is_active, created_by, updated_by)
+      INSERT INTO designations (name, description, "departmentId", "isActive", "createdBy", "updatedBy")
       VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, name, description, department_id, is_active, created_at, updated_at
+      RETURNING id, name, description, "departmentId", "isActive", "createdAt", "updatedAt"
     `;
 
     const result = await query(createQuery, [
       name,
       description || null,
-      department_id || null,
-      is_active,
+      departmentId || null,
+      isActive,
       userId,
       userId
     ]);
@@ -209,7 +209,7 @@ export const createDesignation = async (req: AuthenticatedRequest, res: Response
 export const updateDesignation = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, department_id, is_active } = req.body;
+    const { name, description, departmentId, isActive } = req.body;
     const userId = req.user?.id;
 
     // Check if designation exists
@@ -247,19 +247,19 @@ export const updateDesignation = async (req: AuthenticatedRequest, res: Response
       SET 
         name = COALESCE($1, name),
         description = COALESCE($2, description),
-        department_id = COALESCE($3, department_id),
-        is_active = COALESCE($4, is_active),
-        updated_by = $5,
-        updated_at = CURRENT_TIMESTAMP
+        "departmentId" = COALESCE($3, "departmentId"),
+        "isActive" = COALESCE($4, "isActive"),
+        "updatedBy" = $5,
+        "updatedAt" = CURRENT_TIMESTAMP
       WHERE id = $6
-      RETURNING id, name, description, department_id, is_active, created_at, updated_at
+      RETURNING id, name, description, "departmentId", "isActive", "createdAt", "updatedAt"
     `;
 
     const result = await query(updateQuery, [
       name || null,
       description || null,
-      department_id || null,
-      is_active !== undefined ? is_active : null,
+      departmentId || null,
+      isActive !== undefined ? isActive : null,
       userId,
       id
     ]);
@@ -340,11 +340,11 @@ export const getActiveDesignations = async (req: Request, res: Response) => {
   try {
     const { departmentId } = req.query;
 
-    let whereClause = 'WHERE d.is_active = true';
+    let whereClause = 'WHERE d."isActive" = true';
     const queryParams: any[] = [];
 
     if (departmentId) {
-      whereClause += ' AND (d.department_id = $1 OR d.department_id IS NULL)';
+      whereClause += ' AND (d."departmentId" = $1 OR d."departmentId" IS NULL)';
       queryParams.push(departmentId);
     }
 
@@ -353,10 +353,10 @@ export const getActiveDesignations = async (req: Request, res: Response) => {
         d.id,
         d.name,
         d.description,
-        d.department_id,
-        dept.name as department_name
+        d."departmentId",
+        dept.name as "departmentName"
       FROM designations d
-      LEFT JOIN departments dept ON d.department_id = dept.id
+      LEFT JOIN departments dept ON d."departmentId" = dept.id
       ${whereClause}
       ORDER BY d.name ASC
     `;

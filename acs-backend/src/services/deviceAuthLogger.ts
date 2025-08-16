@@ -66,8 +66,8 @@ class DeviceAuthLogger {
     try {
       const insertQuery = `
         INSERT INTO device_auth_logs (
-          user_id, username, device_id, ip_address, user_agent,
-          event_type, event_details, created_at
+          "userId", username, "deviceId", "ipAddress", "userAgent",
+          "eventType", "eventDetails", "createdAt"
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `;
 
@@ -100,21 +100,21 @@ class DeviceAuthLogger {
     const createTableQuery = `
       CREATE TABLE IF NOT EXISTS device_auth_logs (
         id SERIAL PRIMARY KEY,
-        user_id UUID,
+        "userId" UUID,
         username VARCHAR(255),
-        device_id UUID,
-        ip_address INET,
-        user_agent TEXT,
-        event_type VARCHAR(50) NOT NULL,
-        event_details JSONB NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        
-        -- Indexes for performance
-        INDEX idx_device_auth_logs_user_id (user_id),
-        INDEX idx_device_auth_logs_device_id (device_id),
-        INDEX idx_device_auth_logs_event_type (event_type),
-        INDEX idx_device_auth_logs_created_at (created_at)
+        "deviceId" UUID,
+        "ipAddress" INET,
+        "userAgent" TEXT,
+        "eventType" VARCHAR(50) NOT NULL,
+        "eventDetails" JSONB NOT NULL,
+        "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+
+      -- Create indexes for performance
+      CREATE INDEX IF NOT EXISTS idx_device_auth_logs_userId ON device_auth_logs ("userId");
+      CREATE INDEX IF NOT EXISTS idx_device_auth_logs_deviceId ON device_auth_logs ("deviceId");
+      CREATE INDEX IF NOT EXISTS idx_device_auth_logs_eventType ON device_auth_logs ("eventType");
+      CREATE INDEX IF NOT EXISTS idx_device_auth_logs_createdAt ON device_auth_logs ("createdAt");
     `;
 
     await query(createTableQuery);
@@ -253,12 +253,12 @@ class DeviceAuthLogger {
   async getDeviceAuthLogs(userId: string, limit: number = 50): Promise<any[]> {
     try {
       const selectQuery = `
-        SELECT 
-          id, user_id, username, device_id, ip_address, user_agent,
-          event_type, event_details, created_at
+        SELECT
+          id, "userId", username, "deviceId", "ipAddress", "userAgent",
+          "eventType", "eventDetails", "createdAt"
         FROM device_auth_logs
-        WHERE user_id = $1
-        ORDER BY created_at DESC
+        WHERE "userId" = $1
+        ORDER BY "createdAt" DESC
         LIMIT $2
       `;
 
@@ -276,14 +276,14 @@ class DeviceAuthLogger {
   async getDeviceAuthStats(days: number = 30): Promise<any> {
     try {
       const statsQuery = `
-        SELECT 
-          event_type,
+        SELECT
+          "eventType",
           COUNT(*) as count,
-          COUNT(CASE WHEN (event_details->>'success')::boolean = true THEN 1 END) as success_count,
-          COUNT(CASE WHEN (event_details->>'success')::boolean = false THEN 1 END) as failure_count
+          COUNT(CASE WHEN ("eventDetails"->>'success')::boolean = true THEN 1 END) as success_count,
+          COUNT(CASE WHEN ("eventDetails"->>'success')::boolean = false THEN 1 END) as failure_count
         FROM device_auth_logs
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
-        GROUP BY event_type
+        WHERE "createdAt" >= NOW() - INTERVAL '${days} days'
+        GROUP BY "eventType"
         ORDER BY count DESC
       `;
 
@@ -302,7 +302,7 @@ class DeviceAuthLogger {
     try {
       const deleteQuery = `
         DELETE FROM device_auth_logs
-        WHERE created_at < NOW() - INTERVAL '${daysToKeep} days'
+        WHERE "createdAt" < NOW() - INTERVAL '${daysToKeep} days'
       `;
 
       const result = await query(deleteQuery);

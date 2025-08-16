@@ -41,11 +41,11 @@ const createUserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').max(50, 'Username too long'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role_id: z.string().optional(),
-  department_id: z.string().optional(),
+  roleId: z.string().optional(),
+  departmentId: z.string().optional(),
   employeeId: z.string().optional(),
-  designation_id: z.string().optional(),
-  device_id: z.string().optional(),
+  designationId: z.string().optional(),
+  deviceId: z.string().optional(),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -65,11 +65,11 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       username: '',
       email: '',
       password: '',
-      role_id: '',
-      department_id: '',
+      roleId: '',
+      departmentId: '',
       employeeId: '',
-      designation_id: '',
-      device_id: '',
+      designationId: '',
+      deviceId: '',
     },
   });
 
@@ -94,19 +94,19 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     enabled: open,
   });
 
-  // Watch the selected role to determine if device_id field should be shown
-  const selectedRoleId = form.watch('role_id');
+  // Watch the selected role to determine if deviceId field should be shown
+  const selectedRoleId = form.watch('roleId');
 
   const createMutation = useMutation({
     mutationFn: (data: CreateUserFormData) => {
       // Convert empty strings to undefined for optional fields
       const cleanData = {
         ...data,
-        role_id: data.role_id || undefined,
-        department_id: data.department_id || undefined,
-        designation_id: data.designation_id || undefined,
+        roleId: data.roleId || undefined,
+        departmentId: data.departmentId || undefined,
+        designationId: data.designationId || undefined,
         employeeId: data.employeeId || undefined,
-        device_id: data.device_id || undefined,
+        deviceId: data.deviceId || undefined,
       };
       return usersService.createUser(cleanData as any);
     },
@@ -123,23 +123,23 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   });
 
   const onSubmit = (data: CreateUserFormData) => {
-    // Validate device_id for field agents
-    const submittedRole = roles.find((role: any) => role.id === data.role_id);
+    // Validate deviceId for field agents
+    const submittedRole = roles.find((role: any) => role.id === data.roleId);
     const isSubmittedFieldAgent = submittedRole?.name === 'Field Agent' || submittedRole?.name === 'FIELD_AGENT' || submittedRole?.name === 'FIELD';
 
-    if (isSubmittedFieldAgent && !data.device_id) {
-      form.setError('device_id', {
+    if (isSubmittedFieldAgent && !data.deviceId) {
+      form.setError('deviceId', {
         type: 'manual',
         message: 'Device ID is required for field agents',
       });
       return;
     }
 
-    if (isSubmittedFieldAgent && data.device_id) {
+    if (isSubmittedFieldAgent && data.deviceId) {
       // Validate UUID format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(data.device_id)) {
-        form.setError('device_id', {
+      if (!uuidRegex.test(data.deviceId)) {
+        form.setError('deviceId', {
           type: 'manual',
           message: 'Device ID must be a valid UUID format',
         });
@@ -234,7 +234,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="role_id"
+                name="roleId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
@@ -275,7 +275,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="designation_id"
+                name="designationId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Designation</FormLabel>
@@ -300,7 +300,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
               <FormField
                 control={form.control}
-                name="department_id"
+                name="departmentId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department</FormLabel>
@@ -328,7 +328,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             {isFieldAgent && (
               <FormField
                 control={form.control}
-                name="device_id"
+                name="deviceId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Device ID <span className="text-red-500">*</span></FormLabel>

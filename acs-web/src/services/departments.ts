@@ -7,7 +7,7 @@ export interface DepartmentsQueryParams {
   limit?: number;
   search?: string;
   includeInactive?: boolean;
-  parentId?: string | null;
+
 }
 
 class DepartmentsService {
@@ -19,13 +19,6 @@ class DepartmentsService {
     if (params.limit) queryParams.append('limit', params.limit.toString());
     if (params.search) queryParams.append('search', params.search);
     if (params.includeInactive) queryParams.append('includeInactive', params.includeInactive.toString());
-    if (params.parentId !== undefined) {
-      if (params.parentId === null) {
-        queryParams.append('parentId', '');
-      } else {
-        queryParams.append('parentId', params.parentId);
-      }
-    }
 
     const response = await apiService.get<PaginatedResponse<Department>>(`/departments?${queryParams.toString()}`);
     return response;

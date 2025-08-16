@@ -38,7 +38,7 @@ import { CreateDepartmentRequest } from '@/types/user';
 const createDepartmentSchema = z.object({
   name: z.string().min(1, 'Department name is required').max(100, 'Department name too long'),
   description: z.string().max(500, 'Description too long').optional(),
-  department_head_id: z.string().optional(),
+  departmentHeadId: z.string().optional(),
 });
 
 type CreateDepartmentFormData = z.infer<typeof createDepartmentSchema>;
@@ -56,7 +56,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
     defaultValues: {
       name: '',
       description: '',
-      department_head_id: '__none__',
+      departmentHeadId: '__none__',
     },
   });
 
@@ -74,7 +74,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
       // Remove empty strings to send null values
       const cleanData = {
         ...data,
-        department_head_id: data.department_head_id || undefined,
+        departmentHeadId: data.departmentHeadId || undefined,
       };
       return departmentsService.createDepartment(cleanData);
     },
@@ -123,7 +123,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
     // Convert placeholder values back to null/undefined for API
     const submitData = {
       ...data,
-      department_head_id: data.department_head_id === '__none__' ? undefined : data.department_head_id,
+      departmentHeadId: data.departmentHeadId === '__none__' ? undefined : data.departmentHeadId,
     };
 
 
@@ -186,7 +186,7 @@ export function CreateDepartmentDialog({ open, onOpenChange }: CreateDepartmentD
 
             <FormField
               control={form.control}
-              name="department_head_id"
+              name="departmentHeadId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Department Head</FormLabel>

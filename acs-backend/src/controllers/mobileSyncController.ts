@@ -84,7 +84,7 @@ export class MobileSyncController {
       }
 
       // Update device sync timestamp
-      await query(`UPDATE devices SET "lastActiveAt" = CURRENT_TIMESTAMP WHERE "userId" = $1 AND "deviceId" = $2`, [userId, deviceInfo.deviceId]);
+      await query(`UPDATE devices SET "lastUsed" = CURRENT_TIMESTAMP WHERE "userId" = $1 AND "deviceId" = $2`, [userId, deviceInfo.deviceId]);
 
       await createAuditLog({
         action: 'MOBILE_SYNC_UPLOAD',
@@ -150,7 +150,7 @@ export class MobileSyncController {
       vals.push(Number(limit));
 
       const casesRes = await query(
-        `SELECT c.*, cl.id as client_id, cl.name as client_name, cl.code as client_code
+        `SELECT c.*, cl.id as "clientId", cl.name as "clientName", cl.code as "clientCode"
          FROM cases c LEFT JOIN clients cl ON cl.id = c."clientId"
          ${whereSql}
          ORDER BY c."updatedAt" ASC
@@ -264,7 +264,7 @@ export class MobileSyncController {
       }
 
       const syncStatus = {
-        lastSyncAt: device.lastActiveAt?.toISOString(),
+        lastSyncAt: device.lastUsed?.toISOString(),
         lastSyncData: null, // Field doesn't exist in schema
         isOnline: true,
         pendingChanges: 0, // Would calculate based on local changes

@@ -22,17 +22,17 @@ async function createMigrationsTable(): Promise<void> {
     CREATE TABLE IF NOT EXISTS migrations (
       id VARCHAR(255) PRIMARY KEY,
       filename VARCHAR(255) NOT NULL,
-      executed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      "executedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
   `;
-  
+
   await pool.query(sql);
   logger.info('Migrations table created or verified');
 }
 
 // Get list of executed migrations
 async function getExecutedMigrations(): Promise<string[]> {
-  const result = await pool.query('SELECT id FROM migrations ORDER BY executed_at');
+  const result = await pool.query('SELECT id FROM migrations ORDER BY "executedAt"');
   return result.rows.map(row => row.id);
 }
 

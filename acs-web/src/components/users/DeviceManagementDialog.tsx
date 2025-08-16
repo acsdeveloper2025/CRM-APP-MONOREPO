@@ -29,7 +29,7 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Copy, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
 
 const deviceManagementSchema = z.object({
-  device_id: z.string().optional().refine((val) => {
+  deviceId: z.string().optional().refine((val) => {
     if (!val) return true; // Allow empty for clearing device ID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(val);
@@ -57,7 +57,7 @@ export function DeviceManagementDialog({
   const form = useForm<DeviceManagementFormData>({
     resolver: zodResolver(deviceManagementSchema),
     defaultValues: {
-      device_id: user.device_id || user.deviceId || '',
+      deviceId: user.deviceId || user.device_id || '',
     },
   });
 
@@ -78,7 +78,7 @@ export function DeviceManagementDialog({
   };
 
   const handleCopyDeviceId = async () => {
-    const deviceId = user.device_id || user.deviceId;
+    const deviceId = user.deviceId || user.device_id;
     if (!deviceId) return;
 
     try {
@@ -93,7 +93,7 @@ export function DeviceManagementDialog({
   };
 
   const handleClearDeviceId = () => {
-    form.setValue('device_id', '');
+    form.setValue('deviceId', '');
   };
 
   const handleGenerateNewUUID = () => {
@@ -103,12 +103,12 @@ export function DeviceManagementDialog({
       const v = c === 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
-    form.setValue('device_id', uuid);
+    form.setValue('deviceId', uuid);
   };
 
   const isFieldAgent = user.role === 'FIELD' || user.role === 'FIELD_AGENT' || 
-                      user.role_name === 'Field Agent' || user.role_name === 'FIELD_AGENT';
-  const currentDeviceId = user.device_id || user.deviceId;
+                      user.roleName === 'Field Agent' || user.role_name === 'FIELD_AGENT';
+  const currentDeviceId = user.deviceId || user.device_id;
   const hasDeviceId = Boolean(currentDeviceId);
 
   return (
@@ -184,7 +184,7 @@ export function DeviceManagementDialog({
               
               <FormField
                 control={form.control}
-                name="device_id"
+                name="deviceId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Device ID (UUID Format)</FormLabel>

@@ -14,31 +14,31 @@ export const getRoles = async (req: AuthenticatedRequest, res: Response) => {
     if (search && search.toString().trim()) {
       // Search query
       rolesQuery = `
-        SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count
+        SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u."roleId" = r.id) as "userCount"
         FROM roles r
-        WHERE r.is_active = true AND (r.name ILIKE $1 OR COALESCE(r.description, '') ILIKE $1)
+        WHERE r."isActive" = true AND (r.name ILIKE $1 OR COALESCE(r.description, '') ILIKE $1)
         ORDER BY r.name
         LIMIT $2 OFFSET $3
       `;
       countQuery = `
-        SELECT COUNT(*) as total 
-        FROM roles r 
-        WHERE r.is_active = true AND (r.name ILIKE $1 OR COALESCE(r.description, '') ILIKE $1)
+        SELECT COUNT(*) as total
+        FROM roles r
+        WHERE r."isActive" = true AND (r.name ILIKE $1 OR COALESCE(r.description, '') ILIKE $1)
       `;
       params = [`%${search}%`, Number(limit), (Number(page) - 1) * Number(limit)];
     } else {
       // No search query
       rolesQuery = `
-        SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count
+        SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u."roleId" = r.id) as "userCount"
         FROM roles r
-        WHERE r.is_active = true
+        WHERE r."isActive" = true
         ORDER BY r.name
         LIMIT $1 OFFSET $2
       `;
       countQuery = `
         SELECT COUNT(*) as total 
         FROM roles r 
-        WHERE r.is_active = true
+        WHERE r."isActive" = true
       `;
       params = [Number(limit), (Number(page) - 1) * Number(limit)];
     }
@@ -77,12 +77,12 @@ export const getRole = async (req: AuthenticatedRequest, res: Response) => {
     const roleQuery = `
       SELECT 
         r.*,
-        u1.name as created_by_name,
-        u2.name as updated_by_name,
-        (SELECT COUNT(*) FROM users WHERE role_id = r.id) as user_count
+        u1.name as "createdByName",
+        u2.name as "updatedByName",
+        (SELECT COUNT(*) FROM users WHERE "roleId" = r.id) as "userCount"
       FROM roles r
-      LEFT JOIN users u1 ON r.created_by = u1.id
-      LEFT JOIN users u2 ON r.updated_by = u2.id
+      LEFT JOIN users u1 ON r."createdBy" = u1.id
+      LEFT JOIN users u2 ON r."updatedBy" = u2.id
       WHERE r.id = $1
     `;
 
@@ -114,7 +114,7 @@ export const getRole = async (req: AuthenticatedRequest, res: Response) => {
 // POST /api/roles - Create a new role
 export const createRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, description, permissions, is_system_role = false } = req.body;
+    const { name, description, permissions, isSystemRole = false } = req.body;
 
     // Validate required fields
     if (!name || !permissions) {
@@ -137,7 +137,7 @@ export const createRole = async (req: AuthenticatedRequest, res: Response) => {
 
     // Create role
     const createQuery = `
-      INSERT INTO roles (name, description, permissions, is_system_role, created_by)
+      INSERT INTO roles (name, description, permissions, "isSystemRole", "createdBy")
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `;
@@ -146,7 +146,7 @@ export const createRole = async (req: AuthenticatedRequest, res: Response) => {
       name,
       description || null,
       JSON.stringify(permissions),
-      is_system_role,
+      isSystemRole,
       req.user?.id
     ]);
 
@@ -170,7 +170,7 @@ export const createRole = async (req: AuthenticatedRequest, res: Response) => {
 export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, permissions, is_active } = req.body;
+    const { name, description, permissions, isActive } = req.body;
 
     // Check if role exists
     const existingRole = await query('SELECT * FROM roles WHERE id = $1', [id]);
@@ -201,9 +201,9 @@ export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
         name = COALESCE($1, name),
         description = COALESCE($2, description),
         permissions = COALESCE($3, permissions),
-        is_active = COALESCE($4, is_active),
-        updated_by = $5,
-        updated_at = CURRENT_TIMESTAMP
+        "isActive" = COALESCE($4, "isActive"),
+        "updatedBy" = $5,
+        "updatedAt" = CURRENT_TIMESTAMP
       WHERE id = $6
       RETURNING *
     `;
@@ -212,7 +212,7 @@ export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
       name || null,
       description !== undefined ? description : null,
       permissions ? JSON.stringify(permissions) : null,
-      is_active !== undefined ? is_active : null,
+      isActive !== undefined ? isActive : null,
       req.user?.id,
       id
     ]);
@@ -249,7 +249,7 @@ export const deleteRole = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Check if role is a system role
-    if (existingRole.rows[0].is_system_role) {
+    if (existingRole.rows[0].isSystemRole) {
       return res.status(400).json({
         success: false,
         message: 'Cannot delete system role',
@@ -258,7 +258,7 @@ export const deleteRole = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Check if role has assigned users
-    const usersWithRole = await query('SELECT COUNT(*) as count FROM users WHERE role_id = $1', [id]);
+    const usersWithRole = await query('SELECT COUNT(*) as count FROM users WHERE "roleId" = $1', [id]);
     if (parseInt(usersWithRole.rows[0].count) > 0) {
       return res.status(400).json({
         success: false,

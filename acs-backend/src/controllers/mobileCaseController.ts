@@ -91,7 +91,7 @@ export class MobileCaseController {
       const whereSql = wh.length ? `WHERE ${wh.join(' AND ')}` : '';
 
       const listSql = `
-        SELECT c.*, cl.id as client_id, cl.name as client_name, cl.code as client_code
+        SELECT c.*, cl.id as "clientId", cl.name as "clientName", cl.code as "clientCode"
         FROM cases c
         LEFT JOIN clients cl ON cl.id = c."clientId"
         ${whereSql}
@@ -126,9 +126,9 @@ export class MobileCaseController {
         verificationType: caseItem.verificationType,
         verificationOutcome: caseItem.verificationOutcome,
         client: {
-          id: caseItem.client_id || '',
-          name: caseItem.client_name || '',
-          code: caseItem.client_code || '',
+          id: caseItem.clientId || '',
+          name: caseItem.clientName || '',
+          code: caseItem.clientCode || '',
         },
         attachments: [],
         formData: (caseItem as any).verificationData || null,
@@ -179,7 +179,7 @@ export class MobileCaseController {
       }
 
       const vals2: any[] = [caseId];
-      let caseSql = `SELECT c.*, cl.id as client_id, cl.name as client_name, cl.code as client_code FROM cases c LEFT JOIN clients cl ON cl.id = c."clientId" WHERE c.id = $1`;
+      let caseSql = `SELECT c.*, cl.id as "clientId", cl.name as "clientName", cl.code as "clientCode" FROM cases c LEFT JOIN clients cl ON cl.id = c."clientId" WHERE c.id = $1`;
       if (userRole === 'FIELD') { caseSql += ` AND c."assignedToId" = $2`; vals2.push(userId); }
       const caseRes = await query(caseSql, vals2);
       const caseItem = caseRes.rows[0];
@@ -224,9 +224,9 @@ export class MobileCaseController {
         verificationType: caseItem.verificationType,
         verificationOutcome: caseItem.verificationOutcome,
         client: {
-          id: caseItem.client_id || '',
-          name: caseItem.client_name || '',
-          code: caseItem.client_code || '',
+          id: caseItem.clientId || '',
+          name: caseItem.clientName || '',
+          code: caseItem.clientCode || '',
         },
         attachments: attRes2.rows.map((att: any) => ({
           id: att.id,

@@ -39,8 +39,8 @@ import { UpdateDesignationRequest, Designation } from '@/types/user';
 const updateDesignationSchema = z.object({
   name: z.string().min(1, 'Designation name is required').max(100, 'Designation name too long'),
   description: z.string().max(500, 'Description too long').optional(),
-  department_id: z.string().optional(),
-  is_active: z.boolean(),
+  departmentId: z.string().optional(),
+  isActive: z.boolean(),
 });
 
 type UpdateDesignationFormData = z.infer<typeof updateDesignationSchema>;
@@ -59,8 +59,8 @@ export function EditDesignationDialog({ open, onOpenChange, designation }: EditD
     defaultValues: {
       name: '',
       description: '',
-      department_id: '',
-      is_active: true,
+      departmentId: '',
+      isActive: true,
     },
   });
 
@@ -70,8 +70,8 @@ export function EditDesignationDialog({ open, onOpenChange, designation }: EditD
       form.reset({
         name: designation.name,
         description: designation.description || '',
-        department_id: designation.department_id || '__all__',
-        is_active: designation.is_active,
+        departmentId: designation.departmentId || '__all__',
+        isActive: designation.isActive,
       });
     }
   }, [designation, form]);
@@ -102,8 +102,8 @@ export function EditDesignationDialog({ open, onOpenChange, designation }: EditD
     const submitData: UpdateDesignationRequest = {
       name: data.name,
       description: data.description || undefined,
-      department_id: data.department_id === "__all__" ? undefined : data.department_id || undefined,
-      is_active: data.is_active,
+      departmentId: data.departmentId === "__all__" ? undefined : data.departmentId || undefined,
+      isActive: data.isActive,
     };
     updateMutation.mutate(submitData);
   };
@@ -141,7 +141,7 @@ export function EditDesignationDialog({ open, onOpenChange, designation }: EditD
 
               <FormField
                 control={form.control}
-                name="department_id"
+                name="departmentId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department</FormLabel>
@@ -193,7 +193,7 @@ export function EditDesignationDialog({ open, onOpenChange, designation }: EditD
 
             <FormField
               control={form.control}
-              name="is_active"
+              name="isActive"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">

@@ -159,14 +159,14 @@ export function RolesTable({ onEditRole }: RolesTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={role.is_system_role ? 'default' : 'secondary'}>
-                      {role.is_system_role ? 'System' : 'Custom'}
+                    <Badge variant={role.isSystemRole ? 'default' : 'secondary'}>
+                      {role.isSystemRole ? 'System' : 'Custom'}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>{role.user_count}</span>
+                      <span>{role.userCount}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -175,17 +175,17 @@ export function RolesTable({ onEditRole }: RolesTableProps) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={role.is_active ? 'default' : 'secondary'}>
-                      {role.is_active ? 'Active' : 'Inactive'}
+                    <Badge variant={role.isActive ? 'default' : 'secondary'}>
+                      {role.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(role.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(role.createdAt), { addSuffix: true })}
                     </div>
-                    {role.created_by_name && (
+                    {role.createdByName && (
                       <div className="text-xs text-muted-foreground">
-                        by {role.created_by_name}
+                        by {role.createdByName}
                       </div>
                     )}
                   </TableCell>
@@ -208,7 +208,7 @@ export function RolesTable({ onEditRole }: RolesTableProps) {
                             <DropdownMenuItem
                               onClick={() => handleDeleteRole(role)}
                               className="text-destructive"
-                              disabled={role.user_count > 0}
+                              disabled={role.userCount > 0}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
@@ -231,9 +231,9 @@ export function RolesTable({ onEditRole }: RolesTableProps) {
             <AlertDialogTitle>Delete Role</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the role "{deleteRole?.name}"? This action cannot be undone.
-              {deleteRole?.user_count && deleteRole.user_count > 0 && (
+              {deleteRole?.userCount && deleteRole.userCount > 0 && (
                 <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
-                  This role is assigned to {deleteRole.user_count} user(s) and cannot be deleted.
+                  This role is assigned to {deleteRole.userCount} user(s) and cannot be deleted.
                 </div>
               )}
             </AlertDialogDescription>
@@ -242,7 +242,7 @@ export function RolesTable({ onEditRole }: RolesTableProps) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              disabled={deleteMutation.isPending || (deleteRole?.user_count || 0) > 0}
+              disabled={deleteMutation.isPending || (deleteRole?.userCount || 0) > 0}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteMutation.isPending ? 'Deleting...' : 'Delete'}

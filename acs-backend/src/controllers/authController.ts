@@ -25,7 +25,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // Find user by username
     const userRes = await query(
-      `SELECT id, name, username, email, "passwordHash", role, "employeeId", designation, department, "profilePhotoUrl", device_id
+      `SELECT id, name, username, email, "passwordHash", role, "employeeId", designation, department, "profilePhotoUrl", "deviceId"
        FROM users WHERE username = $1`,
       [username]
     );
@@ -69,7 +69,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         throw createError('Device ID is required for field agents', 400, 'DEVICE_ID_REQUIRED');
       }
 
-      if (!user.device_id) {
+      if (!user.deviceId) {
         logger.warn('Login failed: No device registered for field agent', { username, role: user.role });
 
         // Log device authentication failure
@@ -88,11 +88,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         throw createError('No device registered for this field agent. Please contact administrator.', 403, 'NO_DEVICE_REGISTERED');
       }
 
-      if (user.device_id !== deviceId) {
+      if (user.deviceId !== deviceId) {
         logger.warn('Login failed: Device ID mismatch', {
           username,
           role: user.role,
-          registeredDeviceId: user.device_id,
+          registeredDeviceId: user.deviceId,
           providedDeviceId: deviceId
         });
 
@@ -154,7 +154,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // Log successful login
     await query(
-      `INSERT INTO audit_logs (id, user_id, action, entity_type, new_values, ip_address, user_agent, created_at)
+      `INSERT INTO audit_logs (id, "userId", action, "entityType", "newValues", "ipAddress", "userAgent", "createdAt")
        VALUES (gen_random_uuid(), $1, 'LOGIN', 'USER', $2, $3, $4, CURRENT_TIMESTAMP)`,
       [user.id, JSON.stringify({ deviceId }), req.ip, req.get('User-Agent')]
     );
@@ -196,7 +196,7 @@ export const logout = async (req: AuthenticatedRequest, res: Response): Promise<
 
     // Log logout
     await query(
-      `INSERT INTO audit_logs (id, user_id, action, entity_type, new_values, ip_address, user_agent, created_at)
+      `INSERT INTO audit_logs (id, "userId", action, "entityType", "newValues", "ipAddress", "userAgent", "createdAt")
        VALUES (gen_random_uuid(), $1, 'LOGOUT', 'USER', $2, $3, $4, CURRENT_TIMESTAMP)`,
       [req.user.id, JSON.stringify({ deviceId: req.user.deviceId }), req.ip, req.get('User-Agent')]
     );
@@ -261,22 +261,22 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): 
         u.username,
         u.email,
         u.role,
-        u.role_id,
-        u.department_id,
+        u."roleId",
+        u."departmentId",
         u."employeeId",
         u.designation,
         u.department,
         u."profilePhotoUrl",
-        u.device_id,
-        u.is_active,
-        u.last_login,
-        u.created_at,
-        r.name as role_name,
-        r.permissions as role_permissions,
-        d.name as department_name
+        u."deviceId",
+        u."isActive",
+        u."lastLogin",
+        u."createdAt",
+        r.name as "roleName",
+        r.permissions as "rolePermissions",
+        d.name as "departmentName"
       FROM users u
-      LEFT JOIN roles r ON u.role_id = r.id
-      LEFT JOIN departments d ON u.department_id = d.id
+      LEFT JOIN roles r ON u."roleId" = r.id
+      LEFT JOIN departments d ON u."departmentId" = d.id
       WHERE u.id = $1
     `;
 
@@ -302,19 +302,19 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): 
         username: userData.username,
         email: userData.email,
         role: userData.role,
-        roleId: userData.role_id,
-        roleName: userData.role_name,
-        permissions: userData.role_permissions,
-        departmentId: userData.department_id,
-        departmentName: userData.department_name,
+        roleId: userData.roleId,
+        roleName: userData.roleName,
+        permissions: userData.rolePermissions,
+        departmentId: userData.departmentId,
+        departmentName: userData.departmentName,
         employeeId: userData.employeeId,
         designation: userData.designation,
         department: userData.department, // Legacy field
         profilePhotoUrl: userData.profilePhotoUrl,
-        deviceId: userData.device_id,
-        isActive: userData.is_active,
-        lastLogin: userData.last_login,
-        createdAt: userData.created_at,
+        deviceId: userData.deviceId,
+        isActive: userData.isActive,
+        lastLogin: userData.lastLogin,
+        createdAt: userData.createdAt,
       }
     };
 

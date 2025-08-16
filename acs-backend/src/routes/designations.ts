@@ -25,14 +25,14 @@ const createDesignationValidation = [
     .trim()
     .isLength({ max: 500 })
     .withMessage('Description must be less than 500 characters'),
-  body('department_id')
+  body('departmentId')
     .optional()
     .isUUID()
     .withMessage('Department ID must be a valid UUID'),
-  body('is_active')
+  body('isActive')
     .optional()
     .isBoolean()
-    .withMessage('is_active must be a boolean'),
+    .withMessage('isActive must be a boolean'),
 ];
 
 const updateDesignationValidation = [
@@ -49,14 +49,14 @@ const updateDesignationValidation = [
     .trim()
     .isLength({ max: 500 })
     .withMessage('Description must be less than 500 characters'),
-  body('department_id')
+  body('departmentId')
     .optional()
     .isUUID()
     .withMessage('Department ID must be a valid UUID'),
-  body('is_active')
+  body('isActive')
     .optional()
     .isBoolean()
-    .withMessage('is_active must be a boolean'),
+    .withMessage('isActive must be a boolean'),
 ];
 
 const getDesignationsValidation = [

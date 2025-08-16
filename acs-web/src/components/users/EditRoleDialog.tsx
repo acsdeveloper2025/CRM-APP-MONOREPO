@@ -32,7 +32,7 @@ import { UpdateRoleRequest, RoleData, RolePermissions } from '@/types/user';
 const updateRoleSchema = z.object({
   name: z.string().min(1, 'Role name is required').max(100, 'Role name too long'),
   description: z.string().max(500, 'Description too long').optional(),
-  is_active: z.boolean(),
+  isActive: z.boolean(),
   permissions: z.object({
     users: z.object({
       create: z.boolean(),
@@ -101,7 +101,7 @@ export function EditRoleDialog({ open, onOpenChange, role }: EditRoleDialogProps
     defaultValues: {
       name: '',
       description: '',
-      is_active: true,
+      isActive: true,
       permissions: {
         users: { create: false, read: false, update: false, delete: false },
         roles: { create: false, read: false, update: false, delete: false },
@@ -121,7 +121,7 @@ export function EditRoleDialog({ open, onOpenChange, role }: EditRoleDialogProps
       form.reset({
         name: role.name,
         description: role.description || '',
-        is_active: role.is_active,
+        isActive: role.isActive,
         permissions: role.permissions,
       });
     }
@@ -221,7 +221,7 @@ export function EditRoleDialog({ open, onOpenChange, role }: EditRoleDialogProps
 
             <FormField
               control={form.control}
-              name="is_active"
+              name="isActive"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">

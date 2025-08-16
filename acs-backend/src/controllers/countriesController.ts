@@ -8,8 +8,8 @@ interface Country {
   name: string;
   code: string;
   continent: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // GET /api/countries - List countries with pagination and filters
@@ -31,8 +31,8 @@ export const getCountries = async (req: AuthenticatedRequest, res: Response) => 
         name,
         code,
         continent,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
+        "createdAt",
+        "updatedAt"
       FROM countries
       WHERE 1=1
     `;
@@ -53,10 +53,11 @@ export const getCountries = async (req: AuthenticatedRequest, res: Response) => 
     }
 
     // Apply sorting
-    const validSortFields = ['name', 'code', 'continent', 'created_at', 'updated_at'];
-    const sortField = validSortFields.includes(sortBy as string) ? sortBy : 'name';
+    const validSortFields = ['name', 'code', 'continent', 'createdAt', 'updatedAt'];
+    const sortField = validSortFields.includes(sortBy as string) ? (sortBy as string) : 'name';
     const sortDirection = sortOrder === 'desc' ? 'DESC' : 'ASC';
-    sql += ` ORDER BY ${sortField} ${sortDirection}`;
+    const sortFieldExpr = (sortField === 'createdAt' || sortField === 'updatedAt') ? `"${sortField}"` : sortField;
+    sql += ` ORDER BY ${sortFieldExpr} ${sortDirection}`;
 
     // Apply pagination
     const pageNum = parseInt(page as string, 10);
@@ -134,8 +135,8 @@ export const getCountryById = async (req: AuthenticatedRequest, res: Response) =
         name,
         code,
         continent,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
+        "createdAt",
+        "updatedAt"
       FROM countries
       WHERE id = $1`,
       [id]
@@ -193,7 +194,7 @@ export const createCountry = async (req: AuthenticatedRequest, res: Response) =>
     const result = await query<Country>(
       `INSERT INTO countries (name, code, continent)
        VALUES ($1, $2, $3)
-       RETURNING id, name, code, continent, created_at as "createdAt", updated_at as "updatedAt"`,
+       RETURNING id, name, code, continent, "createdAt", "updatedAt"`,
       [name, code.toUpperCase(), continent]
     );
 
@@ -287,9 +288,9 @@ export const updateCountry = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    // Add updated_at
+    // Add updatedAt
     paramCount++;
-    updateFields.push(`updated_at = $${paramCount}`);
+    updateFields.push(`"updatedAt" = $${paramCount}`);
     updateValues.push(new Date().toISOString());
 
     // Add id for WHERE clause
@@ -297,7 +298,7 @@ export const updateCountry = async (req: AuthenticatedRequest, res: Response) =>
     updateValues.push(id);
 
     const updateSql = `UPDATE countries SET ${updateFields.join(', ')} WHERE id = $${paramCount}
-                       RETURNING id, name, code, continent, created_at as "createdAt", updated_at as "updatedAt"`;
+                       RETURNING id, name, code, continent, "createdAt", "updatedAt"`;
     const result = await query<Country>(updateSql, updateValues);
 
     const updatedCountry = result.rows[0];
@@ -344,7 +345,7 @@ export const deleteCountry = async (req: AuthenticatedRequest, res: Response) =>
 
     // Check for associated states before deletion
     const statesResult = await query<{ count: string }>(
-      'SELECT COUNT(*) FROM states WHERE country_id = $1',
+      'SELECT COUNT(*) FROM states WHERE "countryId" = $1',
       [id]
     );
 
