@@ -100,9 +100,9 @@ class AuthService {
 
     // Fallback to basic device info
     return {
-      platform: 'web', // or 'ios', 'android'
+      platform: 'WEB', // Use uppercase to match database constraint
       version: this.config.app.version,
-      model: 'Unknown',
+      model: 'Browser',
     };
   }
 
