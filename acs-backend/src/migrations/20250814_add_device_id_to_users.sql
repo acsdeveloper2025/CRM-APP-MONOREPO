@@ -83,13 +83,13 @@ BEGIN
     -- Log deviceId changes for security auditing
     IF (TG_OP = 'UPDATE' AND OLD."deviceId" IS DISTINCT FROM NEW."deviceId") THEN
         INSERT INTO audit_logs (
-            user_id,
+            "userId",
             action,
-            entity_type,
-            entity_id,
-            old_values,
-            new_values,
-            created_at
+            "entityType",
+            "entityId",
+            "oldValues",
+            "newValues",
+            "createdAt"
         ) VALUES (
             COALESCE(NEW.id, OLD.id),
             'DEVICE_ID_CHANGE',
@@ -101,12 +101,12 @@ BEGIN
         );
     ELSIF (TG_OP = 'INSERT' AND NEW."deviceId" IS NOT NULL) THEN
         INSERT INTO audit_logs (
-            user_id,
+            "userId",
             action,
-            entity_type,
-            entity_id,
-            new_values,
-            created_at
+            "entityType",
+            "entityId",
+            "newValues",
+            "createdAt"
         ) VALUES (
             NEW.id,
             'DEVICE_ID_SET',

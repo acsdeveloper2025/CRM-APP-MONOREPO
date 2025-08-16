@@ -83,7 +83,7 @@ export function UserDetailsDialog({ user, open, onOpenChange }: UserDetailsDialo
                     <p className="text-muted-foreground">{user.username}</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {getRoleBadge(user.role)}
+                    {getRoleBadge(user.roleName || user.role)}
                     {getStatusBadge(user.isActive)}
                   </div>
                 </div>

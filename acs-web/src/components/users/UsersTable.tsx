@@ -265,8 +265,8 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    {getUserRoleBadge(user.role)}
-                    {(user.role === 'FIELD' || user.role === 'FIELD_AGENT' || user.roleName === 'Field Agent') && (
+                    {getUserRoleBadge(user.roleName || user.role)}
+                    {(user.role === 'FIELD' || user.role === 'FIELD_AGENT' || user.roleName === 'FIELD_AGENT' || user.roleName === 'Field Agent') && (
                       <div className="flex items-center">
                         {user.deviceId ? (
                           <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
