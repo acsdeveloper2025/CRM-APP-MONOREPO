@@ -103,7 +103,7 @@ export class ClientsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/clients/bulk-import`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
       body: formData,
     });
@@ -118,7 +118,7 @@ export class ClientsService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/products/bulk-import`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
       body: formData,
     });

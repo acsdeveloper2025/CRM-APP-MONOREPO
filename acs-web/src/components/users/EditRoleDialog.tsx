@@ -172,7 +172,7 @@ export function EditRoleDialog({ open, onOpenChange, role }: EditRoleDialogProps
         <DialogHeader>
           <DialogTitle>Edit Role: {role.name}</DialogTitle>
           <DialogDescription>
-            Modify role permissions and settings. {role.is_system_role && 'Note: This is a system role - name changes are restricted.'}
+            Modify role permissions and settings. {role.isSystemRole && 'Note: This is a system role - name changes are restricted.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -188,11 +188,11 @@ export function EditRoleDialog({ open, onOpenChange, role }: EditRoleDialogProps
                     <FormControl>
                       <Input 
                         placeholder="e.g., Sales Manager" 
-                        disabled={role.is_system_role}
+                        disabled={role.isSystemRole}
                         {...field} 
                       />
                     </FormControl>
-                    {role.is_system_role && (
+                    {role.isSystemRole && (
                       <p className="text-xs text-muted-foreground">System role names cannot be changed</p>
                     )}
                     <FormMessage />

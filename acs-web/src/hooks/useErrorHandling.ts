@@ -192,7 +192,7 @@ function logErrorToService(appError: AppError, originalError: any) {
   };
 
   // Example: Send to monitoring service
-  console.log('Error logged to service:', errorData);
+  // console.log('Error logged to service:', errorData); // silenced in production
   
   // Uncomment and configure for your monitoring service:
   // Sentry.captureException(originalError, { extra: errorData });

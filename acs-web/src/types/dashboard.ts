@@ -32,7 +32,7 @@ export interface MonthlyTrend {
 
 export interface RecentActivity {
   id: string;
-  type: 'case_assigned' | 'case_completed' | 'case_approved' | 'invoice_generated';
+  type: 'caseAssigned' | 'caseCompleted' | 'caseApproved' | 'invoiceGenerated';
   title: string;
   description: string;
   timestamp: string;

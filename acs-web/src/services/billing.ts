@@ -56,7 +56,7 @@ export class BillingService {
   async downloadInvoicePDF(id: string): Promise<Blob> {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/invoices/${id}/download`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
     });
     return response.blob();
@@ -124,7 +124,7 @@ export class BillingService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/reports/invoices/download`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(query),
@@ -136,7 +136,7 @@ export class BillingService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/reports/commissions/download`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(query),

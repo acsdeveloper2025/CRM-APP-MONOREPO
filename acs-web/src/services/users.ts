@@ -200,7 +200,7 @@ export class UsersService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/export?format=${format}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(query),
@@ -212,7 +212,7 @@ export class UsersService {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/import-template`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
     });
     return response.blob();
