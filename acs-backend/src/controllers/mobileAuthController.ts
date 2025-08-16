@@ -262,7 +262,7 @@ export class MobileAuthController {
       
       // Check if refresh token exists in database
       const storedRes = await query(
-        `SELECT rt.token, u.id as user_id, u.username, u.role
+        `SELECT rt.token, u.id as "userId", u.username, u.role
          FROM refresh_tokens rt JOIN users u ON u.id = rt."userId"
          WHERE rt.token = $1 AND rt."userId" = $2 AND rt."deviceId" = $3 AND rt."expiresAt" > CURRENT_TIMESTAMP
          LIMIT 1`,
@@ -284,7 +284,7 @@ export class MobileAuthController {
       // Generate new access token
       const newAccessToken = jwt.sign(
         {
-          userId: storedToken.user_id,
+          userId: storedToken.userId,
           username: storedToken.username,
           role: storedToken.role,
           deviceId: decoded.deviceId,
