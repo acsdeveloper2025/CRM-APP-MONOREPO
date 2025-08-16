@@ -7,9 +7,6 @@
     "build": "tsc",
     "start": "node -r module-alias/register dist/index.js",
     "dev": "nodemon src/index.ts",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
@@ -19,15 +16,12 @@
     "db:push": "echo 'no-op (prisma removed)'",
     "db:migrate": "echo 'no-op (prisma removed)'",
     "db:migrate:deploy": "echo 'no-op (prisma removed)'",
-    "db:seed": "node scripts/seed.js",
     "port:check": "lsof -i:3000 || echo 'Port 3000 is available'",
     "port:kill": "lsof -ti:3000 | xargs kill -9 || echo 'No process found on port 3000'",
     "services:check": "echo 'Checking required services...' && lsof -i:5432 && lsof -i:6379 && echo 'All services running'",
     "start:force": "npm run port:kill && npm run build && npm start",
-    "db:studio": "echo 'no-op (prisma removed)'",
-    "db:reset": "node scripts/reset-db.js"
+    "db:studio": "echo 'no-op (prisma removed)'"
   },
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/acsdeveloper2025/acs-backend.git"
@@ -84,7 +78,6 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
-    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.0.0",
@@ -95,11 +88,8 @@
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
-    "jest": "^30.0.5",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
-    "supertest": "^7.1.4",
-    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2"
