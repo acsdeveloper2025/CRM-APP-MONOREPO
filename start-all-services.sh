@@ -143,7 +143,7 @@ fi
 # Start Web Frontend
 print_info "Starting Web Frontend..."
 if ! check_port 5173 "Web Frontend"; then
-    cd acs-frontend
+    cd acs-web
     print_status "Installing frontend dependencies..."
     npm install --silent
     print_status "Starting web frontend on port 5173..."

@@ -249,6 +249,5 @@ LEFT JOIN designations des ON des.id = u.designation_id;
 -- Grant permissions on the updated view
 GRANT SELECT ON user_details TO acs_user;
 
--- Log rollback completion
-INSERT INTO migrations (filename, executed_at) 
-VALUES ('20250815_rollback_naming_conventions.sql', CURRENT_TIMESTAMP);
+-- Rollback completed successfully
+-- Note: Migration tracking is handled automatically by the migration system

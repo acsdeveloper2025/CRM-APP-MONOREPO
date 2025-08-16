@@ -62,11 +62,11 @@ FROM clients;
 
 -- Attachments Legacy View
 CREATE VIEW attachments_legacy AS
-SELECT 
+SELECT
     id,
-    name,
-    type,
-    url,
+    filename as name,  -- Use filename as name for legacy compatibility
+    "mimeType" as type,
+    "filePath" as url,
     "caseId" as case_id,
     "originalName" as original_name,
     "filePath" as file_path,
@@ -274,13 +274,13 @@ FROM background_sync_queue;
 
 -- Locations Legacy View
 CREATE VIEW locations_legacy AS
-SELECT 
+SELECT
     id,
     latitude,
     longitude,
     accuracy,
-    timestamp,
-    source,
+    "recordedAt" as timestamp,  -- Use recordedAt as timestamp for legacy compatibility
+    'GPS' as source,  -- Default source value for legacy compatibility
     "caseId" as case_id,
     "recordedBy" as recorded_by,
     "recordedAt" as recorded_at
@@ -405,6 +405,5 @@ GRANT SELECT ON client_verification_types_legacy TO acs_user;
 GRANT SELECT ON product_verification_types_legacy TO acs_user;
 GRANT SELECT ON pincode_areas_legacy TO acs_user;
 
--- Log migration completion
-INSERT INTO migrations (filename, "executedAt") 
-VALUES ('20250815_create_compatibility_views.sql', CURRENT_TIMESTAMP);
+-- Migration completed successfully
+-- Note: Migration tracking is handled automatically by the migration system
