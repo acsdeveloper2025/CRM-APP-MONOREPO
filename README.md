@@ -67,9 +67,28 @@ See the step-by-step guide with OS-specific notes:
 - `npm run db:reset` — reset database and re-apply migrations
 - `npm run test` — run backend tests
 
+## 📚 Documentation
+
+Comprehensive project documentation is organized in the `project-documentation/` directory:
+
+- **[Project Documentation Index](project-documentation/README.md)** - Complete documentation overview
+- **API Documentation** - API implementation, testing, and gap analysis reports
+- **Database Reports** - Schema changes, migrations, and audit reports
+- **System Reports** - Rate limiting, WebSocket, Docker, and port configuration
+- **Audit Reports** - Codebase fixes, security audits, and compliance reports
+- **Setup Guides** - Detailed setup instructions and troubleshooting guides
+
+## Troubleshooting
+
+- **Port conflicts**: Ensure ports 3000, 5173, 5174, 5432, 6379 are available
+- **Database connection**: Verify PostgreSQL is running and credentials are correct
+- **Redis connection**: Ensure Redis server is running on localhost:6379
+- **Build errors**: Clear node_modules and reinstall dependencies
+
 ## Notes
 
 - If Prisma type errors appear in dev, run `npm run db:generate` and restart `npm run dev`.
 - Ensure PostgreSQL is reachable on `localhost:5432` and Redis on `localhost:6379`.
 - PostgreSQL can be installed via Homebrew on macOS, apt on Linux, or downloaded from postgresql.org on Windows.
+- For detailed setup instructions, see individual app README files and the [project documentation](project-documentation/README.md).
 
