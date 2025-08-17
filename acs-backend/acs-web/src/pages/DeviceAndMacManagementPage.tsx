@@ -1,6 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface UserOption { id: string; name: string; username: string; }
 interface MacRow { id: string; macAddress: string; label?: string; isApproved: boolean; createdAt?: string; }
@@ -145,21 +156,42 @@ export const DeviceAndMacManagementPage: React.FC = () => {
                         Approve
                       </button>
                     )}
-                    <button
-                      className="bg-red-600 text-white px-3 py-1 rounded"
-                      onClick={async () => {
-                        const reason = prompt('Enter rejection reason (optional)') || '';
-                        try {
-                          await api.post(`/api/devices/${d.id}/reject`, { reason }, { headers });
-                          const devRes = await api.get(`/api/devices?userId=${selectedUserId}`, { headers });
-                          setDevices(devRes.data?.data?.items || devRes.data?.data?.devices || []);
-                        } catch (e) {
-                          console.error('Reject failed', e);
-                        }
-                      }}
-                    >
-                      Reject
-                    </button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="bg-red-600 text-white px-3 py-1 rounded">Reject</button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Reject device {d.deviceId}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will deactivate and revoke this device's access for {d.userName || d.username || 'the user'}. You can provide an optional reason below.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="mt-2">
+                          <label className="block text-sm mb-1">Reason (optional)</label>
+                          <textarea id={`reject-reason-${d.id}`} className="w-full border rounded px-3 py-2" placeholder="Enter a reason" />
+                        </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700"
+                            onClick={async () => {
+                              const el = document.getElementById(`reject-reason-${d.id}`) as HTMLTextAreaElement | null;
+                              const reason = el?.value || '';
+                              try {
+                                await api.post(`/api/devices/${d.id}/reject`, { reason }, { headers });
+                                const devRes = await api.get(`/api/devices?userId=${selectedUserId}`, { headers });
+                                setDevices(devRes.data?.data?.items || devRes.data?.data?.devices || []);
+                              } catch (e) {
+                                console.error('Reject failed', e);
+                              }
+                            }}
+                          >
+                            Reject Device
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
