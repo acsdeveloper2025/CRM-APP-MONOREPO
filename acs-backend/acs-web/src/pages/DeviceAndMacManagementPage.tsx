@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import toast from 'react-hot-toast';
 
 interface UserOption { id: string; name: string; username: string; }
 interface MacRow { id: string; macAddress: string; label?: string; isApproved: boolean; createdAt?: string; }
@@ -50,12 +51,14 @@ export const DeviceAndMacManagementPage: React.FC = () => {
         setMacs(macRes.data?.data || []);
       } catch (e) {
         console.error('Failed to load MACs', e);
+        toast.error('Failed to load MAC addresses');
       }
       try {
         const devRes = await api.get(`/api/devices?userId=${selectedUserId}`, { headers });
         setDevices(devRes.data?.data?.items || devRes.data?.data || []);
       } catch (e) {
         console.error('Failed to load devices', e);
+        toast.error('Failed to load devices');
       }
     })();
   }, [selectedUserId, headers]);
@@ -67,8 +70,10 @@ export const DeviceAndMacManagementPage: React.FC = () => {
       setNewMac({ macAddress: '', label: '' });
       const macRes = await api.get(`/api/security/mac-addresses/${selectedUserId}`, { headers });
       setMacs(macRes.data?.data || []);
+      toast.success('MAC address added');
     } catch (e) {
       console.error('Failed to add MAC', e);
+      toast.error('Failed to add MAC');
     }
   };
 
@@ -76,8 +81,10 @@ export const DeviceAndMacManagementPage: React.FC = () => {
     try {
       await api.delete(`/api/security/mac-addresses/${id}`, { headers });
       setMacs(prev => prev.filter(m => m.id !== id));
+      toast.success('MAC address removed');
     } catch (e) {
       console.error('Failed to remove MAC', e);
+      toast.error('Failed to remove MAC');
     }
   };
 
@@ -161,8 +168,10 @@ export const DeviceAndMacManagementPage: React.FC = () => {
                                   await api.post(`/api/devices/${d.id}/approve`, {}, { headers });
                                   const devRes = await api.get(`/api/devices?userId=${selectedUserId}`, { headers });
                                   setDevices(devRes.data?.data?.items || devRes.data?.data?.devices || []);
+                                  toast.success('Device approved');
                                 } catch (e) {
                                   console.error('Approve failed', e);
+                                  toast.error('Failed to approve device');
                                 }
                               }}
                             >
@@ -198,8 +207,10 @@ export const DeviceAndMacManagementPage: React.FC = () => {
                                 await api.post(`/api/devices/${d.id}/reject`, { reason }, { headers });
                                 const devRes = await api.get(`/api/devices?userId=${selectedUserId}`, { headers });
                                 setDevices(devRes.data?.data?.items || devRes.data?.data?.devices || []);
+                                toast.success('Device rejected');
                               } catch (e) {
                                 console.error('Reject failed', e);
+                                toast.error('Failed to reject device');
                               }
                             }}
                           >
