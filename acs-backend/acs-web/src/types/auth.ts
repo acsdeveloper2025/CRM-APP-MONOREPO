@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'BACKEND' | 'BANK' | 'FIELD';
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'BACKEND' | 'BANK' | 'FIELD';
 
 export interface User {
   id: string;
@@ -10,11 +10,14 @@ export interface User {
   designation: string;
   department: string;
   profilePhotoUrl?: string;
+  deviceId?: string;
 }
 
 export interface LoginRequest {
   username: string;
   password: string;
+  deviceId?: string;
+  macAddress?: string;
 }
 
 export interface LoginResponse {

@@ -13,6 +13,8 @@ import type { LoginRequest } from '@/types/auth';
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
+  deviceId: z.string().optional(),
+  macAddress: z.string().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -105,6 +107,28 @@ export const LoginPage: React.FC = () => {
                 {errors.password && (
                   <p className="text-sm text-red-500">{errors.password.message}</p>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deviceId">Device ID (Field Agents only)</Label>
+                <Input
+                  id="deviceId"
+                  type="text"
+                  placeholder="Enter your device ID"
+                  {...register('deviceId')}
+                />
+                <p className="text-xs text-gray-500">Field Agents: Required on web and mobile. Get it from your registered device or your admin.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="macAddress">MAC Address (Non-Field web users)</Label>
+                <Input
+                  id="macAddress"
+                  type="text"
+                  placeholder="AA:BB:CC:DD:EE:FF"
+                  {...register('macAddress')}
+                />
+                <p className="text-xs text-gray-500">Admins/Managers: Required for web login. Ask your admin to whitelist your MAC. How to find: Windows: ipconfig /all; Mac: System Settings → Network → Details.</p>
               </div>
 
               <Button
