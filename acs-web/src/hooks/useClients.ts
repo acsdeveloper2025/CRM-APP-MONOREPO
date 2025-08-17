@@ -17,7 +17,7 @@ export const clientKeys = {
   lists: () => [...clientKeys.all, 'list'] as const,
   list: (filters: PaginationQuery) => [...clientKeys.lists(), filters] as const,
   details: () => [...clientKeys.all, 'detail'] as const,
-  detail: (id: string) => [...clientKeys.details(), id] as const,
+  detail: (id: number) => [...clientKeys.details(), id] as const,
 };
 
 export const productKeys = {

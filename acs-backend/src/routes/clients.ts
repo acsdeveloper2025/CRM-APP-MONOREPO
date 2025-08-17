@@ -7,10 +7,11 @@ import {
   getClientById,
   createClient,
   updateClient,
-  deleteClient
+  deleteClient,
+  getClientProducts,
+  getClientVerificationTypes
 } from '@/controllers/clientsController';
 import { getProductsByClient } from '@/controllers/productsController';
-import { getVerificationTypesByClient } from '@/controllers/clientVerificationTypesController';
 
 const router = express.Router();
 
@@ -110,7 +111,7 @@ router.get('/:id/verification-types',
     param('id').trim().notEmpty().withMessage('Client ID is required'),
     query('isActive').optional().isBoolean().withMessage('isActive must be a boolean')
   ]),
-  getVerificationTypesByClient
+  getClientVerificationTypes
 );
 
 // POST /api/clients - Create new client
@@ -146,7 +147,7 @@ router.get('/:id/products',
     param('id').trim().notEmpty().withMessage('Client ID is required'),
     query('isActive').optional().isBoolean().withMessage('isActive must be a boolean')
   ]),
-  getProductsByClient
+  getClientProducts
 );
 
 export default router;

@@ -18,7 +18,7 @@ export class ClientsService {
     return apiService.get('/clients', query);
   }
 
-  async getClientById(id: string): Promise<ApiResponse<Client>> {
+  async getClientById(id: number): Promise<ApiResponse<Client>> {
     return apiService.get(`/clients/${id}`);
   }
 
@@ -26,11 +26,11 @@ export class ClientsService {
     return apiService.post('/clients', data);
   }
 
-  async updateClient(id: string, data: UpdateClientData): Promise<ApiResponse<Client>> {
+  async updateClient(id: number, data: UpdateClientData): Promise<ApiResponse<Client>> {
     return apiService.put(`/clients/${id}`, data);
   }
 
-  async deleteClient(id: string): Promise<ApiResponse<void>> {
+  async deleteClient(id: number): Promise<ApiResponse<void>> {
     return apiService.delete(`/clients/${id}`);
   }
 
@@ -39,11 +39,11 @@ export class ClientsService {
     return apiService.get('/products', query);
   }
 
-  async getProductById(id: string): Promise<ApiResponse<Product>> {
+  async getProductById(id: number): Promise<ApiResponse<Product>> {
     return apiService.get(`/products/${id}`);
   }
 
-  async getProductsByClient(clientId: string, isActive?: boolean): Promise<ApiResponse<Product[]>> {
+  async getProductsByClient(clientId: number, isActive?: boolean): Promise<ApiResponse<Product[]>> {
     const params = isActive !== undefined ? { isActive } : {};
     return apiService.get(`/clients/${clientId}/products`, params);
   }
@@ -52,11 +52,11 @@ export class ClientsService {
     return apiService.post('/products', data);
   }
 
-  async updateProduct(id: string, data: UpdateProductData): Promise<ApiResponse<Product>> {
+  async updateProduct(id: number, data: UpdateProductData): Promise<ApiResponse<Product>> {
     return apiService.put(`/products/${id}`, data);
   }
 
-  async deleteProduct(id: string): Promise<ApiResponse<void>> {
+  async deleteProduct(id: number): Promise<ApiResponse<void>> {
     return apiService.delete(`/products/${id}`);
   }
 
@@ -65,11 +65,11 @@ export class ClientsService {
     return apiService.get('/verification-types', query);
   }
 
-  async getVerificationTypeById(id: string): Promise<ApiResponse<VerificationType>> {
+  async getVerificationTypeById(id: number): Promise<ApiResponse<VerificationType>> {
     return apiService.get(`/verification-types/${id}`);
   }
 
-  async getVerificationTypesByClient(clientId: string, isActive?: boolean): Promise<ApiResponse<VerificationType[]>> {
+  async getVerificationTypesByClient(clientId: number, isActive?: boolean): Promise<ApiResponse<VerificationType[]>> {
     const params = isActive !== undefined ? { isActive } : {};
     return apiService.get(`/clients/${clientId}/verification-types`, params);
   }
@@ -78,20 +78,20 @@ export class ClientsService {
     return apiService.post('/verification-types', data);
   }
 
-  async updateVerificationType(id: string, data: UpdateVerificationTypeData): Promise<ApiResponse<VerificationType>> {
+  async updateVerificationType(id: number, data: UpdateVerificationTypeData): Promise<ApiResponse<VerificationType>> {
     return apiService.put(`/verification-types/${id}`, data);
   }
 
-  async deleteVerificationType(id: string): Promise<ApiResponse<void>> {
+  async deleteVerificationType(id: number): Promise<ApiResponse<void>> {
     return apiService.delete(`/verification-types/${id}`);
   }
 
   // Mapping operations
-  async mapClientToCities(clientId: string, cityIds: string[]): Promise<ApiResponse<void>> {
+  async mapClientToCities(clientId: number, cityIds: number[]): Promise<ApiResponse<void>> {
     return apiService.post(`/clients/${clientId}/cities`, { cityIds });
   }
 
-  async mapProductToVerificationTypes(productId: string, verificationTypeIds: string[]): Promise<ApiResponse<void>> {
+  async mapProductToVerificationTypes(productId: number, verificationTypeIds: number[]): Promise<ApiResponse<void>> {
     return apiService.post(`/products/${productId}/verification-types`, { verificationTypeIds });
   }
 

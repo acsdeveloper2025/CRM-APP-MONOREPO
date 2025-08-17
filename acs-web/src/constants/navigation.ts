@@ -14,7 +14,8 @@ import {
   Shield,
   Plus,
   CheckCircle,
-  Smartphone
+  Smartphone,
+  DollarSign
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -101,6 +102,13 @@ export const navigationItems: NavigationItem[] = [
         label: 'Verification Types',
         href: '/verification-types',
         icon: CheckSquare,
+        permission: { resource: 'clients', action: 'read' },
+      },
+      {
+        id: 'rate-management',
+        label: 'Rate Management',
+        href: '/rate-management',
+        icon: DollarSign,
         permission: { resource: 'clients', action: 'read' },
       },
     ],

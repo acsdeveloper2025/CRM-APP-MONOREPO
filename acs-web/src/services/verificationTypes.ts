@@ -79,6 +79,16 @@ export class VerificationTypesService {
   }>> {
     return apiService.get('/verification-types/stats');
   }
+
+  async getVerificationTypesByClient(clientId: string, isActive?: boolean): Promise<ApiResponse<VerificationType[]>> {
+    const params = isActive !== undefined ? { isActive } : {};
+    return apiService.get(`/clients/${clientId}/verification-types`, params);
+  }
+
+  async getVerificationTypesByProduct(productId: string, isActive?: boolean): Promise<ApiResponse<VerificationType[]>> {
+    const params = isActive !== undefined ? { isActive } : {};
+    return apiService.get(`/products/${productId}/verification-types`, params);
+  }
 }
 
 export const verificationTypesService = new VerificationTypesService();

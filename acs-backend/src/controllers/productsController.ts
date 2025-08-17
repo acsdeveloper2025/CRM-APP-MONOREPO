@@ -332,3 +332,51 @@ export const getProductStats = async (req: AuthenticatedRequest, res: Response) 
     });
   }
 };
+
+// GET /api/products/:id/verification-types - Get verification types for a specific product
+export const getProductVerificationTypes = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.query;
+
+    // Check if product exists
+    const productRes = await query(`SELECT id FROM products WHERE id = $1`, [id]);
+    if (!productRes.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // Build where clause for active filter
+    const whereClause = isActive !== undefined ? 'AND vt."isActive" = $2' : '';
+    const params = isActive !== undefined ? [id, String(isActive) === 'true'] : [id];
+
+    const vtRes = await query(
+      `SELECT vt.id, vt.name, vt.code, vt.description, vt."isActive", pvt."createdAt" as "assignedAt"
+       FROM "productVerificationTypes" pvt
+       JOIN "verificationTypes" vt ON pvt."verificationTypeId" = vt.id
+       WHERE pvt."productId" = $1 ${whereClause}
+       ORDER BY vt.name`,
+      params
+    );
+
+    logger.info(`Retrieved ${vtRes.rows.length} verification types for product ${id}`, {
+      userId: req.user?.id,
+      productId: id,
+    });
+
+    res.json({
+      success: true,
+      data: vtRes.rows,
+    });
+  } catch (error) {
+    logger.error('Error retrieving product verification types:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve product verification types',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};

@@ -9,7 +9,8 @@ import {
   updateProduct,
   deleteProduct,
   getProductsByClient,
-  getProductStats
+  getProductStats,
+  getProductVerificationTypes
 } from '@/controllers/productsController';
 
 const router = express.Router();
@@ -178,18 +179,14 @@ router.delete('/:id',
   deleteProduct
 );
 
-// TODO: Implement verification type mapping endpoints
-// router.post('/:id/verification-types',
-//   [param('id').trim().notEmpty().withMessage('Product ID is required')],
-//   verificationTypesValidation,
-//   validate,
-//   mapVerificationTypes
-// );
-
-// router.get('/:id/verification-types',
-//   [param('id').trim().notEmpty().withMessage('Product ID is required')],
-//   validate,
-//   getVerificationTypesByProduct
-// );
+// Get verification types for a product
+router.get('/:id/verification-types',
+  [
+    param('id').trim().notEmpty().withMessage('Product ID is required'),
+    query('isActive').optional().isBoolean().withMessage('isActive must be a boolean')
+  ],
+  handleValidationErrors,
+  getProductVerificationTypes
+);
 
 export default router;

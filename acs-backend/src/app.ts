@@ -37,6 +37,9 @@ import notificationRoutes from '@/routes/notifications';
 import mobileRoutes from '@/routes/mobile';
 import securityRoutes from '@/routes/security';
 import deduplicationRoutes from '@/routes/deduplication';
+import rateTypesRoutes from '@/routes/rate-types';
+import rateTypeAssignmentsRoutes from '@/routes/rate-type-assignments';
+import ratesRoutes from '@/routes/rates';
 
 
 const app = express();
@@ -121,6 +124,9 @@ app.use('/api/forms', formRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/cases/deduplication', deduplicationRoutes);
+app.use('/api/rate-types', rateTypesRoutes);
+app.use('/api/rate-type-assignments', rateTypeAssignmentsRoutes);
+app.use('/api/rates', ratesRoutes);
 
 
 // Mobile API routes

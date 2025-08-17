@@ -53,7 +53,7 @@ export function ClientsTable({ data, isLoading }: ClientsTableProps) {
 
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => clientsService.deleteClient(id),
+    mutationFn: (id: number) => clientsService.deleteClient(id),
     onSuccess: () => {
       // Invalidate all client-related queries to ensure the list updates
       queryClient.invalidateQueries({

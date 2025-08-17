@@ -26,6 +26,8 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { ProductsPage } from '@/pages/ProductsPage';
 import { VerificationTypesPage } from '@/pages/VerificationTypesPage';
 import { DeviceManagementPage } from '@/pages/DeviceManagementPage';
+import { RateManagementPage } from '@/pages/RateManagementPage';
+import { RateManagementTestPage } from '@/pages/RateManagementTestPage';
 
 // Default route component that handles authentication-based redirects
 const DefaultRoute: React.FC = () => {
@@ -145,6 +147,28 @@ export const AppRoutes: React.FC = () => {
               <VerificationTypesPage />
             </Layout>
           </ProtectedRoute>
+        }
+      />
+
+      {/* Rate Management routes */}
+      <Route
+        path="/rate-management"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
+            <Layout>
+              <RateManagementPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Rate Management Test Route */}
+      <Route
+        path="/rate-test"
+        element={
+          <Layout>
+            <RateManagementTestPage />
+          </Layout>
         }
       />
       

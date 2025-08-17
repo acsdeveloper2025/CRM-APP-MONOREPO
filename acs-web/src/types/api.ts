@@ -46,3 +46,12 @@ export interface ValidationError {
   message: string;
   value?: any;
 }
+
+export interface PaginatedResponse<T = any> extends ApiResponse<T[]> {
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

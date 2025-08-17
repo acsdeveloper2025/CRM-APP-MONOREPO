@@ -1,5 +1,5 @@
 export interface Client {
-  id: string;
+  id: number; // Changed from string (UUID) to number (SERIAL)
   name: string;
   code: string;
   createdAt: string;
@@ -9,7 +9,7 @@ export interface Client {
 }
 
 export interface Product {
-  id: string;
+  id: number; // Changed from string (UUID) to number (SERIAL)
   name: string;
   code: string;
   createdAt: string;
@@ -19,7 +19,7 @@ export interface Product {
 }
 
 export interface VerificationType {
-  id: string;
+  id: number; // Changed from string (UUID) to number (SERIAL)
   name: string;
   code: string;
   createdAt: string;
@@ -29,15 +29,15 @@ export interface VerificationType {
 export interface CreateClientData {
   name: string;
   code: string;
-  productIds?: string[];
-  verificationTypeIds?: string[];
+  productIds?: number[]; // Changed from string[] to number[]
+  verificationTypeIds?: number[]; // Changed from string[] to number[]
 }
 
 export interface UpdateClientData {
   name?: string;
   code?: string;
-  productIds?: string[];
-  verificationTypeIds?: string[];
+  productIds?: number[]; // Changed from string[] to number[]
+  verificationTypeIds?: number[]; // Changed from string[] to number[]
 }
 
 export interface CreateProductData {
