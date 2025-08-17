@@ -141,20 +141,36 @@ export const DeviceAndMacManagementPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     {!d.isApproved && (
-                      <button
-                        className="bg-green-600 text-white px-3 py-1 rounded"
-                        onClick={async () => {
-                          try {
-                            await api.post(`/api/devices/${d.id}/approve`, {}, { headers });
-                            const devRes = await api.get(`/api/devices?userId=${selectedUserId}`, { headers });
-                            setDevices(devRes.data?.data?.items || devRes.data?.data?.devices || []);
-                          } catch (e) {
-                            console.error('Approve failed', e);
-                          }
-                        }}
-                      >
-                        Approve
-                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button className="bg-green-600 text-white px-3 py-1 rounded">Approve</button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Approve device {d.deviceId}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will approve this device for {d.userName || d.username || 'the user'} and grant access for future logins.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={async () => {
+                                try {
+                                  await api.post(`/api/devices/${d.id}/approve`, {}, { headers });
+                                  const devRes = await api.get(`/api/devices?userId=${selectedUserId}`, { headers });
+                                  setDevices(devRes.data?.data?.items || devRes.data?.data?.devices || []);
+                                } catch (e) {
+                                  console.error('Approve failed', e);
+                                }
+                              }}
+                            >
+                              Approve Device
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
