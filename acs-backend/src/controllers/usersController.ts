@@ -837,10 +837,231 @@ export const getUserSessions = async (req: AuthenticatedRequest, res: Response) 
   });
 };
 
+export const getRolePermissions = async (req: AuthenticatedRequest, res: Response) => {
+  res.json({
+    success: true,
+    data: [],
+    pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+    message: 'Role permissions feature coming soon',
+  });
+};
+
 export const bulkUserOperation = async (req: AuthenticatedRequest, res: Response) => {
   res.status(501).json({
     success: false,
     message: 'Bulk operations feature coming soon',
     error: { code: 'NOT_IMPLEMENTED' },
   });
+};
+
+// GET /api/users/:userId/client-assignments - Get assigned clients for a user
+export const getUserClientAssignments = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate user exists
+    const userResult = await query(
+      'SELECT id, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // Get client assignments with client details
+    const assignmentsResult = await query(`
+      SELECT
+        uca.id,
+        uca."clientId",
+        uca."createdAt",
+        uca."updatedAt",
+        c.name as "clientName",
+        c.code as "clientCode",
+        c.email as "clientEmail",
+        c."isActive" as "clientIsActive"
+      FROM "userClientAssignments" uca
+      JOIN clients c ON uca."clientId" = c.id
+      WHERE uca."userId" = $1
+      ORDER BY c.name ASC
+    `, [userId]);
+
+    logger.info(`Retrieved ${assignmentsResult.rows.length} client assignments for user ${userId}`, {
+      userId: req.user?.id,
+      targetUserId: userId
+    });
+
+    res.json({
+      success: true,
+      data: assignmentsResult.rows,
+      pagination: {
+        page: 1,
+        limit: assignmentsResult.rows.length,
+        total: assignmentsResult.rows.length,
+        totalPages: 1
+      },
+      message: 'Client assignments retrieved successfully',
+    });
+  } catch (error) {
+    logger.error('Error retrieving user client assignments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve client assignments',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// POST /api/users/:userId/client-assignments - Assign clients to a user
+export const assignClientsToUser = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { clientIds } = req.body;
+
+    // Validate input
+    if (!Array.isArray(clientIds) || clientIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'clientIds must be a non-empty array',
+        error: { code: 'INVALID_INPUT' },
+      });
+    }
+
+    // Validate user exists
+    const userResult = await query(
+      'SELECT id, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // Validate all client IDs exist
+    const clientsResult = await query(
+      `SELECT id FROM clients WHERE id = ANY($1::int[])`,
+      [clientIds]
+    );
+
+    if (clientsResult.rows.length !== clientIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'One or more client IDs are invalid',
+        error: { code: 'INVALID_CLIENT_IDS' },
+      });
+    }
+
+    // Insert assignments (using ON CONFLICT to handle duplicates)
+    const insertPromises = clientIds.map(clientId =>
+      query(`
+        INSERT INTO "userClientAssignments" ("userId", "clientId")
+        VALUES ($1, $2)
+        ON CONFLICT ("userId", "clientId") DO NOTHING
+        RETURNING id
+      `, [userId, clientId])
+    );
+
+    const results = await Promise.all(insertPromises);
+    const newAssignments = results.filter(result => result.rows.length > 0).length;
+
+    logger.info(`Assigned ${newAssignments} new clients to user ${userId}`, {
+      userId: req.user?.id,
+      targetUserId: userId,
+      clientIds,
+      newAssignments
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        userId,
+        assignedClients: newAssignments,
+        totalRequested: clientIds.length,
+        duplicatesSkipped: clientIds.length - newAssignments
+      },
+      message: `Successfully assigned ${newAssignments} clients to user`,
+    });
+  } catch (error) {
+    logger.error('Error assigning clients to user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to assign clients to user',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// DELETE /api/users/:userId/client-assignments/:clientId - Remove client assignment
+export const removeClientAssignment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId, clientId } = req.params;
+
+    // Validate user exists
+    const userResult = await query(
+      'SELECT id, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // Validate client exists
+    const clientResult = await query(
+      'SELECT id FROM clients WHERE id = $1',
+      [clientId]
+    );
+
+    if (clientResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found',
+        error: { code: 'CLIENT_NOT_FOUND' },
+      });
+    }
+
+    // Remove the assignment
+    const deleteResult = await query(
+      'DELETE FROM "userClientAssignments" WHERE "userId" = $1 AND "clientId" = $2 RETURNING id',
+      [userId, clientId]
+    );
+
+    if (deleteResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client assignment not found',
+        error: { code: 'ASSIGNMENT_NOT_FOUND' },
+      });
+    }
+
+    logger.info(`Removed client assignment: user ${userId}, client ${clientId}`, {
+      userId: req.user?.id,
+      targetUserId: userId,
+      removedClientId: clientId
+    });
+
+    res.json({
+      success: true,
+      message: 'Client assignment removed successfully',
+    });
+  } catch (error) {
+    logger.error('Error removing client assignment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to remove client assignment',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
 };

@@ -15,6 +15,12 @@ import {
   getUserStats,
   getDepartments,
   getDesignations,
+  getUserActivities,
+  getUserSessions,
+  getRolePermissions,
+  getUserClientAssignments,
+  assignClientsToUser,
+  removeClientAssignment,
   bulkUserOperation
 } from '@/controllers/usersController';
 
@@ -219,6 +225,27 @@ const searchValidation = [
     .withMessage('Search query must be between 1 and 100 characters'),
 ];
 
+const clientAssignmentValidation = [
+  body('clientIds')
+    .isArray({ min: 1 })
+    .withMessage('clientIds must be a non-empty array'),
+  body('clientIds.*')
+    .isInt({ min: 1 })
+    .withMessage('Each client ID must be a positive integer'),
+];
+
+const userIdValidation = [
+  param('userId')
+    .isUUID()
+    .withMessage('User ID must be a valid UUID'),
+];
+
+const clientIdValidation = [
+  param('clientId')
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a positive integer'),
+];
+
 // Core CRUD routes
 router.get('/', 
   authenticateToken, 
@@ -244,29 +271,68 @@ router.get('/departments',
   getDepartments
 );
 
-router.get('/designations', 
-  authenticateToken, 
+router.get('/designations',
+  authenticateToken,
   getDesignations
 );
 
-router.post('/', 
-  authenticateToken, 
-  createUserValidation, 
-  validate, 
+router.get('/activities',
+  authenticateToken,
+  getUserActivities
+);
+
+router.get('/sessions',
+  authenticateToken,
+  getUserSessions
+);
+
+router.get('/roles/permissions',
+  authenticateToken,
+  getRolePermissions
+);
+
+router.post('/',
+  authenticateToken,
+  createUserValidation,
+  validate,
   createUser
 );
 
-router.post('/bulk-operation', 
-  authenticateToken, 
-  bulkOperationValidation, 
-  validate, 
+router.post('/bulk-operation',
+  authenticateToken,
+  bulkOperationValidation,
+  validate,
   bulkUserOperation
 );
 
-router.get('/:id', 
-  authenticateToken, 
-  [param('id').trim().notEmpty().withMessage('User ID is required')], 
-  validate, 
+// Client assignment routes (must be before /:id route)
+router.get('/:userId/client-assignments',
+  authenticateToken,
+  userIdValidation,
+  validate,
+  getUserClientAssignments
+);
+
+router.post('/:userId/client-assignments',
+  authenticateToken,
+  userIdValidation,
+  clientAssignmentValidation,
+  validate,
+  assignClientsToUser
+);
+
+router.delete('/:userId/client-assignments/:clientId',
+  authenticateToken,
+  userIdValidation,
+  clientIdValidation,
+  validate,
+  removeClientAssignment
+);
+
+router.get('/:id',
+  authenticateToken,
+  [param('id').trim().notEmpty().withMessage('User ID is required')],
+  validate,
   getUserById
 );
 

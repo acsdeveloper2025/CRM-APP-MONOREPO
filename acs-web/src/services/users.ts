@@ -1,5 +1,5 @@
 import { apiService } from './api';
-import type { 
+import type {
   User,
   CreateUserData,
   UpdateUserData,
@@ -12,7 +12,8 @@ import type {
   BulkUserOperation,
   UserImportData,
   UserExportData,
-  RolePermission
+  RolePermission,
+  UserClientAssignment
 } from '@/types/user';
 import type { ApiResponse, PaginationQuery } from '@/types/api';
 import type { Role } from '@/types/auth';
@@ -254,6 +255,19 @@ export class UsersService {
 
   async getDepartmentStats(): Promise<ApiResponse<{ department: string; userCount: number; activeCount: number }[]>> {
     return apiService.get('/users/departments/stats');
+  }
+
+  // Client assignment management for BACKEND users
+  async getUserClientAssignments(userId: string): Promise<ApiResponse<UserClientAssignment[]>> {
+    return apiService.get(`/users/${userId}/client-assignments`);
+  }
+
+  async assignClientsToUser(userId: string, clientIds: number[]): Promise<ApiResponse<void>> {
+    return apiService.post(`/users/${userId}/client-assignments`, { clientIds });
+  }
+
+  async removeClientAssignment(userId: string, clientId: number): Promise<ApiResponse<void>> {
+    return apiService.delete(`/users/${userId}/client-assignments/${clientId}`);
   }
 }
 

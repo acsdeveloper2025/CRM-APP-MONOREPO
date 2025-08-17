@@ -75,9 +75,14 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
   isSubmitting = false,
   initialData = {}
 }) => {
-  const { data: fieldUsers } = useFieldUsers();
-  const { data: clients } = useClients();
-  const { data: verificationTypes } = useVerificationTypes();
+  const { data: fieldUsersResponse } = useFieldUsers();
+  const { data: clientsResponse } = useClients();
+  const { data: verificationTypesResponse } = useVerificationTypes();
+
+  // Extract the actual arrays from the API responses
+  const fieldUsers = fieldUsersResponse?.data || [];
+  const clients = clientsResponse?.data || [];
+  const verificationTypes = verificationTypesResponse?.data || [];
 
   const form = useForm<FullCaseFormData>({
     resolver: zodResolver(fullCaseFormSchema),

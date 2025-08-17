@@ -282,6 +282,17 @@ export interface UserImportData {
   password?: string;
 }
 
+export interface UserClientAssignment {
+  id: number;
+  clientId: number;
+  clientName: string;
+  clientCode: string;
+  clientEmail?: string;
+  clientIsActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UserExportData {
   id: string;
   name: string;

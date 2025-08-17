@@ -2,7 +2,28 @@ import { Request, Response } from 'express';
 import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from '@/middleware/auth';
 import { pool } from '@/config/database';
+import { query } from '@/config/database';
 import { DeduplicationService } from '@/services/deduplicationService';
+
+// Helper function to get assigned client IDs for BACKEND users
+const getAssignedClientIds = async (userId: string, userRole: string): Promise<number[] | null> => {
+  // Only apply client filtering for BACKEND users
+  if (userRole !== 'BACKEND') {
+    return null; // null means no filtering (access to all clients)
+  }
+
+  try {
+    const result = await query(
+      'SELECT "clientId" FROM "userClientAssignments" WHERE "userId" = $1',
+      [userId]
+    );
+
+    return result.rows.map(row => row.clientId);
+  } catch (error) {
+    logger.error('Error fetching assigned client IDs:', error);
+    throw error;
+  }
+};
 
 // Mock data for demonstration (replace with actual database operations)
 let cases: any[] = [
@@ -12,7 +33,7 @@ let cases: any[] = [
     description: 'Verify residential address for loan application',
     status: 'PENDING',
     priority: 1,
-    clientId: 'client_1',
+    clientId: 1,
     assignedToId: 'user_1',
     createdById: 'user_3',
     address: '123 Main St, City, State 12345',
@@ -33,7 +54,7 @@ let cases: any[] = [
     description: 'Verify office premises for business loan',
     status: 'IN_PROGRESS',
     priority: 2,
-    clientId: 'client_2',
+    clientId: 2,
     assignedToId: 'user_2',
     createdById: 'user_3',
     address: '456 Business Ave, City, State 67890',
@@ -85,68 +106,147 @@ let cases: any[] = [
 // GET /api/cases - List cases with pagination and filters
 export const getCases = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { 
-      page = 1, 
-      limit = 20, 
-      status, 
-      search, 
-      assignedTo, 
-      clientId, 
-      priority, 
-      dateFrom, 
-      dateTo 
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      search,
+      assignedTo,
+      clientId,
+      priority,
+      dateFrom,
+      dateTo
     } = req.query;
 
-    let filteredCases = [...cases];
+    // Get user info for client filtering
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
 
-    // Apply filters
+    // Build WHERE conditions
+    const whereConditions: string[] = [];
+    const queryParams: any[] = [];
+    let paramIndex = 1;
+
+    // Apply client filtering for BACKEND users (SUPER_ADMIN bypasses all restrictions)
+    if (userRole === 'BACKEND') {
+      const assignedClientIds = await getAssignedClientIds(userId!, userRole);
+
+      if (assignedClientIds && assignedClientIds.length === 0) {
+        // BACKEND user has no client assignments, return empty result
+        return res.json({
+          success: true,
+          data: [],
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            total: 0,
+            totalPages: 0,
+          },
+          message: 'No cases found - user has no assigned clients',
+        });
+      }
+
+      // Filter cases by assigned client IDs
+      if (assignedClientIds) {
+        whereConditions.push(`c."clientId" = ANY($${paramIndex}::int[])`);
+        queryParams.push(assignedClientIds);
+        paramIndex++;
+      }
+    }
+
+    // Apply other filters
     if (status) {
-      filteredCases = filteredCases.filter(c => c.status === status);
+      whereConditions.push(`c.status = $${paramIndex}`);
+      queryParams.push(status);
+      paramIndex++;
     }
     if (assignedTo) {
-      filteredCases = filteredCases.filter(c => c.assignedToId === assignedTo);
+      whereConditions.push(`c."assignedTo" = $${paramIndex}`);
+      queryParams.push(assignedTo);
+      paramIndex++;
     }
     if (clientId) {
-      filteredCases = filteredCases.filter(c => c.clientId === clientId);
+      whereConditions.push(`c."clientId" = $${paramIndex}`);
+      queryParams.push(Number(clientId));
+      paramIndex++;
     }
     if (priority) {
-      filteredCases = filteredCases.filter(c => c.priority === Number(priority));
+      whereConditions.push(`c.priority = $${paramIndex}`);
+      queryParams.push(Number(priority));
+      paramIndex++;
     }
     if (search) {
-      const searchTerm = (search as string).toLowerCase();
-      filteredCases = filteredCases.filter(c => 
-        c.title.toLowerCase().includes(searchTerm) ||
-        c.description.toLowerCase().includes(searchTerm) ||
-        c.contactPerson.toLowerCase().includes(searchTerm) ||
-        c.address.toLowerCase().includes(searchTerm)
-      );
+      whereConditions.push(`(
+        c."caseNumber" ILIKE $${paramIndex} OR
+        c."applicantName" ILIKE $${paramIndex} OR
+        c."applicantPhone" ILIKE $${paramIndex} OR
+        c."applicantEmail" ILIKE $${paramIndex} OR
+        c.address ILIKE $${paramIndex}
+      )`);
+      queryParams.push(`%${search}%`);
+      paramIndex++;
     }
     if (dateFrom) {
-      filteredCases = filteredCases.filter(c => new Date(c.createdAt) >= new Date(dateFrom as string));
+      whereConditions.push(`c."createdAt" >= $${paramIndex}`);
+      queryParams.push(new Date(dateFrom as string));
+      paramIndex++;
     }
     if (dateTo) {
-      filteredCases = filteredCases.filter(c => new Date(c.createdAt) <= new Date(dateTo as string));
+      whereConditions.push(`c."createdAt" <= $${paramIndex}`);
+      queryParams.push(new Date(dateTo as string));
+      paramIndex++;
     }
 
-    // Apply pagination
-    const startIndex = ((page as number) - 1) * (limit as number);
-    const endIndex = startIndex + (limit as number);
-    const paginatedCases = filteredCases.slice(startIndex, endIndex);
+    // Build the WHERE clause
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    logger.info(`Retrieved ${paginatedCases.length} cases`, { 
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM cases c
+      ${whereClause}
+    `;
+    const countResult = await query(countQuery, queryParams);
+    const total = parseInt(countResult.rows[0].total);
+
+    // Calculate pagination
+    const offset = (Number(page) - 1) * Number(limit);
+    const totalPages = Math.ceil(total / Number(limit));
+
+    // Get cases with pagination
+    const casesQuery = `
+      SELECT
+        c.*,
+        cl.name as "clientName",
+        cl.code as "clientCode",
+        u.name as "assignedToName"
+      FROM cases c
+      LEFT JOIN clients cl ON c."clientId" = cl.id
+      LEFT JOIN users u ON c."assignedTo" = u.id
+      ${whereClause}
+      ORDER BY c."createdAt" DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+    queryParams.push(Number(limit), offset);
+
+    const casesResult = await query(casesQuery, queryParams);
+
+    logger.info(`Retrieved ${casesResult.rows.length} cases`, {
       userId: req.user?.id,
+      userRole,
       filters: { status, assignedTo, clientId, priority, search },
-      pagination: { page, limit }
+      pagination: { page, limit },
+      total
     });
 
     res.json({
       success: true,
-      data: paginatedCases,
+      data: casesResult.rows,
       pagination: {
         page: Number(page),
         limit: Number(limit),
-        total: filteredCases.length,
-        totalPages: Math.ceil(filteredCases.length / (limit as number)),
+        total,
+        totalPages,
       },
     });
   } catch (error) {
@@ -163,15 +263,57 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
 export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const caseData = cases.find(c => c.id === id);
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
 
-    if (!caseData) {
+    // Build WHERE conditions for client filtering
+    const whereConditions: string[] = ['c.id = $1'];
+    const queryParams: any[] = [id];
+    let paramIndex = 2;
+
+    // Apply client filtering for BACKEND users (SUPER_ADMIN bypasses all restrictions)
+    if (userRole === 'BACKEND') {
+      const assignedClientIds = await getAssignedClientIds(userId!, userRole);
+
+      if (assignedClientIds && assignedClientIds.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied - user has no assigned clients',
+          error: { code: 'ACCESS_DENIED' },
+        });
+      }
+
+      if (assignedClientIds) {
+        whereConditions.push(`c."clientId" = ANY($${paramIndex}::int[])`);
+        queryParams.push(assignedClientIds);
+        paramIndex++;
+      }
+    }
+
+    // Query the case with client filtering
+    const caseQuery = `
+      SELECT
+        c.*,
+        cl.name as "clientName",
+        cl.code as "clientCode",
+        u.name as "assignedToName"
+      FROM cases c
+      LEFT JOIN clients cl ON c."clientId" = cl.id
+      LEFT JOIN users u ON c."assignedTo" = u.id
+      WHERE ${whereConditions.join(' AND ')}
+    `;
+
+    const caseResult = await query(caseQuery, queryParams);
+
+    if (caseResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Case not found',
+        message: 'Case not found or access denied',
         error: { code: 'NOT_FOUND' },
       });
     }
+
+    const caseData = caseResult.rows[0];
 
     logger.info(`Retrieved case ${id}`, { userId: req.user?.id });
 
@@ -227,6 +369,22 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
           code: 'MISSING_REQUIRED_FIELDS'
         }
       });
+    }
+
+    // Validate client access for BACKEND users (SUPER_ADMIN bypasses all restrictions)
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    if (userRole === 'BACKEND') {
+      const assignedClientIds = await getAssignedClientIds(userId!, userRole);
+
+      if (assignedClientIds && !assignedClientIds.includes(Number(clientId))) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied - cannot create case for unassigned client',
+          error: { code: 'CLIENT_ACCESS_DENIED' },
+        });
+      }
     }
 
     // Generate case number

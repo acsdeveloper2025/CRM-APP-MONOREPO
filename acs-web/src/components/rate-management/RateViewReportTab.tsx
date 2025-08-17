@@ -317,8 +317,8 @@ export function RateViewReportTab() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rates.map((rate) => (
-                    <TableRow key={rate.rateId}>
+                  {rates.map((rate, index) => (
+                    <TableRow key={rate.rateId || `${rate.clientId}-${rate.productId}-${rate.verificationTypeId}-${rate.rateTypeId}-${index}`}>
                       <TableCell>
                         <div>
                           <div className="font-medium">{rate.clientName}</div>

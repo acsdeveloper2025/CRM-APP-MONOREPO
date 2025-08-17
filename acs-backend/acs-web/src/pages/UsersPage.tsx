@@ -299,8 +299,8 @@ export function UsersPage() {
                       <SelectContent>
                         <SelectItem value="all">All Departments</SelectItem>
                         {departments.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept}
+                          <SelectItem key={dept.id} value={dept.id}>
+                            {dept.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

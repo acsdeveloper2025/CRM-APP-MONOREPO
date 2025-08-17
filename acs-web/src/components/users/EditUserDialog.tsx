@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Form,
   FormControl,
@@ -34,6 +35,7 @@ import { usersService } from '@/services/users';
 import { rolesService } from '@/services/roles';
 import { departmentsService } from '@/services/departments';
 import { designationsService } from '@/services/designations';
+import { ClientAssignmentSection } from './ClientAssignmentSection';
 import { User } from '@/types/user';
 
 const editUserSchema = z.object({
@@ -57,6 +59,7 @@ interface EditUserDialogProps {
 
 export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('details');
 
   const form = useForm<EditUserFormData>({
     resolver: zodResolver(editUserSchema),
@@ -158,16 +161,23 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
           <DialogDescription>
-            Update user information and permissions.
+            Update user information and manage permissions.
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details">User Details</TabsTrigger>
+            <TabsTrigger value="permissions">Permissions</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details" className="space-y-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -333,21 +343,36 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
               )}
             />
 
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={updateMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={updateMutation.isPending}>
+                    {updateMutation.isPending ? 'Updating...' : 'Update User'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </TabsContent>
+
+          <TabsContent value="permissions" className="space-y-4">
+            <ClientAssignmentSection user={user} />
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={updateMutation.isPending}
               >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? 'Updating...' : 'Update User'}
+                Close
               </Button>
             </DialogFooter>
-          </form>
-        </Form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

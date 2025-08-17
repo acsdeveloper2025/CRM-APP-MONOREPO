@@ -1,8 +1,10 @@
 import rateLimit from 'express-rate-limit';
+import jwt from 'jsonwebtoken';
 import { config } from '@/config';
 import { ApiResponse } from '@/types/api';
+import { AuthenticatedRequest } from './auth';
 
-const createRateLimiter = (windowMs: number, max: number, message: string) => {
+const createRateLimiter = (windowMs: number, max: number, message: string, skipForAdmins = false) => {
   return rateLimit({
     windowMs,
     max,
@@ -15,14 +17,38 @@ const createRateLimiter = (windowMs: number, max: number, message: string) => {
     } as ApiResponse,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: skipForAdmins ? (req: AuthenticatedRequest) => {
+      try {
+        // Check if user is authenticated and has admin privileges
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return false; // Apply rate limiting for unauthenticated requests
+        }
+
+        const token = authHeader.substring(7);
+
+        // Handle dev token for SUPER_ADMIN
+        if (token === 'dev-token') {
+          return true; // Skip rate limiting for dev token
+        }
+
+        const decoded = jwt.verify(token, config.jwtSecret) as any;
+
+        // Skip rate limiting for SUPER_ADMIN and ADMIN users
+        return decoded.role === 'SUPER_ADMIN' || decoded.role === 'ADMIN';
+      } catch (error) {
+        return false; // Apply rate limiting if token verification fails
+      }
+    } : undefined,
   });
 };
 
-// General API rate limiter
+// General API rate limiter - skip for admin users
 export const generalRateLimit = createRateLimiter(
   config.rateLimitWindowMs,
   config.rateLimitMaxRequests,
-  'Too many requests from this IP, please try again later'
+  'Too many requests from this IP, please try again later',
+  true // Skip rate limiting for admin users
 );
 
 // Auth endpoints - stricter limits
@@ -32,18 +58,20 @@ export const authRateLimit = createRateLimiter(
   'Too many authentication attempts, please try again later'
 );
 
-// File upload - moderate limits
+// File upload - generous limits, skip for admin users
 export const uploadRateLimit = createRateLimiter(
   60 * 1000, // 1 minute
-  10, // 10 uploads per minute
-  'Too many file uploads, please try again later'
+  50, // Increased from 10 to 50 uploads per minute
+  'Too many file uploads, please try again later',
+  true // Skip rate limiting for admin users
 );
 
-// Case operations - moderate limits
+// Case operations - generous limits, skip for admin users
 export const caseRateLimit = createRateLimiter(
   60 * 1000, // 1 minute
-  30, // 30 requests per minute
-  'Too many case operations, please try again later'
+  100, // Increased from 30 to 100 requests per minute
+  'Too many case operations, please try again later',
+  true // Skip rate limiting for admin users
 );
 
 // Geolocation - moderate limits

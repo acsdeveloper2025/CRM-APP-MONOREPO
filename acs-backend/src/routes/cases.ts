@@ -3,6 +3,7 @@ import { body, query, param } from 'express-validator';
 import { authenticateToken, requireFieldOrHigher } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
 import { caseRateLimit } from '@/middleware/rateLimiter';
+import { validateCaseAccess, validateClientAccess } from '@/middleware/clientAccess';
 import {
   getCases,
   getCaseById,
@@ -205,12 +206,14 @@ router.get('/',
 router.post('/',
   createCaseValidation,
   validate,
+  validateClientAccess('body'),
   createCase
 );
 
 router.get('/:id',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   validate,
+  validateCaseAccess,
   getCaseById
 );
 
@@ -218,12 +221,14 @@ router.put('/:id',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   updateCaseValidation,
   validate,
+  validateCaseAccess,
   updateCase
 );
 
 router.delete('/:id',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   validate,
+  validateCaseAccess,
   deleteCase
 );
 
@@ -232,6 +237,7 @@ router.put('/:id/status',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   statusUpdateValidation,
   validate,
+  validateCaseAccess,
   updateCaseStatus
 );
 
@@ -239,6 +245,7 @@ router.put('/:id/priority',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   priorityUpdateValidation,
   validate,
+  validateCaseAccess,
   updateCasePriority
 );
 
@@ -246,6 +253,7 @@ router.put('/:id/assign',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   assignValidation,
   validate,
+  validateCaseAccess,
   assignCase
 );
 
@@ -253,12 +261,14 @@ router.post('/:id/notes',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   noteValidation,
   validate,
+  validateCaseAccess,
   addCaseNote
 );
 
 router.get('/:id/history',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   validate,
+  validateCaseAccess,
   getCaseHistory
 );
 
@@ -266,6 +276,7 @@ router.post('/:id/complete',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   completeValidation,
   validate,
+  validateCaseAccess,
   completeCase
 );
 
@@ -273,6 +284,7 @@ router.post('/:id/approve',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   approveValidation,
   validate,
+  validateCaseAccess,
   approveCase
 );
 
@@ -280,6 +292,7 @@ router.post('/:id/reject',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   rejectValidation,
   validate,
+  validateCaseAccess,
   rejectCase
 );
 
@@ -287,6 +300,7 @@ router.post('/:id/rework',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   reworkValidation,
   validate,
+  validateCaseAccess,
   requestRework
 );
 

@@ -41,9 +41,9 @@ export const config = {
     ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
     : ['http://localhost:5173', 'http://localhost:5174'],
   
-  // Rate Limiting
-  rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-  rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+  // Rate Limiting - More generous limits
+  rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
+  rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '500', 10), // Increased from 100 to 500
   
   // File Upload
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10), // 10MB
