@@ -10,9 +10,6 @@ import type {
   RateWithDetails,
   RateManagementView
 } from '@/types/rateManagement';
-  currentAmount?: number;
-  hasRate: boolean;
-}
 
 export interface CreateOrUpdateRateData {
   clientId: number; // Changed from string to number

@@ -182,8 +182,8 @@ export const requirePermission = (resource: string, action: string) => {
       return;
     }
 
-    // Admin users have all permissions
-    if (req.user.role === Role.ADMIN) {
+    // SUPER_ADMIN and ADMIN users have all permissions
+    if (req.user.role === Role.SUPER_ADMIN || req.user.role === Role.ADMIN) {
       next();
       return;
     }

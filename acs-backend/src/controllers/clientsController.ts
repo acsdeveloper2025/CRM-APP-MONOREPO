@@ -67,8 +67,8 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
          FROM "clientProducts" cp
          JOIN "productVerificationTypes" pvt ON cp."productId" = pvt."productId"
          JOIN "verificationTypes" vt ON pvt."verificationTypeId" = vt.id
-         WHERE cp."clientId" = ANY($1::uuid[])`,
-        [clientIds]
+         WHERE cp."clientId" = ANY($1::integer[])`,
+        [clientIds.map(Number)]
       );
       vtMapRes.rows.forEach(r => {
         const arr = vtsByClient.get(r.clientId) || [];
@@ -77,8 +77,8 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
       });
 
       const casesRes = await query(
-        `SELECT id, "caseNumber", status, "clientId" FROM cases WHERE "clientId" = ANY($1::uuid[])`,
-        [clientIds]
+        `SELECT id, "caseNumber", status, "clientId" FROM cases WHERE "clientId" = ANY($1::integer[])`,
+        [clientIds.map(Number)]
       );
       casesRes.rows.forEach(r => {
         const arr = casesByClient.get(r.clientId) || [];
@@ -201,7 +201,7 @@ export const createClient = async (req: AuthenticatedRequest, res: Response) => 
 
     // Verify products exist if provided
     if (productIds.length > 0) {
-      const prodCheck = await query(`SELECT id FROM products WHERE id = ANY($1::uuid[])`, [productIds]);
+      const prodCheck = await query(`SELECT id FROM products WHERE id = ANY($1::integer[])`, [productIds.map(Number)]);
       if (prodCheck.rowCount !== productIds.length) {
         return res.status(400).json({
           success: false,
@@ -213,7 +213,7 @@ export const createClient = async (req: AuthenticatedRequest, res: Response) => 
 
     // Verify verification types exist if provided
     if (verificationTypeIds.length > 0) {
-      const vtCheck = await query(`SELECT id FROM "verificationTypes" WHERE id = ANY($1::uuid[])`, [verificationTypeIds]);
+      const vtCheck = await query(`SELECT id FROM "verificationTypes" WHERE id = ANY($1::integer[])`, [verificationTypeIds.map(Number)]);
       if (vtCheck.rowCount !== verificationTypeIds.length) {
         return res.status(400).json({
           success: false,
@@ -233,9 +233,9 @@ export const createClient = async (req: AuthenticatedRequest, res: Response) => 
       const created = clientIns.rows[0];
 
       if (productIds.length > 0) {
-        const uniqueProductIds = Array.from(new Set(productIds));
+        const uniqueProductIds = Array.from(new Set(productIds.map(Number)));
         // Verify products
-        const prodCheck = await cx.query(`SELECT id FROM products WHERE id = ANY($1::uuid[])`, [uniqueProductIds]);
+        const prodCheck = await cx.query(`SELECT id FROM products WHERE id = ANY($1::integer[])`, [uniqueProductIds]);
         if (prodCheck.rowCount !== uniqueProductIds.length) {
           throw Object.assign(new Error('One or more products not found'), { code: 'PRODUCTS_NOT_FOUND' });
         }
@@ -379,7 +379,8 @@ export const updateClient = async (req: AuthenticatedRequest, res: Response) => 
       if (Array.isArray(updateData.verificationTypeIds)) {
         const vtIds = updateData.verificationTypeIds;
         if (vtIds.length > 0) {
-          const vtCheck = await cx.query(`SELECT id FROM "verificationTypes" WHERE id = ANY($1::uuid[])`, [vtIds]);
+          const numericVtIds = vtIds.map(Number);
+          const vtCheck = await cx.query(`SELECT id FROM "verificationTypes" WHERE id = ANY($1::integer[])`, [numericVtIds]);
           if (vtCheck.rowCount !== vtIds.length) {
             throw Object.assign(new Error('One or more verification types not found'), { code: 'VERIFICATION_TYPES_NOT_FOUND' });
           }

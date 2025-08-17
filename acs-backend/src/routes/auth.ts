@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { login, logout, registerDevice, getCurrentUser, preloginInfo } from '@/controllers/authController';
+import { login, logout, fieldAgentUuidLogin, registerDevice, getCurrentUser, preloginInfo } from '@/controllers/authController';
 import { authenticateToken } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
 import { deviceAuthRateLimit } from '@/middleware/deviceAuthRateLimit';
@@ -58,9 +58,32 @@ const deviceRegistrationValidation = [
     .withMessage('App version must be a string'),
 ];
 
+// Field agent UUID login validation (for CaseFlow mobile app only)
+const fieldAgentUuidLoginValidation = [
+  body('authUuid')
+    .notEmpty()
+    .withMessage('Authentication UUID is required')
+    .isUUID()
+    .withMessage('Authentication UUID must be a valid UUID'),
+  body('deviceId')
+    .notEmpty()
+    .withMessage('Device ID is required for mobile authentication')
+    .isString()
+    .withMessage('Device ID must be a string'),
+  body('platform')
+    .optional()
+    .isIn(['IOS', 'ANDROID'])
+    .withMessage('Platform must be either IOS or ANDROID'),
+  body('appVersion')
+    .optional()
+    .isString()
+    .withMessage('App version must be a string'),
+];
+
 // Routes
 router.post('/prelogin', [body('username').notEmpty().withMessage('Username is required')], validate, preloginInfo);
 router.post('/login', deviceAuthRateLimit, validate(loginValidation), login);
+router.post('/field-agent/uuid-login', deviceAuthRateLimit, validate(fieldAgentUuidLoginValidation), fieldAgentUuidLogin);
 router.post('/logout', authenticateToken, logout);
 router.get('/me', authenticateToken, getCurrentUser);
 router.post('/device/register', validate(deviceRegistrationValidation), registerDevice);
