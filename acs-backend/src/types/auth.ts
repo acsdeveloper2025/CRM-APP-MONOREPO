@@ -1,5 +1,6 @@
 // Role enum for consistent usage
 export enum Role {
+  SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
   BACKEND = 'BACKEND',
   BANK = 'BANK',
@@ -9,7 +10,8 @@ export enum Role {
 export interface LoginRequest {
   username: string;
   password: string;
-  deviceId?: string;
+  deviceId?: string; // For FIELD agents (required on web+mobile)
+  macAddress?: string; // For non-field users (required on web)
 }
 
 export interface LoginResponse {

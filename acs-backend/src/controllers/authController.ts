@@ -6,8 +6,7 @@ import { config } from '@/config';
 import { logger } from '@/config/logger';
 import { createError } from '@/middleware/errorHandler';
 import { AuthenticatedRequest } from '@/middleware/auth';
-import DeviceAuthLogger from '@/services/deviceAuthLogger';
-import { recordDeviceAuthFailure, recordDeviceAuthSuccess } from '@/middleware/deviceAuthRateLimit';
+import { createAuditLog } from '@/utils/auditLogger';
 import {
   LoginRequest,
   LoginResponse,
@@ -21,114 +20,120 @@ import { ApiResponse } from '@/types/api';
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, password, deviceId }: LoginRequest = req.body;
+    const { username, password, deviceId, macAddress }: LoginRequest = req.body;
 
-    // Find user by username
+    // Find user by username (with roleId to check SUPER_ADMIN from roles table)
     const userRes = await query(
-      `SELECT id, name, username, email, "passwordHash", role, "employeeId", designation, department, "profilePhotoUrl", "deviceId"
-       FROM users WHERE username = $1`,
+      `SELECT u.id, u.name, u.username, u.email, u."passwordHash", u.role, u."roleId", u."employeeId", u.designation, u.department, u."profilePhotoUrl",
+              r.name as "roleName"
+       FROM users u
+       LEFT JOIN roles r ON u."roleId" = r.id
+       WHERE u.username = $1`,
       [username]
     );
     const user = userRes.rows[0];
 
     if (!user) {
-      logger.warn('Login failed: User not found', { username });
+      await createAuditLog({
+        action: 'WEB_LOGIN_FAILED',
+        entityType: 'USER',
+        entityId: username,
+        details: { reason: 'USER_NOT_FOUND' },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || undefined,
+      });
       throw createError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-
     if (!isPasswordValid) {
-      logger.warn('Login failed: Invalid password', { username });
+      await createAuditLog({
+        action: 'WEB_LOGIN_FAILED',
+        entityType: 'USER',
+        entityId: user.id,
+        userId: user.id,
+        details: { reason: 'INVALID_PASSWORD' },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || undefined,
+      });
       throw createError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
     }
 
-    // Device authentication for field agents
-    const deviceAuthLogger = DeviceAuthLogger.getInstance();
-    const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
-    const userAgent = req.get('User-Agent') || 'unknown';
+    const isSuperAdmin = user.role === 'SUPER_ADMIN' || user.roleName === 'SUPER_ADMIN';
 
-    if (user.role === 'FIELD' || user.role === 'FIELD_AGENT') {
-      if (!deviceId) {
-        logger.warn('Login failed: Device ID required for field agent', { username, role: user.role });
-
-        // Log device authentication failure
-        await deviceAuthLogger.logDeviceAuthFailure(
-          username,
-          'none',
-          'DEVICE_ID_REQUIRED',
-          'Device ID is required for field agents',
-          clientIp,
-          userAgent
+    // Role-specific checks (skip for SUPER_ADMIN)
+    if (!isSuperAdmin) {
+      if (user.role === 'FIELD' || user.roleName === 'FIELD_AGENT' || user.roleName === 'FIELD') {
+        // FIELD agent: require deviceId and ensure registered & approved
+        if (!deviceId) {
+          await createAuditLog({
+            action: 'WEB_LOGIN_FAILED',
+            entityType: 'USER',
+            entityId: user.id,
+            userId: user.id,
+            details: { reason: 'MISSING_DEVICE_ID' },
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent') || undefined,
+          });
+          throw createError('Device ID is required for field agents', 400, 'MISSING_DEVICE_ID');
+        }
+        const devRes = await query(
+          `SELECT id, "isApproved" FROM devices WHERE "userId" = $1 AND "deviceId" = $2 LIMIT 1`,
+          [user.id, deviceId]
         );
-
-        // Record rate limit failure
-        recordDeviceAuthFailure(req, username);
-
-        throw createError('Device ID is required for field agents', 400, 'DEVICE_ID_REQUIRED');
-      }
-
-      if (!user.deviceId) {
-        logger.warn('Login failed: No device registered for field agent', { username, role: user.role });
-
-        // Log device authentication failure
-        await deviceAuthLogger.logDeviceAuthFailure(
-          username,
-          deviceId,
-          'NO_DEVICE_REGISTERED',
-          'No device registered for this field agent',
-          clientIp,
-          userAgent
+        const device = devRes.rows[0];
+        if (!device || !device.isApproved) {
+          await createAuditLog({
+            action: 'WEB_LOGIN_FAILED',
+            entityType: 'USER',
+            entityId: user.id,
+            userId: user.id,
+            details: { reason: !device ? 'DEVICE_NOT_REGISTERED' : 'DEVICE_NOT_APPROVED', deviceId },
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent') || undefined,
+          });
+          throw createError(
+            !device
+              ? 'Device is not registered. Please register your device and request approval.'
+              : 'Device is pending approval. Please contact your administrator.',
+            403,
+            !device ? 'DEVICE_NOT_REGISTERED' : 'DEVICE_NOT_APPROVED'
+          );
+        }
+      } else {
+        // Non-field web login: require MAC address whitelisting
+        const normalizeMac = (m: string) => m.toLowerCase().replace(/[^a-f0-9]/g, '');
+        if (!macAddress) {
+          await createAuditLog({
+            action: 'WEB_LOGIN_FAILED',
+            entityType: 'USER',
+            entityId: user.id,
+            userId: user.id,
+            details: { reason: 'MISSING_MAC' },
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent') || undefined,
+          });
+          throw createError('MAC address is required for web login', 400, 'MISSING_MAC');
+        }
+        const norm = normalizeMac(macAddress);
+        const macRes = await query(
+          `SELECT id FROM mac_addresses WHERE "userId" = $1 AND REPLACE(LOWER("macAddress"), ':', '') = $2 AND "isApproved" = true LIMIT 1`,
+          [user.id, norm]
         );
-
-        // Record rate limit failure
-        recordDeviceAuthFailure(req, username);
-
-        throw createError('No device registered for this field agent. Please contact administrator.', 403, 'NO_DEVICE_REGISTERED');
+        if (macRes.rows.length === 0) {
+          await createAuditLog({
+            action: 'WEB_LOGIN_FAILED',
+            entityType: 'USER',
+            entityId: user.id,
+            userId: user.id,
+            details: { reason: 'MAC_NOT_WHITELISTED', macAddress },
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent') || undefined,
+          });
+          throw createError('This MAC address is not registered for your account. Please contact an administrator.', 403, 'MAC_NOT_WHITELISTED');
+        }
       }
-
-      if (user.deviceId !== deviceId) {
-        logger.warn('Login failed: Device ID mismatch', {
-          username,
-          role: user.role,
-          registeredDeviceId: user.deviceId,
-          providedDeviceId: deviceId
-        });
-
-        // Log device authentication failure
-        await deviceAuthLogger.logDeviceAuthFailure(
-          username,
-          deviceId,
-          'DEVICE_NOT_AUTHORIZED',
-          'Device not authorized - device ID mismatch',
-          clientIp,
-          userAgent
-        );
-
-        // Record rate limit failure
-        recordDeviceAuthFailure(req, username);
-
-        throw createError('Device not authorized. Please use your registered device or contact administrator.', 403, 'DEVICE_NOT_AUTHORIZED');
-      }
-
-      logger.info('Field agent device authentication successful', {
-        username,
-        role: user.role,
-        deviceId
-      });
-
-      // Log successful device authentication
-      await deviceAuthLogger.logDeviceAuthSuccess(
-        user.id,
-        username,
-        deviceId,
-        clientIp,
-        userAgent
-      );
-
-      // Record successful authentication for rate limiting
-      recordDeviceAuthSuccess(req, username);
     }
 
     // Generate tokens
@@ -158,12 +163,16 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       [user.id]
     );
 
-    // Log successful login
-    await query(
-      `INSERT INTO audit_logs (id, "userId", action, "entityType", "newValues", "ipAddress", "userAgent", "createdAt")
-       VALUES (gen_random_uuid(), $1, 'LOGIN', 'USER', $2, $3, $4, CURRENT_TIMESTAMP)`,
-      [user.id, JSON.stringify({ deviceId }), req.ip, req.get('User-Agent')]
-    );
+    // Audit success
+    await createAuditLog({
+      action: 'WEB_LOGIN_SUCCESS',
+      entityType: 'USER',
+      entityId: user.id,
+      userId: user.id,
+      details: { role: user.role, deviceId: deviceId || null, macAddress: macAddress || null },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent') || undefined,
+    });
 
     const response: LoginResponse = {
       success: true,
@@ -187,7 +196,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       },
     };
 
-    logger.info(`User ${user.username} logged in successfully`);
     res.json(response);
   } catch (error) {
     throw error;
@@ -273,7 +281,6 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): 
         u.designation,
         u.department,
         u."profilePhotoUrl",
-        u."deviceId",
         u."isActive",
         u."lastLogin",
         u."createdAt",
@@ -317,7 +324,6 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): 
         designation: userData.designation,
         department: userData.department, // Legacy field
         profilePhotoUrl: userData.profilePhotoUrl,
-        deviceId: userData.deviceId,
         isActive: userData.isActive,
         lastLogin: userData.lastLogin,
         createdAt: userData.createdAt,

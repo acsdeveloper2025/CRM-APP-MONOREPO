@@ -35,6 +35,7 @@ import geolocationRoutes from '@/routes/geolocation';
 import formRoutes from '@/routes/forms';
 import notificationRoutes from '@/routes/notifications';
 import mobileRoutes from '@/routes/mobile';
+import securityRoutes from '@/routes/security';
 
 const app = express();
 
@@ -116,6 +117,7 @@ app.use('/api/audit-logs', auditLogsRoutes);
 app.use('/api/geolocation', geolocationRoutes);
 app.use('/api/forms', formRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/security', securityRoutes);
 
 // Mobile API routes
 app.use('/api/mobile', mobileRoutes);

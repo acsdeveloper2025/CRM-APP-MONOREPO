@@ -25,6 +25,10 @@ const loginValidation = [
     .optional()
     .isString()
     .withMessage('Device ID must be a string'),
+  body('macAddress')
+    .optional()
+    .isString()
+    .withMessage('MAC address must be a string'),
 ];
 
 // Device registration validation
