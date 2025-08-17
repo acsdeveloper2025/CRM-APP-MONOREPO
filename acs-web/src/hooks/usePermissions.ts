@@ -14,8 +14,8 @@ export function usePermissions() {
   const hasPermission = (resource: string, action: string): boolean => {
     if (!user) return false;
 
-    // Admin users have all permissions
-    if (user.role === 'ADMIN') return true;
+    // SUPER_ADMIN and ADMIN users have all permissions
+    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') return true;
 
     // Check if user has role-based permissions
     const permissions = user.permissions as UserPermissions;
@@ -96,12 +96,12 @@ export function usePermissions() {
   };
 
   // Check if user is admin
-  const isAdmin = () => user?.role === 'ADMIN';
+  const isAdmin = () => user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
   // Get all user permissions
   const getAllPermissions = (): UserPermissions => {
     if (!user) return {};
-    if (user.role === 'ADMIN') {
+    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
       // Return all permissions for admin
       return Object.values(RESOURCES).reduce((acc, resource) => {
         acc[resource] = Object.values(ACTIONS).reduce((actionAcc, action) => {

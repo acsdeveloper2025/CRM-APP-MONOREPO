@@ -19,6 +19,12 @@ export interface RoleConfig {
 }
 
 export const roleConfigs: Record<string, RoleConfig> = {
+  SUPER_ADMIN: {
+    icon: Crown,
+    variant: 'destructive',
+    label: 'Super Admin',
+    color: 'text-red-600'
+  },
   ADMIN: {
     icon: Crown,
     variant: 'default',

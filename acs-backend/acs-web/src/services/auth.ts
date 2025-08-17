@@ -59,12 +59,17 @@ export class AuthService {
 
   hasRole(role: string): boolean {
     const user = this.getCurrentUser();
+    // SUPER_ADMIN has all roles
+    if (user?.role === 'SUPER_ADMIN') return true;
     return user?.role === role;
   }
 
   hasAnyRole(roles: string[]): boolean {
     const user = this.getCurrentUser();
-    return user ? roles.includes(user.role) : false;
+    if (!user) return false;
+    // SUPER_ADMIN has access to everything
+    if (user.role === 'SUPER_ADMIN') return true;
+    return roles.includes(user.role);
   }
 }
 
