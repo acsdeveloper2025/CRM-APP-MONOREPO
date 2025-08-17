@@ -84,7 +84,8 @@ export const requireRole = (allowedRoles: Role[]) => {
       return;
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    // SUPER_ADMIN bypasses role checks
+    if (req.user.role !== Role.SUPER_ADMIN && !allowedRoles.includes(req.user.role)) {
       const response: ApiResponse = {
         success: false,
         message: 'Insufficient permissions',
