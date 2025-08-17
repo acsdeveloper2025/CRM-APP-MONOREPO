@@ -4,7 +4,7 @@ import { api } from '@/services/api';
 
 interface UserOption { id: string; name: string; username: string; }
 interface MacRow { id: string; macAddress: string; label?: string; isApproved: boolean; createdAt?: string; }
-interface DeviceRow { id: string; deviceId: string; platform?: string; model?: string; isApproved?: boolean; lastActiveAt?: string; }
+interface DeviceRow { id: string; deviceId: string; platform?: string; model?: string; isApproved?: boolean; lastActiveAt?: string; userName?: string; username?: string; }
 
 export const DeviceAndMacManagementPage: React.FC = () => {
   const { token } = useAuth();
@@ -122,10 +122,45 @@ export const DeviceAndMacManagementPage: React.FC = () => {
             <div className="border rounded divide-y">
               {devices.length === 0 && <div className="p-3 text-sm text-gray-600">No devices found.</div>}
               {devices.map(d => (
-                <div key={d.id} className="p-3">
-                  <div className="font-mono">{d.deviceId}</div>
-                  <div className="text-sm text-gray-600">{d.platform || 'UNKNOWN'} {d.model || ''}</div>
-                  <div className="text-xs">Approved: {d.isApproved ? 'Yes' : 'No'}</div>
+                <div key={d.id} className="p-3 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-mono">{d.deviceId}</div>
+                    <div className="text-sm text-gray-600">{d.platform || 'UNKNOWN'} {d.model || ''}</div>
+                    <div className="text-xs">Approved: {d.isApproved ? 'Yes' : 'No'}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!d.isApproved && (
+                      <button
+                        className="bg-green-600 text-white px-3 py-1 rounded"
+                        onClick={async () => {
+                          try {
+                            await api.post(`/api/devices/${d.id}/approve`, {}, { headers });
+                            const devRes = await api.get(`/api/devices?userId=${selectedUserId}`, { headers });
+                            setDevices(devRes.data?.data?.items || devRes.data?.data?.devices || []);
+                          } catch (e) {
+                            console.error('Approve failed', e);
+                          }
+                        }}
+                      >
+                        Approve
+                      </button>
+                    )}
+                    <button
+                      className="bg-red-600 text-white px-3 py-1 rounded"
+                      onClick={async () => {
+                        const reason = prompt('Enter rejection reason (optional)') || '';
+                        try {
+                          await api.post(`/api/devices/${d.id}/reject`, { reason }, { headers });
+                          const devRes = await api.get(`/api/devices?userId=${selectedUserId}`, { headers });
+                          setDevices(devRes.data?.data?.items || devRes.data?.data?.devices || []);
+                        } catch (e) {
+                          console.error('Reject failed', e);
+                        }
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
