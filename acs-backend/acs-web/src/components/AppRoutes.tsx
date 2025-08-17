@@ -24,6 +24,7 @@ import { DeviceAndMacManagementPage } from '@/pages/DeviceAndMacManagementPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProductsPage } from '@/pages/ProductsPage';
 import { VerificationTypesPage } from '@/pages/VerificationTypesPage';
+import { DeduplicationPage } from '@/pages/DeduplicationPage';
 
 // Default route component that handles authentication-based redirects
 const DefaultRoute: React.FC = () => {
@@ -105,6 +106,16 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
             <Layout>
               <NewCasePage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cases/deduplication"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+            <Layout>
+              <DeduplicationPage />
             </Layout>
           </ProtectedRoute>
         }

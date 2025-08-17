@@ -37,6 +37,16 @@ export interface CreateCaseData {
   clientId: string;
   priority?: number;
   notes?: string;
+  // New deduplication fields
+  applicantName?: string;
+  applicantPhone?: string;
+  applicantEmail?: string;
+  panNumber?: string;
+  aadhaarNumber?: string;
+  bankAccountNumber?: string;
+  bankIfscCode?: string;
+  deduplicationDecision?: string;
+  deduplicationRationale?: string;
 }
 
 export class CasesService {

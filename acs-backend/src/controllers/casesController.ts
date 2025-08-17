@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from '@/middleware/auth';
+import { pool } from '@/config/database';
+import { DeduplicationService } from '@/services/deduplicationService';
 
 // Mock data for demonstration (replace with actual database operations)
 let cases: any[] = [
@@ -187,59 +189,120 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-// POST /api/cases - Create new case
+// POST /api/cases - Create new case with deduplication check
 export const createCase = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { 
-      title, 
-      description, 
-      clientId, 
-      assignedToId, 
-      address, 
-      contactPerson, 
-      contactPhone, 
-      verificationType, 
-      priority = 2, 
-      deadline 
-    } = req.body;
-
-    const newCase = {
-      id: `case_${Date.now()}`,
+    const {
+      // Basic case fields
       title,
       description,
-      status: 'PENDING',
-      priority,
       clientId,
       assignedToId,
-      createdById: req.user?.id,
       address,
       contactPerson,
       contactPhone,
       verificationType,
+      priority = 2,
       deadline,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      completedAt: null,
-      notes: [],
-      attachments: [],
-      history: [
-        {
-          id: `hist_${Date.now()}`,
-          action: 'CASE_CREATED',
-          description: 'Case created',
-          userId: req.user?.id,
-          timestamp: new Date().toISOString(),
+      // New deduplication fields
+      applicantName,
+      applicantPhone,
+      applicantEmail,
+      panNumber,
+      aadhaarNumber,
+      bankAccountNumber,
+      bankIfscCode,
+      // Deduplication decision fields
+      deduplicationDecision,
+      deduplicationRationale,
+      skipDeduplication = false
+    } = req.body;
+
+    // Validate required fields
+    if (!applicantName || !clientId || !assignedToId) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Missing required fields: applicantName, clientId, assignedToId',
+          code: 'MISSING_REQUIRED_FIELDS'
         }
-      ],
+      });
+    }
+
+    // Generate case number
+    const caseNumber = `CASE_${Date.now()}`;
+
+    // Prepare case data for database insertion
+    const caseData = {
+      caseNumber,
+      clientId,
+      productId: req.body.productId || null, // Will need to be provided or defaulted
+      verificationTypeId: req.body.verificationTypeId || null, // Will need to be provided or defaulted
+      applicantName,
+      applicantPhone: applicantPhone || contactPhone,
+      applicantEmail,
+      address,
+      pincode: req.body.pincode || null,
+      status: 'PENDING',
+      priority: priority === 2 ? 'MEDIUM' : priority === 1 ? 'LOW' : priority === 3 ? 'HIGH' : 'URGENT',
+      assignedTo: assignedToId,
+      createdBy: req.user?.id,
+      panNumber: panNumber?.toUpperCase() || null,
+      aadhaarNumber,
+      bankAccountNumber,
+      bankIfscCode,
+      deduplicationChecked: !skipDeduplication,
+      deduplicationDecision: deduplicationDecision || (skipDeduplication ? 'NO_DUPLICATES' : null),
+      deduplicationRationale
     };
 
-    cases.push(newCase);
+    // Insert case into database
+    const insertQuery = `
+      INSERT INTO cases (
+        "caseNumber", "clientId", "productId", "verificationTypeId",
+        "applicantName", "applicantPhone", "applicantEmail",
+        "address", "pincode", "status", "priority",
+        "assignedTo", "createdBy", "panNumber", "aadhaarNumber",
+        "bankAccountNumber", "bankIfscCode", "deduplicationChecked",
+        "deduplicationDecision", "deduplicationRationale"
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+      ) RETURNING *
+    `;
 
-    logger.info(`Created new case: ${newCase.id}`, { 
+    const result = await pool.query(insertQuery, [
+      caseData.caseNumber,
+      caseData.clientId,
+      caseData.productId,
+      caseData.verificationTypeId,
+      caseData.applicantName,
+      caseData.applicantPhone,
+      caseData.applicantEmail,
+      caseData.address,
+      caseData.pincode,
+      caseData.status,
+      caseData.priority,
+      caseData.assignedTo,
+      caseData.createdBy,
+      caseData.panNumber,
+      caseData.aadhaarNumber,
+      caseData.bankAccountNumber,
+      caseData.bankIfscCode,
+      caseData.deduplicationChecked,
+      caseData.deduplicationDecision,
+      caseData.deduplicationRationale
+    ]);
+
+    const newCase = result.rows[0];
+
+    logger.info(`Created new case: ${newCase.id}`, {
       userId: req.user?.id,
-      caseTitle: title,
+      caseNumber: newCase.caseNumber,
+      applicantName: newCase.applicantName,
       clientId,
-      assignedToId
+      assignedToId,
+      deduplicationChecked: newCase.deduplicationChecked
     });
 
     res.status(201).json({

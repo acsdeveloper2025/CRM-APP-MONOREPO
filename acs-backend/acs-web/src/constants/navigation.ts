@@ -67,6 +67,13 @@ export const navigationItems: NavigationItem[] = [
         icon: CheckSquare,
         roles: ['ADMIN', 'BACKEND'],
       },
+      {
+        id: 'cases-deduplication',
+        label: 'Deduplication',
+        href: '/cases/deduplication',
+        icon: Shield,
+        roles: ['ADMIN', 'BACKEND'],
+      },
     ],
   },
   {
