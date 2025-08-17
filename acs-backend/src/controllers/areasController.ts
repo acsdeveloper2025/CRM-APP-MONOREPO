@@ -17,7 +17,7 @@ export const getAreas = async (req: AuthenticatedRequest, res: Response) => {
       sortOrder = 'asc'
     } = req.query;
 
-    // Query areas with usage count from pincode_areas junction table
+    // Query areas with usage count from pincodeAreas junction table
     let sql = `
       SELECT
         a.id,
@@ -26,7 +26,7 @@ export const getAreas = async (req: AuthenticatedRequest, res: Response) => {
         a."updatedAt",
         COALESCE(COUNT(pa.id), 0) as "usageCount"
       FROM areas a
-      LEFT JOIN pincode_areas pa ON pa."areaId" = a.id
+      LEFT JOIN "pincodeAreas" pa ON pa."areaId" = a.id
     `;
 
     const params: any[] = [];
@@ -172,7 +172,7 @@ export const getAreaById = async (req: AuthenticatedRequest, res: Response) => {
         a."updatedAt",
         COUNT(pa.id) as "usageCount"
       FROM areas a
-      LEFT JOIN pincode_areas pa ON pa."areaId" = a.id
+      LEFT JOIN "pincodeAreas" pa ON pa."areaId" = a.id
       WHERE a.id = $1
       GROUP BY a.id, a.name, a."createdAt", a."updatedAt"
     `;
@@ -361,7 +361,7 @@ export const deleteArea = async (req: AuthenticatedRequest, res: Response) => {
 
     // Check if area is in use by any pincodes
     const usageCheck = await query(
-      'SELECT COUNT(*) as count FROM pincode_areas WHERE "areaId" = $1',
+      'SELECT COUNT(*) as count FROM "pincodeAreas" WHERE "areaId" = $1',
       [id]
     );
     const usageCount = parseInt(usageCheck.rows[0].count, 10);

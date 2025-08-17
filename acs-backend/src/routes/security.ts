@@ -22,7 +22,7 @@ router.get('/mac-addresses/:userId',
   validate,
   async (req, res) => {
     const { userId } = req.params as any;
-    const result = await query(`SELECT id, "macAddress", label, "isApproved", "createdAt", "updatedAt" FROM mac_addresses WHERE "userId" = $1 ORDER BY "createdAt" DESC`, [userId]);
+    const result = await query(`SELECT id, "macAddress", label, "isApproved", "createdAt", "updatedAt" FROM "macAddresses" WHERE "userId" = $1 ORDER BY "createdAt" DESC`, [userId]);
     res.json({ success: true, data: result.rows });
   }
 );
@@ -36,7 +36,7 @@ router.post('/mac-addresses', macCreateValidation, validate, async (req, res) =>
   const colonized = norm.match(/.{1,2}/g)?.join(':') || norm;
 
   const ins = await query(
-    `INSERT INTO mac_addresses ("userId", "macAddress", label, "isApproved")
+    `INSERT INTO "macAddresses" ("userId", "macAddress", label, "isApproved")
      VALUES ($1, $2, $3, COALESCE($4, true))
      ON CONFLICT ("userId", "macAddress") DO UPDATE SET label = EXCLUDED.label, "isApproved" = EXCLUDED."isApproved", "updatedAt" = CURRENT_TIMESTAMP
      RETURNING id, "macAddress", label, "isApproved", "createdAt", "updatedAt"`,
@@ -47,7 +47,7 @@ router.post('/mac-addresses', macCreateValidation, validate, async (req, res) =>
 
 router.delete('/mac-addresses/:id', [param('id').notEmpty().isUUID()], validate, async (req, res) => {
   const { id } = req.params as any;
-  await query(`DELETE FROM mac_addresses WHERE id = $1`, [id]);
+  await query(`DELETE FROM "macAddresses" WHERE id = $1`, [id]);
   res.json({ success: true, message: 'MAC address removed' });
 });
 

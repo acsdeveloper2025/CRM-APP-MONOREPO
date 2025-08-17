@@ -38,6 +38,7 @@ import mobileRoutes from '@/routes/mobile';
 import securityRoutes from '@/routes/security';
 import deduplicationRoutes from '@/routes/deduplication';
 
+
 const app = express();
 
 // Security middleware
@@ -120,6 +121,7 @@ app.use('/api/forms', formRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/cases/deduplication', deduplicationRoutes);
+
 
 // Mobile API routes
 app.use('/api/mobile', mobileRoutes);

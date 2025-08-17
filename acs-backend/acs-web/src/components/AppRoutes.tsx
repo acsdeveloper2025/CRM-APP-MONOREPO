@@ -26,6 +26,7 @@ import { ProductsPage } from '@/pages/ProductsPage';
 import { VerificationTypesPage } from '@/pages/VerificationTypesPage';
 import { DeduplicationPage } from '@/pages/DeduplicationPage';
 
+
 // Default route component that handles authentication-based redirects
 const DefaultRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -120,6 +121,7 @@ export const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
+
 
       {/* Clients routes */}
       <Route

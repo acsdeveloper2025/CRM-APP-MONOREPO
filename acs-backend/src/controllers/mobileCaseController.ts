@@ -427,13 +427,13 @@ export class MobileCaseController {
       }
 
       // Save or update auto-save data
-      const exAuto = await query(`SELECT id FROM auto_saves WHERE "caseId" = $1 AND "formType" = $2`, [caseId, formType]);
+      const exAuto = await query(`SELECT id FROM "autoSaves" WHERE "caseId" = $1 AND "formType" = $2`, [caseId, formType]);
       let autoSaveData: any;
       if (exAuto.rowCount && exAuto.rowCount > 0) {
-        const upd = await query(`UPDATE auto_saves SET "formData" = $1, timestamp = $2 WHERE id = $3 RETURNING *`, [JSON.stringify(formData), new Date(timestamp), exAuto.rows[0].id]);
+        const upd = await query(`UPDATE "autoSaves" SET "formData" = $1, timestamp = $2 WHERE id = $3 RETURNING *`, [JSON.stringify(formData), new Date(timestamp), exAuto.rows[0].id]);
         autoSaveData = upd.rows[0];
       } else {
-        const ins = await query(`INSERT INTO auto_saves (id, "caseId", "formType", "formData", timestamp) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *`, [caseId, formType, JSON.stringify(formData), new Date(timestamp)]);
+        const ins = await query(`INSERT INTO "autoSaves" (id, "caseId", "formType", "formData", timestamp) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *`, [caseId, formType, JSON.stringify(formData), new Date(timestamp)]);
         autoSaveData = ins.rows[0];
       }
 
@@ -491,7 +491,7 @@ export class MobileCaseController {
         });
       }
 
-      const autoRes = await query(`SELECT * FROM auto_saves WHERE "caseId" = $1 AND "formType" = $2 LIMIT 1`, [caseId, formType.toUpperCase()]);
+      const autoRes = await query(`SELECT * FROM "autoSaves" WHERE "caseId" = $1 AND "formType" = $2 LIMIT 1`, [caseId, formType.toUpperCase()]);
       const autoSaveData = autoRes.rows[0];
       if (!autoSaveData) {
         return res.status(404).json({ success: false, message: 'No auto-saved data found', error: { code: 'AUTO_SAVE_NOT_FOUND', timestamp: new Date().toISOString() } });

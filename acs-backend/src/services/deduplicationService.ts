@@ -207,7 +207,7 @@ export class DeduplicationService {
   ): Promise<void> {
     try {
       const query = `
-        INSERT INTO case_deduplication_audit (
+        INSERT INTO "caseDeduplicationAudit" (
           "caseId",
           "searchCriteria",
           "duplicatesFound",
@@ -260,7 +260,7 @@ export class DeduplicationService {
         SELECT 
           cda.*,
           u.name as "performedByName"
-        FROM case_deduplication_audit cda
+        FROM "caseDeduplicationAudit" cda
         LEFT JOIN users u ON cda."performedBy" = u.id
         WHERE cda."caseId" = $1
         ORDER BY cda."performedAt" DESC

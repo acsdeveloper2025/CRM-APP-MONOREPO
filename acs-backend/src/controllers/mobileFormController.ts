@@ -120,7 +120,7 @@ export class MobileFormController {
 
       // Create residence verification report
       await query(
-        `INSERT INTO residence_verification_reports (
+        `INSERT INTO "residenceVerificationReports" (
           id, "caseId", "applicantName", "applicantPhone", "applicantEmail", residenceType, ownershipStatus, monthlyRent, landlordName, landlordPhone,
           residenceSince, familyMembers, neighborVerification, neighborName, neighborPhone, propertyCondition, accessibilityNotes, verificationNotes, recommendationStatus, verifiedAt
         ) VALUES (
@@ -150,7 +150,7 @@ export class MobileFormController {
       );
 
       // Remove auto-save data
-      await query(`DELETE FROM auto_saves WHERE "caseId" = $1 AND "formType" = 'RESIDENCE'`, [caseId]);
+      await query(`DELETE FROM "autoSaves" WHERE "caseId" = $1 AND "formType" = 'RESIDENCE'`, [caseId]);
 
       await createAuditLog({
         action: 'RESIDENCE_VERIFICATION_SUBMITTED',
@@ -306,7 +306,7 @@ export class MobileFormController {
 
       // Create office verification report
       await query(
-        `INSERT INTO office_verification_reports (
+        `INSERT INTO "officeVerificationReports" (
           id, "caseId", "companyName", designation, department, "employeeId", "joiningDate", "monthlySalary", "workingHours", "hrContactName",
           "hrContactPhone", "officeAddress", "officeType", "totalEmployees", "businessNature", "verificationMethod", "documentsSeen", "verificationNotes", "recommendationStatus", "verifiedAt"
         ) VALUES (
@@ -336,7 +336,7 @@ export class MobileFormController {
       );
 
       // Remove auto-save data
-      await query(`DELETE FROM auto_saves WHERE "caseId" = $1 AND "formType" = 'OFFICE'`, [caseId]);
+      await query(`DELETE FROM "autoSaves" WHERE "caseId" = $1 AND "formType" = 'OFFICE'`, [caseId]);
 
       await createAuditLog({
         action: 'OFFICE_VERIFICATION_SUBMITTED',

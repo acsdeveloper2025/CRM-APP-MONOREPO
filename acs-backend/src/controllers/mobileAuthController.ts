@@ -217,7 +217,7 @@ export class MobileAuthController {
 
       // Store refresh token
       await query(
-        `INSERT INTO refresh_tokens (token, "userId", "deviceId", "expiresAt", "createdAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
+        `INSERT INTO "refreshTokens" (token, "userId", "deviceId", "expiresAt", "createdAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
         [refreshToken, user.id, device.deviceId, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)]
       );
 
@@ -307,7 +307,7 @@ export class MobileAuthController {
       // Check if refresh token exists in database
       const storedRes = await query(
         `SELECT rt.token, u.id as "userId", u.username, u.role
-         FROM refresh_tokens rt JOIN users u ON u.id = rt."userId"
+         FROM "refreshTokens" rt JOIN users u ON u.id = rt."userId"
          WHERE rt.token = $1 AND rt."userId" = $2 AND rt."deviceId" = $3 AND rt."expiresAt" > CURRENT_TIMESTAMP
          LIMIT 1`,
         [refreshToken, decoded.userId, decoded.deviceId]
@@ -365,7 +365,7 @@ export class MobileAuthController {
 
       if (deviceId) {
         // Invalidate refresh tokens for this device
-        await query(`DELETE FROM refresh_tokens WHERE "userId" = $1 AND "deviceId" = $2`, [userId, deviceId]);
+        await query(`DELETE FROM "refreshTokens" WHERE "userId" = $1 AND "deviceId" = $2`, [userId, deviceId]);
         await query(`UPDATE devices SET "isActive" = false, "lastActiveAt" = CURRENT_TIMESTAMP WHERE "userId" = $1 AND "deviceId" = $2`, [userId, deviceId]);
       }
 
@@ -633,7 +633,7 @@ export class MobileAuthController {
 
       // Log the rejection
       await query(
-        `INSERT INTO audit_logs (id, "userId", action, "entityType", "entityId", details, "ipAddress", "userAgent", "createdAt")
+        `INSERT INTO "auditLogs" (id, "userId", action, "entityType", "entityId", details, "ipAddress", "userAgent", "createdAt")
          VALUES (gen_random_uuid()::text, $1, 'DEVICE_REJECTED', 'DEVICE', $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
         [
           adminUserId,

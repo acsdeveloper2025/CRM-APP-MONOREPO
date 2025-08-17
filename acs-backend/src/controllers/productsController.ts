@@ -124,7 +124,7 @@ export const createProduct = async (req: AuthenticatedRequest, res: Response) =>
     // Create product in database
     const insertRes = await query(
       `INSERT INTO products (id, name, code, "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       VALUES (gen_random_uuid(), $1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        RETURNING id, name, code, "createdAt", "updatedAt"`,
       [name, code]
     );
@@ -277,7 +277,7 @@ export const getProductsByClient = async (req: AuthenticatedRequest, res: Respon
     if (typeof isActive !== 'undefined') values.push(String(isActive) === 'true');
     const mapRes = await query(
       `SELECT p.id, p.name, p.code, p."createdAt", p."updatedAt"
-       FROM client_products cp
+       FROM "clientProducts" cp
        JOIN products p ON p.id = cp."productId"
        WHERE cp."clientId" = $1 ${activeClause}
       `,

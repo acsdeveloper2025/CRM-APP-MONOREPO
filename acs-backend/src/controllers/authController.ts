@@ -118,7 +118,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         }
         const norm = normalizeMac(macAddress);
         const macRes = await query(
-          `SELECT id FROM mac_addresses WHERE "userId" = $1 AND REPLACE(LOWER("macAddress"), ':', '') = $2 AND "isApproved" = true LIMIT 1`,
+          `SELECT id FROM "macAddresses" WHERE "userId" = $1 AND REPLACE(LOWER("macAddress"), ':', '') = $2 AND "isApproved" = true LIMIT 1`,
           [user.id, norm]
         );
         if (macRes.rows.length === 0) {
@@ -210,7 +210,7 @@ export const logout = async (req: AuthenticatedRequest, res: Response): Promise<
 
     // Log logout
     await query(
-      `INSERT INTO audit_logs (id, "userId", action, "entityType", "newValues", "ipAddress", "userAgent", "createdAt")
+      `INSERT INTO "auditLogs" (id, "userId", action, "entityType", "newValues", "ipAddress", "userAgent", "createdAt")
        VALUES (gen_random_uuid(), $1, 'LOGOUT', 'USER', $2, $3, $4, CURRENT_TIMESTAMP)`,
       [req.user.id, JSON.stringify({ deviceId: req.user.deviceId }), req.ip, req.get('User-Agent')]
     );

@@ -28,6 +28,7 @@ import { CreateAreaDialog } from '@/components/locations/CreateAreaDialog';
 import { BulkImportLocationDialog } from '@/components/locations/BulkImportLocationDialog';
 
 export function LocationsPage() {
+  console.log('LocationsPage component loaded');
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedState, setSelectedState] = useState<string>('all');
@@ -211,47 +212,38 @@ export function LocationsPage() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-            <div className="flex items-center justify-between">
-              <TabsList>
-                <TabsTrigger value="countries">
+            {/* Debug: Current active tab: {activeTab} */}
+            <div className="flex items-center justify-between overflow-x-auto">
+              <TabsList className="flex min-w-max space-x-1">
+                <TabsTrigger value="countries" className="whitespace-nowrap">
                   Countries
-                  {stats.countries > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {stats.countries}
-                    </Badge>
-                  )}
+                  <Badge variant="secondary" className="ml-2">
+                    {stats.countries}
+                  </Badge>
                 </TabsTrigger>
-                <TabsTrigger value="states">
+                <TabsTrigger value="states" className="whitespace-nowrap">
                   States
-                  {stats.states > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {stats.states}
-                    </Badge>
-                  )}
+                  <Badge variant="secondary" className="ml-2">
+                    {stats.states}
+                  </Badge>
                 </TabsTrigger>
-                <TabsTrigger value="cities">
+                <TabsTrigger value="cities" className="whitespace-nowrap">
                   Cities
-                  {stats.cities > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {stats.cities}
-                    </Badge>
-                  )}
+                  <Badge variant="secondary" className="ml-2">
+                    {stats.cities}
+                  </Badge>
                 </TabsTrigger>
-                <TabsTrigger value="pincodes">
+                <TabsTrigger value="pincodes" className="whitespace-nowrap">
                   Pincodes
-                  {stats.pincodes > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {stats.pincodes}
-                    </Badge>
-                  )}
+                  <Badge variant="secondary" className="ml-2">
+                    {stats.pincodes}
+                  </Badge>
                 </TabsTrigger>
-                <TabsTrigger value="areas">
+                <TabsTrigger value="areas" className="whitespace-nowrap">
                   Areas
-                  {stats.areas > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {stats.areas}
-                    </Badge>
-                  )}
+                  <Badge variant="secondary" className="ml-2">
+                    {stats.areas}
+                  </Badge>
                 </TabsTrigger>
               </TabsList>
 

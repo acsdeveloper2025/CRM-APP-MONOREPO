@@ -36,15 +36,11 @@ export const getCities = async (req: AuthenticatedRequest, res: Response) => {
         co.name as country,
         c."createdAt",
         c."updatedAt",
-        COALESCE(p."pincodeCount", 0) as "pincodeCount"
+        0 as "pincodeCount"
       FROM cities c
       JOIN states s ON c."stateId" = s.id
       JOIN countries co ON c."countryId" = co.id
-      LEFT JOIN (
-        SELECT "cityId", COUNT(*) as "pincodeCount"
-        FROM pincodes
-        GROUP BY "cityId"
-      ) p ON c.id = p."cityId"
+
       WHERE 1=1
     `;
 
@@ -454,20 +450,7 @@ export const deleteCity = async (req: AuthenticatedRequest, res: Response) => {
 
     const cityToDelete = cityResult.rows[0];
 
-    // Check if city has associated pincodes
-    const pincodesResult = await query<{ count: string }>(
-      'SELECT COUNT(*) FROM pincodes WHERE "cityId" = $1',
-      [id]
-    );
-
-    const pincodesCount = parseInt(pincodesResult.rows[0].count, 10);
-    if (pincodesCount > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `Cannot delete city. It has ${pincodesCount} associated pincodes.`,
-        error: { code: 'HAS_DEPENDENCIES' },
-      });
-    }
+    // Note: Pincodes table has been removed, so no dependency check needed
 
     // Delete city
     await query('DELETE FROM cities WHERE id = $1', [id]);

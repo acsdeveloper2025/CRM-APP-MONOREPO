@@ -64,7 +64,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/cases"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <CasesPage />
             </Layout>
@@ -74,7 +74,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/cases/:id"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <CaseDetailPage />
             </Layout>
@@ -84,7 +84,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/cases/pending"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <PendingReviewPage />
             </Layout>
@@ -94,7 +94,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/cases/completed"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <CompletedCasesPage />
             </Layout>
@@ -104,7 +104,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/cases/new"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <NewCasePage />
             </Layout>
@@ -116,7 +116,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/clients"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <ClientsPage />
             </Layout>
@@ -128,7 +128,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/products"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
             <Layout>
               <ProductsPage />
             </Layout>
@@ -140,7 +140,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/verification-types"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
             <Layout>
               <VerificationTypesPage />
             </Layout>
@@ -152,7 +152,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/users"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
             <Layout>
               <UsersPage />
             </Layout>
@@ -162,7 +162,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/role-management"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
             <PermissionProtectedRoute resource="roles" action="read">
               <Layout>
                 <RoleManagementPage />
@@ -174,7 +174,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/locations"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
             <Layout>
               <LocationsPage />
             </Layout>
@@ -184,7 +184,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/security-ux"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
             <Layout>
               <SecurityUXPage />
             </Layout>
@@ -194,7 +194,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/devices"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
             <Layout>
               <DeviceManagementPage />
             </Layout>
@@ -206,7 +206,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/reports"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <ReportsPage />
             </Layout>
@@ -218,7 +218,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/billing"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <BillingPage />
             </Layout>
@@ -228,7 +228,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/realtime"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <RealTimePage />
             </Layout>
@@ -238,7 +238,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/forms"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <FormViewerPage />
             </Layout>

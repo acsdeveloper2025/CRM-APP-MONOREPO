@@ -524,7 +524,7 @@ export const exportAuditLogs = async (req: AuthenticatedRequest, res: Response) 
     // In a real implementation, this would generate and return the actual file
     const exportData = {
       downloadUrl: `/api/audit-logs/download/${Date.now()}.${format.toLowerCase()}`,
-      filename: `audit_logs_${new Date().toISOString().split('T')[0]}.${format.toLowerCase()}`,
+      filename: `auditLogs_${new Date().toISOString().split('T')[0]}.${format.toLowerCase()}`,
       recordCount: filteredLogs.length,
       format,
       generatedAt: new Date().toISOString(),

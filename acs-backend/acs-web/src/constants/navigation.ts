@@ -76,6 +76,7 @@ export const navigationItems: NavigationItem[] = [
       },
     ],
   },
+
   {
     id: 'clients',
     label: 'Client Management',
