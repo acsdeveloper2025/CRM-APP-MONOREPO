@@ -26,6 +26,10 @@ export const DeviceAndMacManagementPage: React.FC = () => {
   const [macs, setMacs] = useState<MacRow[]>([]);
   const [devices, setDevices] = useState<DeviceRow[]>([]);
 
+  const [macSearch, setMacSearch] = useState('');
+  const [deviceSearch, setDeviceSearch] = useState('');
+  const [deviceFilter, setDeviceFilter] = useState<'ALL' | 'APPROVED' | 'PENDING'>('ALL');
+
   const [newMac, setNewMac] = useState<{ macAddress: string; label?: string }>({ macAddress: '', label: '' });
 
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
@@ -101,6 +105,15 @@ export const DeviceAndMacManagementPage: React.FC = () => {
           ))}
         </select>
       </div>
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                className="border rounded px-3 py-2 flex-1"
+                placeholder="Search MAC (supports partial)"
+                value={macSearch}
+                onChange={e => setMacSearch(e.target.value)}
+              />
+            </div>
+
 
       {selectedUserId && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -123,13 +136,55 @@ export const DeviceAndMacManagementPage: React.FC = () => {
             </div>
             <div className="border rounded divide-y">
               {macs.length === 0 && <div className="p-3 text-sm text-gray-600">No MACs registered.</div>}
-              {macs.map(m => (
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                className="border rounded px-3 py-2 flex-1"
+                placeholder="Search device ID/model/platform"
+                value={deviceSearch}
+                onChange={e => setDeviceSearch(e.target.value)}
+              />
+              <select
+                className="border rounded px-2 py-2"
+                value={deviceFilter}
+                onChange={e => setDeviceFilter(e.target.value as any)}
+              >
+                <option value="ALL">All</option>
+                <option value="APPROVED">Approved</option>
+                <option value="PENDING">Pending</option>
+              </select>
+            </div>
+
+              {macs
+                .filter(m => !macSearch || m.macAddress.toLowerCase().includes(macSearch.toLowerCase()) || (m.label || '').toLowerCase().includes(macSearch.toLowerCase()))
+                .map(m => (
                 <div key={m.id} className="p-3 flex items-center justify-between">
                   <div>
-                    <div className="font-mono">{m.macAddress}</div>
+                    <div className="font-mono flex items-center gap-2">
+                      {m.macAddress}
+                      <button
+                        className="text-xs text-blue-600 underline"
+                        onClick={() => { navigator.clipboard.writeText(m.macAddress); toast.success('MAC copied'); }}
+                      >Copy</button>
+                    </div>
                     {m.label && <div className="text-sm text-gray-600">{m.label}</div>}
                   </div>
-                  <button className="text-red-600" onClick={() => removeMac(m.id)}>Remove</button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="text-red-600">Remove</button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove MAC {m.macAddress}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will remove this MAC address from the user's whitelist.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => removeMac(m.id)}>Remove</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               ))}
             </div>
@@ -139,10 +194,23 @@ export const DeviceAndMacManagementPage: React.FC = () => {
             <h2 className="font-medium mb-2">Registered Devices</h2>
             <div className="border rounded divide-y">
               {devices.length === 0 && <div className="p-3 text-sm text-gray-600">No devices found.</div>}
-              {devices.map(d => (
+              {devices
+                .filter(d => deviceFilter === 'ALL' || (deviceFilter === 'APPROVED' ? !!d.isApproved : !d.isApproved))
+                .filter(d => !deviceSearch ||
+                  d.deviceId.toLowerCase().includes(deviceSearch.toLowerCase()) ||
+                  (d.platform || '').toLowerCase().includes(deviceSearch.toLowerCase()) ||
+                  (d.model || '').toLowerCase().includes(deviceSearch.toLowerCase())
+                )
+                .map(d => (
                 <div key={d.id} className="p-3 flex items-center justify-between gap-3">
                   <div>
-                    <div className="font-mono">{d.deviceId}</div>
+                    <div className="font-mono flex items-center gap-2">
+                      {d.deviceId}
+                      <button
+                        className="text-xs text-blue-600 underline"
+                        onClick={() => { navigator.clipboard.writeText(d.deviceId); toast.success('Device ID copied'); }}
+                      >Copy</button>
+                    </div>
                     <div className="text-sm text-gray-600">{d.platform || 'UNKNOWN'} {d.model || ''}</div>
                     <div className="text-xs">Approved: {d.isApproved ? 'Yes' : 'No'}</div>
                   </div>
