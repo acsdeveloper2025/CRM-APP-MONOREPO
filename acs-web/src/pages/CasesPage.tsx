@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CaseFilters } from '@/components/cases/CaseFilters';
@@ -9,6 +10,7 @@ import { Download, Plus, RefreshCw } from 'lucide-react';
 import type { CaseListQuery } from '@/services/cases';
 
 export const CasesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<CaseListQuery>({
     page: 1,
     limit: 20,
@@ -85,6 +87,10 @@ export const CasesPage: React.FC = () => {
     refetch();
   };
 
+  const handleNewCase = () => {
+    navigate('/cases/new');
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -104,7 +110,7 @@ export const CasesPage: React.FC = () => {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button>
+          <Button onClick={handleNewCase}>
             <Plus className="h-4 w-4 mr-2" />
             New Case
           </Button>
