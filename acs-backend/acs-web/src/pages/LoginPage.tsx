@@ -52,6 +52,37 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  // Dynamic field visibility
+  const [requiresDeviceId, setRequiresDeviceId] = useState(false);
+  const [requiresMacAddress, setRequiresMacAddress] = useState(false);
+
+  useEffect(() => {
+    // Prelogin role hint after username typed
+    const sub = setTimeout(async () => {
+      const username = (document.getElementById('username') as HTMLInputElement)?.value?.trim();
+      if (!username) return;
+      try {
+        const resp = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/auth/prelogin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+        const data = await resp.json();
+        if (data?.success && data?.data) {
+          setRequiresDeviceId(!!data.data.requiresDeviceId);
+          setRequiresMacAddress(!!data.data.requiresMacAddress);
+        } else {
+          setRequiresDeviceId(false);
+          setRequiresMacAddress(false);
+        }
+      } catch (e) {
+        setRequiresDeviceId(false);
+        setRequiresMacAddress(false);
+      }
+    }, 400);
+    return () => clearTimeout(sub);
+  }, [register]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -109,27 +140,21 @@ export const LoginPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="deviceId">Device ID (Field Agents only)</Label>
-                <Input
-                  id="deviceId"
-                  type="text"
-                  placeholder="Enter your device ID"
-                  {...register('deviceId')}
-                />
-                <p className="text-xs text-gray-500">Field Agents: Required on web and mobile. Get it from your registered device or your admin.</p>
-              </div>
+              {requiresDeviceId && (
+                <div className="space-y-2">
+                  <Label htmlFor="deviceId">Device ID (Field Agents only)</Label>
+                  <Input id="deviceId" type="text" placeholder="Enter your device ID" {...register('deviceId')} />
+                  <p className="text-xs text-gray-500">Field Agents: Required on web and mobile. Get it from your registered device or your admin.</p>
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="macAddress">MAC Address (Non-Field web users)</Label>
-                <Input
-                  id="macAddress"
-                  type="text"
-                  placeholder="AA:BB:CC:DD:EE:FF"
-                  {...register('macAddress')}
-                />
-                <p className="text-xs text-gray-500">Admins/Managers: Required for web login. Ask your admin to whitelist your MAC. How to find: Windows: ipconfig /all; Mac: System Settings → Network → Details.</p>
-              </div>
+              {requiresMacAddress && (
+                <div className="space-y-2">
+                  <Label htmlFor="macAddress">MAC Address (Non-Field web users)</Label>
+                  <Input id="macAddress" type="text" placeholder="AA:BB:CC:DD:EE:FF" {...register('macAddress')} />
+                  <p className="text-xs text-gray-500">Admins/Managers: Required for web login. Ask your admin to whitelist your MAC. How to find: Windows: ipconfig /all; Mac: System Settings → Network → Details.</p>
+                </div>
+              )}
 
               <Button
                 type="submit"

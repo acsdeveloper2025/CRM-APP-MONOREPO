@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { login, logout, registerDevice, getCurrentUser } from '@/controllers/authController';
+import { login, logout, registerDevice, getCurrentUser, preloginInfo } from '@/controllers/authController';
 import { authenticateToken } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
 import { deviceAuthRateLimit } from '@/middleware/deviceAuthRateLimit';
@@ -59,6 +59,7 @@ const deviceRegistrationValidation = [
 ];
 
 // Routes
+router.post('/prelogin', [body('username').notEmpty().withMessage('Username is required')], validate, preloginInfo);
 router.post('/login', deviceAuthRateLimit, validate(loginValidation), login);
 router.post('/logout', authenticateToken, logout);
 router.get('/me', authenticateToken, getCurrentUser);

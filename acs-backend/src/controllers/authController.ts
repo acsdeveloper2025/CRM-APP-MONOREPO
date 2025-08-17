@@ -255,6 +255,49 @@ export const registerDevice = async (req: Request, res: Response): Promise<void>
   }
 };
 
+// Pre-login info to enable dynamic login form (public)
+export const preloginInfo = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username } = req.body as { username?: string };
+    if (!username) {
+      res.status(400).json({ success: false, message: 'Username is required', error: { code: 'MISSING_USERNAME' } });
+      return;
+    }
+
+    const userRes = await query(
+      `SELECT u.id, u.role, u."roleId", r.name as "roleName"
+       FROM users u
+       LEFT JOIN roles r ON u."roleId" = r.id
+       WHERE u.username = $1
+       LIMIT 1`,
+      [username]
+    );
+    const user = userRes.rows[0];
+
+    if (!user) {
+      // Unknown user: return neutral flags (frontend can show both fields)
+      res.json({ success: true, message: 'OK', data: { unknown: true, requiresDeviceId: false, requiresMacAddress: false } });
+      return;
+    }
+
+    const isSuper = user.role === 'SUPER_ADMIN' || user.roleName === 'SUPER_ADMIN';
+    const isField = user.role === 'FIELD' || user.roleName === 'FIELD' || user.roleName === 'FIELD_AGENT';
+
+    res.json({
+      success: true,
+      message: 'OK',
+      data: {
+        role: user.role,
+        roleName: user.roleName,
+        requiresDeviceId: !isSuper && isField,
+        requiresMacAddress: !isSuper && !isField,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal error', error: { code: 'INTERNAL_ERROR' } });
+  }
+};
+
 // Get current user information
 export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
