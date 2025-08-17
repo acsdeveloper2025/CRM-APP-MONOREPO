@@ -20,6 +20,7 @@ import { LocationsPage } from '@/pages/LocationsPage';
 import { RealTimePage } from '@/pages/RealTimePage';
 import { FormViewerPage } from '@/pages/FormViewerPage';
 import { SecurityUXPage } from '@/pages/SecurityUXPage';
+import { DeviceAndMacManagementPage } from '@/pages/DeviceAndMacManagementPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProductsPage } from '@/pages/ProductsPage';
 import { VerificationTypesPage } from '@/pages/VerificationTypesPage';
@@ -172,6 +173,16 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute requiredRoles={['ADMIN']}>
             <Layout>
               <SecurityUXPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/security/devices-macs"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN']}>
+            <Layout>
+              <DeviceAndMacManagementPage />
             </Layout>
           </ProtectedRoute>
         }

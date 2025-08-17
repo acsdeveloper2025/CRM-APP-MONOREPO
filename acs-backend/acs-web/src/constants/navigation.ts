@@ -210,4 +210,11 @@ export const navigationItems: NavigationItem[] = [
     icon: Shield,
     roles: ['ADMIN'],
   },
+  {
+    id: 'security-devices-macs',
+    label: 'Devices & MACs',
+    href: '/security/devices-macs',
+    icon: Shield,
+    roles: ['ADMIN'],
+  },
 ];
