@@ -109,17 +109,19 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
     
     try {
       const caseData: CreateCaseData = {
-        title: data.title,
-        description: data.description,
+        title: `Case for ${customerInfo.customerName}`,
+        description: `Verification case for ${customerInfo.customerName}`,
         customerName: customerInfo.customerName,
+        customerCallingCode: customerInfo.customerCallingCode,
         customerPhone: customerInfo.mobileNumber,
-        customerEmail: data.customerEmail,
+        customerEmail: '',
         addressStreet: data.addressStreet,
         addressCity: data.addressCity,
         addressState: data.addressState,
         addressPincode: data.addressPincode,
         assignedToId: data.assignedToId,
         clientId: data.clientId,
+        productId: data.productId,
         verificationType: data.verificationType,
         verificationTypeId: data.verificationTypeId,
         priority: data.priority,
@@ -127,11 +129,8 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
         // Deduplication fields
         applicantName: customerInfo.customerName,
         applicantPhone: customerInfo.mobileNumber,
-        applicantEmail: data.customerEmail,
+        applicantEmail: '',
         panNumber: customerInfo.panNumber,
-        aadhaarNumber: data.aadhaarNumber,
-        bankAccountNumber: data.bankAccountNumber,
-        bankIfscCode: data.bankIfscCode,
         deduplicationDecision: 'CREATE_NEW',
         deduplicationRationale: 'Case created through two-step workflow',
       };

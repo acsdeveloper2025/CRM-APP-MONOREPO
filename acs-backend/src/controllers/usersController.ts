@@ -79,17 +79,23 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
         u.role,
         u."roleId",
         u."departmentId",
+        u."designationId",
         u."employeeId",
         u.designation,
+        u."attachedPincode",
         u."isActive",
         u."lastLogin",
         u."createdAt",
         u."updatedAt",
         r.name as "roleName",
-        d.name as "departmentName"
+        d.name as "departmentName",
+        des.name as "designationName",
+        dev."deviceId"
       FROM users u
       LEFT JOIN roles r ON u."roleId" = r.id
       LEFT JOIN departments d ON u."departmentId" = d.id
+      LEFT JOIN designations des ON u."designationId" = des.id
+      LEFT JOIN devices dev ON u.id = dev."userId" AND dev."isActive" = true AND dev."isApproved" = true
       ${whereClause}
       ORDER BY u.${safeSortBy} ${safeSortOrder}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -139,8 +145,10 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
         u.role,
         u."roleId",
         u."departmentId",
+        u."designationId",
         u."employeeId",
         u.designation,
+        u."attachedPincode",
         u."isActive",
         u."lastLogin",
         u."createdAt",
@@ -149,10 +157,14 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
         r.description as "roleDescription",
         r.permissions as "rolePermissions",
         d.name as "departmentName",
-        d.description as "departmentDescription"
+        d.description as "departmentDescription",
+        des.name as "designationName",
+        dev."deviceId"
       FROM users u
       LEFT JOIN roles r ON u."roleId" = r.id
       LEFT JOIN departments d ON u."departmentId" = d.id
+      LEFT JOIN designations des ON u."designationId" = des.id
+      LEFT JOIN devices dev ON u.id = dev."userId" AND dev."isActive" = true AND dev."isApproved" = true
       WHERE u.id = $1
     `;
     
@@ -183,6 +195,8 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
 // POST /api/users - Create new user
 export const createUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    logger.info('Creating user with data:', { body: req.body, userId: req.user?.id });
+
     const {
       name,
       username,
@@ -194,7 +208,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       employeeId,
       designation,
       phone,
-      deviceId,
+      attachedPincode,
       isActive = true,
       // Legacy fields for backward compatibility
       role,
@@ -205,7 +219,6 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     const cleanRoleId = roleId && roleId.trim() !== '' ? roleId : null;
     const cleanDepartmentId = departmentId && departmentId.trim() !== '' ? departmentId : null;
     const cleanDesignationId = designationId && designationId.trim() !== '' ? designationId : null;
-    const cleanDeviceId = deviceId && deviceId.trim() !== '' ? deviceId : null;
 
     // Validate required fields
     if (!name || !username || !email || !password) {
@@ -224,63 +237,8 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Determine if user is a field agent by checking roleId or legacy role field
-    let isFieldAgent = false;
-    if (cleanRoleId) {
-      // Look up role name from roleId
-      const roleQuery = `SELECT name FROM roles WHERE id = $1 AND "isActive" = true`;
-      const roleResult = await query(roleQuery, [cleanRoleId]);
-      if (roleResult.rows.length > 0) {
-        const roleName = roleResult.rows[0].name;
-        isFieldAgent = roleName === 'FIELD_AGENT' || roleName === 'FIELD';
-      }
-    } else if (role) {
-      // Use legacy role field
-      isFieldAgent = role === 'FIELD' || role === 'FIELD_AGENT';
-    }
-
-    // Validate deviceId for field agents
-    if (isFieldAgent) {
-      if (!cleanDeviceId) {
-        return res.status(400).json({
-          success: false,
-          message: 'Device ID is required for field agents',
-          error: { code: 'VALIDATION_ERROR' },
-        });
-      }
-
-      // Validate UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(cleanDeviceId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Device ID must be a valid UUID format',
-          error: { code: 'VALIDATION_ERROR' },
-        });
-      }
-
-      // Check if deviceId is already in use
-      const existingDeviceQuery = `
-        SELECT id, username FROM users
-        WHERE "deviceId" = $1
-      `;
-      const existingDevice = await query(existingDeviceQuery, [cleanDeviceId]);
-
-      if (existingDevice.rows.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: `Device ID is already registered to user: ${existingDevice.rows[0].username}`,
-          error: { code: 'DEVICE_ALREADY_REGISTERED' },
-        });
-      }
-    } else if (cleanDeviceId) {
-      // Non-field agents should not have deviceId
-      return res.status(400).json({
-        success: false,
-        message: 'Device ID can only be set for field agents',
-        error: { code: 'VALIDATION_ERROR' },
-      });
-    }
+    // Device management is handled through the devices table, not user creation
+    // Field agents will register devices separately after user creation
 
     // Check if username or email already exists
     const existingUserQuery = `
@@ -304,10 +262,10 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     const createUserQuery = `
       INSERT INTO users (
         name, username, email, password, "passwordHash", role, "roleId", "departmentId", "designationId",
-        "employeeId", designation, phone, "deviceId", "isActive"
+        "employeeId", designation, phone, "attachedPincode", "isActive"
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id, name, username, email, role, "roleId", "departmentId", "designationId",
-                "employeeId", designation, phone, "deviceId", "isActive", "createdAt", "updatedAt"
+                "employeeId", designation, phone, "attachedPincode", "isActive", "createdAt", "updatedAt"
     `;
 
     const result = await query(createUserQuery, [
@@ -323,7 +281,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       employeeId || null,
       designation || null,
       phone || null,
-      cleanDeviceId,
+      attachedPincode || null,
       isActive
     ]);
 
@@ -385,60 +343,18 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
-    // Validate deviceId if being updated
-    if (updateData.deviceId !== undefined) {
-      // Get current user data to check role
-      const currentUserQuery = `SELECT role, "deviceId" FROM users WHERE id = $1`;
-      const currentUser = await query(currentUserQuery, [id]);
-      const userRole = updateData.role || currentUser.rows[0]?.role;
-
-      if (userRole === 'FIELD' || userRole === 'FIELD_AGENT') {
-        if (updateData.deviceId) {
-          // Validate UUID format
-          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-          if (!uuidRegex.test(updateData.deviceId)) {
-            return res.status(400).json({
-              success: false,
-              message: 'Device ID must be a valid UUID format',
-              error: { code: 'VALIDATION_ERROR' },
-            });
-          }
-
-          // Check if deviceId is already in use by another user
-          const existingDeviceQuery = `
-            SELECT id, username FROM users
-            WHERE "deviceId" = $1 AND id != $2
-          `;
-          const existingDevice = await query(existingDeviceQuery, [updateData.deviceId, id]);
-
-          if (existingDevice.rows.length > 0) {
-            return res.status(400).json({
-              success: false,
-              message: `Device ID is already registered to user: ${existingDevice.rows[0].username}`,
-              error: { code: 'DEVICE_ALREADY_REGISTERED' },
-            });
-          }
-        }
-      } else if (updateData.deviceId) {
-        // Non-field agents should not have deviceId
-        return res.status(400).json({
-          success: false,
-          message: 'Device ID can only be set for field agents',
-          error: { code: 'VALIDATION_ERROR' },
-        });
-      }
-    }
+    // Device management is handled separately through device management endpoints
 
     // Build update query dynamically
     const updateFields: string[] = [];
     const updateParams: any[] = [];
     let paramIndex = 1;
 
-    const allowedFields = ['name', 'username', 'email', 'phone', 'role', 'roleId', 'departmentId', 'employeeId', 'designation', 'deviceId', 'isActive'];
+    const allowedFields = ['name', 'username', 'email', 'phone', 'role', 'roleId', 'departmentId', 'employeeId', 'designation', 'attachedPincode', 'isActive'];
 
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {
-        const column = ['employeeId','roleId','departmentId','deviceId','isActive','lastLogin','createdAt','updatedAt'].includes(field) ? `"${field}"` : field;
+        const column = ['employeeId','roleId','departmentId','attachedPincode','isActive','lastLogin','createdAt','updatedAt'].includes(field) ? `"${field}"` : field;
         updateFields.push(`${column} = $${paramIndex++}`);
         updateParams.push(updateData[field]);
       }
@@ -460,53 +376,11 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
       SET ${updateFields.join(', ')}
       WHERE id = $${paramIndex}
       RETURNING id, name, username, email, role, "roleId", "departmentId",
-                "employeeId", designation, phone, "deviceId", "isActive", "createdAt", "updatedAt"
+                "employeeId", designation, phone, "attachedPincode", "isActive", "createdAt", "updatedAt"
     `;
-
-    // Get current user data before update for logging
-    const currentUserQuery = `SELECT username, "deviceId" FROM users WHERE id = $1`;
-    const currentUserResult = await query(currentUserQuery, [id]);
-    const currentUser = currentUserResult.rows[0];
 
     const result = await query(updateQuery, updateParams);
     const updatedUser = result.rows[0];
-
-    // Log device management changes
-    if (updateData.deviceId !== undefined && currentUser) {
-      const deviceAuthLogger = DeviceAuthLogger.getInstance();
-      const oldDeviceId = currentUser.deviceId;
-      const newDeviceId = updateData.deviceId;
-
-      if (oldDeviceId && !newDeviceId) {
-        // Device reset
-        await deviceAuthLogger.logDeviceReset(
-          id,
-          currentUser.username,
-          oldDeviceId,
-          req.user?.id || 'unknown',
-          req.user?.username || 'unknown'
-        );
-      } else if (!oldDeviceId && newDeviceId) {
-        // Device registration
-        await deviceAuthLogger.logDeviceRegistration(
-          id,
-          currentUser.username,
-          newDeviceId,
-          req.user?.id || 'unknown',
-          req.user?.username || 'unknown'
-        );
-      } else if (oldDeviceId && newDeviceId && oldDeviceId !== newDeviceId) {
-        // Device update
-        await deviceAuthLogger.logDeviceUpdate(
-          id,
-          currentUser.username,
-          oldDeviceId,
-          newDeviceId,
-          req.user?.id || 'unknown',
-          req.user?.username || 'unknown'
-        );
-      }
-    }
 
     logger.info(`Updated user: ${id}`, {
       userId: req.user?.id,

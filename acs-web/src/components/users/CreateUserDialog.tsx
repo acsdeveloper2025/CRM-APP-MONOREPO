@@ -34,6 +34,7 @@ import { usersService } from '@/services/users';
 import { rolesService } from '@/services/roles';
 import { departmentsService } from '@/services/departments';
 import { designationsService } from '@/services/designations';
+import { TerritoryAssignmentSection } from './TerritoryAssignmentSection';
 import type { Role } from '@/types/auth';
 
 const createUserSchema = z.object({
@@ -41,11 +42,11 @@ const createUserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').max(50, 'Username too long'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  roleId: z.string().optional(),
+  roleId: z.string().min(1, 'Role is required'),
   departmentId: z.string().optional(),
-  employeeId: z.string().optional(),
+  employeeId: z.string().min(1, 'Employee ID is required'),
   designationId: z.string().optional(),
-  deviceId: z.string().optional(),
+  attachedPincode: z.string().optional(),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -69,44 +70,45 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       departmentId: '',
       employeeId: '',
       designationId: '',
-      deviceId: '',
+      attachedPincode: '',
     },
   });
 
   // Fetch roles for dropdown
-  const { data: rolesData } = useQuery({
+  const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useQuery({
     queryKey: ['roles', 'active'],
     queryFn: () => rolesService.getActiveRoles(),
     enabled: open,
   });
 
   // Fetch departments for dropdown
-  const { data: departmentsData } = useQuery({
+  const { data: departmentsData, isLoading: departmentsLoading, error: departmentsError } = useQuery({
     queryKey: ['departments', 'active'],
     queryFn: () => departmentsService.getActiveDepartments(),
     enabled: open,
   });
 
   // Fetch designations for dropdown
-  const { data: designationsData } = useQuery({
+  const { data: designationsData, isLoading: designationsLoading, error: designationsError } = useQuery({
     queryKey: ['designations', 'active'],
     queryFn: () => designationsService.getActiveDesignations(),
     enabled: open,
   });
 
-  // Watch the selected role to determine if deviceId field should be shown
+  // Watch the selected role to determine if territory assignment should be shown
   const selectedRoleId = form.watch('roleId');
 
   const createMutation = useMutation({
     mutationFn: (data: CreateUserFormData) => {
-      // Convert empty strings to undefined for optional fields
+      // Convert empty strings to undefined for optional fields only
       const cleanData = {
         ...data,
-        roleId: data.roleId || undefined,
+        // Required fields - keep as is
+        roleId: data.roleId,
+        employeeId: data.employeeId,
+        // Optional fields - convert empty strings to undefined
         departmentId: data.departmentId || undefined,
         designationId: data.designationId || undefined,
-        employeeId: data.employeeId || undefined,
-        deviceId: data.deviceId || undefined,
       };
       return usersService.createUser(cleanData as any);
     },
@@ -123,30 +125,6 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   });
 
   const onSubmit = (data: CreateUserFormData) => {
-    // Validate deviceId for field agents
-    const submittedRole = roles.find((role: any) => role.id === data.roleId);
-    const isSubmittedFieldAgent = submittedRole?.name === 'Field Agent' || submittedRole?.name === 'FIELD_AGENT' || submittedRole?.name === 'FIELD';
-
-    if (isSubmittedFieldAgent && !data.deviceId) {
-      form.setError('deviceId', {
-        type: 'manual',
-        message: 'Device ID is required for field agents',
-      });
-      return;
-    }
-
-    if (isSubmittedFieldAgent && data.deviceId) {
-      // Validate UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(data.deviceId)) {
-        form.setError('deviceId', {
-          type: 'manual',
-          message: 'Device ID must be a valid UUID format',
-        });
-        return;
-      }
-    }
-
     createMutation.mutate(data);
   };
 
@@ -154,8 +132,10 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   const departments = departmentsData?.data || [];
   const designations = designationsData?.data || [];
 
+
+
   // Determine if the selected role is a field agent
-  const selectedRole = roles.find((role: any) => role.id === selectedRoleId);
+  const selectedRole = roles.find((role: any) => String(role.id) === String(selectedRoleId));
   const isFieldAgent = selectedRole?.name === 'Field Agent' || selectedRole?.name === 'FIELD_AGENT' || selectedRole?.name === 'FIELD';
 
   return (
@@ -231,6 +211,20 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="employeeId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Employee ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter employee ID" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -238,18 +232,33 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+
+                    <Select
+                      onValueChange={(value) => {
+                        console.log('Role selected:', value);
+                        field.onChange(value);
+                      }}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select role" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {roles.map((role) => (
-                          <SelectItem key={role.id} value={role.id}>
-                            {role.name}
-                          </SelectItem>
-                        ))}
+                        {rolesLoading ? (
+                          <SelectItem value="loading" disabled>Loading roles...</SelectItem>
+                        ) : rolesError ? (
+                          <SelectItem value="error" disabled>Error loading roles</SelectItem>
+                        ) : roles.length === 0 ? (
+                          <SelectItem value="empty" disabled>No roles available</SelectItem>
+                        ) : (
+                          roles.map((role) => (
+                            <SelectItem key={role.id} value={String(role.id)}>
+                              {role.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -279,18 +288,33 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Designation</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+
+                    <Select
+                      onValueChange={(value) => {
+                        console.log('Designation selected:', value);
+                        field.onChange(value);
+                      }}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select designation" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {designations.map((designation) => (
-                          <SelectItem key={designation.id} value={designation.id}>
-                            {designation.name}
-                          </SelectItem>
-                        ))}
+                        {designationsLoading ? (
+                          <SelectItem value="loading" disabled>Loading designations...</SelectItem>
+                        ) : designationsError ? (
+                          <SelectItem value="error" disabled>Error loading designations</SelectItem>
+                        ) : designations.length === 0 ? (
+                          <SelectItem value="empty" disabled>No designations available</SelectItem>
+                        ) : (
+                          designations.map((designation) => (
+                            <SelectItem key={designation.id} value={String(designation.id)}>
+                              {designation.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -304,18 +328,32 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select
+                      onValueChange={(value) => {
+                        console.log('Department selected:', value);
+                        field.onChange(value);
+                      }}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select department" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
-                            {dept.name}
-                          </SelectItem>
-                        ))}
+                        {departmentsLoading ? (
+                          <SelectItem value="loading" disabled>Loading departments...</SelectItem>
+                        ) : departmentsError ? (
+                          <SelectItem value="error" disabled>Error loading departments</SelectItem>
+                        ) : departments.length === 0 ? (
+                          <SelectItem value="empty" disabled>No departments available</SelectItem>
+                        ) : (
+                          departments.map((dept) => (
+                            <SelectItem key={dept.id} value={String(dept.id)}>
+                              {dept.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -324,27 +362,37 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               />
             </div>
 
-            {/* Device ID field - only show for field agents */}
+            {/* Attached Pincode field - only show for field agents */}
             {isFieldAgent && (
               <FormField
                 control={form.control}
-                name="deviceId"
+                name="attachedPincode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Device ID <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>Attached Pincode</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter device UUID (e.g., 123e4567-e89b-12d3-a456-426614174000)"
+                        placeholder="Enter pincode (e.g., 400001)"
                         {...field}
                       />
                     </FormControl>
                     <FormMessage />
                     <p className="text-sm text-muted-foreground">
-                      Required for field agents. Must be a valid UUID format.
+                      Optional pincode assignment for field agents.
                     </p>
                   </FormItem>
                 )}
               />
+            )}
+
+            {/* Territory Assignment for Field Agents */}
+            {isFieldAgent && (
+              <div className="mt-6">
+                <TerritoryAssignmentSection
+                  userRole={selectedRole?.name}
+                  disabled={createMutation.isPending}
+                />
+              </div>
             )}
 
             <DialogFooter>

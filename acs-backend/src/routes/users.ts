@@ -49,11 +49,11 @@ const createUserValidation = [
   body('roleId')
     .optional()
     .custom((value) => {
-      if (value && value.trim() !== '') {
-        // If provided and not empty, must be a valid UUID
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(value)) {
-          throw new Error('Role ID must be a valid UUID');
+      if (value && value.toString().trim() !== '') {
+        // If provided and not empty, must be a valid integer
+        const intValue = parseInt(value, 10);
+        if (isNaN(intValue) || intValue < 1) {
+          throw new Error('Role ID must be a valid positive integer');
         }
       }
       return true;
@@ -65,11 +65,11 @@ const createUserValidation = [
   body('departmentId')
     .optional()
     .custom((value) => {
-      if (value && value.trim() !== '') {
-        // If provided and not empty, must be a valid UUID
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(value)) {
-          throw new Error('Department ID must be a valid UUID');
+      if (value && value.toString().trim() !== '') {
+        // If provided and not empty, must be a valid integer
+        const intValue = parseInt(value, 10);
+        if (isNaN(intValue) || intValue < 1) {
+          throw new Error('Department ID must be a valid positive integer');
         }
       }
       return true;
@@ -77,11 +77,11 @@ const createUserValidation = [
   body('designationId')
     .optional()
     .custom((value) => {
-      if (value && value.trim() !== '') {
-        // If provided and not empty, must be a valid UUID
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(value)) {
-          throw new Error('Designation ID must be a valid UUID');
+      if (value && value.toString().trim() !== '') {
+        // If provided and not empty, must be a valid integer
+        const intValue = parseInt(value, 10);
+        if (isNaN(intValue) || intValue < 1) {
+          throw new Error('Designation ID must be a valid positive integer');
         }
       }
       return true;
@@ -92,8 +92,9 @@ const createUserValidation = [
     .isLength({ max: 100 })
     .withMessage('Department must be less than 100 characters'),
   body('employeeId')
-    .optional()
     .trim()
+    .notEmpty()
+    .withMessage('Employee ID is required')
     .isLength({ max: 50 })
     .withMessage('Employee ID must be less than 50 characters'),
   body('designation')

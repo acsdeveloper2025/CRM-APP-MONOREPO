@@ -23,39 +23,26 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, Send, Loader2, User, MapPin, Building2, CreditCard, Building } from 'lucide-react';
 import { useFieldUsers } from '@/hooks/useUsers';
-import { useClients, useVerificationTypes } from '@/hooks/useClients';
+import { useClients, useVerificationTypes, useProductsByClient } from '@/hooks/useClients';
 import type { CustomerInfoData } from './CustomerInfoStep';
 
 const fullCaseFormSchema = z.object({
-  // Case details
-  title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
-  description: z.string().min(1, 'Description is required').max(1000, 'Description must be less than 1000 characters'),
-  
   // Address information
   addressStreet: z.string().min(1, 'Street address is required').max(200, 'Street address must be less than 200 characters'),
   addressCity: z.string().min(1, 'City is required').max(100, 'City must be less than 100 characters'),
   addressState: z.string().min(1, 'State is required').max(100, 'State must be less than 100 characters'),
   addressPincode: z.string().min(1, 'Pincode is required').regex(/^\d{6}$/, 'Pincode must be 6 digits'),
-  
+
   // Assignment and client
   assignedToId: z.string().min(1, 'Field user assignment is required'),
   clientId: z.string().min(1, 'Client selection is required'),
+  productId: z.string().min(1, 'Product selection is required'),
   verificationType: z.string().min(1, 'Verification type is required'),
   verificationTypeId: z.string().optional(),
-  
+
   // Additional details
   priority: z.number().min(1).max(5).default(2),
-  notes: z.string().optional(),
-  
-  // Additional deduplication fields
-  customerEmail: z.string().email('Invalid email format').optional().or(z.literal('')),
-  aadhaarNumber: z.string().optional().refine((val) => !val || /^[0-9]{12}$/.test(val.replace(/\s/g, '')), {
-    message: 'Aadhaar must be 12 digits'
-  }),
-  bankAccountNumber: z.string().optional(),
-  bankIfscCode: z.string().optional().refine((val) => !val || /^[A-Z]{4}0[A-Z0-9]{6}$/.test(val), {
-    message: 'IFSC code must be in format: ABCD0123456'
-  }),
+  notes: z.string().optional(), // TRIGGER field
 });
 
 export type FullCaseFormData = z.infer<typeof fullCaseFormSchema>;
@@ -87,24 +74,24 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
   const form = useForm<FullCaseFormData>({
     resolver: zodResolver(fullCaseFormSchema),
     defaultValues: {
-      title: initialData.title || '',
-      description: initialData.description || '',
       addressStreet: initialData.addressStreet || '',
       addressCity: initialData.addressCity || '',
       addressState: initialData.addressState || '',
       addressPincode: initialData.addressPincode || '',
       assignedToId: initialData.assignedToId || '',
       clientId: initialData.clientId || '',
+      productId: initialData.productId || '',
       verificationType: initialData.verificationType || '',
       verificationTypeId: initialData.verificationTypeId || '',
       priority: initialData.priority || 2,
-      notes: initialData.notes || '',
-      customerEmail: initialData.customerEmail || '',
-      aadhaarNumber: initialData.aadhaarNumber || '',
-      bankAccountNumber: initialData.bankAccountNumber || '',
-      bankIfscCode: initialData.bankIfscCode || '',
+      notes: initialData.notes || '', // TRIGGER field
     },
   });
+
+  // Watch for client selection to fetch products
+  const selectedClientId = form.watch('clientId');
+  const { data: productsResponse } = useProductsByClient(selectedClientId);
+  const products = productsResponse?.data || [];
 
   const handleSubmit = (data: FullCaseFormData) => {
     onSubmit(data);
@@ -155,47 +142,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
             </CardContent>
           </Card>
 
-          {/* Case Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Case Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Case Title *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter case title" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Case Description *</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Describe the case details and requirements" 
-                          {...field}
-                          rows={3}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Address Information */}
           <Card>
@@ -290,7 +237,11 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={(value) => {
+                        field.onChange(value);
+                        // Reset product selection when client changes
+                        form.setValue('productId', '');
+                      }} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select client" />
@@ -298,8 +249,33 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                         </FormControl>
                         <SelectContent>
                           {clients?.map((client) => (
-                            <SelectItem key={client.id} value={client.id}>
+                            <SelectItem key={client.id} value={String(client.id)}>
                               {client.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="productId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedClientId}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={selectedClientId ? "Select product" : "Select client first"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {products?.map((product) => (
+                            <SelectItem key={product.id} value={product.id.toString()}>
+                              {product.name} ({product.code})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -323,7 +299,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                         </FormControl>
                         <SelectContent>
                           {fieldUsers?.map((user) => (
-                            <SelectItem key={user.id} value={user.id}>
+                            <SelectItem key={user.id} value={String(user.id)}>
                               {user.name} ({user.email})
                             </SelectItem>
                           ))}
@@ -383,102 +359,17 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   )}
                 />
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Additional Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Additional Information
-              </CardTitle>
-              <CardDescription>
-                Optional fields for enhanced deduplication and verification
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="customerEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Address</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="customer@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="aadhaarNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Aadhaar Number</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="1234 5678 9012" 
-                          {...field}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, '');
-                            const formatted = value.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3');
-                            field.onChange(formatted);
-                          }}
-                          maxLength={14}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="bankAccountNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bank Account Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter bank account number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="bankIfscCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bank IFSC Code</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="ABCD0123456" 
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                          maxLength={11}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
+              {/* TRIGGER Field - Moved from Additional Information */}
               <FormField
                 control={form.control}
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Additional Notes</FormLabel>
+                    <FormLabel>TRIGGER</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Any additional information or special instructions" 
+                      <Textarea
+                        placeholder="Any additional information or special instructions"
                         {...field}
                         rows={3}
                       />
@@ -489,6 +380,8 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
               />
             </CardContent>
           </Card>
+
+
 
           {/* Form Actions */}
           <div className="flex items-center justify-between pt-6 border-t">

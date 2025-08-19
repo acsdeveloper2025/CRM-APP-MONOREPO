@@ -23,6 +23,7 @@ export interface CreateCaseData {
   title: string;
   description: string;
   customerName: string;
+  customerCallingCode?: string;
   customerPhone?: string;
   customerEmail?: string;
   addressStreet: string;
@@ -35,8 +36,16 @@ export interface CreateCaseData {
   verificationTypeId?: string;
   assignedToId: string;
   clientId: string;
+  productId?: string;
   priority?: number;
   notes?: string;
+  // Deduplication fields
+  applicantName?: string;
+  applicantPhone?: string;
+  applicantEmail?: string;
+  panNumber?: string;
+  deduplicationDecision?: string;
+  deduplicationRationale?: string;
 }
 
 export class CasesService {

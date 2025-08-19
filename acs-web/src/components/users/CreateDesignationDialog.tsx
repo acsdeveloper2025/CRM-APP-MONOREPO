@@ -137,7 +137,7 @@ export function CreateDesignationDialog({ open, onOpenChange }: CreateDesignatio
                       <SelectContent>
                         <SelectItem value="__all__">All departments</SelectItem>
                         {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
+                          <SelectItem key={dept.id} value={String(dept.id)}>
                             {dept.name}
                           </SelectItem>
                         ))}

@@ -216,7 +216,7 @@ export function RateViewReportTab() {
                 <SelectContent>
                   <SelectItem value="all">All products</SelectItem>
                   {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
+                    <SelectItem key={product.id} value={String(product.id)}>
                       {product.name}
                     </SelectItem>
                   ))}

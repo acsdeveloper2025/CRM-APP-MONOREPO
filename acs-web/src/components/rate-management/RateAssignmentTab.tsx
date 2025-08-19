@@ -183,7 +183,7 @@ export function RateAssignmentTab() {
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
+                    <SelectItem key={client.id} value={String(client.id)}>
                       {client.name} ({client.code})
                     </SelectItem>
                   ))}
@@ -204,7 +204,7 @@ export function RateAssignmentTab() {
                 </SelectTrigger>
                 <SelectContent>
                   {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
+                    <SelectItem key={product.id} value={String(product.id)}>
                       {product.name} ({product.code})
                     </SelectItem>
                   ))}

@@ -174,7 +174,7 @@ export function CreatePincodeDialog({ open, onOpenChange }: CreatePincodeDialogP
                     </FormControl>
                     <SelectContent>
                       {cities.map((city) => (
-                        <SelectItem key={city.id} value={city.id}>
+                        <SelectItem key={city.id} value={String(city.id)}>
                           <div className="flex flex-col">
                             <span>{city.name}</span>
                             <span className="text-xs text-muted-foreground">

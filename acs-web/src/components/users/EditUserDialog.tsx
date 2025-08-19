@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import {
   Form,
   FormControl,
@@ -35,7 +35,7 @@ import { usersService } from '@/services/users';
 import { rolesService } from '@/services/roles';
 import { departmentsService } from '@/services/departments';
 import { designationsService } from '@/services/designations';
-import { ClientAssignmentSection } from './ClientAssignmentSection';
+
 import { User } from '@/types/user';
 
 const editUserSchema = z.object({
@@ -46,6 +46,7 @@ const editUserSchema = z.object({
   designationId: z.string().min(1, 'Designation is required'),
   departmentId: z.string().min(1, 'Department is required'),
   deviceId: z.string().optional(),
+  attachedPincode: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -59,18 +60,18 @@ interface EditUserDialogProps {
 
 export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('details');
 
   const form = useForm<EditUserFormData>({
     resolver: zodResolver(editUserSchema),
     defaultValues: {
       name: user.name,
       email: user.email,
-      roleId: user.roleId || '',
+      roleId: user.roleId ? String(user.roleId) : '',
       employeeId: user.employeeId,
-      designationId: user.designationId || '',
-      departmentId: user.departmentId || '',
+      designationId: user.designationId ? String(user.designationId) : '',
+      departmentId: user.departmentId ? String(user.departmentId) : '',
       deviceId: user.deviceId || '',
+      attachedPincode: user.attachedPincode || '',
       isActive: user.isActive ?? false,
     },
   });
@@ -101,10 +102,12 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       form.reset({
         name: user.name,
         email: user.email,
-        roleId: user.roleId || '',
+        roleId: user.roleId ? String(user.roleId) : '',
         employeeId: user.employeeId,
-        designationId: user.designationId || '',
-        departmentId: user.departmentId || '',
+        designationId: user.designationId ? String(user.designationId) : '',
+        departmentId: user.departmentId ? String(user.departmentId) : '',
+        deviceId: user.deviceId || '',
+        attachedPincode: user.attachedPincode || '',
         isActive: user.isActive ?? false,
       });
     }
@@ -169,13 +172,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="details">User Details</TabsTrigger>
-            <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="details" className="space-y-4">
+        <div className="space-y-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -221,7 +218,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                       </FormControl>
                       <SelectContent>
                         {roles.map((role) => (
-                          <SelectItem key={role.id} value={role.id}>
+                          <SelectItem key={role.id} value={String(role.id)}>
                             {role.name}
                           </SelectItem>
                         ))}
@@ -262,7 +259,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                       </FormControl>
                       <SelectContent>
                         {designations.map((designation) => (
-                          <SelectItem key={designation.id} value={designation.id}>
+                          <SelectItem key={designation.id} value={String(designation.id)}>
                             {designation.name}
                           </SelectItem>
                         ))}
@@ -287,7 +284,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                       </FormControl>
                       <SelectContent>
                         {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
+                          <SelectItem key={dept.id} value={String(dept.id)}>
                             {dept.name}
                           </SelectItem>
                         ))}
@@ -316,6 +313,29 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                     <FormMessage />
                     <p className="text-sm text-muted-foreground">
                       Required for field agents. Must be a valid UUID format.
+                    </p>
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Attached Pincode field - only show for field agents */}
+            {isFieldAgent && (
+              <FormField
+                control={form.control}
+                name="attachedPincode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Attached Pincode</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter pincode (e.g., 400001)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-sm text-muted-foreground">
+                      Optional pincode assignment for field agents.
                     </p>
                   </FormItem>
                 )}
@@ -358,21 +378,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                 </DialogFooter>
               </form>
             </Form>
-          </TabsContent>
-
-          <TabsContent value="permissions" className="space-y-4">
-            <ClientAssignmentSection user={user} />
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Close
-              </Button>
-            </DialogFooter>
-          </TabsContent>
-        </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );

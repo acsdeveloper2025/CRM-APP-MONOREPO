@@ -24,7 +24,7 @@ interface UserDetailsDialogProps {
 export function UserDetailsDialog({ user, open, onOpenChange }: UserDetailsDialogProps) {
   const { data: userProfileData, isLoading } = useQuery({
     queryKey: ['user-profile', user.id],
-    queryFn: () => usersService.getUserProfile(user.id),
+    queryFn: () => usersService.getUserById(user.id),
     enabled: open,
   });
 

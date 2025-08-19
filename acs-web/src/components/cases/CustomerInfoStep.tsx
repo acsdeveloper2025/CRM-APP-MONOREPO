@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,10 +13,18 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Search, ArrowRight, User, CreditCard, Phone } from 'lucide-react';
+import { Search, ArrowRight, User, CreditCard, Phone, Hash } from 'lucide-react';
+
+// Function to generate unique customer calling code
+const generateCustomerCallingCode = (): string => {
+  const timestamp = Date.now().toString();
+  const randomDigits = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return `CC-${timestamp}-${randomDigits}`;
+};
 
 const customerInfoSchema = z.object({
   customerName: z.string().min(1, 'Customer name is required').max(100, 'Customer name must be less than 100 characters'),
+  customerCallingCode: z.string().min(1, 'Customer calling code is required'),
   panNumber: z.string().optional().refine((val) => !val || /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val), {
     message: 'PAN must be in format: ABCDE1234F'
   }),
@@ -44,10 +52,19 @@ export const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
     resolver: zodResolver(customerInfoSchema),
     defaultValues: {
       customerName: initialData.customerName || '',
+      customerCallingCode: initialData.customerCallingCode || '',
       panNumber: initialData.panNumber || '',
       mobileNumber: initialData.mobileNumber || '',
     },
   });
+
+  // Auto-generate customer calling code when component mounts or when customer name changes
+  useEffect(() => {
+    if (!form.getValues('customerCallingCode')) {
+      const newCallingCode = generateCustomerCallingCode();
+      form.setValue('customerCallingCode', newCallingCode);
+    }
+  }, [form]);
 
   const handleSearchExisting = (data: CustomerInfoData) => {
     onSearchExisting(data);
@@ -93,13 +110,40 @@ export const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
                       Customer Name *
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Enter customer full name" 
+                      <Input
+                        placeholder="Enter customer full name"
                         {...field}
                         className="text-base"
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Customer Calling Code - Auto-generated */}
+              <FormField
+                control={form.control}
+                name="customerCallingCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Hash className="h-4 w-4" />
+                      Customer Calling Code *
+                      <span className="text-sm text-muted-foreground">(Auto-generated)</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        readOnly
+                        className="text-base font-mono bg-muted"
+                        placeholder="Auto-generated calling code"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">
+                      This unique code will be used for automatic call routing from the mobile app
+                    </p>
                   </FormItem>
                 )}
               />

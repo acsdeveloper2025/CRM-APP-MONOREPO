@@ -18,6 +18,7 @@ export interface User {
   departmentName?: string;
   profilePhotoUrl?: string;
   deviceId?: string; // Device ID for field agents
+  attachedPincode?: string; // Pincode assignment for field agents
   isActive?: boolean;
   lastLogin?: string;
   lastLoginAt?: string; // Some views may still use lastLoginAt
@@ -40,6 +41,7 @@ export interface CreateUserData {
   department?: string; // Legacy display only
   departmentId?: string; // New department system
   deviceId?: string; // Device ID for field agents
+  attachedPincode?: string; // Pincode assignment for field agents
   profilePhotoUrl?: string;
 }
 
@@ -54,6 +56,7 @@ export interface UpdateUserData {
   department?: string; // Legacy display only
   departmentId?: string; // New department system
   deviceId?: string; // Device ID for field agents
+  attachedPincode?: string; // Pincode assignment for field agents
   profilePhotoUrl?: string;
   isActive?: boolean;
 }

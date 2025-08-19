@@ -1,6 +1,4 @@
----
-type: "always_apply"
----
+[byterover-mcp]
 
 # important 
 always use byterover-retrieve-knowledge tool to get the related context before any tasks 

@@ -16,7 +16,13 @@ export const handleValidationErrors = (
       value: error.type === 'field' ? error.value : undefined,
     }));
 
-    // Validation errors occurred
+    // Log validation errors for debugging
+    console.log('Validation errors:', {
+      url: req.url,
+      method: req.method,
+      body: req.body,
+      errors: validationErrors
+    });
 
     const response: ApiResponse = {
       success: false,

@@ -235,6 +235,10 @@ export class LocationsService {
   async removePincodeArea(pincodeId: string, areaId: string): Promise<ApiResponse<void>> {
     return apiService.delete(`/pincodes/${pincodeId}/areas/${areaId}`);
   }
+
+  async getAreasByPincode(pincodeId: number): Promise<ApiResponse<{ id: number; name: string }[]>> {
+    return apiService.get(`/pincodes/${pincodeId}/areas`);
+  }
 }
 
 export const locationsService = new LocationsService();

@@ -40,6 +40,7 @@ import deduplicationRoutes from '@/routes/deduplication';
 import rateTypesRoutes from '@/routes/rate-types';
 import rateTypeAssignmentsRoutes from '@/routes/rate-type-assignments';
 import ratesRoutes from '@/routes/rates';
+import territoryAssignmentsRoutes from '@/routes/territoryAssignments';
 
 
 const app = express();
@@ -127,6 +128,7 @@ app.use('/api/cases/deduplication', deduplicationRoutes);
 app.use('/api/rate-types', rateTypesRoutes);
 app.use('/api/rate-type-assignments', rateTypeAssignmentsRoutes);
 app.use('/api/rates', ratesRoutes);
+// app.use('/api/territory-assignments', territoryAssignmentsRoutes);
 
 
 // Mobile API routes
