@@ -77,23 +77,40 @@ export const getFieldAgentTerritories = async (req: Request, res: Response) => {
         COALESCE(
           JSON_AGG(
             JSON_BUILD_OBJECT(
-              'pincodeAssignmentId', fat."pincodeAssignmentId",
-              'pincodeId', fat."pincodeId",
-              'pincodeCode', fat."pincodeCode",
-              'cityName', fat."cityName",
-              'stateName', fat."stateName",
-              'countryName', fat."countryName",
-              'assignedAreas', fat."assignedAreas",
-              'pincodeAssignedAt', fat."pincodeAssignedAt",
-              'isActive', fat."isActive"
-            ) ORDER BY fat."pincodeCode"
-          ) FILTER (WHERE fat."pincodeId" IS NOT NULL),
+              'pincodeAssignmentId', upa.id,
+              'pincodeId', upa."pincodeId",
+              'pincodeCode', p.code,
+              'cityName', c.name,
+              'stateName', c.state,
+              'countryName', c.country,
+              'assignedAreas', COALESCE(area_agg.areas, '[]'::json),
+              'pincodeAssignedAt', upa."assignedAt",
+              'isActive', upa."isActive"
+            ) ORDER BY p.code
+          ) FILTER (WHERE upa."pincodeId" IS NOT NULL),
           '[]'::json
         ) as "territoryAssignments"
       FROM users u
-      LEFT JOIN "fieldAgentTerritories" fat ON u.id = fat."userId"
-      LEFT JOIN pincodes p ON fat."pincodeId" = p.id
+      LEFT JOIN "userPincodeAssignments" upa ON u.id = upa."userId" AND upa."isActive" = true
+      LEFT JOIN pincodes p ON upa."pincodeId" = p.id
       LEFT JOIN cities c ON p."cityId" = c.id
+      LEFT JOIN (
+        SELECT
+          uaa."userId",
+          uaa."pincodeId",
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'areaAssignmentId', uaa.id,
+              'areaId', uaa."areaId",
+              'areaName', pa.name,
+              'assignedAt', uaa."assignedAt"
+            )
+          ) as areas
+        FROM "userAreaAssignments" uaa
+        LEFT JOIN "pincodeAreas" pa ON uaa."areaId" = pa.id
+        WHERE uaa."isActive" = true
+        GROUP BY uaa."userId", uaa."pincodeId"
+      ) area_agg ON upa."userId" = area_agg."userId" AND upa."pincodeId" = area_agg."pincodeId"
       ${whereClause}
       GROUP BY u.id, u.name, u.username, u."employeeId", u."isActive"
       ORDER BY ${sortBy === 'userName' ? 'u.name' : `u."${sortBy}"`} ${String(sortOrder).toUpperCase()}
