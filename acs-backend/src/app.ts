@@ -128,7 +128,7 @@ app.use('/api/cases/deduplication', deduplicationRoutes);
 app.use('/api/rate-types', rateTypesRoutes);
 app.use('/api/rate-type-assignments', rateTypeAssignmentsRoutes);
 app.use('/api/rates', ratesRoutes);
-// app.use('/api/territory-assignments', territoryAssignmentsRoutes);
+app.use('/api/territory-assignments', territoryAssignmentsRoutes);
 
 
 // Mobile API routes

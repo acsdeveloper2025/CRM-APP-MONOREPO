@@ -46,7 +46,6 @@ const createUserSchema = z.object({
   departmentId: z.string().optional(),
   employeeId: z.string().min(1, 'Employee ID is required'),
   designationId: z.string().optional(),
-  attachedPincode: z.string().optional(),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -70,7 +69,6 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       departmentId: '',
       employeeId: '',
       designationId: '',
-      attachedPincode: '',
     },
   });
 
@@ -361,29 +359,6 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 )}
               />
             </div>
-
-            {/* Attached Pincode field - only show for field agents */}
-            {isFieldAgent && (
-              <FormField
-                control={form.control}
-                name="attachedPincode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Attached Pincode</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter pincode (e.g., 400001)"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-sm text-muted-foreground">
-                      Optional pincode assignment for field agents.
-                    </p>
-                  </FormItem>
-                )}
-              />
-            )}
 
             {/* Territory Assignment for Field Agents */}
             {isFieldAgent && (

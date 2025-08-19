@@ -35,6 +35,7 @@ import { usersService } from '@/services/users';
 import { rolesService } from '@/services/roles';
 import { departmentsService } from '@/services/departments';
 import { designationsService } from '@/services/designations';
+import { TerritoryAssignmentSection } from './TerritoryAssignmentSection';
 
 import { User } from '@/types/user';
 
@@ -46,7 +47,6 @@ const editUserSchema = z.object({
   designationId: z.string().min(1, 'Designation is required'),
   departmentId: z.string().min(1, 'Department is required'),
   deviceId: z.string().optional(),
-  attachedPincode: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -71,7 +71,6 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       designationId: user.designationId ? String(user.designationId) : '',
       departmentId: user.departmentId ? String(user.departmentId) : '',
       deviceId: user.deviceId || '',
-      attachedPincode: user.attachedPincode || '',
       isActive: user.isActive ?? false,
     },
   });
@@ -107,7 +106,6 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
         designationId: user.designationId ? String(user.designationId) : '',
         departmentId: user.departmentId ? String(user.departmentId) : '',
         deviceId: user.deviceId || '',
-        attachedPincode: user.attachedPincode || '',
         isActive: user.isActive ?? false,
       });
     }
@@ -159,8 +157,10 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
 
   // Watch the selected role to determine if deviceId field should be shown
   const selectedRoleId = form.watch('roleId');
-  const selectedRole = roles.find((role: any) => role.id === selectedRoleId);
+  const selectedRole = roles.find((role: any) => String(role.id) === String(selectedRoleId));
   const isFieldAgent = selectedRole?.name === 'Field Agent' || selectedRole?.name === 'FIELD_AGENT' || selectedRole?.name === 'FIELD';
+
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -319,29 +319,6 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
               />
             )}
 
-            {/* Attached Pincode field - only show for field agents */}
-            {isFieldAgent && (
-              <FormField
-                control={form.control}
-                name="attachedPincode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Attached Pincode</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter pincode (e.g., 400001)"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-sm text-muted-foreground">
-                      Optional pincode assignment for field agents.
-                    </p>
-                  </FormItem>
-                )}
-              />
-            )}
-
             <FormField
               control={form.control}
               name="isActive"
@@ -378,6 +355,17 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                 </DialogFooter>
               </form>
             </Form>
+
+            {/* Territory Assignment for Field Agents */}
+            {isFieldAgent && (
+              <div className="mt-6 border-t pt-6">
+                <h3 className="text-lg font-medium mb-4">Territory Assignment</h3>
+                <TerritoryAssignmentSection
+                  userId={user.id}
+                  userRole={selectedRole?.name}
+                />
+              </div>
+            )}
         </div>
       </DialogContent>
     </Dialog>

@@ -82,7 +82,6 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
         u."designationId",
         u."employeeId",
         u.designation,
-        u."attachedPincode",
         u."isActive",
         u."lastLogin",
         u."createdAt",
@@ -148,7 +147,6 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
         u."designationId",
         u."employeeId",
         u.designation,
-        u."attachedPincode",
         u."isActive",
         u."lastLogin",
         u."createdAt",
@@ -208,7 +206,6 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       employeeId,
       designation,
       phone,
-      attachedPincode,
       isActive = true,
       // Legacy fields for backward compatibility
       role,
@@ -262,10 +259,10 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     const createUserQuery = `
       INSERT INTO users (
         name, username, email, password, "passwordHash", role, "roleId", "departmentId", "designationId",
-        "employeeId", designation, phone, "attachedPincode", "isActive"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        "employeeId", designation, phone, "isActive"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING id, name, username, email, role, "roleId", "departmentId", "designationId",
-                "employeeId", designation, phone, "attachedPincode", "isActive", "createdAt", "updatedAt"
+                "employeeId", designation, phone, "isActive", "createdAt", "updatedAt"
     `;
 
     const result = await query(createUserQuery, [
@@ -281,7 +278,6 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       employeeId || null,
       designation || null,
       phone || null,
-      attachedPincode || null,
       isActive
     ]);
 
@@ -350,11 +346,11 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
     const updateParams: any[] = [];
     let paramIndex = 1;
 
-    const allowedFields = ['name', 'username', 'email', 'phone', 'role', 'roleId', 'departmentId', 'employeeId', 'designation', 'attachedPincode', 'isActive'];
+    const allowedFields = ['name', 'username', 'email', 'phone', 'role', 'roleId', 'departmentId', 'employeeId', 'designation', 'isActive'];
 
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {
-        const column = ['employeeId','roleId','departmentId','attachedPincode','isActive','lastLogin','createdAt','updatedAt'].includes(field) ? `"${field}"` : field;
+        const column = ['employeeId','roleId','departmentId','isActive','lastLogin','createdAt','updatedAt'].includes(field) ? `"${field}"` : field;
         updateFields.push(`${column} = $${paramIndex++}`);
         updateParams.push(updateData[field]);
       }
@@ -376,7 +372,7 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
       SET ${updateFields.join(', ')}
       WHERE id = $${paramIndex}
       RETURNING id, name, username, email, role, "roleId", "departmentId",
-                "employeeId", designation, phone, "attachedPincode", "isActive", "createdAt", "updatedAt"
+                "employeeId", designation, phone, "isActive", "createdAt", "updatedAt"
     `;
 
     const result = await query(updateQuery, updateParams);
