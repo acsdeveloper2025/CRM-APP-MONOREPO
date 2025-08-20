@@ -1,15 +1,17 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, User, Shield, Building2, Package } from 'lucide-react';
+import { ArrowLeft, User, Shield, Building2, Package, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usersService } from '@/services/users';
+import { territoryAssignmentService } from '@/services/territoryAssignments';
 import { ClientAssignmentSection } from '@/components/users/ClientAssignmentSection';
 import { ProductAssignmentSection } from '@/components/users/ProductAssignmentSection';
+import { TerritoryAssignmentSection } from '@/components/users/TerritoryAssignmentSectionNew';
 import type { User as UserType } from '@/types/user';
 
 export function UserPermissionsPage() {
@@ -35,6 +37,13 @@ export function UserPermissionsPage() {
     queryKey: ['user-product-assignments', userId],
     queryFn: () => usersService.getUserProductAssignments(userId!),
     enabled: !!userId,
+  });
+
+  // Fetch territory assignments for field agents
+  const { data: territoryAssignments, isLoading: territoryAssignmentsLoading } = useQuery({
+    queryKey: ['user-territory-assignments', userId],
+    queryFn: () => territoryAssignmentService.getFieldAgentTerritoryById(userId!),
+    enabled: !!userId && userData?.data?.role === 'FIELD_AGENT',
   });
 
   if (userLoading) {
@@ -162,6 +171,11 @@ export function UserPermissionsPage() {
         </>
       )}
 
+      {/* Territory Assignment Section */}
+      {user.role === 'FIELD_AGENT' && (
+        <TerritoryAssignmentSection user={user} />
+      )}
+
       {/* Additional Permissions Info */}
       <Card>
         <CardHeader>
@@ -174,7 +188,11 @@ export function UserPermissionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className={`grid grid-cols-1 gap-6 ${
+            user.role === 'FIELD_AGENT' ? 'md:grid-cols-1 lg:grid-cols-3' :
+            user.role === 'BACKEND_USER' ? 'md:grid-cols-2' :
+            'md:grid-cols-1'
+          }`}>
             <div>
               <h4 className="font-medium mb-2 flex items-center space-x-2">
                 <Building2 className="h-4 w-4" />
@@ -247,6 +265,66 @@ export function UserPermissionsPage() {
                 </p>
               )}
             </div>
+
+            {/* Territory Access Section for Field Agents */}
+            {user.role === 'FIELD_AGENT' && (
+              <div>
+                <h4 className="font-medium mb-2 flex items-center space-x-2">
+                  <MapPin className="h-4 w-4" />
+                  <span>Territory Access</span>
+                </h4>
+                {territoryAssignmentsLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading territory assignments...</p>
+                ) : territoryAssignments?.data?.territoryAssignments && territoryAssignments.data.territoryAssignments.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        Assigned to {territoryAssignments.data.territoryAssignments.length} pincode(s):
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {territoryAssignments.data.territoryAssignments.map((assignment: any) => (
+                          <Badge key={assignment.pincodeId} variant="outline" className="text-xs">
+                            {assignment.pincodeCode} - {assignment.cityName}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Show total areas assigned */}
+                    {(() => {
+                      const totalAreas = territoryAssignments.data.territoryAssignments.reduce(
+                        (total: number, assignment: any) => total + (assignment.assignedAreas?.length || 0),
+                        0
+                      );
+                      return totalAreas > 0 ? (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">
+                            Total areas assigned: {totalAreas}
+                          </p>
+                          <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                            {territoryAssignments.data.territoryAssignments.flatMap((assignment: any) =>
+                              assignment.assignedAreas?.map((area: any) => (
+                                <Badge key={`${assignment.pincodeId}-${area.areaId}`} variant="secondary" className="text-xs">
+                                  {area.areaName}
+                                </Badge>
+                              )) || []
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Pincodes assigned but no specific areas selected
+                        </p>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <p className="text-sm text-amber-600">
+                    No territories assigned - field agent has no coverage area
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -237,11 +237,11 @@ export const assignPincodesToFieldAgent = async (req: Request, res: Response) =>
     const { userId } = req.params;
     const { pincodeIds } = req.body;
 
-    // Validate input
-    if (!Array.isArray(pincodeIds) || pincodeIds.length === 0) {
+    // Validate input - allow empty arrays for removing all assignments
+    if (!Array.isArray(pincodeIds)) {
       return res.status(400).json({
         success: false,
-        message: 'pincodeIds must be a non-empty array',
+        message: 'pincodeIds must be an array',
         error: { code: 'INVALID_INPUT' },
       });
     }
@@ -261,7 +261,7 @@ export const assignPincodesToFieldAgent = async (req: Request, res: Response) =>
     }
 
     const user = userResult.rows[0];
-    if (user.role !== 'FIELD') {
+    if (user.role !== 'FIELD_AGENT') {
       return res.status(400).json({
         success: false,
         message: 'User is not a field agent',
@@ -269,66 +269,93 @@ export const assignPincodesToFieldAgent = async (req: Request, res: Response) =>
       });
     }
 
-    // Verify all pincodes exist
-    const pincodeCheck = await query(
-      `SELECT id, code FROM pincodes WHERE id = ANY($1)`,
-      [pincodeIds]
-    );
+    // Verify all pincodes exist (only if pincodeIds is not empty)
+    if (pincodeIds.length > 0) {
+      const pincodeCheck = await query(
+        `SELECT id, code FROM pincodes WHERE id = ANY($1)`,
+        [pincodeIds]
+      );
 
-    if (pincodeCheck.rows.length !== pincodeIds.length) {
-      const foundIds = pincodeCheck.rows.map(row => row.id);
-      const missingIds = pincodeIds.filter(id => !foundIds.includes(parseInt(id)));
-      return res.status(400).json({
-        success: false,
-        message: `Pincodes not found: ${missingIds.join(', ')}`,
-        error: { code: 'INVALID_PINCODES' },
-      });
+      if (pincodeCheck.rows.length !== pincodeIds.length) {
+        const foundIds = pincodeCheck.rows.map(row => row.id);
+        const missingIds = pincodeIds.filter(id => !foundIds.includes(parseInt(id)));
+        return res.status(400).json({
+          success: false,
+          message: `Pincodes not found: ${missingIds.join(', ')}`,
+          error: { code: 'INVALID_PINCODES' },
+        });
+      }
     }
 
-    // Insert pincode assignments (ignore duplicates)
-    const insertPromises = pincodeIds.map(async (pincodeId: number) => {
-      try {
-        const result = await query(
-          `INSERT INTO "userPincodeAssignments" ("userId", "pincodeId", "assignedBy")
-           VALUES ($1, $2, $3)
-           ON CONFLICT ("userId", "pincodeId", "isActive") 
-           WHERE "isActive" = true
-           DO NOTHING
-           RETURNING id, "pincodeId", "assignedAt"`,
-          [userId, pincodeId, (req as any).user?.id]
-        );
-        return result.rows[0];
-      } catch (error) {
-        logger.warn(`Failed to assign pincode ${pincodeId} to user ${userId}:`, error);
-        return null;
+    // Start transaction to replace all pincode assignments
+    await query('BEGIN');
+
+    try {
+      // First, delete all existing pincode assignments for this user (and their related area assignments)
+      const deleteAreasResult = await query(
+        'DELETE FROM "userAreaAssignments" WHERE "userId" = $1 RETURNING id',
+        [userId]
+      );
+      const deletedAreasCount = deleteAreasResult.rows.length;
+
+      const deletePincodesResult = await query(
+        'DELETE FROM "userPincodeAssignments" WHERE "userId" = $1 RETURNING id',
+        [userId]
+      );
+      const deletedPincodesCount = deletePincodesResult.rows.length;
+
+      let insertedCount = 0;
+
+      // Then, insert new pincode assignments (only if pincodeIds is not empty)
+      if (pincodeIds.length > 0) {
+        const insertPromises = pincodeIds.map(async (pincodeId: number) => {
+          const result = await query(
+            `INSERT INTO "userPincodeAssignments" ("userId", "pincodeId", "assignedBy")
+             VALUES ($1, $2, $3)
+             RETURNING id, "pincodeId", "assignedAt"`,
+            [userId, pincodeId, (req as any).user?.id]
+          );
+          return result.rows[0];
+        });
+
+        const results = await Promise.all(insertPromises);
+        insertedCount = results.length;
       }
-    });
 
-    const results = await Promise.all(insertPromises);
-    const newAssignments = results.filter(result => result !== null);
+      // Commit transaction
+      await query('COMMIT');
 
-    logger.info(`Assigned ${newAssignments.length} new pincodes to field agent ${userId}`, {
-      userId: (req as any).user?.id,
-      targetUserId: userId,
-      pincodeIds,
-      newAssignments: newAssignments.length
-    });
+      logger.info(`Replaced pincode assignments for field agent ${userId}`, {
+        userId: (req as any).user?.id,
+        targetUserId: userId,
+        pincodeIds,
+        deletedPincodesCount,
+        deletedAreasCount,
+        insertedCount
+      });
 
-    res.status(201).json({
-      success: true,
-      data: {
-        userId,
-        assignedPincodes: newAssignments.length,
-        totalRequested: pincodeIds.length,
-        duplicatesSkipped: pincodeIds.length - newAssignments.length
-      },
-      message: `Successfully assigned ${newAssignments.length} pincodes to field agent`,
-    });
+      res.status(200).json({
+        success: true,
+        data: {
+          userId,
+          deletedPincodes: deletedPincodesCount,
+          deletedAreas: deletedAreasCount,
+          newPincodeAssignments: insertedCount,
+          totalRequested: pincodeIds.length
+        },
+        message: `Successfully updated pincode assignments for field agent`,
+      });
+
+    } catch (transactionError) {
+      // Rollback transaction on error
+      await query('ROLLBACK');
+      throw transactionError;
+    }
   } catch (error) {
-    logger.error('Error assigning pincodes to field agent:', error);
+    logger.error('Error updating pincode assignments for field agent:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to assign pincodes to field agent',
+      message: 'Failed to update pincode assignments for field agent',
       error: { code: 'INTERNAL_ERROR' },
     });
   }
@@ -364,7 +391,7 @@ export const assignAreasToFieldAgent = async (req: Request, res: Response) => {
     }
 
     const user = userResult.rows[0];
-    if (user.role !== 'FIELD') {
+    if (user.role !== 'FIELD_AGENT') {
       return res.status(400).json({
         success: false,
         message: 'User is not a field agent',

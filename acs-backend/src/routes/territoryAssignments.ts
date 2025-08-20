@@ -58,9 +58,10 @@ const assignPincodesValidation = [
     .isUUID()
     .withMessage('User ID must be a valid UUID'),
   body('pincodeIds')
-    .isArray({ min: 1, max: 50 })
-    .withMessage('pincodeIds must be an array with 1-50 pincode IDs'),
+    .isArray({ max: 50 })
+    .withMessage('pincodeIds must be an array with maximum 50 pincode IDs'),
   body('pincodeIds.*')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('Each pincode ID must be a positive integer'),
 ];
