@@ -109,17 +109,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else {
         setIsLoading(false);
 
-        // Check for device authentication specific errors
-        const errorCode = response.error?.code;
-        const isDeviceAuthError = errorCode === 'DEVICE_ID_REQUIRED' ||
-                                  errorCode === 'NO_DEVICE_REGISTERED' ||
-                                  errorCode === 'DEVICE_NOT_AUTHORIZED';
-
         return {
           success: false,
           error: response.error?.message || 'Login failed. Please check your credentials.',
-          errorCode: errorCode,
-          requiresDeviceAuth: isDeviceAuthError
+          errorCode: response.error?.code,
         };
       }
     } catch (error) {

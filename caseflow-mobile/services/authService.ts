@@ -133,17 +133,6 @@ class AuthService {
         // Store tokens and user data
         await this.storeAuthData(data.data);
         return data;
-      } else if (response.status === 403 && data.error?.code === 'DEVICE_APPROVAL_REQUIRED') {
-        // Handle device approval required
-        return {
-          success: false,
-          requiresDeviceAuth: true,
-          error: {
-            code: 'DEVICE_APPROVAL_REQUIRED',
-            message: 'Your device is pending admin approval. Please contact your administrator.',
-          },
-          data: data.data, // Include device authentication info
-        };
       } else {
         return {
           success: false,
