@@ -293,6 +293,17 @@ export interface UserClientAssignment {
   updatedAt: string;
 }
 
+export interface UserProductAssignment {
+  id: number;
+  userId: string;
+  productId: number;
+  productName: string;
+  productDescription?: string;
+  assignedAt: string;
+  assignedBy?: string;
+  assignedByName?: string;
+}
+
 export interface UserExportData {
   id: string;
   name: string;

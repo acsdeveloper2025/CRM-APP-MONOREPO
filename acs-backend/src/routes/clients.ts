@@ -2,6 +2,7 @@ import express from 'express';
 import { body, query, param } from 'express-validator';
 import { authenticateToken } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
+import { addClientFiltering } from '@/middleware/clientAccess';
 import {
   getClients,
   getClientById,
@@ -92,6 +93,7 @@ router.get('/',
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
     query('search').optional().trim().isLength({ max: 100 }).withMessage('Search term too long'),
   ]),
+  addClientFiltering,
   getClients
 );
 

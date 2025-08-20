@@ -15,6 +15,7 @@ import { CompletedCasesPage } from '@/pages/CompletedCasesPage';
 import { NewCasePage } from '@/pages/NewCasePage';
 import { ClientsPage } from '@/pages/ClientsPage';
 import { UsersPage } from '@/pages/UsersPage';
+import { UserPermissionsPage } from '@/pages/UserPermissionsPage';
 import RoleManagementPage from '@/pages/RoleManagementPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { BillingPage } from '@/pages/BillingPage';
@@ -179,6 +180,16 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
             <Layout>
               <UsersPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users/:userId/permissions"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
+            <Layout>
+              <UserPermissionsPage />
             </Layout>
           </ProtectedRoute>
         }

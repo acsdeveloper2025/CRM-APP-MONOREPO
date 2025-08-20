@@ -21,6 +21,9 @@ import {
   getUserClientAssignments,
   assignClientsToUser,
   removeClientAssignment,
+  getUserProductAssignments,
+  assignProductsToUser,
+  removeProductAssignment,
   bulkUserOperation
 } from '@/controllers/usersController';
 
@@ -247,6 +250,21 @@ const clientIdValidation = [
     .withMessage('Client ID must be a positive integer'),
 ];
 
+const productAssignmentValidation = [
+  body('productIds')
+    .isArray({ min: 1 })
+    .withMessage('productIds must be a non-empty array'),
+  body('productIds.*')
+    .isInt({ min: 1 })
+    .withMessage('All productIds must be positive integers'),
+];
+
+const productIdValidation = [
+  param('productId')
+    .isInt({ min: 1 })
+    .withMessage('Product ID must be a positive integer'),
+];
+
 // Core CRUD routes
 router.get('/', 
   authenticateToken, 
@@ -328,6 +346,30 @@ router.delete('/:userId/client-assignments/:clientId',
   clientIdValidation,
   validate,
   removeClientAssignment
+);
+
+// Product assignment routes
+router.get('/:userId/product-assignments',
+  authenticateToken,
+  userIdValidation,
+  validate,
+  getUserProductAssignments
+);
+
+router.post('/:userId/product-assignments',
+  authenticateToken,
+  userIdValidation,
+  productAssignmentValidation,
+  validate,
+  assignProductsToUser
+);
+
+router.delete('/:userId/product-assignments/:productId',
+  authenticateToken,
+  userIdValidation,
+  productIdValidation,
+  validate,
+  removeProductAssignment
 );
 
 router.get('/:id',

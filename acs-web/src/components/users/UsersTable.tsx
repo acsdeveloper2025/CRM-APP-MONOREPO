@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { MoreHorizontal, Edit, Trash2, UserCheck, UserX, Eye, Shield, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,6 +49,7 @@ interface UsersTableProps {
 
 export function UsersTable({ data, isLoading }: UsersTableProps) {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const navigate = useNavigate();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -307,6 +309,10 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                       <DropdownMenuItem onClick={() => handleResetPassword(user)}>
                         <Key className="mr-2 h-4 w-4" />
                         Reset Password
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(`/users/${user.id}/permissions`)}>
+                        <Shield className="mr-2 h-4 w-4" />
+                        Manage Permissions
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />

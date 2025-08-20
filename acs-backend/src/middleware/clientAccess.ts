@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { query } from '@/config/database';
 import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from './auth';
+import { getAssignedProductIds } from './productAccess';
 
 /**
  * Middleware to enforce client-level access restrictions for BACKEND users
@@ -263,3 +264,92 @@ export const addClientFiltering = async (req: AuthenticatedRequest, res: Respons
     });
   }
 };
+
+/**
+ * Combined middleware to validate both client and product access for case creation
+ * This middleware checks if a BACKEND user has access to both the client and product
+ * specified in the case creation request
+ */
+export const validateCaseCreationAccess = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+    const { clientId, productId } = req.body;
+
+    // Skip validation for non-authenticated requests
+    if (!userId || !userRole) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+        error: { code: 'UNAUTHORIZED' },
+      });
+    }
+
+    // SUPER_ADMIN users bypass all restrictions
+    if (userRole === 'SUPER_ADMIN') {
+      return next();
+    }
+
+    // Only apply restrictions to BACKEND users
+    if (userRole !== 'BACKEND') {
+      return next();
+    }
+
+    // If no clientId or productId is provided, let the request continue
+    if (!clientId || !productId) {
+      return next();
+    }
+
+    // Get assigned client IDs for the BACKEND user
+    const assignedClientIds = await getAssignedClientIds(userId, userRole);
+
+    // Check client access
+    if (assignedClientIds && assignedClientIds.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: No clients assigned to your account',
+        error: { code: 'NO_CLIENT_ACCESS' },
+      });
+    }
+
+    if (assignedClientIds && !assignedClientIds.includes(parseInt(clientId))) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: You do not have access to this client',
+        error: { code: 'CLIENT_ACCESS_DENIED' },
+      });
+    }
+
+    // Get assigned product IDs for the BACKEND user
+    const assignedProductIds = await getAssignedProductIds(userId, userRole);
+
+    // Check product access
+    if (assignedProductIds && assignedProductIds.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: No products assigned to your account',
+        error: { code: 'NO_PRODUCT_ACCESS' },
+      });
+    }
+
+    if (assignedProductIds && !assignedProductIds.includes(parseInt(productId))) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: You do not have access to this product',
+        error: { code: 'PRODUCT_ACCESS_DENIED' },
+      });
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Error in case creation access validation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during access validation',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// Export helper function for use in other modules
+export { getAssignedClientIds };

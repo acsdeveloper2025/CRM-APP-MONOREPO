@@ -13,7 +13,8 @@ import type {
   UserImportData,
   UserExportData,
   RolePermission,
-  UserClientAssignment
+  UserClientAssignment,
+  UserProductAssignment
 } from '@/types/user';
 import type { ApiResponse, PaginationQuery } from '@/types/api';
 import type { Role } from '@/types/auth';
@@ -268,6 +269,19 @@ export class UsersService {
 
   async removeClientAssignment(userId: string, clientId: number): Promise<ApiResponse<void>> {
     return apiService.delete(`/users/${userId}/client-assignments/${clientId}`);
+  }
+
+  // Product assignment management for BACKEND users
+  async getUserProductAssignments(userId: string): Promise<ApiResponse<UserProductAssignment[]>> {
+    return apiService.get(`/users/${userId}/product-assignments`);
+  }
+
+  async assignProductsToUser(userId: string, productIds: number[]): Promise<ApiResponse<void>> {
+    return apiService.post(`/users/${userId}/product-assignments`, { productIds });
+  }
+
+  async removeProductAssignment(userId: string, productId: number): Promise<ApiResponse<void>> {
+    return apiService.delete(`/users/${userId}/product-assignments/${productId}`);
   }
 }
 

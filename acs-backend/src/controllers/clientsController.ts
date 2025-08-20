@@ -6,54 +6,90 @@ import { query, withTransaction } from '@/config/database';
 // GET /api/clients - List clients with pagination and filters
 export const getClients = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { 
-      page = 1, 
-      limit = 20, 
-      search, 
-      sortBy = 'name', 
-      sortOrder = 'asc' 
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      sortBy = 'name',
+      sortOrder = 'asc',
+      clientIds: clientIdsFilter
     } = req.query;
 
-    // Build where clause
-    const whereClause: any = {};
-    
-    // Temporarily disable search to avoid SQL Server issues
-    // if (search) {
-    //   const searchTerm = search as string;
-    //   whereClause.OR = [
-    //     { name: { contains: searchTerm } },
-    //     { code: { contains: searchTerm } }
-    //   ];
-    // }
+    // Build where clause and parameters
+    const whereConditions: string[] = [];
+    const queryParams: any[] = [];
+    let paramIndex = 1;
+
+    // Apply client filtering for BACKEND users
+    if (clientIdsFilter) {
+      try {
+        const parsedClientIds = JSON.parse(clientIdsFilter as string);
+        if (Array.isArray(parsedClientIds)) {
+          if (parsedClientIds.length === 0) {
+            // User has no client assignments, return empty result
+            return res.json({
+              success: true,
+              data: [],
+              pagination: {
+                page: Number(page),
+                limit: Number(limit),
+                total: 0,
+                totalPages: 0,
+              },
+              message: 'No clients found - user has no assigned clients',
+            });
+          }
+          whereConditions.push(`id = ANY($${paramIndex}::int[])`);
+          queryParams.push(parsedClientIds);
+          paramIndex++;
+        }
+      } catch (error) {
+        logger.error('Error parsing clientIds filter:', error);
+      }
+    }
+
+    // Add search filter if provided
+    if (search) {
+      whereConditions.push(`(name ILIKE $${paramIndex} OR code ILIKE $${paramIndex + 1})`);
+      queryParams.push(`%${search}%`, `%${search}%`);
+      paramIndex += 2;
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     // Get total count
-    const countRes = await query<{ count: string }>(`SELECT COUNT(*)::text as count FROM clients`, []);
+    const countRes = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count FROM clients ${whereClause}`,
+      queryParams
+    );
     const totalCount = Number(countRes.rows[0]?.count || 0);
 
     // Get clients with pagination
     const offset = (Number(page) - 1) * Number(limit);
     const sortCol = ['name', 'code', 'createdAt', 'updatedAt'].includes(String(sortBy)) ? String(sortBy) : 'name';
     const sortDir = String(sortOrder).toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+
     const clientsRes = await query(
       `SELECT id, name, code, "createdAt", "updatedAt"
        FROM clients
-       ORDER BY ${sortCol} ${sortDir}
-       LIMIT $1 OFFSET $2`,
-      [Number(limit), offset]
+       ${whereClause}
+       ORDER BY "${sortCol}" ${sortDir}
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...queryParams, Number(limit), offset]
     );
     const dbClients = clientsRes.rows as any[];
 
     // Load mappings and cases
-    const clientIds = dbClients.map(c => c.id);
+    const dbClientIds = dbClients.map(c => c.id);
     let productsByClient = new Map<string, any[]>();
     let vtsByClient = new Map<string, any[]>();
     let casesByClient = new Map<string, any[]>();
-    if (clientIds.length > 0) {
+    if (dbClientIds.length > 0) {
       const prodMapRes = await query(
         `SELECT cp."clientId", p.id, p.name, p.code
          FROM "clientProducts" cp JOIN products p ON p.id = cp."productId"
          WHERE cp."clientId" = ANY($1::integer[])`,
-        [clientIds.map(Number)]
+        [dbClientIds.map(Number)]
       );
       prodMapRes.rows.forEach(r => {
         const arr = productsByClient.get(r.clientId) || [];
@@ -68,7 +104,7 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
          JOIN "productVerificationTypes" pvt ON cp."productId" = pvt."productId"
          JOIN "verificationTypes" vt ON pvt."verificationTypeId" = vt.id
          WHERE cp."clientId" = ANY($1::integer[])`,
-        [clientIds.map(Number)]
+        [dbClientIds.map(Number)]
       );
       vtMapRes.rows.forEach(r => {
         const arr = vtsByClient.get(r.clientId) || [];
@@ -78,7 +114,7 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
 
       const casesRes = await query(
         `SELECT id, "caseNumber", status, "clientId" FROM cases WHERE "clientId" = ANY($1::integer[])`,
-        [clientIds.map(Number)]
+        [dbClientIds.map(Number)]
       );
       casesRes.rows.forEach(r => {
         const arr = casesByClient.get(r.clientId) || [];

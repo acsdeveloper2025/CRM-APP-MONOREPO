@@ -2,6 +2,7 @@ import express from 'express';
 import { body, query, param } from 'express-validator';
 import { authenticateToken } from '@/middleware/auth';
 import { handleValidationErrors } from '@/middleware/validation';
+import { addProductFiltering } from '@/middleware/productAccess';
 import {
   getProducts,
   getProductById,
@@ -140,6 +141,7 @@ const clientProductsValidation = [
 router.get('/',
   listProductsValidation,
   handleValidationErrors,
+  addProductFiltering,
   getProducts
 );
 

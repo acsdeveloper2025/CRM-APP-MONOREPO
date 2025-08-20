@@ -3,7 +3,7 @@ import { body, query, param } from 'express-validator';
 import { authenticateToken, requireFieldOrHigher } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
 import { caseRateLimit } from '@/middleware/rateLimiter';
-import { validateCaseAccess, validateClientAccess } from '@/middleware/clientAccess';
+import { validateCaseAccess, validateClientAccess, validateCaseCreationAccess } from '@/middleware/clientAccess';
 import {
   getCases,
   getCaseById,
@@ -242,7 +242,7 @@ router.get('/',
 router.post('/',
   createCaseValidation,
   validate,
-  validateClientAccess('body'),
+  validateCaseCreationAccess,
   createCase
 );
 

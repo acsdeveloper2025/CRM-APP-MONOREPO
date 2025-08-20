@@ -933,3 +933,204 @@ export const removeClientAssignment = async (req: AuthenticatedRequest, res: Res
     });
   }
 };
+
+// GET /api/users/:userId/product-assignments - Get user's product assignments
+export const getUserProductAssignments = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate user exists
+    const userResult = await query(
+      'SELECT id, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // Get product assignments with product details
+    const assignmentsQuery = `
+      SELECT
+        upa.id,
+        upa."userId",
+        upa."productId",
+        upa."assignedAt",
+        upa."assignedBy",
+        p.name as "productName",
+        p.description as "productDescription",
+        u.name as "assignedByName"
+      FROM "userProductAssignments" upa
+      JOIN products p ON upa."productId" = p.id
+      LEFT JOIN users u ON upa."assignedBy" = u.id
+      WHERE upa."userId" = $1
+      ORDER BY upa."assignedAt" DESC
+    `;
+
+    const result = await query(assignmentsQuery, [userId]);
+
+    res.json({
+      success: true,
+      data: result.rows,
+      message: 'Product assignments retrieved successfully'
+    });
+
+  } catch (error) {
+    logger.error('Error fetching user product assignments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// POST /api/users/:userId/product-assignments - Assign products to a user
+export const assignProductsToUser = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { productIds } = req.body;
+
+    // Validate input
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'productIds must be a non-empty array',
+        error: { code: 'INVALID_INPUT' },
+      });
+    }
+
+    // Validate user exists
+    const userResult = await query(
+      'SELECT id, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // Validate all products exist
+    const productCheckQuery = `
+      SELECT id FROM products WHERE id = ANY($1::int[])
+    `;
+    const productCheckResult = await query(productCheckQuery, [productIds]);
+
+    if (productCheckResult.rows.length !== productIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'One or more products not found',
+        error: { code: 'INVALID_PRODUCTS' },
+      });
+    }
+
+    // Check for existing assignments
+    const existingQuery = `
+      SELECT "productId" FROM "userProductAssignments"
+      WHERE "userId" = $1 AND "productId" = ANY($2::int[])
+    `;
+    const existingResult = await query(existingQuery, [userId, productIds]);
+    const existingProductIds = existingResult.rows.map(row => row.productId);
+
+    // Filter out already assigned products
+    const newProductIds = productIds.filter(id => !existingProductIds.includes(id));
+
+    if (newProductIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'All specified products are already assigned to this user',
+        error: { code: 'ALREADY_ASSIGNED' },
+      });
+    }
+
+    // Insert new assignments
+    const insertValues = newProductIds.map((productId, index) =>
+      `($1, $${index + 2}, $${newProductIds.length + 2}, CURRENT_TIMESTAMP)`
+    ).join(', ');
+
+    const insertQuery = `
+      INSERT INTO "userProductAssignments" ("userId", "productId", "assignedBy", "assignedAt")
+      VALUES ${insertValues}
+      RETURNING *
+    `;
+
+    const insertParams = [userId, ...newProductIds, req.user?.id];
+    const insertResult = await query(insertQuery, insertParams);
+
+    res.status(201).json({
+      success: true,
+      data: insertResult.rows,
+      message: `Successfully assigned ${newProductIds.length} product(s) to user`
+    });
+
+  } catch (error) {
+    logger.error('Error assigning products to user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// DELETE /api/users/:userId/product-assignments/:productId - Remove product assignment
+export const removeProductAssignment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { userId, productId } = req.params;
+
+    // Validate user exists
+    const userResult = await query(
+      'SELECT id, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // Check if assignment exists
+    const assignmentResult = await query(
+      'SELECT id FROM "userProductAssignments" WHERE "userId" = $1 AND "productId" = $2',
+      [userId, productId]
+    );
+
+    if (assignmentResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product assignment not found',
+        error: { code: 'ASSIGNMENT_NOT_FOUND' },
+      });
+    }
+
+    // Remove assignment
+    await query(
+      'DELETE FROM "userProductAssignments" WHERE "userId" = $1 AND "productId" = $2',
+      [userId, productId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Product assignment removed successfully'
+    });
+
+  } catch (error) {
+    logger.error('Error removing product assignment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};

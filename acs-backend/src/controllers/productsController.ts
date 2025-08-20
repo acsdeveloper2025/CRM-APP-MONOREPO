@@ -7,22 +7,55 @@ import { randomUUID } from 'crypto';
 // GET /api/products - List products with pagination and filters
 export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { 
-      page = 1, 
-      limit = 20, 
-      search, 
-      sortBy = 'name', 
-      sortOrder = 'asc' 
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      sortBy = 'name',
+      sortOrder = 'asc',
+      productIds: productIdsFilter
     } = req.query;
 
-    // Build where clause (basic search on name/code)
+    // Build where clause and parameters
     const values: any[] = [];
     const whereSql: string[] = [];
-    if (search) {
-      values.push(`%${String(search)}%`);
-      values.push(`%${String(search)}%`);
-      whereSql.push('(name ILIKE $1 OR code ILIKE $2)');
+    let paramIndex = 1;
+
+    // Apply product filtering for BACKEND users
+    if (productIdsFilter) {
+      try {
+        const parsedProductIds = JSON.parse(productIdsFilter as string);
+        if (Array.isArray(parsedProductIds)) {
+          if (parsedProductIds.length === 0) {
+            // User has no product assignments, return empty result
+            return res.json({
+              success: true,
+              data: [],
+              pagination: {
+                page: Number(page),
+                limit: Number(limit),
+                total: 0,
+                totalPages: 0,
+              },
+              message: 'No products found - user has no assigned products',
+            });
+          }
+          whereSql.push(`id = ANY($${paramIndex}::int[])`);
+          values.push(parsedProductIds);
+          paramIndex++;
+        }
+      } catch (error) {
+        logger.error('Error parsing productIds filter:', error);
+      }
     }
+
+    // Add search filter if provided
+    if (search) {
+      whereSql.push(`(name ILIKE $${paramIndex} OR code ILIKE $${paramIndex + 1})`);
+      values.push(`%${String(search)}%`, `%${String(search)}%`);
+      paramIndex += 2;
+    }
+
     const whereClause = whereSql.length ? `WHERE ${whereSql.join(' AND ')}` : '';
 
     // Get total count
@@ -38,7 +71,7 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
        FROM products
        ${whereClause}
        ORDER BY "${sortCol}" ${sortDir}
-       LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...values, Number(limit), offset]
     );
     const products = listRes.rows;
