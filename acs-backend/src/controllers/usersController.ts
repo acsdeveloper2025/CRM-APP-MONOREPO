@@ -210,10 +210,10 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       department
     } = req.body;
 
-    // Convert empty strings to null for UUID fields
-    const cleanRoleId = roleId && roleId.trim() !== '' ? roleId : null;
-    const cleanDepartmentId = departmentId && departmentId.trim() !== '' ? departmentId : null;
-    const cleanDesignationId = designationId && designationId.trim() !== '' ? designationId : null;
+    // Convert empty strings to null for UUID fields and handle numeric IDs
+    const cleanRoleId = roleId && (typeof roleId === 'string' ? roleId.trim() !== '' : true) ? roleId : null;
+    const cleanDepartmentId = departmentId && (typeof departmentId === 'string' ? departmentId.trim() !== '' : true) ? departmentId : null;
+    const cleanDesignationId = designationId && (typeof designationId === 'string' ? designationId.trim() !== '' : true) ? designationId : null;
 
     // Validate required fields
     if (!name || !username || !email || !password) {

@@ -98,6 +98,23 @@ export interface CreatePincodeData {
   country?: string;
 }
 
+// New cascading form data types
+export interface CascadingCreatePincodeData {
+  countryId: string;
+  stateId: string;
+  cityId: string;
+  pincodeCode: string;
+  areas: string[];
+}
+
+export interface CascadingEditPincodeData {
+  countryId: string;
+  stateId: string;
+  cityId: string;
+  pincodeCode: string;
+  areas: string[];
+}
+
 export interface UpdatePincodeData {
   code?: string;
   area?: string;
@@ -105,7 +122,7 @@ export interface UpdatePincodeData {
 }
 
 export interface AddPincodeAreasData {
-  areaIds: string[];
+  areaIds: number[];
 }
 
 export interface UpdatePincodeAreaData {

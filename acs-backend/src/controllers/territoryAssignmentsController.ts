@@ -170,7 +170,7 @@ export const getFieldAgentTerritoryById = async (req: Request, res: Response) =>
     }
 
     const user = userCheck.rows[0];
-    if (user.role !== 'FIELD') {
+    if (user.role !== 'FIELD_AGENT') {
       return res.status(400).json({
         success: false,
         message: 'User is not a field agent',
@@ -367,11 +367,11 @@ export const assignAreasToFieldAgent = async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { assignments } = req.body; // Array of { pincodeId, areaIds }
 
-    // Validate input
-    if (!Array.isArray(assignments) || assignments.length === 0) {
+    // Validate input - allow empty arrays for removing all area assignments
+    if (!Array.isArray(assignments)) {
       return res.status(400).json({
         success: false,
-        message: 'assignments must be a non-empty array of { pincodeId, areaIds }',
+        message: 'assignments must be an array of { pincodeId, areaIds }',
         error: { code: 'INVALID_INPUT' },
       });
     }
@@ -399,109 +399,123 @@ export const assignAreasToFieldAgent = async (req: Request, res: Response) => {
       });
     }
 
+    // Use replace-all logic: first remove all existing area assignments, then add new ones
+
+    // Step 1: Remove all existing area assignments for this user
+    const removeResult = await query(
+      `UPDATE "userAreaAssignments"
+       SET "isActive" = false, "updatedAt" = CURRENT_TIMESTAMP
+       WHERE "userId" = $1 AND "isActive" = true`,
+      [userId]
+    );
+
+    const removedCount = removeResult.rowCount || 0;
+
     let totalAssigned = 0;
     let totalRequested = 0;
     const assignmentResults = [];
 
-    for (const assignment of assignments) {
-      const { pincodeId, areaIds } = assignment;
+    // Step 2: Add new area assignments if any provided
+    if (assignments.length > 0) {
+      for (const assignment of assignments) {
+        const { pincodeId, areaIds } = assignment;
 
-      if (!Array.isArray(areaIds) || areaIds.length === 0) {
-        continue;
-      }
-
-      totalRequested += areaIds.length;
-
-      // Verify pincode assignment exists
-      const pincodeAssignmentResult = await query(
-        `SELECT id FROM "userPincodeAssignments"
-         WHERE "userId" = $1 AND "pincodeId" = $2 AND "isActive" = true`,
-        [userId, pincodeId]
-      );
-
-      if (pincodeAssignmentResult.rows.length === 0) {
-        assignmentResults.push({
-          pincodeId,
-          error: 'Field agent not assigned to this pincode',
-          assigned: 0,
-          requested: areaIds.length
-        });
-        continue;
-      }
-
-      const userPincodeAssignmentId = pincodeAssignmentResult.rows[0].id;
-
-      // Verify areas exist and belong to the pincode
-      const areaCheck = await query(
-        `SELECT a.id, a.name, pa."pincodeId"
-         FROM areas a
-         JOIN "pincodeAreas" pa ON a.id = pa."areaId"
-         WHERE a.id = ANY($1) AND pa."pincodeId" = $2`,
-        [areaIds, pincodeId]
-      );
-
-      const validAreaIds = areaCheck.rows.map(row => row.id);
-      const invalidAreaIds = areaIds.filter(id => !validAreaIds.includes(parseInt(id)));
-
-      if (invalidAreaIds.length > 0) {
-        assignmentResults.push({
-          pincodeId,
-          error: `Invalid areas for pincode: ${invalidAreaIds.join(', ')}`,
-          assigned: 0,
-          requested: areaIds.length
-        });
-        continue;
-      }
-
-      // Insert area assignments
-      const insertPromises = validAreaIds.map(async (areaId: number) => {
-        try {
-          const result = await query(
-            `INSERT INTO "userAreaAssignments"
-             ("userId", "pincodeId", "areaId", "userPincodeAssignmentId", "assignedBy")
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT ("userId", "pincodeId", "areaId", "isActive")
-             WHERE "isActive" = true
-             DO NOTHING
-             RETURNING id, "areaId"`,
-            [userId, pincodeId, areaId, userPincodeAssignmentId, (req as any).user?.id]
-          );
-          return result.rows[0];
-        } catch (error) {
-          logger.warn(`Failed to assign area ${areaId} to user ${userId}:`, error);
-          return null;
+        if (!Array.isArray(areaIds) || areaIds.length === 0) {
+          continue;
         }
-      });
 
-      const results = await Promise.all(insertPromises);
-      const newAreaAssignments = results.filter(result => result !== null);
-      totalAssigned += newAreaAssignments.length;
+        totalRequested += areaIds.length;
 
-      assignmentResults.push({
-        pincodeId,
-        assigned: newAreaAssignments.length,
-        requested: areaIds.length,
-        duplicatesSkipped: areaIds.length - newAreaAssignments.length
-      });
+        // Verify pincode assignment exists
+        const pincodeAssignmentResult = await query(
+          `SELECT id FROM "userPincodeAssignments"
+           WHERE "userId" = $1 AND "pincodeId" = $2 AND "isActive" = true`,
+          [userId, pincodeId]
+        );
+
+        if (pincodeAssignmentResult.rows.length === 0) {
+          assignmentResults.push({
+            pincodeId,
+            error: 'Field agent not assigned to this pincode',
+            assigned: 0,
+            requested: areaIds.length
+          });
+          continue;
+        }
+
+        const userPincodeAssignmentId = pincodeAssignmentResult.rows[0].id;
+
+        // Verify areas exist and belong to the pincode
+        const areaCheck = await query(
+          `SELECT a.id, a.name, pa."pincodeId"
+           FROM areas a
+           JOIN "pincodeAreas" pa ON a.id = pa."areaId"
+           WHERE a.id = ANY($1) AND pa."pincodeId" = $2`,
+          [areaIds, pincodeId]
+        );
+
+        const validAreaIds = areaCheck.rows.map(row => row.id);
+        const invalidAreaIds = areaIds.filter(id => !validAreaIds.includes(parseInt(id)));
+
+        if (invalidAreaIds.length > 0) {
+          assignmentResults.push({
+            pincodeId,
+            error: `Invalid areas for pincode: ${invalidAreaIds.join(', ')}`,
+            assigned: 0,
+            requested: areaIds.length
+          });
+          continue;
+        }
+
+        // Insert area assignments
+        const insertPromises = validAreaIds.map(async (areaId: number) => {
+          try {
+            const result = await query(
+              `INSERT INTO "userAreaAssignments"
+               ("userId", "pincodeId", "areaId", "userPincodeAssignmentId", "assignedBy")
+               VALUES ($1, $2, $3, $4, $5)
+               RETURNING id, "areaId"`,
+              [userId, pincodeId, areaId, userPincodeAssignmentId, (req as any).user?.id]
+            );
+            return result.rows[0];
+          } catch (error) {
+            logger.warn(`Failed to assign area ${areaId} to user ${userId}:`, error);
+            return null;
+          }
+        });
+
+        const results = await Promise.all(insertPromises);
+        const newAreaAssignments = results.filter(result => result !== null);
+        totalAssigned += newAreaAssignments.length;
+
+        assignmentResults.push({
+          pincodeId,
+          assigned: newAreaAssignments.length,
+          requested: areaIds.length,
+          failed: areaIds.length - newAreaAssignments.length
+        });
+      }
     }
 
-    logger.info(`Assigned ${totalAssigned} new areas to field agent ${userId}`, {
+    logger.info(`Updated area assignments for field agent ${userId}`, {
       userId: (req as any).user?.id,
       targetUserId: userId,
+      removedCount,
       totalAssigned,
       totalRequested,
       assignmentResults
     });
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       data: {
         userId,
+        removedCount,
         totalAssigned,
         totalRequested,
         assignmentResults
       },
-      message: `Successfully assigned ${totalAssigned} areas to field agent`,
+      message: `Successfully updated area assignments: removed ${removedCount}, assigned ${totalAssigned}`,
     });
   } catch (error) {
     logger.error('Error assigning areas to field agent:', error);

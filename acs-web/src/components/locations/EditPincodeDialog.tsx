@@ -32,7 +32,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { locationsService } from '@/services/locations';
 import { Pincode } from '@/types/location';
-import { AreasMultiSelect } from './AreasMultiSelect';
+import { EnhancedAreasMultiSelect } from './EnhancedAreasMultiSelect';
 
 const editPincodeSchema = z.object({
   code: z.string()
@@ -139,10 +139,12 @@ export function EditPincodeDialog({ pincode, open, onOpenChange }: EditPincodeDi
                 <FormItem>
                   <FormLabel>Areas</FormLabel>
                   <FormControl>
-                    <AreasMultiSelect
+                    <EnhancedAreasMultiSelect
                       selectedAreaIds={field.value}
                       onAreasChange={field.onChange}
                       disabled={updateMutation.isPending}
+                      placeholder="Select areas for this pincode..."
+                      maxAreas={15}
                     />
                   </FormControl>
                   <FormDescription>

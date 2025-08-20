@@ -71,15 +71,18 @@ const assignAreasValidation = [
     .isUUID()
     .withMessage('User ID must be a valid UUID'),
   body('assignments')
-    .isArray({ min: 1, max: 20 })
-    .withMessage('assignments must be an array with 1-20 assignments'),
+    .isArray({ max: 20 })
+    .withMessage('assignments must be an array with maximum 20 assignments'),
   body('assignments.*.pincodeId')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('Each assignment must have a valid pincode ID'),
   body('assignments.*.areaIds')
-    .isArray({ min: 1, max: 50 })
-    .withMessage('Each assignment must have 1-50 area IDs'),
+    .optional()
+    .isArray({ max: 50 })
+    .withMessage('Each assignment must have maximum 50 area IDs'),
   body('assignments.*.areaIds.*')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('Each area ID must be a positive integer'),
 ];

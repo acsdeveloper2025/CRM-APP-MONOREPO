@@ -7,7 +7,8 @@ import {
   getAreaById,
   createArea,
   updateArea,
-  deleteArea
+  deleteArea,
+  getStandaloneAreas
 } from '@/controllers/areasController';
 
 const router = express.Router();
@@ -71,6 +72,11 @@ const listAreasValidation = [
     .isIn(['asc', 'desc'])
     .withMessage('Sort order must be asc or desc'),
 ];
+
+// Standalone areas route (must come before /:id route)
+router.get('/standalone',
+  getStandaloneAreas
+);
 
 // Core CRUD routes
 router.get('/',

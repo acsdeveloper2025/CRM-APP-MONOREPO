@@ -11,7 +11,7 @@ import { usersService } from '@/services/users';
 import { territoryAssignmentService } from '@/services/territoryAssignments';
 import { ClientAssignmentSection } from '@/components/users/ClientAssignmentSection';
 import { ProductAssignmentSection } from '@/components/users/ProductAssignmentSection';
-import { TerritoryAssignmentSection } from '@/components/users/TerritoryAssignmentSectionNew';
+import { TerritoryAssignmentDropdown as TerritoryAssignmentSection } from '@/components/users/TerritoryAssignmentDropdown';
 import type { User as UserType } from '@/types/user';
 
 export function UserPermissionsPage() {

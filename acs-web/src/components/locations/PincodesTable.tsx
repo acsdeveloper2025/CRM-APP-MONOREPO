@@ -34,7 +34,8 @@ import { toast } from 'sonner';
 import { locationsService } from '@/services/locations';
 import { Pincode } from '@/types/location';
 import { EditPincodeDialog } from './EditPincodeDialog';
-import { InlineAreaManager } from './InlineAreaManager';
+import { CascadingEditPincodeDialog } from './CascadingEditPincodeDialog';
+import { EnhancedAreaManager } from './EnhancedAreaManager';
 
 interface PincodesTableProps {
   data: Pincode[];
@@ -44,6 +45,7 @@ interface PincodesTableProps {
 export function PincodesTable({ data, isLoading }: PincodesTableProps) {
   const [selectedPincode, setSelectedPincode] = useState<Pincode | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCascadingEditDialog, setShowCascadingEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pincodeToDelete, setPincodeToDelete] = useState<Pincode | null>(null);
 
@@ -65,6 +67,11 @@ export function PincodesTable({ data, isLoading }: PincodesTableProps) {
   const handleEdit = (pincode: Pincode) => {
     setSelectedPincode(pincode);
     setShowEditDialog(true);
+  };
+
+  const handleCascadingEdit = (pincode: Pincode) => {
+    setSelectedPincode(pincode);
+    setShowCascadingEditDialog(true);
   };
 
   const handleDelete = (pincode: Pincode) => {
@@ -134,7 +141,7 @@ export function PincodesTable({ data, isLoading }: PincodesTableProps) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <InlineAreaManager pincode={pincode} />
+                  <EnhancedAreaManager pincode={pincode} />
                 </TableCell>
                 <TableCell>
                   {pincode.cityName ? (
@@ -168,7 +175,11 @@ export function PincodesTable({ data, isLoading }: PincodesTableProps) {
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem onClick={() => handleEdit(pincode)}>
                         <Edit className="mr-2 h-4 w-4" />
-                        Edit Pincode
+                        Quick Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCascadingEdit(pincode)}>
+                        <Building className="mr-2 h-4 w-4" />
+                        Edit Location
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -193,6 +204,15 @@ export function PincodesTable({ data, isLoading }: PincodesTableProps) {
           pincode={selectedPincode}
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
+        />
+      )}
+
+      {/* Cascading Edit Dialog */}
+      {selectedPincode && (
+        <CascadingEditPincodeDialog
+          pincode={selectedPincode}
+          open={showCascadingEditDialog}
+          onOpenChange={setShowCascadingEditDialog}
         />
       )}
 

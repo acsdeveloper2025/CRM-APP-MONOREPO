@@ -112,7 +112,10 @@ export const getAreas = async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({
       success: true,
-      data: result.rows,
+      data: result.rows.map(area => ({
+        ...area,
+        id: area.id.toString() // Convert integer ID to string for frontend compatibility
+      })),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -146,7 +149,10 @@ export const getStandaloneAreas = async (req: AuthenticatedRequest, res: Respons
 
     res.json({
       success: true,
-      data: result.rows,
+      data: result.rows.map(area => ({
+        ...area,
+        id: area.id.toString() // Convert integer ID to string for frontend compatibility
+      })),
     });
   } catch (error) {
     logger.error('Error retrieving standalone areas:', error);
@@ -249,7 +255,10 @@ export const createArea = async (req: AuthenticatedRequest, res: Response) => {
     res.status(201).json({
       success: true,
       message: 'Area created successfully',
-      data: newArea,
+      data: {
+        ...newArea,
+        id: newArea.id.toString() // Convert integer ID to string for frontend compatibility
+      },
     });
   } catch (error: any) {
     if (error.code === '23505') { // Unique constraint violation
@@ -326,7 +335,10 @@ export const updateArea = async (req: AuthenticatedRequest, res: Response) => {
     res.json({
       success: true,
       message: 'Area updated successfully',
-      data: result.rows[0],
+      data: {
+        ...result.rows[0],
+        id: result.rows[0].id.toString() // Convert integer ID to string for frontend compatibility
+      },
     });
   } catch (error) {
     logger.error('Error updating area:', error);

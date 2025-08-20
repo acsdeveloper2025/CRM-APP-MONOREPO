@@ -662,7 +662,11 @@ export const getPincodesByCity = async (req: AuthenticatedRequest, res: Response
 
     res.json({
       success: true,
-      data: result.rows,
+      data: result.rows.map(pincode => ({
+        ...pincode,
+        id: pincode.id.toString(), // Convert integer ID to string
+        cityId: pincode.cityId ? pincode.cityId.toString() : null // Convert integer cityId to string if exists
+      })),
     });
   } catch (error) {
     logger.error('Error getting pincodes by city:', error);

@@ -224,7 +224,7 @@ export class LocationsService {
 
   // Get areas for dropdown/selection
   async getStandaloneAreas(): Promise<ApiResponse<{ id: string; name: string }[]>> {
-    return apiService.get('/areas', { limit: 100 });
+    return apiService.get('/areas/standalone');
   }
 
   // Pincode area management

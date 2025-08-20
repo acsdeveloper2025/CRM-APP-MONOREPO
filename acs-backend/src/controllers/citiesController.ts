@@ -136,7 +136,12 @@ export const getCities = async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({
       success: true,
-      data: result.rows,
+      data: result.rows.map(city => ({
+        ...city,
+        id: city.id.toString(), // Convert integer ID to string
+        stateId: city.stateId ? city.stateId.toString() : null, // Convert integer stateId to string if exists
+        countryId: city.countryId ? city.countryId.toString() : null // Convert integer countryId to string if exists
+      })),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -189,7 +194,10 @@ export const getCityById = async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({
       success: true,
-      data: city,
+      data: {
+        ...city,
+        id: city.id.toString() // Convert integer ID to string
+      },
     });
   } catch (error) {
     logger.error('Error retrieving city:', error);

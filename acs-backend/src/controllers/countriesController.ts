@@ -104,7 +104,10 @@ export const getCountries = async (req: AuthenticatedRequest, res: Response) => 
 
     res.json({
       success: true,
-      data: result.rows,
+      data: result.rows.map(country => ({
+        ...country,
+        id: country.id.toString() // Convert integer ID to string
+      })),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -159,7 +162,10 @@ export const getCountryById = async (req: AuthenticatedRequest, res: Response) =
 
     res.json({
       success: true,
-      data: country,
+      data: {
+        ...country,
+        id: country.id.toString() // Convert integer ID to string
+      },
     });
   } catch (error) {
     logger.error('Error retrieving country:', error);

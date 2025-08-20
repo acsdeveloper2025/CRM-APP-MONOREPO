@@ -24,6 +24,7 @@ import { CreateCountryDialog } from '@/components/locations/CreateCountryDialog'
 import { CreateStateDialog } from '@/components/locations/CreateStateDialog';
 import { CreateCityDialog } from '@/components/locations/CreateCityDialog';
 import { CreatePincodeDialog } from '@/components/locations/CreatePincodeDialog';
+import { CascadingCreatePincodeDialog } from '@/components/locations/CascadingCreatePincodeDialog';
 import { CreateAreaDialog } from '@/components/locations/CreateAreaDialog';
 import { BulkImportLocationDialog } from '@/components/locations/BulkImportLocationDialog';
 
@@ -38,6 +39,7 @@ export function LocationsPage() {
   const [showCreateState, setShowCreateState] = useState(false);
   const [showCreateCity, setShowCreateCity] = useState(false);
   const [showCreatePincode, setShowCreatePincode] = useState(false);
+  const [showCascadingCreatePincode, setShowCascadingCreatePincode] = useState(false);
   const [showCreateArea, setShowCreateArea] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [bulkImportType, setBulkImportType] = useState<'countries' | 'states' | 'cities' | 'pincodes'>('countries');
@@ -320,8 +322,16 @@ export function LocationsPage() {
                       Import Pincodes
                     </Button>
                     <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setShowCreatePincode(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Quick Add
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowCascadingCreatePincode(true)}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Pincode
@@ -470,6 +480,11 @@ export function LocationsPage() {
       <CreatePincodeDialog
         open={showCreatePincode}
         onOpenChange={setShowCreatePincode}
+      />
+
+      <CascadingCreatePincodeDialog
+        open={showCascadingCreatePincode}
+        onOpenChange={setShowCascadingCreatePincode}
       />
 
       <CreateAreaDialog

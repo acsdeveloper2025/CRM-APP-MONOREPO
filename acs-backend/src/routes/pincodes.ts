@@ -39,10 +39,9 @@ const createPincodeValidation = [
     .withMessage('Areas must be an array with 1-15 area IDs'),
   body('areas.*')
     .optional()
-    .isUUID()
-    .withMessage('Each area must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Each area must be a valid positive integer'),
   body('cityId')
-    .trim()
     .notEmpty()
     .withMessage('City ID is required'),
   body('cityName')
@@ -107,7 +106,6 @@ const updatePincodeValidation = [
     .withMessage('Area name must be between 1 and 200 characters'),
   body('cityId')
     .optional()
-    .trim()
     .notEmpty()
     .withMessage('City ID must not be empty'),
   body('cityName')
@@ -293,8 +291,8 @@ const addAreasValidation = [
     .isArray({ min: 1, max: 15 })
     .withMessage('Area IDs array is required (1-15 areas)'),
   body('areaIds.*')
-    .isUUID()
-    .withMessage('Each area ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Each area ID must be a valid positive integer'),
 ];
 
 // POST /api/pincodes/:id/areas - Add areas to a pincode
@@ -308,7 +306,7 @@ router.post('/:id/areas',
 router.delete('/:id/areas/:areaId',
   [
     param('id').trim().notEmpty().withMessage('Pincode ID is required'),
-    param('areaId').isUUID().withMessage('Area ID must be a valid UUID')
+    param('areaId').isInt({ min: 1 }).withMessage('Area ID must be a valid positive integer')
   ],
   validate,
   removePincodeArea
