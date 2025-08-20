@@ -1,22 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, Plus, X, Save, AlertCircle } from 'lucide-react';
+import { Building2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { usersService } from '@/services/users';
 import { clientsService } from '@/services/clients';
 import { toast } from 'sonner';
-import type { User, UserClientAssignment } from '@/types/user';
+import type { User } from '@/types/user';
 import type { Client } from '@/types/client';
 
 interface ClientAssignmentSectionProps {
@@ -24,204 +15,115 @@ interface ClientAssignmentSectionProps {
 }
 
 export function ClientAssignmentSection({ user }: ClientAssignmentSectionProps) {
-  const [selectedClientId, setSelectedClientId] = useState<string>('');
-  const [hasChanges, setHasChanges] = useState(false);
+  const [selectedClientIds, setSelectedClientIds] = useState<number[]>([]);
   const queryClient = useQueryClient();
 
-  // Only show for BACKEND users
-  if (user.role !== 'BACKEND') {
+  // Only show for BACKEND_USER users
+  if (user.role !== 'BACKEND_USER') {
     return null;
   }
 
-  // Fetch all clients for the dropdown
+  // Fetch all clients
   const { data: clientsData, isLoading: clientsLoading } = useQuery({
     queryKey: ['clients', 'all'],
-    queryFn: () => clientsService.getClients({ limit: 1000 }), // Get all clients
+    queryFn: () => clientsService.getClients({ limit: 100 }),
   });
 
   // Fetch current user client assignments
-  const { data: assignmentsData, isLoading: assignmentsLoading, refetch: refetchAssignments } = useQuery({
+  const { data: assignmentsData, isLoading: assignmentsLoading } = useQuery({
     queryKey: ['user-client-assignments', user.id],
     queryFn: () => usersService.getUserClientAssignments(user.id),
   });
 
-  // Assign clients mutation
-  const assignClientsMutation = useMutation({
+  // Update selected clients when assignments data loads
+  useEffect(() => {
+    if (assignmentsData?.data) {
+      const assignedClientIds = assignmentsData.data.map((assignment: any) => assignment.clientId);
+      setSelectedClientIds(assignedClientIds);
+    }
+  }, [assignmentsData]);
+
+  // Save assignments mutation
+  const saveAssignmentsMutation = useMutation({
     mutationFn: (clientIds: number[]) => usersService.assignClientsToUser(user.id, clientIds),
     onSuccess: () => {
-      toast.success('Client assigned successfully');
-      refetchAssignments();
-      setSelectedClientId('');
-      setHasChanges(false);
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['user-client-assignments'] });
+      toast.success('Client assignments updated successfully');
+      // Invalidate all queries related to this user to ensure Permission Summary updates
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return (
+            (Array.isArray(queryKey) && queryKey.includes(user.id)) ||
+            (Array.isArray(queryKey) && queryKey[0] === 'user-client-assignments') ||
+            (Array.isArray(queryKey) && queryKey[0] === 'user' && queryKey[1] === user.id)
+          );
+        }
+      });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to assign client');
-    },
-  });
-
-  // Remove client assignment mutation
-  const removeAssignmentMutation = useMutation({
-    mutationFn: (clientId: number) => usersService.removeClientAssignment(user.id, clientId),
-    onSuccess: () => {
-      toast.success('Client assignment removed successfully');
-      refetchAssignments();
-      setHasChanges(false);
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['user-client-assignments'] });
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to remove client assignment');
+      toast.error(error.response?.data?.message || 'Failed to update client assignments');
     },
   });
 
   const clients = clientsData?.data || [];
-  const assignments = assignmentsData?.data || [];
 
-  // Get assigned client IDs for filtering
-  const assignedClientIds = assignments.map(assignment => assignment.clientId);
-
-  // Filter available clients (not already assigned)
-  const availableClients = clients.filter(client => !assignedClientIds.includes(client.id));
-
-  const handleAssignClient = () => {
-    if (!selectedClientId) return;
-    
-    const clientId = parseInt(selectedClientId);
-    assignClientsMutation.mutate([clientId]);
+  const handleClientToggle = (clientId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedClientIds(prev => [...prev, clientId]);
+    } else {
+      setSelectedClientIds(prev => prev.filter(id => id !== clientId));
+    }
   };
 
-  const handleRemoveAssignment = (clientId: number) => {
-    removeAssignmentMutation.mutate(clientId);
+  const handleSaveAssignments = () => {
+    saveAssignmentsMutation.mutate(selectedClientIds);
   };
 
-  if (assignmentsLoading || clientsLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Building2 className="h-5 w-5" />
-            <span>Client Access Management</span>
-          </CardTitle>
-          <CardDescription>
-            Loading client assignments...
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-3">
-            <div className="h-4 bg-muted rounded w-3/4"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const isLoading = clientsLoading || assignmentsLoading || saveAssignmentsMutation.isPending;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
+        <CardTitle className="flex items-center gap-2">
           <Building2 className="h-5 w-5" />
-          <span>Client Access Management</span>
+          Client Assignments
         </CardTitle>
         <CardDescription>
-          Manage which clients this BACKEND user can access. Users can only view and manage cases from their assigned clients.
+          Select which clients this user can access
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Current Assignments */}
-        <div>
-          <h4 className="text-sm font-medium mb-3">Assigned Clients ({assignments.length})</h4>
-          {assignments.length > 0 ? (
-            <div className="space-y-2">
-              {assignments.map((assignment) => (
-                <div
-                  key={assignment.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{assignment.clientName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Code: {assignment.clientCode}
-                      </p>
-                    </div>
-                    <Badge variant={assignment.clientIsActive ? 'default' : 'secondary'}>
-                      {assignment.clientIsActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemoveAssignment(assignment.clientId)}
-                    disabled={removeAssignmentMutation.isPending}
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {clients.map((client: Client) => (
+                <div key={client.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`client-${client.id}`}
+                    checked={selectedClientIds.includes(client.id)}
+                    onCheckedChange={(checked) => handleClientToggle(client.id, checked as boolean)}
+                  />
+                  <label
+                    htmlFor={`client-${client.id}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
+                    {client.name}
+                  </label>
                 </div>
               ))}
             </div>
-          ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                No clients assigned. This user will not be able to access any cases until clients are assigned.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-
-        <Separator />
-
-        {/* Add New Assignment */}
-        <div>
-          <h4 className="text-sm font-medium mb-3">Assign New Client</h4>
-          {availableClients.length > 0 ? (
-            <div className="flex items-center space-x-3">
-              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select a client to assign" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableClients.map((client) => (
-                    <SelectItem key={client.id} value={client.id.toString()}>
-                      <div className="flex items-center space-x-2">
-                        <span>{client.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {client.code}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                onClick={handleAssignClient}
-                disabled={!selectedClientId || assignClientsMutation.isPending}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Assign
-              </Button>
-            </div>
-          ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                All available clients have been assigned to this user.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-
-        {/* Info Alert */}
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Note:</strong> Changes take effect immediately. SUPER_ADMIN users can access all clients regardless of assignments.
-          </AlertDescription>
-        </Alert>
+            <Button 
+              onClick={handleSaveAssignments}
+              disabled={saveAssignmentsMutation.isPending}
+              className="w-full"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Client Assignments
+            </Button>
+          </>
+        )}
       </CardContent>
     </Card>
   );

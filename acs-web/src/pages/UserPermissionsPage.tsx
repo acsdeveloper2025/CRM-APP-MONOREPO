@@ -23,6 +23,20 @@ export function UserPermissionsPage() {
     enabled: !!userId,
   });
 
+  // Fetch client assignments
+  const { data: clientAssignments, isLoading: clientAssignmentsLoading } = useQuery({
+    queryKey: ['user-client-assignments', userId],
+    queryFn: () => usersService.getUserClientAssignments(userId!),
+    enabled: !!userId,
+  });
+
+  // Fetch product assignments
+  const { data: productAssignments, isLoading: productAssignmentsLoading } = useQuery({
+    queryKey: ['user-product-assignments', userId],
+    queryFn: () => usersService.getUserProductAssignments(userId!),
+    enabled: !!userId,
+  });
+
   if (userLoading) {
     return (
       <div className="space-y-6">
@@ -131,17 +145,17 @@ export function UserPermissionsPage() {
         </Alert>
       )}
 
-      {user.role !== 'BACKEND' && user.role !== 'SUPER_ADMIN' && (
+      {user.role !== 'BACKEND_USER' && user.role !== 'SUPER_ADMIN' && (
         <Alert>
           <AlertDescription>
-            <strong>Role-based Access:</strong> Client and product access control only applies to BACKEND users. 
+            <strong>Role-based Access:</strong> Client and product access control only applies to BACKEND_USER users.
             This user's role ({user.role}) has different permission structures.
           </AlertDescription>
         </Alert>
       )}
 
       {/* Client Assignment Section */}
-      {user.role === 'BACKEND' && (
+      {user.role === 'BACKEND_USER' && (
         <>
           <ClientAssignmentSection user={user} />
           <ProductAssignmentSection user={user} />
@@ -168,10 +182,29 @@ export function UserPermissionsPage() {
               </h4>
               {user.role === 'SUPER_ADMIN' ? (
                 <p className="text-sm text-muted-foreground">Full access to all clients</p>
-              ) : user.role === 'BACKEND' ? (
-                <p className="text-sm text-muted-foreground">
-                  Access restricted to assigned clients only
-                </p>
+              ) : user.role === 'BACKEND_USER' ? (
+                <div className="space-y-2">
+                  {clientAssignmentsLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading assignments...</p>
+                  ) : clientAssignments?.data && clientAssignments.data.length > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        Assigned to {clientAssignments.data.length} client(s):
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {clientAssignments.data.map((assignment: any) => (
+                          <Badge key={assignment.id} variant="outline" className="text-xs">
+                            {assignment.clientName}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-amber-600">
+                      No clients assigned - user has no access
+                    </p>
+                  )}
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   Role-based access (not client-specific)
@@ -185,10 +218,29 @@ export function UserPermissionsPage() {
               </h4>
               {user.role === 'SUPER_ADMIN' ? (
                 <p className="text-sm text-muted-foreground">Full access to all products</p>
-              ) : user.role === 'BACKEND' ? (
-                <p className="text-sm text-muted-foreground">
-                  Access restricted to assigned products only
-                </p>
+              ) : user.role === 'BACKEND_USER' ? (
+                <div className="space-y-2">
+                  {productAssignmentsLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading assignments...</p>
+                  ) : productAssignments?.data && productAssignments.data.length > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        Assigned to {productAssignments.data.length} product(s):
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {productAssignments.data.map((assignment: any) => (
+                          <Badge key={assignment.id} variant="outline" className="text-xs">
+                            {assignment.productName}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-amber-600">
+                      No products assigned - user has no access
+                    </p>
+                  )}
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   Role-based access (not product-specific)

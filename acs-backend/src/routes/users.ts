@@ -63,8 +63,8 @@ const createUserValidation = [
     }),
   body('role')
     .optional()
-    .isIn(['ADMIN', 'MANAGER', 'FIELD', 'VIEWER'])
-    .withMessage('Role must be one of: ADMIN, MANAGER, FIELD, VIEWER'),
+    .isIn(['ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER', 'SUPER_ADMIN'])
+    .withMessage('Role must be one of: ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER, SUPER_ADMIN'),
   body('departmentId')
     .optional()
     .custom((value) => {
@@ -146,8 +146,8 @@ const updateUserValidation = [
     .normalizeEmail(),
   body('role')
     .optional()
-    .isIn(['ADMIN', 'MANAGER', 'FIELD', 'VIEWER'])
-    .withMessage('Role must be one of: ADMIN, MANAGER, FIELD, VIEWER'),
+    .isIn(['ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER', 'SUPER_ADMIN'])
+    .withMessage('Role must be one of: ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER, SUPER_ADMIN'),
   body('department')
     .optional()
     .trim()
@@ -180,8 +180,8 @@ const listUsersValidation = [
     .withMessage('Limit must be between 1 and 100'),
   query('role')
     .optional()
-    .isIn(['ADMIN', 'MANAGER', 'FIELD', 'VIEWER'])
-    .withMessage('Role must be one of: ADMIN, MANAGER, FIELD, VIEWER'),
+    .isIn(['ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER', 'SUPER_ADMIN'])
+    .withMessage('Role must be one of: ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER, SUPER_ADMIN'),
   query('department')
     .optional()
     .trim()
@@ -231,9 +231,10 @@ const searchValidation = [
 
 const clientAssignmentValidation = [
   body('clientIds')
-    .isArray({ min: 1 })
-    .withMessage('clientIds must be a non-empty array'),
+    .isArray()
+    .withMessage('clientIds must be an array'),
   body('clientIds.*')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('Each client ID must be a positive integer'),
 ];
@@ -252,9 +253,10 @@ const clientIdValidation = [
 
 const productAssignmentValidation = [
   body('productIds')
-    .isArray({ min: 1 })
-    .withMessage('productIds must be a non-empty array'),
+    .isArray()
+    .withMessage('productIds must be an array'),
   body('productIds.*')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('All productIds must be positive integers'),
 ];

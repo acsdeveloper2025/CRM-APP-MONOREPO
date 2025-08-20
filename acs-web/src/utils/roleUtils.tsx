@@ -37,24 +37,6 @@ export const roleConfigs: Record<string, RoleConfig> = {
     label: 'Backend User',
     color: 'text-blue-600'
   },
-  BACKEND: {
-    icon: Server,
-    variant: 'secondary',
-    label: 'Backend',
-    color: 'text-blue-600'
-  },
-  BANK: {
-    icon: Building2,
-    variant: 'outline',
-    label: 'Bank',
-    color: 'text-green-600'
-  },
-  FIELD: {
-    icon: MapPin,
-    variant: 'outline',
-    label: 'Field',
-    color: 'text-purple-600'
-  },
   FIELD_AGENT: {
     icon: MapPin,
     variant: 'outline',
@@ -66,17 +48,11 @@ export const roleConfigs: Record<string, RoleConfig> = {
     variant: 'outline',
     label: 'Manager',
     color: 'text-orange-600'
-  },
-  VIEWER: {
-    icon: User,
-    variant: 'outline',
-    label: 'Viewer',
-    color: 'text-gray-600'
   }
 };
 
 export const getRoleIcon = (roleName: string, size: 'sm' | 'md' | 'lg' = 'md') => {
-  const config = roleConfigs[roleName] || roleConfigs.VIEWER;
+  const config = roleConfigs[roleName] || roleConfigs.MANAGER;
   const Icon = config.icon;
   
   const sizeClasses = {
@@ -89,10 +65,10 @@ export const getRoleIcon = (roleName: string, size: 'sm' | 'md' | 'lg' = 'md') =
 };
 
 export const getRoleBadge = (roleName: string) => {
-  const config = roleConfigs[roleName] || roleConfigs.VIEWER;
+  const config = roleConfigs[roleName] || roleConfigs.MANAGER;
   return <Badge variant={config.variant}>{config.label}</Badge>;
 };
 
 export const getRoleConfig = (roleName: string): RoleConfig => {
-  return roleConfigs[roleName] || roleConfigs.VIEWER;
+  return roleConfigs[roleName] || roleConfigs.MANAGER;
 };

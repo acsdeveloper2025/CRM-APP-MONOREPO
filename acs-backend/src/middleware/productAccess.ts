@@ -5,13 +5,13 @@ import { AuthenticatedRequest } from './auth';
 
 /**
  * Product Access Control Middleware
- * Provides access control for BACKEND users to specific products
+ * Provides access control for BACKEND_USER users to specific products
  */
 
-// Helper function to get assigned product IDs for BACKEND users
+// Helper function to get assigned product IDs for BACKEND_USER users
 const getAssignedProductIds = async (userId: string, userRole: string): Promise<number[] | null> => {
-  // Only apply product filtering for BACKEND users
-  if (userRole !== 'BACKEND') {
+  // Only apply product filtering for BACKEND_USER users
+  if (userRole !== 'BACKEND_USER') {
     return null; // null means no filtering (access to all products)
   }
 
@@ -29,9 +29,9 @@ const getAssignedProductIds = async (userId: string, userRole: string): Promise<
 };
 
 /**
- * Middleware to validate product access for BACKEND users
+ * Middleware to validate product access for BACKEND_USER users
  * Checks if the user has access to the product specified in the request
- * 
+ *
  * Usage:
  * - For routes with :productId parameter: validateProductAccess()
  * - For routes with productId in body: validateProductAccess('body')
@@ -42,7 +42,7 @@ export const validateProductAccess = (source: 'params' | 'body' | 'query' = 'par
     try {
       const userId = req.user?.id;
       const userRole = req.user?.role;
-      
+
       // Skip validation for non-authenticated requests
       if (!userId || !userRole) {
         return res.status(401).json({
@@ -57,8 +57,8 @@ export const validateProductAccess = (source: 'params' | 'body' | 'query' = 'par
         return next();
       }
 
-      // Only apply restrictions to BACKEND users
-      if (userRole !== 'BACKEND') {
+      // Only apply restrictions to BACKEND_USER users
+      if (userRole !== 'BACKEND_USER') {
         return next();
       }
 
@@ -84,7 +84,7 @@ export const validateProductAccess = (source: 'params' | 'body' | 'query' = 'par
         return next();
       }
 
-      // Get assigned product IDs for the BACKEND user
+      // Get assigned product IDs for the BACKEND_USER user
       const assignedProductIds = await getAssignedProductIds(userId, userRole);
 
       // If user has no product assignments, deny access
@@ -118,8 +118,8 @@ export const validateProductAccess = (source: 'params' | 'body' | 'query' = 'par
 };
 
 /**
- * Middleware to validate case access for BACKEND users based on product
- * This middleware checks if a BACKEND user has access to a case by verifying
+ * Middleware to validate case access for BACKEND_USER users based on product
+ * This middleware checks if a BACKEND_USER user has access to a case by verifying
  * they have access to the product associated with the case
  */
 export const validateCaseProductAccess = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -142,8 +142,8 @@ export const validateCaseProductAccess = async (req: AuthenticatedRequest, res: 
       return next();
     }
 
-    // Only apply restrictions to BACKEND users
-    if (userRole !== 'BACKEND') {
+    // Only apply restrictions to BACKEND_USER users
+    if (userRole !== 'BACKEND_USER') {
       return next();
     }
 
@@ -168,7 +168,7 @@ export const validateCaseProductAccess = async (req: AuthenticatedRequest, res: 
 
     const productId = caseResult.rows[0].productId;
 
-    // Get assigned product IDs for the BACKEND user
+    // Get assigned product IDs for the BACKEND_USER user
     const assignedProductIds = await getAssignedProductIds(userId, userRole);
 
     // If user has no product assignments, deny access
@@ -201,7 +201,7 @@ export const validateCaseProductAccess = async (req: AuthenticatedRequest, res: 
 };
 
 /**
- * Middleware to add product filtering to query parameters for BACKEND users
+ * Middleware to add product filtering to query parameters for BACKEND_USER users
  * This middleware automatically adds product filtering to list endpoints
  */
 export const addProductFiltering = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -219,12 +219,12 @@ export const addProductFiltering = async (req: AuthenticatedRequest, res: Respon
       return next();
     }
 
-    // Only apply filtering to BACKEND users
-    if (userRole !== 'BACKEND') {
+    // Only apply filtering to BACKEND_USER users
+    if (userRole !== 'BACKEND_USER') {
       return next();
     }
 
-    // Get assigned product IDs for the BACKEND user
+    // Get assigned product IDs for the BACKEND_USER user
     const assignedProductIds = await getAssignedProductIds(userId, userRole);
 
     if (assignedProductIds && assignedProductIds.length === 0) {

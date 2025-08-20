@@ -790,11 +790,11 @@ export const assignClientsToUser = async (req: AuthenticatedRequest, res: Respon
     const { userId } = req.params;
     const { clientIds } = req.body;
 
-    // Validate input
-    if (!Array.isArray(clientIds) || clientIds.length === 0) {
+    // Validate input - allow empty arrays for removing all assignments
+    if (!Array.isArray(clientIds)) {
       return res.status(400).json({
         success: false,
-        message: 'clientIds must be a non-empty array',
+        message: 'clientIds must be an array',
         error: { code: 'INVALID_INPUT' },
       });
     }
@@ -813,55 +813,81 @@ export const assignClientsToUser = async (req: AuthenticatedRequest, res: Respon
       });
     }
 
-    // Validate all client IDs exist
-    const clientsResult = await query(
-      `SELECT id FROM clients WHERE id = ANY($1::int[])`,
-      [clientIds]
-    );
+    // Validate all client IDs exist (only if clientIds is not empty)
+    if (clientIds.length > 0) {
+      const clientsResult = await query(
+        `SELECT id FROM clients WHERE id = ANY($1::int[])`,
+        [clientIds]
+      );
 
-    if (clientsResult.rows.length !== clientIds.length) {
-      return res.status(400).json({
-        success: false,
-        message: 'One or more client IDs are invalid',
-        error: { code: 'INVALID_CLIENT_IDS' },
-      });
+      if (clientsResult.rows.length !== clientIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'One or more client IDs are invalid',
+          error: { code: 'INVALID_CLIENT_IDS' },
+        });
+      }
     }
 
-    // Insert assignments (using ON CONFLICT to handle duplicates)
-    const insertPromises = clientIds.map(clientId =>
-      query(`
-        INSERT INTO "userClientAssignments" ("userId", "clientId")
-        VALUES ($1, $2)
-        ON CONFLICT ("userId", "clientId") DO NOTHING
-        RETURNING id
-      `, [userId, clientId])
-    );
+    // Start transaction to replace all assignments
+    await query('BEGIN');
 
-    const results = await Promise.all(insertPromises);
-    const newAssignments = results.filter(result => result.rows.length > 0).length;
+    try {
+      // First, delete all existing assignments for this user
+      const deleteResult = await query(
+        'DELETE FROM "userClientAssignments" WHERE "userId" = $1 RETURNING id',
+        [userId]
+      );
+      const deletedCount = deleteResult.rows.length;
 
-    logger.info(`Assigned ${newAssignments} new clients to user ${userId}`, {
-      userId: req.user?.id,
-      targetUserId: userId,
-      clientIds,
-      newAssignments
-    });
+      let insertedCount = 0;
 
-    res.status(201).json({
-      success: true,
-      data: {
-        userId,
-        assignedClients: newAssignments,
-        totalRequested: clientIds.length,
-        duplicatesSkipped: clientIds.length - newAssignments
-      },
-      message: `Successfully assigned ${newAssignments} clients to user`,
-    });
+      // Then, insert new assignments (only if clientIds is not empty)
+      if (clientIds.length > 0) {
+        const insertPromises = clientIds.map(clientId =>
+          query(`
+            INSERT INTO "userClientAssignments" ("userId", "clientId")
+            VALUES ($1, $2)
+            RETURNING id
+          `, [userId, clientId])
+        );
+
+        const results = await Promise.all(insertPromises);
+        insertedCount = results.length;
+      }
+
+      // Commit transaction
+      await query('COMMIT');
+
+      logger.info(`Replaced client assignments for user ${userId}`, {
+        userId: req.user?.id,
+        targetUserId: userId,
+        clientIds,
+        deletedCount,
+        insertedCount
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          userId,
+          deletedAssignments: deletedCount,
+          newAssignments: insertedCount,
+          totalRequested: clientIds.length
+        },
+        message: `Successfully updated client assignments for user`,
+      });
+
+    } catch (transactionError) {
+      // Rollback transaction on error
+      await query('ROLLBACK');
+      throw transactionError;
+    }
   } catch (error) {
-    logger.error('Error assigning clients to user:', error);
+    logger.error('Error updating client assignments for user:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to assign clients to user',
+      message: 'Failed to update client assignments for user',
       error: { code: 'INTERNAL_ERROR' },
     });
   }
@@ -995,11 +1021,11 @@ export const assignProductsToUser = async (req: AuthenticatedRequest, res: Respo
     const { userId } = req.params;
     const { productIds } = req.body;
 
-    // Validate input
-    if (!Array.isArray(productIds) || productIds.length === 0) {
+    // Validate input - allow empty arrays for removing all assignments
+    if (!Array.isArray(productIds)) {
       return res.status(400).json({
         success: false,
-        message: 'productIds must be a non-empty array',
+        message: 'productIds must be an array',
         error: { code: 'INVALID_INPUT' },
       });
     }
@@ -1018,64 +1044,85 @@ export const assignProductsToUser = async (req: AuthenticatedRequest, res: Respo
       });
     }
 
-    // Validate all products exist
-    const productCheckQuery = `
-      SELECT id FROM products WHERE id = ANY($1::int[])
-    `;
-    const productCheckResult = await query(productCheckQuery, [productIds]);
+    // Validate all product IDs exist (only if productIds is not empty)
+    if (productIds.length > 0) {
+      const productCheckQuery = `
+        SELECT id FROM products WHERE id = ANY($1::int[])
+      `;
+      const productCheckResult = await query(productCheckQuery, [productIds]);
 
-    if (productCheckResult.rows.length !== productIds.length) {
-      return res.status(400).json({
-        success: false,
-        message: 'One or more products not found',
-        error: { code: 'INVALID_PRODUCTS' },
-      });
+      if (productCheckResult.rows.length !== productIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'One or more products not found',
+          error: { code: 'INVALID_PRODUCTS' },
+        });
+      }
     }
 
-    // Check for existing assignments
-    const existingQuery = `
-      SELECT "productId" FROM "userProductAssignments"
-      WHERE "userId" = $1 AND "productId" = ANY($2::int[])
-    `;
-    const existingResult = await query(existingQuery, [userId, productIds]);
-    const existingProductIds = existingResult.rows.map(row => row.productId);
+    // Start transaction to replace all assignments
+    await query('BEGIN');
 
-    // Filter out already assigned products
-    const newProductIds = productIds.filter(id => !existingProductIds.includes(id));
+    try {
+      // First, delete all existing assignments for this user
+      const deleteResult = await query(
+        'DELETE FROM "userProductAssignments" WHERE "userId" = $1 RETURNING id',
+        [userId]
+      );
+      const deletedCount = deleteResult.rows.length;
 
-    if (newProductIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'All specified products are already assigned to this user',
-        error: { code: 'ALREADY_ASSIGNED' },
+      let insertedCount = 0;
+
+      // Then, insert new assignments (only if productIds is not empty)
+      if (productIds.length > 0) {
+        const insertValues = productIds.map((productId, index) =>
+          `($1, $${index + 2}, $${productIds.length + 2}, CURRENT_TIMESTAMP)`
+        ).join(', ');
+
+        const insertQuery = `
+          INSERT INTO "userProductAssignments" ("userId", "productId", "assignedBy", "assignedAt")
+          VALUES ${insertValues}
+          RETURNING *
+        `;
+
+        const insertParams = [userId, ...productIds, req.user?.id];
+        const insertResult = await query(insertQuery, insertParams);
+        insertedCount = insertResult.rows.length;
+      }
+
+      // Commit transaction
+      await query('COMMIT');
+
+      logger.info(`Replaced product assignments for user ${userId}`, {
+        userId: req.user?.id,
+        targetUserId: userId,
+        productIds,
+        deletedCount,
+        insertedCount
       });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          userId,
+          deletedAssignments: deletedCount,
+          newAssignments: insertedCount,
+          totalRequested: productIds.length
+        },
+        message: `Successfully updated product assignments for user`,
+      });
+
+    } catch (transactionError) {
+      // Rollback transaction on error
+      await query('ROLLBACK');
+      throw transactionError;
     }
-
-    // Insert new assignments
-    const insertValues = newProductIds.map((productId, index) =>
-      `($1, $${index + 2}, $${newProductIds.length + 2}, CURRENT_TIMESTAMP)`
-    ).join(', ');
-
-    const insertQuery = `
-      INSERT INTO "userProductAssignments" ("userId", "productId", "assignedBy", "assignedAt")
-      VALUES ${insertValues}
-      RETURNING *
-    `;
-
-    const insertParams = [userId, ...newProductIds, req.user?.id];
-    const insertResult = await query(insertQuery, insertParams);
-
-    res.status(201).json({
-      success: true,
-      data: insertResult.rows,
-      message: `Successfully assigned ${newProductIds.length} product(s) to user`
-    });
 
   } catch (error) {
-    logger.error('Error assigning products to user:', error);
+    logger.error('Error updating product assignments for user:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error',
+      message: 'Failed to update product assignments for user',
       error: { code: 'INTERNAL_ERROR' },
     });
   }

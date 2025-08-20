@@ -11,40 +11,53 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
       limit = 20,
       search,
       sortBy = 'name',
-      sortOrder = 'asc',
-      clientIds: clientIdsFilter
+      sortOrder = 'asc'
     } = req.query;
+
+    // Get client filter from middleware
+    const clientFilter = (req as any).clientFilter;
+
+    logger.info('getClients controller called', {
+      userId: req.user?.id,
+      userRole: req.user?.role,
+      query: req.query,
+      clientFilter,
+      clientFilterType: typeof clientFilter
+    });
 
     // Build where clause and parameters
     const whereConditions: string[] = [];
     const queryParams: any[] = [];
     let paramIndex = 1;
 
-    // Apply client filtering for BACKEND users
-    if (clientIdsFilter) {
-      try {
-        const parsedClientIds = JSON.parse(clientIdsFilter as string);
-        if (Array.isArray(parsedClientIds)) {
-          if (parsedClientIds.length === 0) {
-            // User has no client assignments, return empty result
-            return res.json({
-              success: true,
-              data: [],
-              pagination: {
-                page: Number(page),
-                limit: Number(limit),
-                total: 0,
-                totalPages: 0,
-              },
-              message: 'No clients found - user has no assigned clients',
-            });
-          }
-          whereConditions.push(`id = ANY($${paramIndex}::int[])`);
-          queryParams.push(parsedClientIds);
-          paramIndex++;
+    // Apply client filtering for BACKEND_USER users
+    if (clientFilter !== undefined) {
+      if (Array.isArray(clientFilter)) {
+        if (clientFilter.length === 0) {
+          // User has no client assignments, return empty result
+          return res.json({
+            success: true,
+            data: [],
+            pagination: {
+              page: Number(page),
+              limit: Number(limit),
+              total: 0,
+              totalPages: 0,
+            },
+            message: 'No clients found - user has no assigned clients',
+          });
         }
-      } catch (error) {
-        logger.error('Error parsing clientIds filter:', error);
+        whereConditions.push(`id = ANY($${paramIndex}::int[])`);
+        queryParams.push(clientFilter);
+        paramIndex++;
+        logger.info('Applied client filter', { clientFilter, whereConditions });
+      } else {
+        logger.error('clientFilter is not an array:', { clientFilter, type: typeof clientFilter });
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid client filter format',
+          error: { code: 'INVALID_CLIENT_FILTER' },
+        });
       }
     }
 

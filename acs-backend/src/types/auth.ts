@@ -2,10 +2,9 @@
 export enum Role {
   SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
-  BACKEND = 'BACKEND',
-  BANK = 'BANK',
-  FIELD = 'FIELD',
-  FIELD_AGENT = 'FIELD_AGENT' // All roles support UUID-based authentication
+  BACKEND_USER = 'BACKEND_USER',
+  FIELD_AGENT = 'FIELD_AGENT',
+  MANAGER = 'MANAGER'
 }
 
 export interface LoginRequest {

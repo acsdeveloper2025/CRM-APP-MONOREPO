@@ -106,8 +106,8 @@ export const requireRole = (allowedRoles: Role[]) => {
 };
 
 export const requireAdmin = requireRole([Role.ADMIN]);
-export const requireBackendOrAdmin = requireRole([Role.ADMIN, Role.BACKEND]);
-export const requireFieldOrHigher = requireRole([Role.ADMIN, Role.BACKEND, Role.BANK, Role.FIELD]);
+export const requireBackendOrAdmin = requireRole([Role.ADMIN, Role.BACKEND_USER]);
+export const requireFieldOrHigher = requireRole([Role.ADMIN, Role.BACKEND_USER, Role.MANAGER, Role.FIELD_AGENT]);
 
 // Enhanced auth middleware that loads user permissions
 export const auth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {

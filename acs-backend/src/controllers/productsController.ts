@@ -21,7 +21,7 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
     const whereSql: string[] = [];
     let paramIndex = 1;
 
-    // Apply product filtering for BACKEND users
+    // Apply product filtering for BACKEND_USER users
     if (productIdsFilter) {
       try {
         const parsedProductIds = JSON.parse(productIdsFilter as string);

@@ -5,15 +5,15 @@ import { AuthenticatedRequest } from './auth';
 import { getAssignedProductIds } from './productAccess';
 
 /**
- * Middleware to enforce client-level access restrictions for BACKEND users
- * This middleware checks if BACKEND users have access to the requested client
+ * Middleware to enforce client-level access restrictions for BACKEND_USER users
+ * This middleware checks if BACKEND_USER users have access to the requested client
  * SUPER_ADMIN users bypass all restrictions
  */
 
-// Helper function to get assigned client IDs for BACKEND users
+// Helper function to get assigned client IDs for BACKEND_USER users
 const getAssignedClientIds = async (userId: string, userRole: string): Promise<number[] | null> => {
-  // Only apply client filtering for BACKEND users
-  if (userRole !== 'BACKEND') {
+  // Only apply client filtering for BACKEND_USER users
+  if (userRole !== 'BACKEND_USER') {
     return null; // null means no filtering (access to all clients)
   }
 
@@ -31,9 +31,9 @@ const getAssignedClientIds = async (userId: string, userRole: string): Promise<n
 };
 
 /**
- * Middleware to validate client access for BACKEND users
+ * Middleware to validate client access for BACKEND_USER users
  * Checks if the user has access to the client specified in the request
- * 
+ *
  * Usage:
  * - For routes with :clientId parameter: validateClientAccess()
  * - For routes with clientId in body: validateClientAccess('body')
@@ -59,8 +59,8 @@ export const validateClientAccess = (source: 'params' | 'body' | 'query' = 'para
         return next();
       }
 
-      // Only apply restrictions to BACKEND users
-      if (userRole !== 'BACKEND') {
+      // Only apply restrictions to BACKEND_USER users
+      if (userRole !== 'BACKEND_USER') {
         return next();
       }
 
@@ -84,7 +84,7 @@ export const validateClientAccess = (source: 'params' | 'body' | 'query' = 'para
         return next();
       }
 
-      // Get assigned client IDs for the BACKEND user
+      // Get assigned client IDs for the BACKEND_USER user
       const assignedClientIds = await getAssignedClientIds(userId, userRole);
 
       if (assignedClientIds && assignedClientIds.length === 0) {
@@ -97,7 +97,7 @@ export const validateClientAccess = (source: 'params' | 'body' | 'query' = 'para
 
       // Check if the user has access to the requested client
       if (assignedClientIds && !assignedClientIds.includes(clientId)) {
-        logger.warn(`BACKEND user ${userId} attempted to access unauthorized client ${clientId}`, {
+        logger.warn(`BACKEND_USER user ${userId} attempted to access unauthorized client ${clientId}`, {
           userId,
           userRole,
           requestedClientId: clientId,
@@ -127,8 +127,8 @@ export const validateClientAccess = (source: 'params' | 'body' | 'query' = 'para
 };
 
 /**
- * Middleware to validate case access for BACKEND users
- * This middleware checks if a BACKEND user has access to a case by verifying
+ * Middleware to validate case access for BACKEND_USER users
+ * This middleware checks if a BACKEND_USER user has access to a case by verifying
  * they have access to the client that owns the case
  */
 export const validateCaseAccess = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -151,8 +151,8 @@ export const validateCaseAccess = async (req: AuthenticatedRequest, res: Respons
       return next();
     }
 
-    // Only apply restrictions to BACKEND users
-    if (userRole !== 'BACKEND') {
+    // Only apply restrictions to BACKEND_USER users
+    if (userRole !== 'BACKEND_USER') {
       return next();
     }
 
@@ -177,7 +177,7 @@ export const validateCaseAccess = async (req: AuthenticatedRequest, res: Respons
 
     const caseClientId = caseResult.rows[0].clientId;
 
-    // Get assigned client IDs for the BACKEND user
+    // Get assigned client IDs for the BACKEND_USER user
     const assignedClientIds = await getAssignedClientIds(userId, userRole);
 
     if (assignedClientIds && assignedClientIds.length === 0) {
@@ -190,7 +190,7 @@ export const validateCaseAccess = async (req: AuthenticatedRequest, res: Respons
 
     // Check if the user has access to the case's client
     if (assignedClientIds && !assignedClientIds.includes(caseClientId)) {
-      logger.warn(`BACKEND user ${userId} attempted to access case ${caseId} from unauthorized client ${caseClientId}`, {
+      logger.warn(`BACKEND_USER user ${userId} attempted to access case ${caseId} from unauthorized client ${caseClientId}`, {
         userId,
         userRole,
         caseId,
@@ -220,7 +220,7 @@ export const validateCaseAccess = async (req: AuthenticatedRequest, res: Respons
 };
 
 /**
- * Middleware to add client filtering to query parameters for BACKEND users
+ * Middleware to add client filtering to query parameters for BACKEND_USER users
  * This middleware automatically adds client filtering to list endpoints
  */
 export const addClientFiltering = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -228,32 +228,44 @@ export const addClientFiltering = async (req: AuthenticatedRequest, res: Respons
     const userId = req.user?.id;
     const userRole = req.user?.role;
 
+    logger.info('Client filtering middleware called', { userId, userRole, originalQuery: req.query });
+
     // Skip for non-authenticated requests
     if (!userId || !userRole) {
+      logger.info('Skipping client filtering - no user or role');
       return next();
     }
 
     // SUPER_ADMIN users bypass all filtering
     if (userRole === 'SUPER_ADMIN') {
+      logger.info('Skipping client filtering - SUPER_ADMIN user');
       return next();
     }
 
-    // Only apply filtering to BACKEND users
-    if (userRole !== 'BACKEND') {
+    // Only apply filtering to BACKEND_USER users
+    if (userRole !== 'BACKEND_USER') {
+      logger.info('Skipping client filtering - not BACKEND_USER', { userRole });
       return next();
     }
 
-    // Get assigned client IDs for the BACKEND user
+    // Get assigned client IDs for the BACKEND_USER user
     const assignedClientIds = await getAssignedClientIds(userId, userRole);
+    logger.info('Retrieved assigned client IDs', { userId, assignedClientIds });
 
     if (assignedClientIds && assignedClientIds.length === 0) {
       // User has no client assignments, they should see no data
-      req.query.clientIds = '[]';
+      (req as any).clientFilter = [];
+      logger.info('Set clientFilter to empty array - no assignments');
     } else if (assignedClientIds) {
-      // Add client filtering to the query
-      req.query.clientIds = JSON.stringify(assignedClientIds);
+      // Add client filtering to the request
+      (req as any).clientFilter = assignedClientIds;
+      logger.info('Set clientFilter', {
+        assignedClientIds,
+        clientFilter: (req as any).clientFilter
+      });
     }
 
+    logger.info('Client filtering middleware complete', { finalQuery: req.query });
     next();
   } catch (error) {
     logger.error('Error in client filtering middleware:', error);
@@ -267,7 +279,7 @@ export const addClientFiltering = async (req: AuthenticatedRequest, res: Respons
 
 /**
  * Combined middleware to validate both client and product access for case creation
- * This middleware checks if a BACKEND user has access to both the client and product
+ * This middleware checks if a BACKEND_USER user has access to both the client and product
  * specified in the case creation request
  */
 export const validateCaseCreationAccess = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -290,8 +302,8 @@ export const validateCaseCreationAccess = async (req: AuthenticatedRequest, res:
       return next();
     }
 
-    // Only apply restrictions to BACKEND users
-    if (userRole !== 'BACKEND') {
+    // Only apply restrictions to BACKEND_USER users
+    if (userRole !== 'BACKEND_USER') {
       return next();
     }
 
@@ -300,7 +312,7 @@ export const validateCaseCreationAccess = async (req: AuthenticatedRequest, res:
       return next();
     }
 
-    // Get assigned client IDs for the BACKEND user
+    // Get assigned client IDs for the BACKEND_USER user
     const assignedClientIds = await getAssignedClientIds(userId, userRole);
 
     // Check client access
@@ -320,7 +332,7 @@ export const validateCaseCreationAccess = async (req: AuthenticatedRequest, res:
       });
     }
 
-    // Get assigned product IDs for the BACKEND user
+    // Get assigned product IDs for the BACKEND_USER user
     const assignedProductIds = await getAssignedProductIds(userId, userRole);
 
     // Check product access

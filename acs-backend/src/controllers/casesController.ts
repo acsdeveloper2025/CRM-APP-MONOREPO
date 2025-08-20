@@ -5,10 +5,10 @@ import { pool } from '@/config/database';
 import { query } from '@/config/database';
 import { DeduplicationService } from '@/services/deduplicationService';
 
-// Helper function to get assigned client IDs for BACKEND users
+// Helper function to get assigned client IDs for BACKEND_USER users
 const getAssignedClientIds = async (userId: string, userRole: string): Promise<number[] | null> => {
-  // Only apply client filtering for BACKEND users
-  if (userRole !== 'BACKEND') {
+  // Only apply client filtering for BACKEND_USER users
+  if (userRole !== 'BACKEND_USER') {
     return null; // null means no filtering (access to all clients)
   }
 
@@ -127,12 +127,12 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
     const queryParams: any[] = [];
     let paramIndex = 1;
 
-    // Apply client filtering for BACKEND users (SUPER_ADMIN bypasses all restrictions)
-    if (userRole === 'BACKEND') {
+    // Apply client filtering for BACKEND_USER users (SUPER_ADMIN bypasses all restrictions)
+    if (userRole === 'BACKEND_USER') {
       const assignedClientIds = await getAssignedClientIds(userId!, userRole);
 
       if (assignedClientIds && assignedClientIds.length === 0) {
-        // BACKEND user has no client assignments, return empty result
+        // BACKEND_USER user has no client assignments, return empty result
         return res.json({
           success: true,
           data: [],
@@ -271,8 +271,8 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
     const queryParams: any[] = [id];
     let paramIndex = 2;
 
-    // Apply client filtering for BACKEND users (SUPER_ADMIN bypasses all restrictions)
-    if (userRole === 'BACKEND') {
+    // Apply client filtering for BACKEND_USER users (SUPER_ADMIN bypasses all restrictions)
+    if (userRole === 'BACKEND_USER') {
       const assignedClientIds = await getAssignedClientIds(userId!, userRole);
 
       if (assignedClientIds && assignedClientIds.length === 0) {
@@ -389,11 +389,11 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Validate client access for BACKEND users (SUPER_ADMIN bypasses all restrictions)
+    // Validate client access for BACKEND_USER users (SUPER_ADMIN bypasses all restrictions)
     const userId = req.user?.id;
     const userRole = req.user?.role;
 
-    if (userRole === 'BACKEND') {
+    if (userRole === 'BACKEND_USER') {
       const assignedClientIds = await getAssignedClientIds(userId!, userRole);
 
       if (assignedClientIds && !assignedClientIds.includes(Number(clientId))) {
