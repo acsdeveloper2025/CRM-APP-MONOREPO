@@ -76,10 +76,4 @@ class ApiService {
 
 export const apiService = new ApiService();
 
-// Device management API
-export const devicesApi = {
-  getAllDevices: (params?: any) => apiService.get('/devices', params),
-  getPendingDevices: () => apiService.get('/devices/pending'),
-  approveDevice: (deviceId: string) => apiService.post(`/devices/${deviceId}/approve`),
-  rejectDevice: (deviceId: string, reason?: string) => apiService.post(`/devices/${deviceId}/reject`, { reason }),
-};
+

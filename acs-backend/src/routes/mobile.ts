@@ -21,11 +21,7 @@ router.post('/auth/version-check', MobileAuthController.checkVersion);
 router.get('/auth/config', MobileAuthController.getAppConfig);
 router.post('/auth/notifications/register', authenticateToken, MobileAuthController.registerNotifications);
 
-// Device Management Routes (Admin only)
-router.get('/devices/pending', authenticateToken, MobileAuthController.getPendingDevices);
-router.post('/devices/:deviceId/approve', authenticateToken, MobileAuthController.approveDevice);
-router.post('/devices/:deviceId/reject', authenticateToken, MobileAuthController.rejectDevice);
-router.get('/devices/user/:userId', authenticateToken, MobileAuthController.getUserDevices);
+
 
 // Mobile Case Management Routes
 router.get('/cases', authenticateToken, validateMobileVersion, MobileCaseController.getMobileCases);

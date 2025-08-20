@@ -9,14 +9,13 @@ import {
   Platform
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import DeviceRegistration from '../components/DeviceRegistration';
+
 
 const NewLoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showDeviceRegistration, setShowDeviceRegistration] = useState(false);
-  const [deviceAuthError, setDeviceAuthError] = useState<string>('');
+
   const { login } = useAuth();
 
   const handleLogin = async () => {
@@ -53,24 +52,10 @@ const NewLoginScreen: React.FC = () => {
       if (!result.success) {
         console.log('📱 LoginScreen: Login failed:', result.error);
 
-        // Handle device authentication errors
-        if (result.requiresDeviceAuth) {
-          setDeviceAuthError(result.error || 'Device authentication required');
-          setShowDeviceRegistration(true);
-
-          Alert.alert(
-            'Device Authentication Required',
-            result.error + '\n\nPlease register your device using the Device Registration section below.',
-            [{ text: 'OK' }]
-          );
-        } else {
-          Alert.alert('Authentication Failed', result.error || 'Invalid credentials. Please try again.');
-        }
+        Alert.alert('Authentication Failed', result.error || 'Invalid credentials. Please try again.');
       } else {
         console.log('📱 LoginScreen: Login successful, waiting for navigation...');
-        // Clear any previous device auth errors
-        setDeviceAuthError('');
-        setShowDeviceRegistration(false);
+
       }
       // If successful, the AuthContext will handle the navigation
     } catch (error) {
@@ -253,57 +238,7 @@ const NewLoginScreen: React.FC = () => {
             </View>
 
             {/* Device Authentication Error Message */}
-            {deviceAuthError && (
-              <View style={{
-                backgroundColor: '#7c2d12',
-                borderRadius: 8,
-                padding: 12,
-                marginTop: 16,
-                borderWidth: 1,
-                borderColor: '#ea580c',
-                width: '100%',
-                maxWidth: 400
-              }}>
-                <Text style={{
-                  color: '#fed7aa',
-                  fontSize: 14,
-                  fontWeight: '600',
-                  textAlign: 'center',
-                  marginBottom: 4
-                }}>
-                  🚫 Device Authentication Failed
-                </Text>
-                <Text style={{
-                  color: '#fdba74',
-                  fontSize: 12,
-                  textAlign: 'center',
-                  lineHeight: 16
-                }}>
-                  {deviceAuthError}
-                </Text>
-              </View>
-            )}
 
-            {/* Device Registration Section - Always show, but highlight when needed */}
-            <DeviceRegistration
-              style={{
-                width: '100%',
-                maxWidth: 400,
-                marginTop: deviceAuthError ? 12 : 24,
-                borderWidth: showDeviceRegistration ? 2 : 0,
-                borderColor: showDeviceRegistration ? '#3b82f6' : 'transparent'
-              }}
-              onRegistrationComplete={(deviceId) => {
-                console.log('📱 Device registration complete:', deviceId);
-                setDeviceAuthError('');
-                setShowDeviceRegistration(false);
-                Alert.alert(
-                  'Device Registered',
-                  'Your device has been registered. Please try logging in again after your administrator approves your device.',
-                  [{ text: 'OK' }]
-                );
-              }}
-            />
 
 
           </View>

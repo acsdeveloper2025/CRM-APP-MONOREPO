@@ -1,9 +1,33 @@
 import { apiService } from './api';
 import type { LoginRequest, LoginResponse, User } from '@/types/auth';
 
+interface UuidLoginRequest {
+  authUuid: string; // This is the device UUID from mobile app pattern
+  deviceId: string; // Same as authUuid for consistency
+  platform?: string;
+  appVersion?: string;
+}
+
 export class AuthService {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await apiService.post<LoginResponse['data']>('/auth/login', credentials);
+
+    if (response.success && response.data) {
+      // Store token and user data
+      localStorage.setItem('accessToken', response.data.tokens.accessToken);
+      localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+      localStorage.setItem('authUser', JSON.stringify(response.data.user));
+    }
+
+    return {
+      success: response.success,
+      message: response.message,
+      data: response.data,
+    };
+  }
+
+  async uuidLogin(credentials: UuidLoginRequest): Promise<LoginResponse> {
+    const response = await apiService.post<LoginResponse['data']>('/auth/uuid-login', credentials);
 
     if (response.success && response.data) {
       // Store token and user data

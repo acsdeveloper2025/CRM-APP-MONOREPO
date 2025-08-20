@@ -37,6 +37,9 @@ export interface CreateCaseData {
   assignedToId: string;
   clientId: string;
   productId?: string;
+  applicantType?: string;
+  createdByBackendUser?: string;
+  backendContactNumber?: string;
   priority?: number;
   notes?: string;
   // Deduplication fields

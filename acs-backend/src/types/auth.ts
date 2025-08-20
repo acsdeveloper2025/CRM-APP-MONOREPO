@@ -5,22 +5,22 @@ export enum Role {
   BACKEND = 'BACKEND',
   BANK = 'BANK',
   FIELD = 'FIELD',
-  FIELD_AGENT = 'FIELD_AGENT' // UUID-based authentication for mobile app
+  FIELD_AGENT = 'FIELD_AGENT' // All roles support UUID-based authentication
 }
 
 export interface LoginRequest {
   username: string;
   password: string;
-  deviceId?: string; // For FIELD agents (required on web+mobile)
-  macAddress?: string; // For non-field users (required on web)
+  deviceId?: string; // Optional for all user roles (device authentication)
+  macAddress?: string; // Optional fallback authentication method
 }
 
-// UUID-based authentication for FIELD_AGENT mobile users only
+// Universal UUID-based authentication for all user roles
 export interface FieldAgentUuidLoginRequest {
-  authUuid: string; // UUID authentication token for field agents
-  deviceId: string; // Required for mobile app identification
-  platform?: 'IOS' | 'ANDROID'; // Mobile platform
-  appVersion?: string; // CaseFlow mobile app version
+  authUuid: string; // UUID authentication token for any user role
+  deviceId: string; // Required for device identification
+  platform?: 'IOS' | 'ANDROID'; // Platform (mobile/web)
+  appVersion?: string; // Application version
 }
 
 export interface LoginResponse {
@@ -37,7 +37,7 @@ export interface LoginResponse {
       designation: string;
       department: string;
       profilePhotoUrl?: string;
-      deviceId?: string;
+
     };
     tokens: {
       accessToken: string;
@@ -46,22 +46,7 @@ export interface LoginResponse {
   };
 }
 
-export interface DeviceRegistrationRequest {
-  deviceId: string;
-  platform: 'IOS' | 'ANDROID';
-  model: string;
-  osVersion: string;
-  appVersion: string;
-}
 
-export interface DeviceRegistrationResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    deviceId: string;
-    registeredAt: string;
-  };
-}
 
 export interface JwtPayload {
   userId: string;

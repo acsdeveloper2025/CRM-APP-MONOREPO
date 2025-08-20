@@ -30,36 +30,46 @@ router.use(caseRateLimit);
 
 // Validation schemas
 const createCaseValidation = [
+  // Optional legacy fields for backward compatibility
   body('title')
+    .optional()
     .trim()
     .isLength({ min: 1, max: 200 })
     .withMessage('Title must be between 1 and 200 characters'),
   body('description')
+    .optional()
     .trim()
     .isLength({ min: 1, max: 1000 })
     .withMessage('Description must be between 1 and 1000 characters'),
+
+  // Required fields
   body('clientId')
     .trim()
     .notEmpty()
     .withMessage('Client ID is required'),
   body('assignedToId')
-    .optional()
     .trim()
     .notEmpty()
-    .withMessage('Assigned user ID must not be empty'),
+    .withMessage('Assigned user ID is required'),
+
+  // Optional legacy fields
   body('address')
+    .optional()
     .trim()
     .isLength({ min: 1, max: 500 })
     .withMessage('Address must be between 1 and 500 characters'),
   body('contactPerson')
+    .optional()
     .trim()
     .isLength({ min: 1, max: 100 })
     .withMessage('Contact person must be between 1 and 100 characters'),
   body('contactPhone')
+    .optional()
     .trim()
     .matches(/^\+?[1-9]\d{1,14}$/)
     .withMessage('Contact phone must be valid'),
   body('verificationType')
+    .optional()
     .isIn(['RESIDENCE', 'OFFICE', 'BUSINESS', 'OTHER'])
     .withMessage('Verification type must be one of: RESIDENCE, OFFICE, BUSINESS, OTHER'),
   body('priority')
@@ -70,6 +80,32 @@ const createCaseValidation = [
     .optional()
     .isISO8601()
     .withMessage('Deadline must be a valid date'),
+
+  // New required fields for form integration
+  body('applicantType')
+    .trim()
+    .isIn(['APPLICANT', 'CO-APPLICANT', 'REFERENCE PERSON'])
+    .withMessage('Applicant type must be APPLICANT, CO-APPLICANT, or REFERENCE PERSON'),
+  body('backendContactNumber')
+    .trim()
+    .matches(/^[+]?[\d\s\-\(\)]{10,15}$/)
+    .withMessage('Backend contact number must be valid'),
+  body('notes')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('TRIGGER field is required'),
+
+  // Customer information (at least one name required)
+  body('applicantName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Applicant name must be between 1 and 100 characters'),
+  body('customerName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Customer name must be between 1 and 100 characters'),
 ];
 
 const updateCaseValidation = [

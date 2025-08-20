@@ -46,7 +46,7 @@ const editUserSchema = z.object({
   employeeId: z.string().min(1, 'Employee ID is required'),
   designationId: z.string().min(1, 'Designation is required'),
   departmentId: z.string().min(1, 'Department is required'),
-  deviceId: z.string().optional(),
+
   isActive: z.boolean(),
 });
 
@@ -70,7 +70,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       employeeId: user.employeeId,
       designationId: user.designationId ? String(user.designationId) : '',
       departmentId: user.departmentId ? String(user.departmentId) : '',
-      deviceId: user.deviceId || '',
+
       isActive: user.isActive ?? false,
     },
   });
@@ -105,7 +105,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
         employeeId: user.employeeId,
         designationId: user.designationId ? String(user.designationId) : '',
         departmentId: user.departmentId ? String(user.departmentId) : '',
-        deviceId: user.deviceId || '',
+
         isActive: user.isActive ?? false,
       });
     }
@@ -124,30 +124,6 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   });
 
   const onSubmit = (data: EditUserFormData) => {
-    // Validate deviceId for field agents
-    const submittedRole = roles.find((role: any) => role.id === data.roleId);
-    const isSubmittedFieldAgent = submittedRole?.name === 'Field Agent' || submittedRole?.name === 'FIELD_AGENT' || submittedRole?.name === 'FIELD';
-
-    if (isSubmittedFieldAgent && !data.deviceId) {
-      form.setError('deviceId', {
-        type: 'manual',
-        message: 'Device ID is required for field agents',
-      });
-      return;
-    }
-
-    if (isSubmittedFieldAgent && data.deviceId) {
-      // Validate UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(data.deviceId)) {
-        form.setError('deviceId', {
-          type: 'manual',
-          message: 'Device ID must be a valid UUID format',
-        });
-        return;
-      }
-    }
-
     updateMutation.mutate(data);
   };
 
@@ -155,7 +131,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   const departments = departmentsData?.data || [];
   const designations = designationsData?.data || [];
 
-  // Watch the selected role to determine if deviceId field should be shown
+  // Get selected role for territory assignment
   const selectedRoleId = form.watch('roleId');
   const selectedRole = roles.find((role: any) => String(role.id) === String(selectedRoleId));
   const isFieldAgent = selectedRole?.name === 'Field Agent' || selectedRole?.name === 'FIELD_AGENT' || selectedRole?.name === 'FIELD';
@@ -296,28 +272,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
               />
             </div>
 
-            {/* Device ID field - only show for field agents */}
-            {isFieldAgent && (
-              <FormField
-                control={form.control}
-                name="deviceId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Device ID <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter device UUID (e.g., 123e4567-e89b-12d3-a456-426614174000)"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-sm text-muted-foreground">
-                      Required for field agents. Must be a valid UUID format.
-                    </p>
-                  </FormItem>
-                )}
-              />
-            )}
+
 
             <FormField
               control={form.control}

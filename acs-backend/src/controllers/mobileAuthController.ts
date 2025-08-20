@@ -18,12 +18,12 @@ export class MobileAuthController {
   // Mobile login with device registration
   static async mobileLogin(req: Request, res: Response) {
     try {
-      const { username, password, deviceId, deviceInfo }: MobileLoginRequest = req.body;
+      const { username, password }: MobileLoginRequest = req.body;
 
-      if (!username || !password || !deviceId) {
+      if (!username || !password) {
         return res.status(400).json({
           success: false,
-          message: 'Username, password, and deviceId are required',
+          message: 'Username and password are required',
           error: {
             code: 'MISSING_REQUIRED_FIELDS',
             timestamp: new Date().toISOString(),
@@ -47,7 +47,7 @@ export class MobileAuthController {
           action: 'MOBILE_LOGIN_FAILED',
           entityType: 'USER',
           entityId: username,
-          details: { reason: 'User not found', deviceId },
+          details: { reason: 'User not found' },
           ipAddress: req.ip,
           userAgent: req.get('User-Agent'),
         });
@@ -69,7 +69,7 @@ export class MobileAuthController {
           action: 'MOBILE_LOGIN_FAILED',
           entityType: 'USER',
           entityId: user.id,
-          details: { reason: 'Invalid password', deviceId },
+          details: { reason: 'Invalid password' },
           ipAddress: req.ip,
           userAgent: req.get('User-Agent'),
         });
@@ -84,122 +84,16 @@ export class MobileAuthController {
         });
       }
 
-      // Check if device exists or register new device
-      const devRes = await query(`SELECT * FROM devices WHERE "deviceId" = $1`, [deviceId]);
-      let device: any = devRes.rows[0];
+      // Simplified authentication - no device validation required
 
-      let deviceRegistered = true;
-      let deviceNeedsApproval = false;
 
-      if (!device) {
-        // Check if user is a field agent (needs device approval)
-        const isFieldAgent = user.roleName === 'FIELD_AGENT' || user.role === 'FIELD' || user.role === 'FIELD_AGENT';
 
-        // Generate authentication code for new device (only for field agents)
-        const authCode = isFieldAgent ? Math.random().toString(36).substring(2, 8).toUpperCase() : null;
-        const authCodeExpiresAt = isFieldAgent ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null; // 24 hours
-
-        // Register new device
-        const insertDev = await query(
-          `INSERT INTO devices ("deviceId", "userId", platform, model, "osVersion", "appVersion", "pushToken", "isActive", "lastActiveAt", "isApproved", "authCode", "authCodeExpiresAt", "registeredAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, true, CURRENT_TIMESTAMP, $8, $9, $10, CURRENT_TIMESTAMP)
-           RETURNING *`,
-          [
-            deviceId,
-            user.id,
-            deviceInfo?.platform || 'ANDROID',
-            deviceInfo?.model || 'Unknown',
-            deviceInfo?.osVersion || 'Unknown',
-            deviceInfo?.appVersion || 'Unknown',
-            deviceInfo?.pushToken || null,
-            !isFieldAgent, // Auto-approve non-field agents, require approval for field agents
-            authCode,
-            authCodeExpiresAt,
-          ]
-        );
-        device = insertDev.rows[0];
-        deviceRegistered = false;
-        deviceNeedsApproval = isFieldAgent;
-
-        // Log device registration for audit
-        await createAuditLog({
-          action: 'DEVICE_REGISTERED',
-          entityType: 'DEVICE',
-          entityId: device.id,
-          details: {
-            deviceId,
-            platform: deviceInfo?.platform || 'ANDROID',
-            model: deviceInfo?.model || 'Unknown',
-            isFieldAgent,
-            needsApproval: deviceNeedsApproval
-          },
-          ipAddress: req.ip,
-          userAgent: req.get('User-Agent'),
-        });
-      } else {
-        // Update existing device
-        await query(
-          `UPDATE devices SET platform = $1, model = $2, "osVersion" = $3, "appVersion" = $4, "pushToken" = $5, "isActive" = true, "lastActiveAt" = CURRENT_TIMESTAMP WHERE id = $6`,
-          [
-            deviceInfo?.platform || device.platform,
-            deviceInfo?.model || device.model,
-            deviceInfo?.osVersion || device.osVersion,
-            deviceInfo?.appVersion || device.appVersion,
-            deviceInfo?.pushToken || device.pushToken,
-            device.id,
-          ]
-        );
-
-        // Check if device is approved for field agents
-        const isFieldAgent = user.roleName === 'FIELD_AGENT' || user.role === 'FIELD' || user.role === 'FIELD_AGENT';
-        if (isFieldAgent && !device.isApproved) {
-          deviceNeedsApproval = true;
-        }
-      }
-
-      // Check if field agent device needs approval
-      if (deviceNeedsApproval && !device.isApproved) {
-        return res.status(403).json({
-          success: false,
-          message: 'Device registration pending approval',
-          error: {
-            code: 'DEVICE_APPROVAL_REQUIRED',
-            timestamp: new Date().toISOString(),
-          },
-          data: {
-            deviceAuthentication: {
-              isApproved: false,
-              needsApproval: true,
-              authCode: device.authCode,
-              authCodeExpiresAt: device.authCodeExpiresAt,
-            },
-          },
-        });
-      }
-
-      // Check device limit per user
-      const cntRes = await query(`SELECT COUNT(*)::int as count FROM devices WHERE "userId" = $1 AND "isActive" = true`, [user.id]);
-      const userDeviceCount = Number(cntRes.rows[0]?.count || 0);
-
-      if (userDeviceCount > config.mobile.maxDevicesPerUser) {
-        // Deactivate oldest device
-        const oldestRes = await query(
-          `SELECT id FROM devices WHERE "userId" = $1 AND "isActive" = true AND id <> $2 ORDER BY "lastActiveAt" ASC LIMIT 1`,
-          [user.id, device.id]
-        );
-        const oldestDevice = oldestRes.rows[0];
-        if (oldestDevice) {
-          await query(`UPDATE devices SET "isActive" = false WHERE id = $1`, [oldestDevice.id]);
-        }
-      }
-
-      // Generate tokens
+      // Generate tokens (simplified - no device ID)
       const accessToken = jwt.sign(
         {
           userId: user.id,
           username: user.username,
           role: user.role,
-          deviceId: device.deviceId,
         } as any,
         config.jwtSecret as any,
         { expiresIn: '24h' } as any
@@ -208,33 +102,25 @@ export class MobileAuthController {
       const refreshToken = jwt.sign(
         {
           userId: user.id,
-          deviceId: device.deviceId,
           type: 'refresh',
         } as any,
         config.jwtSecret as any,
         { expiresIn: '7d' } as any
       );
 
-      // Store refresh token
+      // Store refresh token (simplified - no device ID)
       await query(
-        `INSERT INTO "refreshTokens" (token, "userId", "deviceId", "expiresAt", "createdAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
-        [refreshToken, user.id, device.deviceId, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)]
+        `INSERT INTO "refreshTokens" (token, "userId", "expiresAt", "createdAt") VALUES ($1, $2, $3, CURRENT_TIMESTAMP)`,
+        [refreshToken, user.id, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)]
       );
-
-      // Check for app version compatibility
-      const currentAppVersion = deviceInfo?.appVersion || '1.0.0';
-      const forceUpdate = MobileAuthController.shouldForceUpdate(currentAppVersion);
 
       await createAuditLog({
         action: 'MOBILE_LOGIN_SUCCESS',
         entityType: 'USER',
         entityId: user.id,
         userId: user.id,
-        details: { 
-          deviceId: device.deviceId, 
-          platform: device.platform,
-          appVersion: currentAppVersion,
-          deviceRegistered,
+        details: {
+          authMethod: 'PASSWORD',
         },
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
@@ -258,15 +144,6 @@ export class MobileAuthController {
           tokens: {
             accessToken,
             refreshToken,
-          },
-          deviceRegistered,
-          forceUpdate,
-          minSupportedVersion: config.mobile.minSupportedVersion,
-          deviceAuthentication: {
-            isApproved: device.isApproved,
-            needsApproval: deviceNeedsApproval,
-            authCode: deviceNeedsApproval ? device.authCode : null,
-            authCodeExpiresAt: deviceNeedsApproval ? device.authCodeExpiresAt : null,
           },
         },
       };
@@ -308,9 +185,9 @@ export class MobileAuthController {
       const storedRes = await query(
         `SELECT rt.token, u.id as "userId", u.username, u.role
          FROM "refreshTokens" rt JOIN users u ON u.id = rt."userId"
-         WHERE rt.token = $1 AND rt."userId" = $2 AND rt."deviceId" = $3 AND rt."expiresAt" > CURRENT_TIMESTAMP
+         WHERE rt.token = $1 AND rt."userId" = $2 AND rt."expiresAt" > CURRENT_TIMESTAMP
          LIMIT 1`,
-        [refreshToken, decoded.userId, decoded.deviceId]
+        [refreshToken, decoded.userId]
       );
       const storedToken = storedRes.rows[0];
 
@@ -331,7 +208,6 @@ export class MobileAuthController {
           userId: storedToken.userId,
           username: storedToken.username,
           role: storedToken.role,
-          deviceId: decoded.deviceId,
         } as any,
         config.jwtSecret as any,
         { expiresIn: '24h' } as any
@@ -360,21 +236,17 @@ export class MobileAuthController {
   // Mobile logout
   static async mobileLogout(req: Request, res: Response) {
     try {
-      const { deviceId } = req.body;
       const userId = (req as any).user?.userId;
 
-      if (deviceId) {
-        // Invalidate refresh tokens for this device
-        await query(`DELETE FROM "refreshTokens" WHERE "userId" = $1 AND "deviceId" = $2`, [userId, deviceId]);
-        await query(`UPDATE devices SET "isActive" = false, "lastActiveAt" = CURRENT_TIMESTAMP WHERE "userId" = $1 AND "deviceId" = $2`, [userId, deviceId]);
-      }
+      // Invalidate all refresh tokens for this user
+      await query(`DELETE FROM "refreshTokens" WHERE "userId" = $1`, [userId]);
 
       await createAuditLog({
         action: 'MOBILE_LOGOUT',
         entityType: 'USER',
         entityId: userId,
         userId,
-        details: { deviceId },
+        details: {},
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
       });
@@ -469,17 +341,14 @@ export class MobileAuthController {
     }
   }
 
-  // Register device for push notifications
+  // Register device for push notifications (simplified)
   static async registerNotifications(req: Request, res: Response) {
     try {
-      const { deviceId, pushToken, platform, enabled, preferences }: MobileNotificationRegistrationRequest = req.body;
+      const { pushToken, platform, enabled, preferences } = req.body;
       const userId = (req as any).user?.userId;
 
-      await query(
-        `UPDATE devices SET "pushToken" = $1, "notificationsEnabled" = $2, "notificationPreferences" = $3 WHERE "userId" = $4 AND "deviceId" = $5`,
-        [pushToken, enabled, preferences ? JSON.stringify(preferences) : null, userId, deviceId]
-      );
-
+      // Store notification preferences in user profile or separate table
+      // For now, just return success since we removed device table
       res.json({
         success: true,
         message: 'Notification registration successful',
@@ -521,146 +390,9 @@ export class MobileAuthController {
     return 0;
   }
 
-  // Device Management Methods for Admins
 
-  /**
-   * Get pending device approvals
-   */
-  static async getPendingDevices(req: Request, res: Response) {
-    try {
-      const pendingRes = await query(
-        `SELECT d.*, u.id as u_id, u.name as u_name, u.username as u_username, u."employeeId" as u_employeeId, u.role as u_role
-         FROM devices d JOIN users u ON u.id = d."userId"
-         WHERE d."isApproved" = false AND d."authCode" IS NOT NULL
-         ORDER BY d."registeredAt" DESC`
-      );
-      const pendingDevices = pendingRes.rows.map((r: any) => ({
-        ...r,
-        user: { id: r.u_id, name: r.u_name, username: r.u_username, employeeId: r.u_employeeId, role: r.u_role },
-      }));
 
-      res.json({
-        success: true,
-        data: pendingDevices,
-      });
-    } catch (error) {
-      console.error('Get pending devices error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-        error: {
-          code: 'INTERNAL_ERROR',
-          timestamp: new Date().toISOString(),
-        },
-      });
-    }
-  }
 
-  /**
-   * Approve a device
-   */
-  static async approveDevice(req: Request, res: Response) {
-    try {
-      const { deviceId } = req.params;
-      const adminUserId = (req as any).user?.userId;
-
-      await query(
-        `UPDATE devices SET "isApproved" = true, "approvedAt" = CURRENT_TIMESTAMP, "approvedBy" = $1, "authCode" = NULL, "authCodeExpiresAt" = NULL WHERE id = $2`,
-        [adminUserId, deviceId]
-      );
-      const devRes = await query(
-        `SELECT d.*, u.name as u_name, u.username as u_username, u."employeeId" as u_employeeId
-         FROM devices d JOIN users u ON u.id = d."userId" WHERE d.id = $1`,
-        [deviceId]
-      );
-      const device = devRes.rows[0];
-
-      // Log the approval (temporarily disabled for testing)
-      // await prisma.auditLog.create({
-      //   data: {
-      //     userId: adminUserId,
-      //     action: 'DEVICE_APPROVED',
-      //     entityType: 'DEVICE',
-      //     entityId: device.id,
-      //     details: JSON.stringify({
-      //       deviceId: device.deviceId,
-      //       userId: device.userId,
-      //       platform: device.platform,
-      //       model: device.model,
-      //     }),
-      //     ipAddress: (req as any).ip || 'unknown',
-      //     userAgent: req.get('User-Agent') || 'unknown',
-      //   },
-      // });
-
-      res.json({
-        success: true,
-        message: 'Device approved successfully',
-        data: device,
-      });
-    } catch (error) {
-      console.error('Approve device error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-        error: {
-          code: 'INTERNAL_ERROR',
-          timestamp: new Date().toISOString(),
-        },
-      });
-    }
-  }
-
-  /**
-   * Reject a device
-   */
-  static async rejectDevice(req: Request, res: Response) {
-    try {
-      const { deviceId } = req.params;
-      const { reason } = req.body;
-      const adminUserId = (req as any).user?.userId;
-
-      await query(
-        `UPDATE devices SET "rejectedAt" = CURRENT_TIMESTAMP, "rejectedBy" = $1, "rejectionReason" = $2, "authCode" = NULL, "authCodeExpiresAt" = NULL, "isActive" = false WHERE id = $3`,
-        [adminUserId, reason, deviceId]
-      );
-      const devRes2 = await query(
-        `SELECT d.*, u.name as u_name, u.username as u_username, u."employeeId" as u_employeeId
-         FROM devices d JOIN users u ON u.id = d."userId" WHERE d.id = $1`,
-        [deviceId]
-      );
-      const device = devRes2.rows[0];
-
-      // Log the rejection
-      await query(
-        `INSERT INTO "auditLogs" (id, "userId", action, "entityType", "entityId", details, "ipAddress", "userAgent", "createdAt")
-         VALUES (gen_random_uuid()::text, $1, 'DEVICE_REJECTED', 'DEVICE', $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
-        [
-          adminUserId,
-          device.id,
-          JSON.stringify({ deviceId: device.deviceId, userId: device.userId, platform: device.platform, model: device.model, reason }),
-          (req as any).ip || 'unknown',
-          req.get('User-Agent') || 'unknown',
-        ]
-      );
-
-      res.json({
-        success: true,
-        message: 'Device rejected successfully',
-        data: device,
-      });
-    } catch (error) {
-      console.error('Reject device error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-        error: {
-          code: 'INTERNAL_ERROR',
-          timestamp: new Date().toISOString(),
-        },
-      });
-    }
-  }
 
   /**
    * Get all devices for a user

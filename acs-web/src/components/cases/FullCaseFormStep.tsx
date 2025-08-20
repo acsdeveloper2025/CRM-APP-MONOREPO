@@ -24,6 +24,7 @@ import {
 import { ArrowLeft, Send, Loader2, User, MapPin, Building2, CreditCard, Building } from 'lucide-react';
 import { useFieldUsers } from '@/hooks/useUsers';
 import { useClients, useVerificationTypes, useProductsByClient } from '@/hooks/useClients';
+import { useAuth } from '@/contexts/AuthContext';
 import type { CustomerInfoData } from './CustomerInfoStep';
 
 const fullCaseFormSchema = z.object({
@@ -37,12 +38,15 @@ const fullCaseFormSchema = z.object({
   assignedToId: z.string().min(1, 'Field user assignment is required'),
   clientId: z.string().min(1, 'Client selection is required'),
   productId: z.string().min(1, 'Product selection is required'),
+  applicantType: z.string().min(1, 'Applicant type is required'),
+  createdByBackendUser: z.string().min(1, 'Created by backend user is required'), // Required field
+  backendContactNumber: z.string().min(1, 'Backend contact number is required').regex(/^[+]?[\d\s\-\(\)]{10,15}$/, 'Please enter a valid phone number'),
   verificationType: z.string().min(1, 'Verification type is required'),
   verificationTypeId: z.string().optional(),
 
   // Additional details
-  priority: z.number().min(1).max(5).default(2),
-  notes: z.string().optional(), // TRIGGER field
+  priority: z.number().min(1, 'Priority is required').max(5),
+  notes: z.string().min(1, 'TRIGGER is required'), // Required TRIGGER field
 });
 
 export type FullCaseFormData = z.infer<typeof fullCaseFormSchema>;
@@ -62,12 +66,40 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
   isSubmitting = false,
   initialData = {}
 }) => {
-  const { data: fieldUsersResponse } = useFieldUsers();
-  const { data: clientsResponse } = useClients();
-  const { data: verificationTypesResponse } = useVerificationTypes();
+  const { user } = useAuth();
+  const { data: fieldUsers, isLoading: loadingUsers } = useFieldUsers();
+  const { data: clientsResponse, isLoading: loadingClients } = useClients();
+  const { data: verificationTypesResponse, isLoading: loadingVerificationTypes } = useVerificationTypes();
 
-  // Extract the actual arrays from the API responses
-  const fieldUsers = fieldUsersResponse?.data || [];
+  // Helper function to get user display name
+  const getUserDisplayName = (user: any) => {
+    if (!user) return '';
+
+    // Try different possible name formats
+    if (user.name && typeof user.name === 'string' && user.name.trim()) {
+      return user.name;
+    }
+
+    // If name is just a number/ID, try firstName + lastName
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`.trim();
+    }
+
+    // If only firstName available
+    if (user.firstName) {
+      return user.firstName;
+    }
+
+    // Fallback to username if available
+    if (user.username) {
+      return user.username;
+    }
+
+    // Last resort - return the name even if it looks like an ID
+    return user.name || 'Unknown User';
+  };
+
+  // Extract the actual arrays from the API responses (fieldUsers is already extracted by the hook)
   const clients = clientsResponse?.data || [];
   const verificationTypes = verificationTypesResponse?.data || [];
 
@@ -81,6 +113,9 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
       assignedToId: initialData.assignedToId || '',
       clientId: initialData.clientId || '',
       productId: initialData.productId || '',
+      applicantType: initialData.applicantType || '',
+      createdByBackendUser: initialData.createdByBackendUser || getUserDisplayName(user),
+      backendContactNumber: initialData.backendContactNumber || '',
       verificationType: initialData.verificationType || '',
       verificationTypeId: initialData.verificationTypeId || '',
       priority: initialData.priority || 2,
@@ -230,7 +265,8 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* 1. Client * */}
                 <FormField
                   control={form.control}
                   name="clientId"
@@ -248,11 +284,17 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {clients?.map((client) => (
-                            <SelectItem key={client.id} value={String(client.id)}>
-                              {client.name}
-                            </SelectItem>
-                          ))}
+                          {loadingClients ? (
+                            <SelectItem value="loading" disabled>Loading clients...</SelectItem>
+                          ) : clients.length === 0 ? (
+                            <SelectItem value="no-clients" disabled>No clients available</SelectItem>
+                          ) : (
+                            clients.map((client) => (
+                              <SelectItem key={client.id} value={String(client.id)}>
+                                {client.name}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -260,6 +302,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   )}
                 />
 
+                {/* 2. Product * */}
                 <FormField
                   control={form.control}
                   name="productId"
@@ -285,31 +328,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="assignedToId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Assign to Field User *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select field user" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {fieldUsers?.map((user) => (
-                            <SelectItem key={user.id} value={String(user.id)}>
-                              {user.name} ({user.email})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+                {/* 3. Verification Type * */}
                 <FormField
                   control={form.control}
                   name="verificationType"
@@ -335,12 +354,108 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   )}
                 />
 
+                {/* 4. Applicant Type * */}
+                <FormField
+                  control={form.control}
+                  name="applicantType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Applicant Type *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select applicant type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="APPLICANT">APPLICANT</SelectItem>
+                          <SelectItem value="CO-APPLICANT">CO-APPLICANT</SelectItem>
+                          <SelectItem value="REFERENCE PERSON">REFERENCE PERSON</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 5. Created By Backend User * */}
+                <FormField
+                  control={form.control}
+                  name="createdByBackendUser"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Created By Backend User *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Backend user name"
+                          disabled={true}
+                          className="bg-gray-50 text-gray-600"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 6. Backend Contact Number * */}
+                <FormField
+                  control={form.control}
+                  name="backendContactNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Backend Contact Number *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Enter backend user contact number"
+                          type="tel"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 7. Assign to Field User * */}
+                <FormField
+                  control={form.control}
+                  name="assignedToId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Assign to Field User *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select field user" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {loadingUsers ? (
+                            <SelectItem value="loading" disabled>Loading users...</SelectItem>
+                          ) : !fieldUsers || fieldUsers.length === 0 ? (
+                            <SelectItem value="no-users" disabled>No field users available</SelectItem>
+                          ) : (
+                            fieldUsers.map((user) => (
+                              <SelectItem key={user.id} value={String(user.id)}>
+                                {user.name} ({user.email})
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 8. Priority * */}
                 <FormField
                   control={form.control}
                   name="priority"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Priority</FormLabel>
+                      <FormLabel>Priority *</FormLabel>
                       <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
                         <FormControl>
                           <SelectTrigger>
@@ -360,13 +475,13 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                 />
               </div>
 
-              {/* TRIGGER Field - Moved from Additional Information */}
+              {/* 9. TRIGGER * - Full width field */}
               <FormField
                 control={form.control}
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>TRIGGER</FormLabel>
+                    <FormLabel>TRIGGER *</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Any additional information or special instructions"
@@ -378,6 +493,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   </FormItem>
                 )}
               />
+
             </CardContent>
           </Card>
 

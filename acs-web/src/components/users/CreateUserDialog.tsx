@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -57,6 +57,7 @@ interface CreateUserDialogProps {
 
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
   const queryClient = useQueryClient();
+  const [createdUser, setCreatedUser] = useState<any>(null); // Store created user for territory assignment
 
   const form = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
@@ -110,12 +111,20 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       };
       return usersService.createUser(cleanData as any);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user-stats'] });
       toast.success('User created successfully');
-      form.reset();
-      onOpenChange(false);
+
+      // Store the created user for territory assignment
+      setCreatedUser(response.data);
+
+      // Don't close dialog yet if it's a field agent - allow territory assignment
+      const selectedRole = roles.find(role => role.id === form.getValues('roleId'));
+      if (selectedRole?.name !== 'FIELD_AGENT') {
+        form.reset();
+        onOpenChange(false);
+      }
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to create user');
@@ -124,6 +133,12 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
   const onSubmit = (data: CreateUserFormData) => {
     createMutation.mutate(data);
+  };
+
+  const handleClose = () => {
+    form.reset();
+    setCreatedUser(null);
+    onOpenChange(false);
   };
 
   const roles = rolesData?.data || [];
@@ -156,7 +171,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter full name" {...field} />
+                      <Input placeholder="Enter full name" {...field} disabled={!!createdUser} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -170,7 +185,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter username" {...field} />
+                      <Input placeholder="Enter username" {...field} disabled={!!createdUser} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -185,7 +200,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="Enter email address" {...field} />
+                    <Input type="email" placeholder="Enter email address" {...field} disabled={!!createdUser} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -199,7 +214,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Enter password" {...field} />
+                    <Input type="password" placeholder="Enter password" {...field} disabled={!!createdUser} />
                   </FormControl>
                   <FormDescription>
                     Password must be at least 8 characters long
@@ -216,7 +231,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 <FormItem>
                   <FormLabel>Employee ID</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter employee ID" {...field} />
+                    <Input placeholder="Enter employee ID" {...field} disabled={!!createdUser} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -237,6 +252,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         field.onChange(value);
                       }}
                       value={field.value}
+                      disabled={!!createdUser}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -271,7 +287,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                   <FormItem>
                     <FormLabel>Employee ID</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter employee ID" {...field} />
+                      <Input placeholder="Enter employee ID" {...field} disabled={!!createdUser} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -293,6 +309,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         field.onChange(value);
                       }}
                       value={field.value}
+                      disabled={!!createdUser}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -332,6 +349,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         field.onChange(value);
                       }}
                       value={field.value}
+                      disabled={!!createdUser}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -363,10 +381,26 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             {/* Territory Assignment for Field Agents */}
             {isFieldAgent && (
               <div className="mt-6">
-                <TerritoryAssignmentSection
-                  userRole={selectedRole?.name}
-                  disabled={createMutation.isPending}
-                />
+                {!createdUser ? (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      <strong>Territory Assignment:</strong> Create the user first, then assign territories below.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-700">
+                        <strong>User Created Successfully!</strong> You can now assign territories to {createdUser.name}.
+                      </p>
+                    </div>
+                    <TerritoryAssignmentSection
+                      userId={createdUser.id}
+                      userRole={selectedRole?.name}
+                      disabled={createMutation.isPending}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -374,17 +408,19 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleClose}
                 disabled={createMutation.isPending}
               >
-                Cancel
+                {createdUser ? 'Close' : 'Cancel'}
               </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending ? 'Creating...' : 'Create User'}
-              </Button>
+              {!createdUser && (
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                >
+                  {createMutation.isPending ? 'Creating...' : 'Create User'}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </Form>

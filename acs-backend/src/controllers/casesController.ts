@@ -346,6 +346,23 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       verificationType,
       priority = 2,
       deadline,
+      // New form fields
+      applicantType,
+      createdByBackendUser,
+      backendContactNumber,
+      notes, // TRIGGER field
+      productId,
+      verificationTypeId,
+      // Customer information
+      customerName,
+      customerCallingCode,
+      customerPhone,
+      customerEmail,
+      // Address fields
+      addressStreet,
+      addressCity,
+      addressState,
+      addressPincode,
       // New deduplication fields
       applicantName,
       applicantPhone,
@@ -361,11 +378,12 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
     } = req.body;
 
     // Validate required fields
-    if (!applicantName || !clientId || !assignedToId) {
+    const finalApplicantName = applicantName || customerName;
+    if (!finalApplicantName || !clientId || !assignedToId || !applicantType || !backendContactNumber || !notes) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Missing required fields: applicantName, clientId, assignedToId',
+          message: 'Missing required fields: applicantName/customerName, clientId, assignedToId, applicantType, backendContactNumber, notes',
           code: 'MISSING_REQUIRED_FIELDS'
         }
       });
@@ -394,13 +412,13 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
     const caseData = {
       caseNumber,
       clientId,
-      productId: req.body.productId || null, // Will need to be provided or defaulted
-      verificationTypeId: req.body.verificationTypeId || null, // Will need to be provided or defaulted
-      applicantName,
-      applicantPhone: applicantPhone || contactPhone,
-      applicantEmail,
-      address,
-      pincode: req.body.pincode || null,
+      productId: productId || null,
+      verificationTypeId: verificationTypeId || null,
+      applicantName: finalApplicantName,
+      applicantPhone: applicantPhone || customerPhone || contactPhone,
+      applicantEmail: applicantEmail || customerEmail,
+      address: address || addressStreet,
+      pincode: addressPincode || req.body.pincode || null,
       status: 'PENDING',
       priority: priority === 2 ? 'MEDIUM' : priority === 1 ? 'LOW' : priority === 3 ? 'HIGH' : 'URGENT',
       assignedTo: assignedToId,
@@ -409,6 +427,10 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       aadhaarNumber,
       bankAccountNumber,
       bankIfscCode,
+      // New required fields
+      applicantType,
+      backendContactNumber,
+      notes, // TRIGGER field
       deduplicationChecked: !skipDeduplication,
       deduplicationDecision: deduplicationDecision || (skipDeduplication ? 'NO_DUPLICATES' : null),
       deduplicationRationale
@@ -421,12 +443,14 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
         "applicantName", "applicantPhone", "applicantEmail",
         "address", "pincode", "status", "priority",
         "assignedTo", "createdBy", "panNumber", "aadhaarNumber",
-        "bankAccountNumber", "bankIfscCode", "deduplicationChecked",
+        "bankAccountNumber", "bankIfscCode", "applicantType",
+        "backendContactNumber", "notes", "deduplicationChecked",
         "deduplicationDecision", "deduplicationRationale"
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
-      ) RETURNING *
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+        $21, $22, $23
+      ) RETURNING *, "caseId"
     `;
 
     const result = await pool.query(insertQuery, [
@@ -447,6 +471,9 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       caseData.aadhaarNumber,
       caseData.bankAccountNumber,
       caseData.bankIfscCode,
+      caseData.applicantType,
+      caseData.backendContactNumber,
+      caseData.notes,
       caseData.deduplicationChecked,
       caseData.deduplicationDecision,
       caseData.deduplicationRationale
@@ -454,9 +481,10 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
 
     const newCase = result.rows[0];
 
-    logger.info(`Created new case: ${newCase.id}`, {
+    logger.info(`Created new case: ${newCase.id} (Case ID: ${newCase.caseId})`, {
       userId: req.user?.id,
       caseNumber: newCase.caseNumber,
+      caseId: newCase.caseId,
       applicantName: newCase.applicantName,
       clientId,
       assignedToId,
@@ -466,7 +494,7 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
     res.status(201).json({
       success: true,
       data: newCase,
-      message: 'Case created successfully',
+      message: `Case created successfully with Case ID: ${newCase.caseId}`,
     });
   } catch (error) {
     logger.error('Error creating case:', error);

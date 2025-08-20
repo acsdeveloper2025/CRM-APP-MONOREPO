@@ -2,34 +2,21 @@ import AsyncStorage from '../polyfills/AsyncStorage';
 import { getEnvironmentConfig, getApiConfig } from '../config/environment';
 import { User } from '../types';
 import { tokenManager } from '../utils/tokenManager';
-import DeviceService from './deviceService';
+
 
 export interface LoginRequest {
   username: string;
   password: string;
-  deviceId: string;
-  deviceInfo?: {
-    platform: string;
-    version: string;
-    model: string;
-  };
 }
 
 export interface LoginResponse {
   success: boolean;
-  requiresDeviceAuth?: boolean;
   data?: {
     user: User;
     tokens: {
       accessToken: string;
       refreshToken: string;
       expiresIn: number;
-    };
-    deviceAuthentication?: {
-      isApproved: boolean;
-      needsApproval: boolean;
-      authCode?: string | null;
-      authCodeExpiresAt?: Date | null;
     };
   };
   error?: {
@@ -64,54 +51,7 @@ class AuthService {
   private apiConfig = getApiConfig();
   private refreshTokenPromise: Promise<string | null> | null = null;
 
-  /**
-   * Get device UUID for authentication
-   */
-  private async getDeviceId(): Promise<string> {
-    try {
-      const deviceService = DeviceService.getInstance();
-      return await deviceService.getDeviceUUID();
-    } catch (error) {
-      console.error('Error getting device UUID:', error);
-      // Fallback to legacy device ID if new service fails
-      let deviceId = await AsyncStorage.getItem('deviceId');
 
-      if (!deviceId) {
-        // Generate a fallback device ID
-        deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        await AsyncStorage.setItem('deviceId', deviceId);
-      }
-
-      return deviceId;
-    }
-  }
-
-  /**
-   * Get device information
-   */
-  private async getDeviceInfo() {
-    try {
-      const deviceService = DeviceService.getInstance();
-      const registrationInfo = await deviceService.getDeviceRegistrationInfo();
-
-      if (registrationInfo) {
-        return {
-          platform: registrationInfo.platform,
-          version: registrationInfo.appVersion,
-          model: registrationInfo.model || 'Unknown',
-        };
-      }
-    } catch (error) {
-      console.error('Error getting device info:', error);
-    }
-
-    // Fallback to basic device info
-    return {
-      platform: 'WEB', // Use uppercase to match database constraint
-      version: this.config.app.version,
-      model: 'Browser',
-    };
-  }
 
   /**
    * Make authenticated API request
@@ -173,14 +113,9 @@ class AuthService {
    */
   async login(username: string, password: string): Promise<LoginResponse> {
     try {
-      const deviceId = await this.getDeviceId();
-      const deviceInfo = await this.getDeviceInfo();
-
       const loginRequest: LoginRequest = {
         username: username.trim(),
         password,
-        deviceId,
-        deviceInfo,
       };
 
       const response = await fetch(`${this.apiConfig.baseUrl}/mobile/auth/login`, {

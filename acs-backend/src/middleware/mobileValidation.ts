@@ -70,55 +70,7 @@ export const validateMobileVersion = (req: Request, res: Response, next: NextFun
   }
 };
 
-// Validate device information
-export const validateDeviceInfo = (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const deviceId = req.headers['x-device-id'] as string;
-    const platform = req.headers['x-platform'] as string;
 
-    if (!deviceId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Device ID header is required',
-        error: {
-          code: 'MISSING_DEVICE_ID',
-          timestamp: new Date().toISOString(),
-        },
-      });
-    }
-
-    if (platform && !['IOS', 'ANDROID'].includes(platform.toUpperCase())) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid platform. Must be IOS or ANDROID',
-        error: {
-          code: 'INVALID_PLATFORM',
-          timestamp: new Date().toISOString(),
-        },
-      });
-    }
-
-    // Add device info to request
-    (req as any).deviceInfo = {
-      deviceId,
-      platform: platform?.toUpperCase(),
-      userAgent: req.get('User-Agent'),
-      ipAddress: req.ip,
-    };
-
-    next();
-  } catch (error) {
-    console.error('Device validation error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: {
-        code: 'DEVICE_VALIDATION_FAILED',
-        timestamp: new Date().toISOString(),
-      },
-    });
-  }
-};
 
 // Rate limiting for mobile endpoints
 export const mobileRateLimit = (maxRequests: number = 100, windowMs: number = 15 * 60 * 1000) => {
@@ -126,7 +78,7 @@ export const mobileRateLimit = (maxRequests: number = 100, windowMs: number = 15
 
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const deviceId = req.headers['x-device-id'] as string || req.ip;
+      const identifier = req.ip; // Use IP address instead of device ID
       const now = Date.now();
       const windowStart = now - windowMs;
 
@@ -137,11 +89,11 @@ export const mobileRateLimit = (maxRequests: number = 100, windowMs: number = 15
         }
       }
 
-      // Get or create request count for this device
-      let requestInfo = requests.get(deviceId);
+      // Get or create request count for this identifier
+      let requestInfo = requests.get(identifier);
       if (!requestInfo || requestInfo.resetTime < windowStart) {
         requestInfo = { count: 0, resetTime: now + windowMs };
-        requests.set(deviceId, requestInfo);
+        requests.set(identifier, requestInfo);
       }
 
       // Check rate limit

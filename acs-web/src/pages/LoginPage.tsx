@@ -8,11 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+
+import { Smartphone } from 'lucide-react';
 import type { LoginRequest } from '@/types/auth';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
+  deviceId: z.string().optional(),
+  macAddress: z.string().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -21,6 +26,7 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   const {
     register,
@@ -43,7 +49,7 @@ export const LoginPage: React.FC = () => {
       if (success) {
         navigate('/dashboard');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
     } finally {
       setIsSubmitting(false);
@@ -57,6 +63,8 @@ export const LoginPage: React.FC = () => {
       </div>
     );
   }
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -107,6 +115,23 @@ export const LoginPage: React.FC = () => {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="deviceId">Device ID (Optional)</Label>
+                <Input
+                  id="deviceId"
+                  type="text"
+                  placeholder="Enter device UUID for device authentication"
+                  {...register('deviceId')}
+                  className={errors.deviceId ? 'border-red-500' : ''}
+                />
+                {errors.deviceId && (
+                  <p className="text-sm text-red-500">{errors.deviceId.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Optional: Use device UUID for enhanced security authentication
+                </p>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full"
@@ -117,6 +142,8 @@ export const LoginPage: React.FC = () => {
             </form>
           </CardContent>
         </Card>
+
+
       </div>
     </div>
   );

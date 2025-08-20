@@ -14,7 +14,7 @@ import {
   Shield,
   Plus,
   CheckCircle,
-  Smartphone,
+
   DollarSign
 } from 'lucide-react';
 
@@ -224,13 +224,7 @@ export const navigationItems: NavigationItem[] = [
         icon: Shield,
         permission: { resource: 'roles', action: 'read' },
       },
-      {
-        id: 'devices',
-        label: 'Device Management',
-        href: '/devices',
-        icon: Smartphone,
-        permission: { resource: 'users', action: 'read' },
-      },
+
     ],
   },
   {

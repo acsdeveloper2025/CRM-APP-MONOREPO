@@ -25,7 +25,7 @@ import { SecurityUXPage } from '@/pages/SecurityUXPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProductsPage } from '@/pages/ProductsPage';
 import { VerificationTypesPage } from '@/pages/VerificationTypesPage';
-import { DeviceManagementPage } from '@/pages/DeviceManagementPage';
+
 import { RateManagementPage } from '@/pages/RateManagementPage';
 import { RateManagementTestPage } from '@/pages/RateManagementTestPage';
 
@@ -215,16 +215,7 @@ export const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/devices"
-        element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
-            <Layout>
-              <DeviceManagementPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
+
 
       {/* Reports routes */}
       <Route

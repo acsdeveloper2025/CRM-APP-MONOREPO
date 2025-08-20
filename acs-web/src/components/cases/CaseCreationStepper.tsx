@@ -122,6 +122,9 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
         assignedToId: data.assignedToId,
         clientId: data.clientId,
         productId: data.productId,
+        applicantType: data.applicantType,
+        createdByBackendUser: data.createdByBackendUser,
+        backendContactNumber: data.backendContactNumber,
         verificationType: data.verificationType,
         verificationTypeId: data.verificationTypeId,
         priority: data.priority,
@@ -136,9 +139,10 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
       };
 
       const result = await casesService.createCase(caseData);
-      
+
       if (result.success) {
-        toast.success('Case created successfully!');
+        const caseId = result.data.caseId || result.data.id;
+        toast.success(`Case created successfully! Case ID: ${caseId}`);
         onSuccess?.(result.data.id);
       } else {
         toast.error('Failed to create case');

@@ -4,7 +4,7 @@ import { query } from '@/config/database';
 import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from '@/middleware/auth';
 import type { Role } from '@/types/auth';
-import DeviceAuthLogger from '@/services/deviceAuthLogger';
+
 
 // GET /api/users - List users with pagination and filters
 export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
@@ -86,15 +86,14 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
         u."lastLogin",
         u."createdAt",
         u."updatedAt",
+
         r.name as "roleName",
         d.name as "departmentName",
-        des.name as "designationName",
-        dev."deviceId"
+        des.name as "designationName"
       FROM users u
       LEFT JOIN roles r ON u."roleId" = r.id
       LEFT JOIN departments d ON u."departmentId" = d.id
       LEFT JOIN designations des ON u."designationId" = des.id
-      LEFT JOIN devices dev ON u.id = dev."userId" AND dev."isActive" = true AND dev."isApproved" = true
       ${whereClause}
       ORDER BY u.${safeSortBy} ${safeSortOrder}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -151,18 +150,17 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
         u."lastLogin",
         u."createdAt",
         u."updatedAt",
+
         r.name as "roleName",
         r.description as "roleDescription",
         r.permissions as "rolePermissions",
         d.name as "departmentName",
         d.description as "departmentDescription",
-        des.name as "designationName",
-        dev."deviceId"
+        des.name as "designationName"
       FROM users u
       LEFT JOIN roles r ON u."roleId" = r.id
       LEFT JOIN departments d ON u."departmentId" = d.id
       LEFT JOIN designations des ON u."designationId" = des.id
-      LEFT JOIN devices dev ON u.id = dev."userId" AND dev."isActive" = true AND dev."isApproved" = true
       WHERE u.id = $1
     `;
     

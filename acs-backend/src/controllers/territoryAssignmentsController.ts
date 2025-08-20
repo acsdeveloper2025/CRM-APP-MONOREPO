@@ -68,7 +68,7 @@ export const getFieldAgentTerritories = async (req: Request, res: Response) => {
 
     // Get field agents with territory assignments using the view
     const sql = `
-      SELECT DISTINCT
+      SELECT
         u.id as "userId",
         u.name as "userName",
         u.username,
@@ -81,8 +81,8 @@ export const getFieldAgentTerritories = async (req: Request, res: Response) => {
               'pincodeId', upa."pincodeId",
               'pincodeCode', p.code,
               'cityName', c.name,
-              'stateName', c.state,
-              'countryName', c.country,
+              'stateName', s.name,
+              'countryName', co.name,
               'assignedAreas', COALESCE(area_agg.areas, '[]'::json),
               'pincodeAssignedAt', upa."assignedAt",
               'isActive', upa."isActive"
@@ -94,6 +94,8 @@ export const getFieldAgentTerritories = async (req: Request, res: Response) => {
       LEFT JOIN "userPincodeAssignments" upa ON u.id = upa."userId" AND upa."isActive" = true
       LEFT JOIN pincodes p ON upa."pincodeId" = p.id
       LEFT JOIN cities c ON p."cityId" = c.id
+      LEFT JOIN states s ON c."stateId" = s.id
+      LEFT JOIN countries co ON c."countryId" = co.id
       LEFT JOIN (
         SELECT
           uaa."userId",
@@ -102,12 +104,12 @@ export const getFieldAgentTerritories = async (req: Request, res: Response) => {
             JSON_BUILD_OBJECT(
               'areaAssignmentId', uaa.id,
               'areaId', uaa."areaId",
-              'areaName', pa.name,
+              'areaName', a.name,
               'assignedAt', uaa."assignedAt"
             )
           ) as areas
         FROM "userAreaAssignments" uaa
-        LEFT JOIN "pincodeAreas" pa ON uaa."areaId" = pa.id
+        LEFT JOIN areas a ON uaa."areaId" = a.id
         WHERE uaa."isActive" = true
         GROUP BY uaa."userId", uaa."pincodeId"
       ) area_agg ON upa."userId" = area_agg."userId" AND upa."pincodeId" = area_agg."pincodeId"

@@ -36,15 +36,7 @@ export interface MobileLoginResponse {
       accessToken: string;
       refreshToken: string;
     };
-    deviceRegistered: boolean;
-    forceUpdate?: boolean;
-    minSupportedVersion?: string;
-    deviceAuthentication?: {
-      isApproved: boolean;
-      needsApproval: boolean;
-      authCode?: string | null;
-      authCodeExpiresAt?: Date | null;
-    };
+
   };
 }
 
