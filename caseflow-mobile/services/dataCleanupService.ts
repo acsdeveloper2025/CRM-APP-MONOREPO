@@ -56,8 +56,6 @@ class DataCleanupService {
    */
   async initialize(): Promise<void> {
     try {
-      console.log('🧹 Initializing Data Cleanup Service...');
-      
       // Check if user has been notified about cleanup
       const userNotified = await this.getUserNotificationStatus();
       if (!userNotified) {
@@ -66,13 +64,11 @@ class DataCleanupService {
 
       // Schedule daily cleanup checks
       await this.scheduleCleanupCheck();
-      
+
       // Run initial cleanup check
       await this.checkAndCleanup();
-      
-      console.log('✅ Data Cleanup Service initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize Data Cleanup Service:', error);
+      console.error('Failed to initialize Data Cleanup Service:', error);
     }
   }
 
@@ -87,11 +83,8 @@ class DataCleanupService {
 
       // Check if 24 hours have passed since last cleanup
       if (timeSinceLastCleanup >= this.CLEANUP_INTERVAL) {
-        console.log('🧹 Starting scheduled data cleanup...');
         return await this.performCleanup();
       } else {
-        const hoursUntilNext = Math.ceil((this.CLEANUP_INTERVAL - timeSinceLastCleanup) / (60 * 60 * 1000));
-        console.log(`⏰ Next cleanup in ${hoursUntilNext} hours`);
         
         return {
           success: true,
@@ -129,8 +122,6 @@ class DataCleanupService {
     };
 
     try {
-      console.log('🧹 Starting data cleanup process...');
-      
       // 1. Clean up case data from AsyncStorage
       const storageResult = await this.cleanupStorageData();
       result.deletedCases += storageResult.deletedCases;
@@ -201,7 +192,6 @@ class DataCleanupService {
                 await AsyncStorage.removeItem(key);
               }
               result.deletedCases++;
-              console.log(`🗑️ Deleted expired case data: ${key}`);
             }
           }
         } catch (error) {
@@ -313,7 +303,6 @@ class DataCleanupService {
                 await AsyncStorage.removeItem(key);
               }
               result.deletedCases++;
-              console.log(`🗑️ Deleted expired auto-save data: ${key}`);
             }
           }
         } catch (error) {
@@ -354,7 +343,6 @@ class DataCleanupService {
                 await AsyncStorage.removeItem(key);
               }
               result.deletedFiles++;
-              console.log(`🗑️ Deleted expired temp data: ${key}`);
             }
           }
         } catch (error) {
@@ -547,7 +535,6 @@ class DataCleanupService {
    * Manual cleanup trigger (for testing or user-initiated cleanup)
    */
   async manualCleanup(): Promise<CleanupResult> {
-    console.log('🧹 Manual cleanup triggered');
     return await this.performCleanup();
   }
 

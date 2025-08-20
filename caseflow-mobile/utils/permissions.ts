@@ -267,12 +267,9 @@ export const showPermissionRationale = (permissionType: string, message: string)
  * Initialize app permissions on startup
  */
 export const initializeAppPermissions = async (): Promise<PermissionResult> => {
-  console.log('🚀 Initializing app permissions...');
-
   try {
     // Check current permissions first
     const currentPermissions = await checkPermissions();
-    console.log('📋 Current permission status:', currentPermissions);
 
     // Request permissions that are not yet granted
     const results: PermissionResult = {
@@ -283,7 +280,6 @@ export const initializeAppPermissions = async (): Promise<PermissionResult> => {
 
     // Request camera permissions if not granted
     if (!currentPermissions.camera.granted && !currentPermissions.camera.denied) {
-      console.log('📷 Requesting camera permissions on startup...');
       results.camera = await requestCameraPermissions({
         showRationale: true,
         context: 'capture verification photos and selfies'

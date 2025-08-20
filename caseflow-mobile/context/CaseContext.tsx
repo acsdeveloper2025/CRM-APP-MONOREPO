@@ -82,7 +82,8 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
     try {
       const data = await caseService.getCases();
-      setCases(data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+      const casesArray = Array.isArray(data) ? data : [];
+      setCases(casesArray.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
     } catch (err) {
       setError('Failed to fetch cases.');
       console.error(err);

@@ -79,7 +79,7 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
       // Check camera availability first
       const cameraAvailable = await checkCameraAvailability();
       if (!cameraAvailable) {
-        console.warn('📷 Camera not available, using file input fallback');
+        console.warn('Camera not available, using file input fallback');
         if (fileInputRef.current) {
           fileInputRef.current.click();
           return;
@@ -89,7 +89,6 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
         }
       }
       // Request camera permissions first with enhanced options
-      console.log('🔐 Requesting camera permissions...');
       const cameraPermission = await requestCameraPermissions({
         showRationale: true,
         fallbackToSettings: true,
@@ -136,18 +135,9 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
         console.log('📱 Using iOS camera configuration');
       }
 
-      console.log('📷 Camera options:', cameraOptions);
-
       const image = await Camera.getPhoto(cameraOptions);
-      console.log('📷 Camera.getPhoto result:', {
-        hasDataUrl: !!image.dataUrl,
-        format: image.format,
-        webPath: image.webPath,
-        dataUrlLength: image.dataUrl?.length
-      });
 
       if (image.dataUrl) {
-        console.log('🔄 Processing captured image...');
         // Add timeout to prevent hanging
         await Promise.race([
           processImage(image.dataUrl),
@@ -155,9 +145,7 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
             setTimeout(() => reject(new Error('Image processing timeout after 15 seconds')), 15000)
           )
         ]);
-        console.log('✅ Image processing completed successfully');
       } else {
-        console.error('❌ No image data received from camera');
         throw new Error('No image data received from camera');
       }
     } catch (error: any) {
@@ -170,13 +158,10 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
 
       // Handle specific error types
       if (error.message?.includes('User cancelled')) {
-        console.log('ℹ️ User cancelled camera capture');
         return; // Don't show error for user cancellation
       } else if (error.message?.includes('timeout')) {
-        console.error('⏰ Image processing timeout');
         setError('Image processing timed out. Please try again.');
       } else if (error.message?.includes('permission')) {
-        console.error('🔐 Permission error during capture');
         const platform = Capacitor.getPlatform();
         if (platform === 'android') {
           const androidError = getAndroidCameraErrorMessage(error);

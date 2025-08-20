@@ -38,8 +38,6 @@ class BackgroundTaskManager {
     if (this.isInitialized) return;
 
     try {
-      console.log('🔄 Initializing Background Task Manager...');
-
       // Request notification permissions
       await this.requestNotificationPermissions();
 
@@ -56,9 +54,8 @@ class BackgroundTaskManager {
       this.startAllTasks();
 
       this.isInitialized = true;
-      console.log('✅ Background Task Manager initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize Background Task Manager:', error);
+      console.error('Failed to initialize Background Task Manager:', error);
     }
   }
 
@@ -90,9 +87,7 @@ class BackgroundTaskManager {
       lastRun: 0,
       enabled: true,
       handler: async () => {
-        console.log('🧹 Running background data cleanup...');
-        const result = await dataCleanupService.checkAndCleanup();
-        console.log('🧹 Background cleanup result:', result);
+        await dataCleanupService.checkAndCleanup();
       }
     });
 
@@ -104,7 +99,6 @@ class BackgroundTaskManager {
       lastRun: 0,
       enabled: true,
       handler: async () => {
-        console.log('💓 Running app health check...');
         await this.performHealthCheck();
       }
     });
@@ -117,7 +111,6 @@ class BackgroundTaskManager {
       lastRun: 0,
       enabled: true,
       handler: async () => {
-        console.log('⚡ Running cache optimization...');
         await this.optimizeCache();
       }
     });
@@ -128,7 +121,6 @@ class BackgroundTaskManager {
    */
   registerTask(task: BackgroundTask): void {
     this.tasks.set(task.id, task);
-    console.log(`📝 Registered background task: ${task.name}`);
   }
 
   /**
@@ -147,12 +139,11 @@ class BackgroundTaskManager {
         await task.handler();
         task.lastRun = Date.now();
       } catch (error) {
-        console.error(`❌ Background task ${task.name} failed:`, error);
+        console.error(`Background task ${task.name} failed:`, error);
       }
     }, task.interval);
 
     this.intervalIds.set(taskId, intervalId);
-    console.log(`▶️ Started background task: ${task.name}`);
   }
 
   /**
@@ -164,8 +155,7 @@ class BackgroundTaskManager {
       clearInterval(intervalId);
       this.intervalIds.delete(taskId);
       
-      const task = this.tasks.get(taskId);
-      console.log(`⏹️ Stopped background task: ${task?.name || taskId}`);
+
     }
   }
 
@@ -249,7 +239,6 @@ class BackgroundTaskManager {
       const action = notification.extra?.action;
       
       if (action === 'cleanupCheck') {
-        console.log('🔔 Cleanup notification received - running cleanup');
         this.runTaskImmediately('dataCleanup');
       }
     });
@@ -258,7 +247,6 @@ class BackgroundTaskManager {
       const action = notificationAction.notification.extra?.action;
       
       if (action === 'cleanupCheck') {
-        console.log('🔔 Cleanup action performed - running cleanup');
         this.runTaskImmediately('dataCleanup');
       }
     });
@@ -293,7 +281,6 @@ class BackgroundTaskManager {
       const shouldHaveRun = timeSinceLastRun >= task.interval;
       
       if (shouldHaveRun) {
-        console.log(`⏰ Task ${task.name} is overdue - running now`);
         await this.runTaskImmediately(taskId);
       }
     }
@@ -310,7 +297,7 @@ class BackgroundTaskManager {
         const memUsage = memInfo.usedJSHeapSize / memInfo.totalJSHeapSize;
         
         if (memUsage > 0.8) {
-          console.warn('⚠️ High memory usage detected:', memUsage);
+          console.warn('High memory usage detected:', memUsage);
           // Trigger cache cleanup
           await this.runTaskImmediately('cacheOptimization');
         }
@@ -319,14 +306,13 @@ class BackgroundTaskManager {
       // Check local storage usage
       const storageUsage = await this.checkStorageUsage();
       if (storageUsage > 50 * 1024 * 1024) { // 50MB
-        console.warn('⚠️ High storage usage detected:', storageUsage);
+        console.warn('High storage usage detected:', storageUsage);
         // Suggest cleanup
         await this.suggestCleanup();
       }
 
-      console.log('💓 Health check completed');
     } catch (error) {
-      console.error('❌ Health check failed:', error);
+      console.error('Health check failed:', error);
     }
   }
 
@@ -336,10 +322,8 @@ class BackgroundTaskManager {
   private async optimizeCache(): Promise<void> {
     try {
       // This would implement cache optimization logic
-      // For now, just log the action
-      console.log('⚡ Cache optimization completed');
     } catch (error) {
-      console.error('❌ Cache optimization failed:', error);
+      console.error('Cache optimization failed:', error);
     }
   }
 
@@ -409,11 +393,9 @@ class BackgroundTaskManager {
    * Cleanup and shutdown
    */
   shutdown(): void {
-    console.log('🔄 Shutting down Background Task Manager...');
     this.stopAllTasks();
     this.tasks.clear();
     this.isInitialized = false;
-    console.log('✅ Background Task Manager shutdown complete');
   }
 }
 

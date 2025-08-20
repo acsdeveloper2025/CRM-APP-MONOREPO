@@ -74,7 +74,6 @@ const AttachmentViewer: React.FC<AttachmentViewerProps> = ({ attachment, isVisib
 
 
   const handlePdfLoad = () => {
-    console.log('✅ PDF loaded successfully');
     setPdfLoaded(true);
     setPdfError(null);
   };
