@@ -40,14 +40,7 @@ const AppNavigator: React.FC = () => {
 
         if (isValid) {
           // Initialize Google Maps service
-          const initialized = await googleMapsService.initialize();
-          if (initialized) {
-            console.log('✅ Google Maps API initialized successfully');
-          } else {
-            console.warn('⚠️ Google Maps API initialization failed - using fallback services');
-          }
-        } else {
-          console.warn('⚠️ Environment configuration invalid - some features may not work');
+          await googleMapsService.initialize();
         }
 
         // Initialize background task manager (includes data cleanup)
@@ -135,7 +128,12 @@ const App: React.FC = () => {
   try {
     return (
       <ErrorBoundary>
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
           <SafeAreaProvider>
             <ResponsiveLayoutProvider>
               <AuthProvider>
