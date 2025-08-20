@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, Edit, Trash2, UserCheck, UserX, Eye, Shield, Key, Smartphone } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, UserCheck, UserX, Eye, Shield, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -38,7 +38,7 @@ import { User } from '@/types/user';
 import { EditUserDialog } from './EditUserDialog';
 import { UserDetailsDialog } from './UserDetailsDialog';
 import { ResetPasswordDialog } from './ResetPasswordDialog';
-import { DeviceManagementDialog } from './DeviceManagementDialog';
+
 import { getRoleBadge } from '@/utils/roleUtils';
 
 interface UsersTableProps {
@@ -52,7 +52,7 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
-  const [showDeviceManagementDialog, setShowDeviceManagementDialog] = useState(false);
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
@@ -124,10 +124,7 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
     setShowResetPasswordDialog(true);
   };
 
-  const handleDeviceManagement = (user: User) => {
-    setSelectedUser(user);
-    setShowDeviceManagementDialog(true);
-  };
+
 
   const handleDelete = (user: User) => {
     setUserToDelete(user);
@@ -311,10 +308,7 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                         <Key className="mr-2 h-4 w-4" />
                         Reset Password
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDeviceManagement(user)}>
-                        <Smartphone className="mr-2 h-4 w-4" />
-                        Device Management
-                      </DropdownMenuItem>
+
                       <DropdownMenuSeparator />
                       {user.isActive ? (
                         <DropdownMenuItem 
@@ -375,14 +369,7 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
         />
       )}
 
-      {/* Device Management Dialog */}
-      {selectedUser && (
-        <DeviceManagementDialog
-          user={selectedUser}
-          open={showDeviceManagementDialog}
-          onOpenChange={setShowDeviceManagementDialog}
-        />
-      )}
+
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
