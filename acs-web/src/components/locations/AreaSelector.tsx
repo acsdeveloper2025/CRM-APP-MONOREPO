@@ -57,17 +57,7 @@ export function AreaSelector({
 
   const availableAreas = areasData?.data || [];
 
-  // Debug logging
-  React.useEffect(() => {
-    if (open) {
-      console.log('AreaSelector - Dropdown opened');
-      console.log('AreaSelector - cityId:', cityId);
-      console.log('AreaSelector - searchValue:', searchValue);
-      console.log('AreaSelector - isLoading:', isLoading);
-      console.log('AreaSelector - queryError:', queryError);
-      console.log('AreaSelector - availableAreas:', availableAreas);
-    }
-  }, [open, cityId, searchValue, isLoading, queryError, availableAreas]);
+
 
   // Get unique area names from available areas
   const uniqueAreaNames = Array.from(

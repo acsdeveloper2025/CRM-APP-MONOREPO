@@ -25,20 +25,14 @@ const ProfileScreen = lazy(() => import('./screens/ProfileScreen'));
 const DigitalIdCardScreen = lazy(() => import('./screens/DigitalIdCardScreen'));
 
 const AppNavigator: React.FC = () => {
-  console.log('🔄 AppNavigator: Component rendering...');
   const { isAuthenticated, isLoading } = useAuth();
-  console.log('🔐 AppNavigator: Auth state -', { isAuthenticated, isLoading });
 
   // Initialize services on app start
   useEffect(() => {
     const initializeServices = async () => {
       try {
-        console.log('🚀 Starting app initialization...');
-
         // Initialize app permissions first (critical for iOS)
-        console.log('🔐 Initializing permissions...');
         const permissions = await initializeAppPermissions();
-        console.log('🔐 Permission initialization complete:', permissions);
 
         // Validate environment configuration
         const config = getEnvironmentConfig();
@@ -109,29 +103,24 @@ const AppNavigator: React.FC = () => {
     <MobileContainer>
       <Suspense fallback={<RouteLoader />}>
         <Routes>
-          {(() => {
-            console.log('🚀 App: Rendering routes, isAuthenticated:', isAuthenticated);
-            return isAuthenticated ? (
-              <>
-                {console.log('🚀 App: User is authenticated, showing dashboard routes')}
-                <Route path="/" element={<DashboardScreen />} />
-                <Route path="/cases" element={<CaseListScreen title="All Cases" filter={() => true} emptyMessage="No cases available." tabKey="all" searchPlaceholder="Search all cases..." />} />
-                <Route path="/cases/assigned" element={<AssignedCasesScreen />} />
-                <Route path="/cases/in-progress" element={<InProgressCasesScreen />} />
-                <Route path="/cases/completed" element={<CompletedCasesScreen />} />
-                <Route path="/cases/saved" element={<SavedCasesScreen />} />
-                <Route path="/profile" element={<ProfileScreen />} />
-                <Route path="/digital-id-card" element={<DigitalIdCardScreen />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </>
-            ) : (
-              <>
-                {console.log('🚀 App: User is not authenticated, showing login routes')}
-                <Route path="/login" element={<NewLoginScreen />} />
-                <Route path="*" element={<Navigate to="/login" replace />} />
-              </>
-            );
-          })()}
+          {isAuthenticated ? (
+            <>
+              <Route path="/" element={<DashboardScreen />} />
+              <Route path="/cases" element={<CaseListScreen title="All Cases" filter={() => true} emptyMessage="No cases available." tabKey="all" searchPlaceholder="Search all cases..." />} />
+              <Route path="/cases/assigned" element={<AssignedCasesScreen />} />
+              <Route path="/cases/in-progress" element={<InProgressCasesScreen />} />
+              <Route path="/cases/completed" element={<CompletedCasesScreen />} />
+              <Route path="/cases/saved" element={<SavedCasesScreen />} />
+              <Route path="/profile" element={<ProfileScreen />} />
+              <Route path="/digital-id-card" element={<DigitalIdCardScreen />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          ) : (
+            <>
+              <Route path="/login" element={<NewLoginScreen />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </>
+          )}
         </Routes>
       </Suspense>
       {isAuthenticated && <BottomNavigation />}

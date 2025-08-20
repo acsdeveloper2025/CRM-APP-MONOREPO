@@ -16,7 +16,7 @@ function GlobalWebSocket() {
   useWebSocket({
     autoConnect: true,
     onNotification: (notification) => {
-      console.log('Global notification:', notification);
+      // Handle global notifications
     },
   });
   return null;

@@ -44,22 +44,17 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
-console.log('🚀 CaseFlow Mobile: Starting application...');
-
 const container = document.getElementById('root');
 if (!container) {
-  console.error('❌ Root container not found!');
+  console.error('Root container not found!');
   throw new Error('Root container not found');
 }
 
-console.log('✅ Root container found, creating React root...');
 const root = createRoot(container);
 
 try {
-  console.log('✅ Rendering App component...');
   root.render(<App />);
-  console.log('✅ App component rendered successfully!');
 } catch (error) {
-  console.error('❌ Error rendering App:', error);
+  console.error('Error rendering App:', error);
   throw error;
 }

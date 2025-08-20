@@ -151,7 +151,6 @@ export class MobileAuthController {
 
       return res.json(response);
     } catch (error) {
-      console.error('Mobile login error:', error);
       return res.status(500).json({
         success: false,
         message: 'Internal server error',
@@ -257,7 +256,6 @@ export class MobileAuthController {
         message: 'Logout successful',
       });
     } catch (error) {
-      console.error('Mobile logout error:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error',

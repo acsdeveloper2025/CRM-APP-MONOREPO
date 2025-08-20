@@ -103,7 +103,6 @@ class AuthService {
 
       return response;
     } catch (error) {
-      console.error('API request failed:', error);
       throw error;
     }
   }
@@ -262,7 +261,6 @@ class AuthService {
 
       return token;
     } catch (error) {
-      console.error('Error getting access token:', error);
       return null;
     }
   }
@@ -324,7 +322,7 @@ class AuthService {
       await tokenManager.clearTokens();
       await AsyncStorage.removeItem('user');
     } catch (error) {
-      console.error('Error clearing auth data:', error);
+      // Silently fail - clearing auth data is not critical
     }
   }
 

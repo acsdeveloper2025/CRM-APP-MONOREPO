@@ -324,8 +324,6 @@ export const initializeAppPermissions = async (): Promise<PermissionResult> => {
  * Request all permissions at once with enhanced options
  */
 export const requestAllPermissions = async (options: PermissionRequestOptions = {}): Promise<PermissionResult> => {
-  console.log('🔐 Requesting all permissions...');
-
   const [camera, location, notifications] = await Promise.all([
     requestCameraPermissions(options),
     requestLocationPermissions(options),
@@ -333,7 +331,6 @@ export const requestAllPermissions = async (options: PermissionRequestOptions = 
   ]);
 
   const result = { camera, location, notifications };
-  console.log('🔐 All permissions request complete:', result);
   return result;
 };
 

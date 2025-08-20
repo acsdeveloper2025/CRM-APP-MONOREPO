@@ -48,7 +48,6 @@ export class AuthService {
       await apiService.post('/auth/logout');
     } catch (error) {
       // Continue with logout even if API call fails
-      console.error('Logout API call failed:', error);
     } finally {
       // Clear local storage
       localStorage.removeItem('accessToken');
@@ -63,7 +62,6 @@ export class AuthService {
       try {
         return JSON.parse(userStr);
       } catch (error) {
-        console.error('Failed to parse user data:', error);
         return null;
       }
     }

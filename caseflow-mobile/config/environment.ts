@@ -256,8 +256,6 @@ export const validateEnvironmentConfig = (config: EnvironmentConfig): boolean =>
   // Validate Google Maps configuration
   if (!config.googleMaps.apiKey) {
     warnings.push('Google Maps API key is not configured - map features will be limited');
-  } else if (config.googleMaps.apiKey === 'AIzaSyDCl8zO1ysulgTpIHg3mw4hcuxLIM4kcJc') {
-    console.log('Using configured Google Maps API key');
   }
 
   // Validate file upload configuration

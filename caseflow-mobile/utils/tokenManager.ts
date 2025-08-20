@@ -42,7 +42,6 @@ class TokenManager {
       ]);
 
     } catch (error) {
-      console.error('Error storing tokens:', error);
       throw new Error('Failed to store authentication tokens');
     }
   }
@@ -54,7 +53,6 @@ class TokenManager {
     try {
       return await AsyncStorage.getItem(this.ACCESS_TOKEN_KEY);
     } catch (error) {
-      console.error('Error getting access token:', error);
       return null;
     }
   }
@@ -164,7 +162,6 @@ class TokenManager {
       const decoded = JSON.parse(this.base64UrlDecode(payload));
       return decoded;
     } catch (error) {
-      console.error('Error decoding token:', error);
       return null;
     }
   }
@@ -179,7 +176,6 @@ class TokenManager {
 
       return this.decodeToken(accessToken);
     } catch (error) {
-      console.error('Error getting user from token:', error);
       return null;
     }
   }
@@ -225,7 +221,6 @@ class TokenManager {
       const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
       return remaining;
     } catch (error) {
-      console.error('Error getting time remaining:', error);
       return 0;
     }
   }
@@ -242,7 +237,7 @@ class TokenManager {
         this.TOKEN_TYPE_KEY,
       ]);
     } catch (error) {
-      console.error('Error clearing tokens:', error);
+      // Silently fail - clearing tokens is not critical
     }
   }
 
