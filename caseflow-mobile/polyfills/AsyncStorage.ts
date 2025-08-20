@@ -40,6 +40,17 @@ const AsyncStorage = {
       console.warn('AsyncStorage getAllKeys error:', error);
       return [];
     }
+  },
+
+  async multiSet(keyValuePairs: [string, string][]): Promise<void> {
+    try {
+      for (const [key, value] of keyValuePairs) {
+        localStorage.setItem(key, value);
+      }
+    } catch (error) {
+      console.warn('AsyncStorage multiSet error:', error);
+      throw error;
+    }
   }
 };
 
