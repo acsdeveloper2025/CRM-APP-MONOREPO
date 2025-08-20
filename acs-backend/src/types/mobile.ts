@@ -35,6 +35,7 @@ export interface MobileLoginResponse {
     tokens: {
       accessToken: string;
       refreshToken: string;
+      expiresIn: number;
     };
 
   };

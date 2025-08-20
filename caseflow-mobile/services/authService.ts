@@ -296,7 +296,7 @@ class AuthService {
     tokens: {
       accessToken: string;
       refreshToken: string;
-      expiresIn: number;
+      expiresIn?: number;
     };
   }): Promise<void> {
     try {
@@ -304,7 +304,7 @@ class AuthService {
       await tokenManager.storeTokens({
         accessToken: authData.tokens.accessToken,
         refreshToken: authData.tokens.refreshToken,
-        expiresIn: authData.tokens.expiresIn,
+        expiresIn: authData.tokens.expiresIn || 86400, // Default to 24 hours (86400 seconds)
         tokenType: 'Bearer',
       });
 

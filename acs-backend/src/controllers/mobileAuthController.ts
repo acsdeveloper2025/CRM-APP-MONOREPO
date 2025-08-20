@@ -144,6 +144,7 @@ export class MobileAuthController {
           tokens: {
             accessToken,
             refreshToken,
+            expiresIn: 86400, // 24 hours in seconds
           },
         },
       };
