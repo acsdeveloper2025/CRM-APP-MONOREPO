@@ -60,6 +60,7 @@ app.use(cors({
     'Authorization',
     'X-Requested-With',
     'X-App-Version',
+    'X-App-Environment',
     'X-Platform',
     'X-Device-ID',
     'X-Device-Model',
