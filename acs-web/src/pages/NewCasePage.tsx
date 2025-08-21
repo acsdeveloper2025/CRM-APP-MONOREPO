@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CaseCreationStepper } from '@/components/cases/CaseCreationStepper';
 import { useCase } from '@/hooks/useCases';
+import { usePincodes } from '@/hooks/useLocations';
+import { useAreasByPincode } from '@/hooks/useAreas';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import type { CustomerInfoData } from '@/components/cases/CustomerInfoStep';
@@ -12,6 +14,9 @@ export const NewCasePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const editCaseId = searchParams.get('edit');
   const isEditMode = !!editCaseId;
+
+  console.log('NewCasePage - Edit case ID from URL:', editCaseId);
+  console.log('NewCasePage - Is edit mode:', isEditMode);
 
 
 
@@ -24,15 +29,46 @@ export const NewCasePage: React.FC = () => {
   const shouldFetchCase = isEditMode && editCaseId;
   const { data: caseData, isLoading: loadingCase } = useCase(shouldFetchCase ? editCaseId : '');
 
+  // Fetch pincodes for mapping pincode code to ID in edit mode
+  const { data: pincodesResponse } = usePincodes();
+
+  // Get pincode ID for fetching areas
+  const [pincodeIdForAreas, setPincodeIdForAreas] = useState<number | undefined>();
+  const { data: areasResponse } = useAreasByPincode(pincodeIdForAreas);
+
+  // First useEffect: Set pincode ID for fetching areas
+  useEffect(() => {
+    if (isEditMode && caseData?.data && pincodesResponse?.data) {
+      const caseItem = caseData.data;
+      const pincodes = pincodesResponse.data;
+
+      // Find pincode ID based on pincode code
+      const foundPincode = pincodes.find(p => p.code === caseItem.pincode);
+      if (foundPincode) {
+        setPincodeIdForAreas(foundPincode.id);
+      }
+    }
+  }, [isEditMode, caseData, pincodesResponse]);
+
+  // Second useEffect: Map all case data when areas are loaded
   useEffect(() => {
     try {
-      if (isEditMode && caseData?.data) {
+      if (isEditMode && caseData?.data && pincodesResponse?.data && areasResponse?.data) {
         const caseItem = caseData.data;
+        const pincodes = pincodesResponse.data;
+        const areas = areasResponse.data;
+
+        // Find pincode ID based on pincode code
+        const foundPincode = pincodes.find(p => p.code === caseItem.pincode);
+        const pincodeId = foundPincode?.id?.toString() || '';
+
+        // For now, select the first available area (we can improve this later)
+        const areaId = areas.length > 0 ? areas[0].id.toString() : '';
 
         // Map case data to CustomerInfoData format
         const customerInfo: CustomerInfoData = {
-          customerName: String(caseItem.applicantName || ''),
-          mobileNumber: String(caseItem.applicantPhone || ''),
+          customerName: String(caseItem.customerName || caseItem.applicantName || ''),
+          mobileNumber: String(caseItem.customerPhone || caseItem.applicantPhone || ''),
           panNumber: String(caseItem.panNumber || ''),
           customerCallingCode: String(caseItem.customerCallingCode || '')
         };
@@ -42,8 +78,9 @@ export const NewCasePage: React.FC = () => {
           clientId: String(caseItem.clientId || ''),
           productId: String(caseItem.productId || ''),
           verificationType: String(caseItem.verificationType || ''),
+          verificationTypeId: String(caseItem.verificationTypeId || ''),
           applicantType: String(caseItem.applicantType || ''),
-          createdByBackendUser: String(caseItem.createdByBackendUser || ''),
+          createdByBackendUser: '', // Will be set to current user
           backendContactNumber: String(caseItem.backendContactNumber || ''),
           assignedToId: String(caseItem.assignedTo || ''),
           priority: typeof caseItem.priority === 'string' ?
@@ -51,8 +88,8 @@ export const NewCasePage: React.FC = () => {
             Number(caseItem.priority) || 2,
           notes: String(caseItem.trigger || caseItem.notes || ''),
           address: String(caseItem.address || ''),
-          pincodeId: '', // Will be populated by the form
-          areaId: '', // Will be populated by the form
+          pincodeId: pincodeId, // Map pincode code to pincode ID
+          areaId: areaId, // Set the first available area
         };
 
         setInitialData({
@@ -64,7 +101,7 @@ export const NewCasePage: React.FC = () => {
       console.error('Error in NewCasePage useEffect:', error);
       // Don't redirect on error, just log it
     }
-  }, [isEditMode, caseData]);
+  }, [isEditMode, caseData, pincodesResponse, areasResponse]);
 
   const handleSuccess = (caseId: string) => {
     navigate(`/cases/${caseId}`);

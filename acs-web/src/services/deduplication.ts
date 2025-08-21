@@ -2,23 +2,17 @@ import { apiService } from './api';
 import type { ApiResponse } from '@/types/api';
 
 export interface DeduplicationCriteria {
-  applicantName?: string;
+  customerName?: string;
   panNumber?: string;
-  aadhaarNumber?: string;
-  applicantPhone?: string;
-  applicantEmail?: string;
-  bankAccountNumber?: string;
+  customerPhone?: string;
 }
 
 export interface DuplicateCase {
   id: string;
-  caseNumber: string;
-  applicantName: string;
-  applicantPhone?: string;
-  applicantEmail?: string;
+  caseId: number;
+  customerName: string;
+  customerPhone?: string;
   panNumber?: string;
-  aadhaarNumber?: string;
-  bankAccountNumber?: string;
   status: string;
   createdAt: string;
   clientName?: string;
@@ -128,14 +122,9 @@ export class DeduplicationService {
       }
     }
 
-    // Validate email format
-    if (criteria.applicantEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(criteria.applicantEmail)) {
-      errors.push('Invalid email format');
-    }
-
     // Validate phone format
-    if (criteria.applicantPhone) {
-      const phone = criteria.applicantPhone.replace(/\D/g, '');
+    if (criteria.customerPhone) {
+      const phone = criteria.customerPhone.replace(/\D/g, '');
       if (phone.length < 10) {
         errors.push('Phone number should be at least 10 digits');
       }
@@ -153,20 +142,16 @@ export class DeduplicationService {
   cleanCriteria(criteria: DeduplicationCriteria): DeduplicationCriteria {
     const cleaned: DeduplicationCriteria = {};
 
-    if (criteria.applicantName?.trim()) {
-      cleaned.applicantName = criteria.applicantName.trim();
+    if (criteria.customerName?.trim()) {
+      cleaned.customerName = criteria.customerName.trim();
     }
 
     if (criteria.panNumber?.trim()) {
       cleaned.panNumber = criteria.panNumber.trim().toUpperCase();
     }
 
-    if (criteria.aadhaarNumber?.trim()) {
-      cleaned.aadhaarNumber = criteria.aadhaarNumber.trim().replace(/\s/g, '');
-    }
-
-    if (criteria.applicantPhone?.trim()) {
-      cleaned.applicantPhone = criteria.applicantPhone.trim().replace(/\D/g, '');
+    if (criteria.customerPhone?.trim()) {
+      cleaned.customerPhone = criteria.customerPhone.trim().replace(/\D/g, '');
     }
 
     if (criteria.applicantEmail?.trim()) {

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Mobile App API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        pre { background-color: #f8f9fa; padding: 10px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Mobile App API Debug Tool</h1>
+    
+    <div class="section">
+        <h2>Step 1: Login</h2>
+        <button onclick="testLogin()">Test Login</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Step 2: Fetch Cases</h2>
+        <button onclick="testCases()">Test Cases API</button>
+        <div id="casesResult"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Step 3: Filter Analysis</h2>
+        <button onclick="analyzeFiltering()">Analyze Case Filtering</button>
+        <div id="filterResult"></div>
+    </div>
+
+    <script>
+        let accessToken = null;
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('loginResult');
+            resultDiv.innerHTML = '<p>🔄 Testing login...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/mobile/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-App-Version': '4.0.0',
+                        'X-Platform': 'ANDROID'
+                    },
+                    body: JSON.stringify({
+                        username: 'field_agent_test',
+                        password: 'password123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    accessToken = data.data.tokens.accessToken;
+                    resultDiv.className = 'section success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Login Successful</h3>
+                        <p><strong>User:</strong> ${data.data.user.name} (${data.data.user.role})</p>
+                        <p><strong>User ID:</strong> ${data.data.user.id}</p>
+                        <p><strong>Token:</strong> ${accessToken.substring(0, 30)}...</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(data.message || 'Login failed');
+                }
+            } catch (error) {
+                resultDiv.className = 'section error';
+                resultDiv.innerHTML = `<h3>❌ Login Failed</h3><p>${error.message}</p>`;
+            }
+        }
+        
+        async function testCases() {
+            const resultDiv = document.getElementById('casesResult');
+            
+            if (!accessToken) {
+                resultDiv.className = 'section error';
+                resultDiv.innerHTML = '<p>❌ Please login first</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>🔄 Fetching cases...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/mobile/cases', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'X-App-Version': '4.0.0',
+                        'X-Platform': 'ANDROID'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const cases = data.data || [];
+                    const assignedCases = cases.filter(c => c.status === 'ASSIGNED');
+                    
+                    resultDiv.className = 'section success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Cases Retrieved</h3>
+                        <p><strong>Total Cases:</strong> ${cases.length}</p>
+                        <p><strong>ASSIGNED Cases:</strong> ${assignedCases.length}</p>
+                        <h4>Case Details:</h4>
+                        <pre>${JSON.stringify(cases.map(c => ({
+                            caseId: c.caseId,
+                            customerName: c.customerName,
+                            status: c.status,
+                            assignedToFieldUser: c.assignedToFieldUser
+                        })), null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(data.message || 'Failed to fetch cases');
+                }
+            } catch (error) {
+                resultDiv.className = 'section error';
+                resultDiv.innerHTML = `<h3>❌ Cases Fetch Failed</h3><p>${error.message}</p>`;
+            }
+        }
+        
+        async function analyzeFiltering() {
+            const resultDiv = document.getElementById('filterResult');
+            
+            if (!accessToken) {
+                resultDiv.className = 'section error';
+                resultDiv.innerHTML = '<p>❌ Please login first</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>🔄 Analyzing filtering...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/mobile/cases', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'X-App-Version': '4.0.0',
+                        'X-Platform': 'ANDROID'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const cases = data.data || [];
+                    
+                    // Simulate mobile app filtering
+                    const CaseStatus = {
+                        Assigned: 'ASSIGNED',
+                        InProgress: 'IN_PROGRESS',
+                        Completed: 'COMPLETED',
+                        Pending: 'PENDING'
+                    };
+                    
+                    const assignedCases = cases.filter(c => c.status === CaseStatus.Assigned);
+                    const allStatuses = [...new Set(cases.map(c => c.status))];
+                    
+                    resultDiv.className = 'section success';
+                    resultDiv.innerHTML = `
+                        <h3>🔍 Filtering Analysis</h3>
+                        <p><strong>Total Cases from API:</strong> ${cases.length}</p>
+                        <p><strong>All Statuses Found:</strong> ${allStatuses.join(', ')}</p>
+                        <p><strong>CaseStatus.Assigned Value:</strong> '${CaseStatus.Assigned}'</p>
+                        <p><strong>Cases Matching CaseStatus.Assigned:</strong> ${assignedCases.length}</p>
+                        
+                        <h4>Mobile App Should Show:</h4>
+                        <ul>
+                            <li>Assigned Tab: ${assignedCases.length} cases</li>
+                            <li>All Cases Tab: ${cases.length} cases</li>
+                        </ul>
+                        
+                        <h4>Assigned Cases Details:</h4>
+                        <pre>${JSON.stringify(assignedCases.map(c => ({
+                            caseId: c.caseId,
+                            customerName: c.customerName,
+                            status: c.status
+                        })), null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(data.message || 'Failed to fetch cases');
+                }
+            } catch (error) {
+                resultDiv.className = 'section error';
+                resultDiv.innerHTML = `<h3>❌ Analysis Failed</h3><p>${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

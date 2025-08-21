@@ -58,6 +58,18 @@ export const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
     },
   });
 
+  // Update form when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      form.reset({
+        customerName: initialData.customerName || '',
+        customerCallingCode: initialData.customerCallingCode || '',
+        panNumber: initialData.panNumber || '',
+        mobileNumber: initialData.mobileNumber || '',
+      });
+    }
+  }, [initialData, form]);
+
   // Auto-generate customer calling code when component mounts or when customer name changes
   useEffect(() => {
     if (!form.getValues('customerCallingCode')) {

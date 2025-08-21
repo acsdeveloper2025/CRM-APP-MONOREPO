@@ -9,6 +9,7 @@ export interface Case {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  customerCallingCode?: string;
   addressStreet?: string;
   addressCity?: string;
   addressState?: string;

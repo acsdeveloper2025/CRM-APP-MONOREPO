@@ -20,18 +20,14 @@ export interface CaseUpdateData {
 }
 
 export interface CreateCaseData {
-  // Business-required fields (keeping as requested)
+  // Core case fields
   customerName: string;
   customerCallingCode?: string;
-  customerEmail?: string;
+  customerPhone?: string;
   createdByBackendUser?: string;
   verificationType?: string;
-
-  // Core case fields
-  addressStreet: string;
-  addressPincode: string;
-  latitude?: number;
-  longitude?: number;
+  address: string;
+  pincode: string;
   verificationTypeId?: string;
   assignedToId: string;
   clientId: string;
@@ -41,10 +37,7 @@ export interface CreateCaseData {
   priority?: number;
   notes?: string;
 
-  // Deduplication fields - REQUIRED by backend
-  applicantName?: string;
-  applicantPhone?: string;
-  applicantEmail?: string;
+  // Deduplication fields
   panNumber?: string;
   deduplicationDecision?: string;
   deduplicationRationale?: string;

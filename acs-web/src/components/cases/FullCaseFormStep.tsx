@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -130,12 +130,36 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
   const { data: productsResponse } = useProductsByClient(selectedClientId);
   const products = productsResponse?.data || [];
 
+  // Watch for product selection to fetch verification types
+  const selectedProductId = form.watch('productId');
+
   // Watch for pincode selection to fetch areas
   const selectedPincodeId = form.watch('pincodeId');
   const { data: pincodesResponse } = usePincodes();
   const pincodes = pincodesResponse?.data || [];
   const { data: areasResponse } = useAreasByPincode(selectedPincodeId ? parseInt(selectedPincodeId) : undefined);
   const areas = areasResponse?.data || [];
+
+  // Update form when initialData changes (for edit mode)
+  useEffect(() => {
+    if (editMode && initialData && Object.keys(initialData).length > 0) {
+      form.reset({
+        applicantType: initialData.applicantType || '',
+        address: initialData.address || '',
+        notes: initialData.notes || '', // TRIGGER field
+        clientId: initialData.clientId || '',
+        productId: initialData.productId || '',
+        verificationType: initialData.verificationType || '',
+        verificationTypeId: initialData.verificationTypeId || '',
+        createdByBackendUser: initialData.createdByBackendUser || getUserDisplayName(user),
+        backendContactNumber: initialData.backendContactNumber || '',
+        pincodeId: initialData.pincodeId || '',
+        areaId: initialData.areaId || '',
+        assignedToId: initialData.assignedToId || '',
+        priority: initialData.priority || 2,
+      });
+    }
+  }, [editMode, initialData, form, user]);
 
   const handleSubmit = (data: FullCaseFormData) => {
     onSubmit(data);
@@ -192,7 +216,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Applicant Type *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select applicant type" />
@@ -273,7 +297,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                         field.onChange(value);
                         // Reset product selection when client changes
                         form.setValue('productId', '');
-                      }} defaultValue={field.value}>
+                      }} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select client" />
@@ -305,7 +329,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Product *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedClientId}>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedClientId}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder={selectedClientId ? "Select product" : "Select client first"} />
@@ -331,7 +355,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Verification Type *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select verification type" />
@@ -416,7 +440,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                         field.onChange(value);
                         // Reset area selection when pincode changes
                         form.setValue('areaId', '');
-                      }} defaultValue={field.value}>
+                      }} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select pincode" />
@@ -442,7 +466,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Area *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedPincodeId}>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedPincodeId}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder={selectedPincodeId ? "Select area" : "Select pincode first"} />
@@ -468,7 +492,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Assign to Field User *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select field user" />
@@ -500,7 +524,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Priority *</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select priority" />

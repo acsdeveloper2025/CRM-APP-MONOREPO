@@ -267,8 +267,8 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
     const userRole = req.user?.role;
 
     // Build WHERE conditions for client filtering
-    const whereConditions: string[] = ['c.id = $1'];
-    const queryParams: any[] = [id];
+    const whereConditions: string[] = ['c."caseId" = $1'];
+    const queryParams: any[] = [parseInt(id)];
     let paramIndex = 2;
 
     // Apply client filtering for BACKEND_USER users (SUPER_ADMIN bypasses all restrictions)
@@ -335,55 +335,35 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
 export const createCase = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
-      // Basic case fields
-      title,
-      description,
-      clientId,
-      assignedToId,
-      address,
-      contactPerson,
-      contactPhone,
-      verificationType,
-      priority = 2,
-      deadline,
-      // New form fields
-      applicantType,
-      createdByBackendUser,
-      backendContactNumber,
-      notes, // TRIGGER field
-      productId,
-      verificationTypeId,
-      // Customer information
+      // Core case fields
       customerName,
       customerCallingCode,
       customerPhone,
-      customerEmail,
-      // Address fields
-      addressStreet,
-      addressCity,
-      addressState,
-      addressPincode,
-      // New deduplication fields
-      applicantName,
-      applicantPhone,
-      applicantEmail,
+      createdByBackendUser,
+      verificationType,
+      address,
+      pincode,
+      clientId,
+      assignedToId,
+      productId,
+      verificationTypeId,
+      applicantType,
+      backendContactNumber,
+      priority = 2,
+      notes, // TRIGGER field
+      // Deduplication fields
       panNumber,
-      aadhaarNumber,
-      bankAccountNumber,
-      bankIfscCode,
-      // Deduplication decision fields
       deduplicationDecision,
       deduplicationRationale,
       skipDeduplication = false
     } = req.body;
 
     // Validate required fields
-    const finalApplicantName = applicantName || customerName;
-    if (!finalApplicantName || !clientId || !assignedToId || !applicantType || !backendContactNumber || !notes) {
+    if (!customerName || !clientId || !assignedToId || !applicantType || !backendContactNumber || !notes) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Missing required fields: applicantName/customerName, clientId, assignedToId, applicantType, backendContactNumber, notes',
+          message: 'Missing required fields: customerName, clientId, assignedToId, applicantType, backendContactNumber, notes',
           code: 'MISSING_REQUIRED_FIELDS'
         }
       });
@@ -405,29 +385,23 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
-    // Generate case number - will be updated after getting caseId from database
-    let caseNumber = `CASE_TEMP_${Date.now()}`;
-
     // Prepare case data for database insertion
     const caseData = {
-      caseNumber,
       clientId,
       productId: productId || null,
       verificationTypeId: verificationTypeId || null,
-      applicantName: finalApplicantName,
-      applicantPhone: applicantPhone || customerPhone || contactPhone,
-      applicantEmail: applicantEmail || customerEmail,
-      address: address || addressStreet,
-      pincode: addressPincode || req.body.pincode || null,
-      status: 'PENDING',
+      customerName,
+      customerCallingCode: customerCallingCode || null,
+      customerPhone: customerPhone || null,
+      address: address || null,
+      pincode: pincode || null,
+      verificationType: verificationType || null,
+      status: assignedToId ? 'ASSIGNED' : 'PENDING',
       priority: priority === 2 ? 'MEDIUM' : priority === 1 ? 'LOW' : priority === 3 ? 'HIGH' : 'URGENT',
       assignedTo: assignedToId,
       createdBy: req.user?.id,
       panNumber: panNumber?.toUpperCase() || null,
-      aadhaarNumber: aadhaarNumber || '',
-      bankAccountNumber: bankAccountNumber || '',
-      bankIfscCode: bankIfscCode || '',
-      // New required fields
+      // Required fields
       applicantType,
       backendContactNumber,
       trigger: notes, // TRIGGER field
@@ -439,38 +413,33 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
     // Insert case into database
     const insertQuery = `
       INSERT INTO cases (
-        "caseNumber", "clientId", "productId", "verificationTypeId",
-        "applicantName", "applicantPhone", "applicantEmail",
-        "address", "pincode", "status", "priority",
-        "assignedTo", "createdBy", "panNumber", "aadhaarNumber",
-        "bankAccountNumber", "bankIfscCode", "applicantType",
+        "clientId", "productId", "verificationTypeId",
+        "customerName", "customerCallingCode", "customerPhone",
+        "address", "pincode", "verificationType", "status", "priority",
+        "assignedTo", "createdBy", "panNumber", "applicantType",
         "backendContactNumber", "trigger", "deduplicationChecked",
         "deduplicationDecision", "deduplicationRationale"
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-        $21, $22, $23
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
       ) RETURNING *, "caseId"
     `;
 
     const result = await pool.query(insertQuery, [
-      caseData.caseNumber,
       caseData.clientId,
       caseData.productId,
       caseData.verificationTypeId,
-      caseData.applicantName,
-      caseData.applicantPhone,
-      caseData.applicantEmail,
+      caseData.customerName,
+      caseData.customerCallingCode,
+      caseData.customerPhone,
       caseData.address,
       caseData.pincode,
+      caseData.verificationType,
       caseData.status,
       caseData.priority,
       caseData.assignedTo,
       caseData.createdBy,
       caseData.panNumber,
-      caseData.aadhaarNumber,
-      caseData.bankAccountNumber,
-      caseData.bankIfscCode,
       caseData.applicantType,
       caseData.backendContactNumber,
       caseData.trigger,
@@ -481,21 +450,10 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
 
     const newCase = result.rows[0];
 
-    // Update case number to use simplified format: CASE_1, CASE_2, etc.
-    const simplifiedCaseNumber = `CASE_${newCase.caseId}`;
-    await pool.query(
-      'UPDATE cases SET "caseNumber" = $1 WHERE id = $2',
-      [simplifiedCaseNumber, newCase.id]
-    );
-
-    // Update the returned case object
-    newCase.caseNumber = simplifiedCaseNumber;
-
-    logger.info(`Created new case: ${newCase.id} (Case ID: ${newCase.caseId})`, {
+    logger.info(`Created new case: Case ID ${newCase.caseId}`, {
       userId: req.user?.id,
-      caseNumber: newCase.caseNumber,
       caseId: newCase.caseId,
-      applicantName: newCase.applicantName,
+      customerName: newCase.customerName,
       clientId,
       assignedToId,
       deduplicationChecked: newCase.deduplicationChecked
@@ -525,28 +483,24 @@ export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
       clientId,
       productId,
       verificationTypeId,
-      applicantName,
-      applicantPhone,
-      applicantEmail,
+      customerName,
+      customerCallingCode,
+      customerPhone,
       address,
-      addressStreet,
       pincode,
-      addressPincode,
+      verificationType,
       priority,
       notes,
       trigger,
       assignedToId,
       applicantType,
       backendContactNumber,
-      panNumber,
-      aadhaarNumber,
-      bankAccountNumber,
-      bankIfscCode
+      panNumber
     } = req.body;
 
     // Check if case exists
-    const checkQuery = 'SELECT id FROM cases WHERE id = $1';
-    const checkResult = await pool.query(checkQuery, [id]);
+    const checkQuery = 'SELECT "caseId" FROM cases WHERE "caseId" = $1';
+    const checkResult = await pool.query(checkQuery, [parseInt(id)]);
 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({
@@ -573,25 +527,29 @@ export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
       updateFields.push(`"verificationTypeId" = $${paramIndex++}`);
       updateValues.push(verificationTypeId);
     }
-    if (applicantName !== undefined) {
-      updateFields.push(`"applicantName" = $${paramIndex++}`);
-      updateValues.push(applicantName);
+    if (customerName !== undefined) {
+      updateFields.push(`"customerName" = $${paramIndex++}`);
+      updateValues.push(customerName);
     }
-    if (applicantPhone !== undefined) {
-      updateFields.push(`"applicantPhone" = $${paramIndex++}`);
-      updateValues.push(applicantPhone);
+    if (customerCallingCode !== undefined) {
+      updateFields.push(`"customerCallingCode" = $${paramIndex++}`);
+      updateValues.push(customerCallingCode);
     }
-    if (applicantEmail !== undefined) {
-      updateFields.push(`"applicantEmail" = $${paramIndex++}`);
-      updateValues.push(applicantEmail);
+    if (customerPhone !== undefined) {
+      updateFields.push(`"customerPhone" = $${paramIndex++}`);
+      updateValues.push(customerPhone);
     }
-    if (address !== undefined || addressStreet !== undefined) {
+    if (address !== undefined) {
       updateFields.push(`"address" = $${paramIndex++}`);
-      updateValues.push(address || addressStreet);
+      updateValues.push(address);
     }
-    if (pincode !== undefined || addressPincode !== undefined) {
+    if (pincode !== undefined) {
       updateFields.push(`"pincode" = $${paramIndex++}`);
-      updateValues.push(pincode || addressPincode);
+      updateValues.push(pincode);
+    }
+    if (verificationType !== undefined) {
+      updateFields.push(`"verificationType" = $${paramIndex++}`);
+      updateValues.push(verificationType);
     }
     if (priority !== undefined) {
       const priorityValue = typeof priority === 'number' ?
@@ -620,22 +578,9 @@ export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
       updateFields.push(`"panNumber" = $${paramIndex++}`);
       updateValues.push(panNumber?.toUpperCase() || null);
     }
-    if (aadhaarNumber !== undefined) {
-      updateFields.push(`"aadhaarNumber" = $${paramIndex++}`);
-      updateValues.push(aadhaarNumber || '');
-    }
-    if (bankAccountNumber !== undefined) {
-      updateFields.push(`"bankAccountNumber" = $${paramIndex++}`);
-      updateValues.push(bankAccountNumber || '');
-    }
-    if (bankIfscCode !== undefined) {
-      updateFields.push(`"bankIfscCode" = $${paramIndex++}`);
-      updateValues.push(bankIfscCode || '');
-    }
-
     // Always update the updatedAt timestamp
     updateFields.push(`"updatedAt" = CURRENT_TIMESTAMP`);
-    updateValues.push(id); // Add case ID as the last parameter
+    updateValues.push(parseInt(id)); // Add case ID as the last parameter
 
     if (updateFields.length === 1) { // Only updatedAt field
       return res.status(400).json({
@@ -649,7 +594,7 @@ export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
     const updateQuery = `
       UPDATE cases
       SET ${updateFields.join(', ')}
-      WHERE id = $${paramIndex}
+      WHERE "caseId" = $${paramIndex}
       RETURNING *
     `;
 
@@ -665,10 +610,10 @@ export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
       FROM cases c
       LEFT JOIN users u ON c."assignedTo" = u.id
       LEFT JOIN clients cl ON c."clientId" = cl.id
-      WHERE c.id = $1
+      WHERE c."caseId" = $1
     `;
 
-    const detailsResult = await pool.query(detailsQuery, [id]);
+    const detailsResult = await pool.query(detailsQuery, [parseInt(id)]);
     const finalCase = detailsResult.rows[0];
 
     logger.info(`Updated case: ${id}`, {
@@ -733,8 +678,11 @@ export const updateCaseStatus = async (req: AuthenticatedRequest, res: Response)
     const { id } = req.params;
     const { status } = req.body;
 
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
+    // Check if case exists
+    const checkQuery = 'SELECT "caseId", status FROM cases WHERE "caseId" = $1';
+    const checkResult = await pool.query(checkQuery, [parseInt(id)]);
+
+    if (checkResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Case not found',
@@ -742,23 +690,18 @@ export const updateCaseStatus = async (req: AuthenticatedRequest, res: Response)
       });
     }
 
-    const oldStatus = cases[caseIndex].status;
-    cases[caseIndex].status = status;
-    cases[caseIndex].updatedAt = new Date().toISOString();
+    const oldStatus = checkResult.rows[0].status;
 
-    // If status is completed, set completion date
-    if (status === 'COMPLETED' || status === 'APPROVED') {
-      cases[caseIndex].completedAt = new Date().toISOString();
-    }
+    // Update case status
+    const updateQuery = `
+      UPDATE cases
+      SET status = $1, "updatedAt" = CURRENT_TIMESTAMP
+      WHERE "caseId" = $2
+      RETURNING *
+    `;
 
-    // Add history entry
-    cases[caseIndex].history.push({
-      id: `hist_${Date.now()}`,
-      action: 'STATUS_UPDATED',
-      description: `Status changed from ${oldStatus} to ${status}`,
-      userId: req.user?.id,
-      timestamp: new Date().toISOString(),
-    });
+    const updateResult = await pool.query(updateQuery, [status, parseInt(id)]);
+    const updatedCase = updateResult.rows[0];
 
     logger.info(`Updated case status: ${id}`, {
       userId: req.user?.id,
@@ -768,7 +711,7 @@ export const updateCaseStatus = async (req: AuthenticatedRequest, res: Response)
 
     res.json({
       success: true,
-      data: cases[caseIndex],
+      data: updatedCase,
       message: 'Case status updated successfully',
     });
   } catch (error) {
@@ -787,8 +730,11 @@ export const updateCasePriority = async (req: AuthenticatedRequest, res: Respons
     const { id } = req.params;
     const { priority } = req.body;
 
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
+    // Check if case exists and get current priority
+    const checkQuery = 'SELECT "caseId", priority FROM cases WHERE "caseId" = $1';
+    const checkResult = await pool.query(checkQuery, [parseInt(id)]);
+
+    if (checkResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Case not found',
@@ -796,18 +742,18 @@ export const updateCasePriority = async (req: AuthenticatedRequest, res: Respons
       });
     }
 
-    const oldPriority = cases[caseIndex].priority;
-    cases[caseIndex].priority = priority;
-    cases[caseIndex].updatedAt = new Date().toISOString();
+    const oldPriority = checkResult.rows[0].priority;
 
-    // Add history entry
-    cases[caseIndex].history.push({
-      id: `hist_${Date.now()}`,
-      action: 'PRIORITY_UPDATED',
-      description: `Priority changed from ${oldPriority} to ${priority}`,
-      userId: req.user?.id,
-      timestamp: new Date().toISOString(),
-    });
+    // Update case priority
+    const updateQuery = `
+      UPDATE cases
+      SET priority = $1, "updatedAt" = CURRENT_TIMESTAMP
+      WHERE "caseId" = $2
+      RETURNING *
+    `;
+
+    const updateResult = await pool.query(updateQuery, [priority, parseInt(id)]);
+    const updatedCase = updateResult.rows[0];
 
     logger.info(`Updated case priority: ${id}`, {
       userId: req.user?.id,
@@ -817,7 +763,7 @@ export const updateCasePriority = async (req: AuthenticatedRequest, res: Respons
 
     res.json({
       success: true,
-      data: cases[caseIndex],
+      data: updatedCase,
       message: 'Case priority updated successfully',
     });
   } catch (error) {
@@ -845,10 +791,10 @@ export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
       FROM cases c
       LEFT JOIN users u ON c."assignedTo" = u.id
       LEFT JOIN clients cl ON c."clientId" = cl.id
-      WHERE c.id = $1
+      WHERE c."caseId" = $1
     `;
 
-    const currentCaseResult = await pool.query(currentCaseQuery, [id]);
+    const currentCaseResult = await pool.query(currentCaseQuery, [parseInt(id)]);
 
     if (currentCaseResult.rows.length === 0) {
       return res.status(404).json({
@@ -878,12 +824,12 @@ export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
     // Update case assignment
     const updateQuery = `
       UPDATE cases
-      SET "assignedTo" = $1, "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $2
+      SET "assignedTo" = $1, "status" = 'ASSIGNED', "updatedAt" = CURRENT_TIMESTAMP
+      WHERE "caseId" = $2
       RETURNING *
     `;
 
-    const updateResult = await pool.query(updateQuery, [assignedToId, id]);
+    const updateResult = await pool.query(updateQuery, [assignedToId, parseInt(id)]);
     const updatedCase = updateResult.rows[0];
 
     // Create assignment history entry
@@ -895,7 +841,7 @@ export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
     `;
 
     await pool.query(historyQuery, [
-      id,
+      parseInt(id),
       oldAssignee,
       assignedToId,
       reason || 'Case reassignment',

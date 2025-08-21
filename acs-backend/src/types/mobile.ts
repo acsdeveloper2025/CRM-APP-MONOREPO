@@ -55,9 +55,11 @@ export interface MobileCaseListRequest {
 
 export interface MobileCaseResponse {
   id: string;
+  caseId: number; // User-friendly auto-incrementing case ID
   title: string;
   description: string;
   customerName: string;
+  customerCallingCode?: string; // Customer Calling Code
   customerPhone?: string;
   customerEmail?: string;
   addressStreet: string;
@@ -71,13 +73,27 @@ export interface MobileCaseResponse {
   assignedAt: string;
   updatedAt: string;
   completedAt?: string;
-  notes?: string;
+  notes?: string; // TRIGGER field
   verificationType?: string;
   verificationOutcome?: string;
+  applicantType?: string; // Applicant Type
+  backendContactNumber?: string; // Backend Contact Number
+  createdByBackendUser?: string; // Created By Backend User name
+  assignedToFieldUser?: string; // Assign to Field User name
   client: {
     id: string;
     name: string;
     code: string;
+  };
+  product?: {
+    id: string;
+    name: string;
+    code?: string;
+  };
+  verificationTypeDetails?: {
+    id: string;
+    name: string;
+    code?: string;
   };
   attachments?: MobileAttachmentResponse[];
   formData?: any;

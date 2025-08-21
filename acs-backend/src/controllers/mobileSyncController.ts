@@ -13,7 +13,7 @@ export class MobileSyncController {
   static async uploadSync(req: Request, res: Response) {
     try {
       const { localChanges, deviceInfo, lastSyncTimestamp }: MobileSyncUploadRequest = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
       if (!localChanges) {
@@ -124,7 +124,7 @@ export class MobileSyncController {
   // Download changes from server for mobile app
   static async downloadSync(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
       const { lastSyncTimestamp, limit = config.mobile.syncBatchSize } = req.query;
 
@@ -138,20 +138,30 @@ export class MobileSyncController {
       };
 
       // Role-based filtering
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
+      if (userRole === 'FIELD_AGENT') {
+        where.assignedTo = userId;
       }
 
       const vals: any[] = [];
       const wh: string[] = [];
-      if (where.assignedToId) { vals.push(where.assignedToId); wh.push(`c."assignedToId" = $${vals.length}`); }
+      if (where.assignedTo) { vals.push(where.assignedTo); wh.push(`c."assignedTo" = $${vals.length}`); }
       if (where.updatedAt?.gt) { vals.push(where.updatedAt.gt); wh.push(`c."updatedAt" > $${vals.length}`); }
       const whereSql = wh.length ? `WHERE ${wh.join(' AND ')}` : '';
       vals.push(Number(limit));
 
       const casesRes = await query(
-        `SELECT c.*, cl.id as "clientId", cl.name as "clientName", cl.code as "clientCode"
-         FROM cases c LEFT JOIN clients cl ON cl.id = c."clientId"
+        `SELECT c.*,
+                cl.id as "clientId", cl.name as "clientName", cl.code as "clientCode",
+                p.id as "productId", p.name as "productName", p.code as "productCode",
+                vt.id as "verificationTypeId", vt.name as "verificationTypeName", vt.code as "verificationTypeCode",
+                cu.name as "createdByUserName",
+                au.name as "assignedToUserName"
+         FROM cases c
+         LEFT JOIN clients cl ON cl.id = c."clientId"
+         LEFT JOIN products p ON p.id = c."productId"
+         LEFT JOIN "verificationTypes" vt ON vt.id = c."verificationTypeId"
+         LEFT JOIN users cu ON cu.id = c."createdBy"
+         LEFT JOIN users au ON au.id = c."assignedTo"
          ${whereSql}
          ORDER BY c."updatedAt" ASC
          LIMIT $${vals.length}`,
@@ -160,12 +170,14 @@ export class MobileSyncController {
       const updatedCases = casesRes.rows;
       const deletedCases: any[] = [];
 
-      // Transform cases for mobile response
+      // Transform cases for mobile response with all required assignment fields
       const mobileCases: MobileCaseResponse[] = updatedCases.map(caseItem => ({
         id: caseItem.id,
+        caseId: caseItem.caseId, // User-friendly auto-incrementing case ID
         title: caseItem.title,
         description: caseItem.description,
-        customerName: caseItem.customerName,
+        customerName: caseItem.customerName || caseItem.applicantName, // Customer Name
+        customerCallingCode: caseItem.customerCallingCode, // Customer Calling Code
         customerPhone: caseItem.customerPhone,
         customerEmail: caseItem.customerEmail,
         addressStreet: caseItem.addressStreet,
@@ -175,25 +187,33 @@ export class MobileSyncController {
         latitude: caseItem.latitude,
         longitude: caseItem.longitude,
         status: caseItem.status,
-        priority: caseItem.priority,
-        assignedAt: caseItem.assignedAt.toISOString(),
-        updatedAt: caseItem.updatedAt.toISOString(),
-        completedAt: caseItem.completedAt?.toISOString(),
-        notes: caseItem.notes,
+        priority: caseItem.priority, // Priority
+        assignedAt: new Date(caseItem.createdAt).toISOString(),
+        updatedAt: new Date(caseItem.updatedAt).toISOString(),
+        completedAt: caseItem.completedAt ? new Date(caseItem.completedAt).toISOString() : undefined,
+        notes: caseItem.notes, // TRIGGER field
         verificationType: caseItem.verificationType,
         verificationOutcome: caseItem.verificationOutcome,
-        client: caseItem.client,
-        attachments: caseItem.attachments.map(att => ({
-          id: att.id,
-          filename: att.filename,
-          originalName: att.originalName,
-          mimeType: att.mimeType,
-          size: att.size,
-          url: att.url,
-          thumbnailUrl: att.thumbnailUrl,
-          uploadedAt: att.uploadedAt.toISOString(),
-          geoLocation: att.geoLocation as any,
-        })),
+        applicantType: caseItem.applicantType, // Applicant Type
+        backendContactNumber: caseItem.backendContactNumber, // Backend Contact Number
+        createdByBackendUser: caseItem.createdByUserName, // Created By Backend User
+        assignedToFieldUser: caseItem.assignedToUserName, // Assign to Field User
+        client: {
+          id: caseItem.clientId || '',
+          name: caseItem.clientName || '', // Client
+          code: caseItem.clientCode || '',
+        },
+        product: caseItem.productId ? {
+          id: caseItem.productId,
+          name: caseItem.productName || '', // Product
+          code: caseItem.productCode || '',
+        } : undefined,
+        verificationTypeDetails: caseItem.verificationTypeId ? {
+          id: caseItem.verificationTypeId,
+          name: caseItem.verificationTypeName || '', // Verification Type
+          code: caseItem.verificationTypeCode || '',
+        } : undefined,
+        attachments: [], // Will be populated separately if needed
         formData: caseItem.verificationData,
         syncStatus: 'SYNCED',
       }));
@@ -246,7 +266,7 @@ export class MobileSyncController {
   // Get sync status for device
   static async getSyncStatus(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const deviceId = req.headers['x-device-id'] as string;
 
       const devRes = await query(`SELECT * FROM devices WHERE "userId" = $1 AND "deviceId" = $2 LIMIT 1`, [userId, deviceId]);
@@ -296,13 +316,13 @@ export class MobileSyncController {
       case 'UPDATE':
         // Check if case exists and user has access
         const where: any = { id };
-        if (userRole === 'FIELD') {
-          where.assignedToId = userId;
+        if (userRole === 'FIELD_AGENT') {
+          where.assignedTo = userId;
         }
 
         const vals9: any[] = [id];
         let exSql7 = `SELECT id, "updatedAt" FROM cases WHERE id = $1`;
-        if (userRole === 'FIELD') { exSql7 += ` AND "assignedToId" = $2`; vals9.push(userId); }
+        if (userRole === 'FIELD_AGENT') { exSql7 += ` AND "assignedTo" = $2`; vals9.push(userId); }
         const exRes7 = await query(exSql7, vals9);
         const existingCase = exRes7.rows[0];
         if (!existingCase) {
@@ -337,7 +357,7 @@ export class MobileSyncController {
 
       case 'CREATE':
         // Create new case (if allowed)
-        if (userRole === 'FIELD') {
+        if (userRole === 'FIELD_AGENT') {
           throw new Error('Field users cannot create cases');
         }
 

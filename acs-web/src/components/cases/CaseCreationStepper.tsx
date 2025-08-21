@@ -73,14 +73,14 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
   // Update state when initialData changes (for edit mode)
   useEffect(() => {
     if (editMode && initialData) {
-      if (initialData.customerInfo && !customerInfo) {
+      if (initialData.customerInfo) {
         setCustomerInfo(initialData.customerInfo);
       }
-      if (initialData.caseFormData && !caseFormData) {
+      if (initialData.caseFormData) {
         setCaseFormData(initialData.caseFormData);
       }
     }
-  }, [editMode, initialData, customerInfo, caseFormData]);
+  }, [editMode, initialData]);
 
   const steps = [
     {
@@ -104,9 +104,9 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
     
     try {
       const criteria = deduplicationService.cleanCriteria({
-        applicantName: data.customerName,
+        customerName: data.customerName,
         panNumber: data.panNumber,
-        applicantPhone: data.mobileNumber,
+        customerPhone: data.mobileNumber,
       });
 
       const validation = deduplicationService.validateCriteria(criteria);
@@ -169,16 +169,14 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
       const verificationTypeId = selectedVerificationType?.id?.toString() || '';
 
       const caseData: CreateCaseData = {
-        // Business-required fields (keeping as requested)
+        // Core case fields
         customerName: customerInfo.customerName,
         customerCallingCode: customerInfo.customerCallingCode,
-        customerEmail: '',
+        customerPhone: customerInfo.mobileNumber,
         createdByBackendUser: data.createdByBackendUser,
         verificationType: mapVerificationType(data.verificationType),
-
-        // Core case fields
-        addressStreet: data.address,
-        addressPincode: pincodeCode, // Use actual pincode code, not ID
+        address: data.address,
+        pincode: pincodeCode, // Use actual pincode code, not ID
         assignedToId: data.assignedToId,
         clientId: data.clientId,
         productId: data.productId,
@@ -188,10 +186,7 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
         priority: data.priority,
         notes: data.notes,
 
-        // Deduplication fields - REQUIRED by backend
-        applicantName: customerInfo.customerName,
-        applicantPhone: customerInfo.mobileNumber,
-        applicantEmail: '',
+        // Deduplication fields
         panNumber: customerInfo.panNumber,
         deduplicationDecision: 'CREATE_NEW',
         deduplicationRationale: 'Case created through two-step workflow',
@@ -208,7 +203,7 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
         const caseId = result.data.caseId || result.data.id;
         const action = editMode ? 'updated' : 'created';
         toast.success(`Case ${action} successfully! Case ID: ${caseId}`);
-        onSuccess?.(result.data.id);
+        onSuccess?.(String(caseId));
       } else {
         const action = editMode ? 'update' : 'create';
         toast.error(`Failed to ${action} case`);

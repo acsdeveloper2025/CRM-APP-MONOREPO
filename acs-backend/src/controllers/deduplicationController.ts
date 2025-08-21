@@ -31,11 +31,11 @@ export const searchDuplicates = async (req: AuthenticatedRequest, res: Response)
 
     // Clean and validate criteria
     const cleanCriteria: DeduplicationCriteria = {};
-    
-    if (criteria.applicantName?.trim()) {
-      cleanCriteria.applicantName = criteria.applicantName.trim();
+
+    if (criteria.customerName?.trim()) {
+      cleanCriteria.customerName = criteria.customerName.trim();
     }
-    
+
     if (criteria.panNumber?.trim()) {
       const pan = criteria.panNumber.trim().toUpperCase();
       // Basic PAN validation (5 letters, 4 digits, 1 letter)
@@ -50,41 +50,11 @@ export const searchDuplicates = async (req: AuthenticatedRequest, res: Response)
       }
       cleanCriteria.panNumber = pan;
     }
-    
-    if (criteria.aadhaarNumber?.trim()) {
-      const aadhaar = criteria.aadhaarNumber.trim().replace(/\s/g, '');
-      // Basic Aadhaar validation (12 digits)
-      if (!/^[0-9]{12}$/.test(aadhaar)) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            message: 'Invalid Aadhaar number format',
-            code: 'INVALID_AADHAAR_FORMAT'
-          }
-        });
-      }
-      cleanCriteria.aadhaarNumber = aadhaar;
-    }
-    
-    if (criteria.applicantPhone?.trim()) {
-      const phone = criteria.applicantPhone.trim().replace(/\D/g, '');
+
+    if (criteria.customerPhone?.trim()) {
+      const phone = criteria.customerPhone.trim().replace(/\D/g, '');
       if (phone.length >= 10) {
-        cleanCriteria.applicantPhone = phone;
-      }
-    }
-    
-    if (criteria.applicantEmail?.trim()) {
-      const email = criteria.applicantEmail.trim().toLowerCase();
-      // Basic email validation
-      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        cleanCriteria.applicantEmail = email;
-      }
-    }
-    
-    if (criteria.bankAccountNumber?.trim()) {
-      const bankAccount = criteria.bankAccountNumber.trim().replace(/\s/g, '');
-      if (bankAccount.length >= 8) {
-        cleanCriteria.bankAccountNumber = bankAccount;
+        cleanCriteria.customerPhone = phone;
       }
     }
 

@@ -126,12 +126,12 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
       });
 
       const casesRes = await query(
-        `SELECT id, "caseNumber", status, "clientId" FROM cases WHERE "clientId" = ANY($1::integer[])`,
+        `SELECT "caseId", status, "clientId" FROM cases WHERE "clientId" = ANY($1::integer[])`,
         [dbClientIds.map(Number)]
       );
       casesRes.rows.forEach(r => {
         const arr = casesByClient.get(r.clientId) || [];
-        arr.push({ id: r.id, caseNumber: r.caseNumber, status: r.status });
+        arr.push({ id: r.caseId, caseId: r.caseId, status: r.status });
         casesByClient.set(r.clientId, arr);
       });
     }
@@ -202,7 +202,7 @@ export const getClientById = async (req: AuthenticatedRequest, res: Response) =>
       [Number(id)]
     );
 
-    const casesRes2 = await query(`SELECT id, "caseNumber", status FROM cases WHERE "clientId" = $1`, [Number(id)]);
+    const casesRes2 = await query(`SELECT "caseId", status FROM cases WHERE "clientId" = $1`, [Number(id)]);
 
     // Transform response data
     const responseData = {

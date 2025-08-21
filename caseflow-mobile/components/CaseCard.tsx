@@ -712,40 +712,56 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
       </div>
     </div>
 
-    <Modal isVisible={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} title="Case Information">
+    <Modal isVisible={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} title="Case Assignment Information">
         <div className="text-light-text space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                 <div>
-                    <h4 className="font-bold text-sm text-medium-text">Customer Name</h4>
+                    <h4 className="font-bold text-sm text-medium-text">Customer Name *</h4>
                     <p>{caseData.customer.name}</p>
                 </div>
                 <div>
-                    <h4 className="font-bold text-sm text-medium-text">Bank Name</h4>
-                    <p>{caseData.bankName || 'N/A'}</p>
+                    <h4 className="font-bold text-sm text-medium-text">Case ID *</h4>
+                    <p>{caseData.caseId || caseData.id}</p>
                 </div>
                 <div>
-                    <h4 className="font-bold text-sm text-medium-text">Product</h4>
+                    <h4 className="font-bold text-sm text-medium-text">Client *</h4>
+                    <p>{caseData.clientName || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Product *</h4>
                     <p>{caseData.product || 'N/A'}</p>
                 </div>
                 <div>
-                    <h4 className="font-bold text-sm text-medium-text">Trigger</h4>
+                    <h4 className="font-bold text-sm text-medium-text">Verification Type *</h4>
+                    <p>{caseData.verificationType}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Applicant Type *</h4>
+                    <p>{caseData.applicantType || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Created By Backend User *</h4>
+                    <p>{caseData.createdByBackendUser || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Backend Contact Number *</h4>
+                    <p>{caseData.backendContactNumber || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Assign to Field User *</h4>
+                    <p>{caseData.assignedToFieldUser || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Priority *</h4>
+                    <p>{caseData.priority || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">TRIGGER *</h4>
                     <p>{caseData.trigger || 'N/A'}</p>
                 </div>
-                <div className="sm:col-span-2">
-                    <h4 className="font-bold text-sm text-medium-text">Visit Address</h4>
-                    <p>{caseData.visitAddress || 'N/A'}</p>
-                </div>
                 <div>
-                    <h4 className="font-bold text-sm text-medium-text">System Contact Number</h4>
-                    <p>{caseData.systemContactNumber || 'N/A'}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Customer Calling Code</h4>
+                    <h4 className="font-bold text-sm text-medium-text">Customer Calling Code *</h4>
                     <p>{caseData.customerCallingCode || 'N/A'}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Applicant Status</h4>
-                    <p>{caseData.applicantStatus || 'N/A'}</p>
                 </div>
             </div>
              <div className="flex justify-end pt-4">

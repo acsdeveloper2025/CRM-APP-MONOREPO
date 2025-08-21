@@ -1,8 +1,9 @@
 
 export enum CaseStatus {
-  Assigned = 'Assigned',
-  InProgress = 'In Progress',
-  Completed = 'Completed',
+  Assigned = 'ASSIGNED',
+  InProgress = 'IN_PROGRESS',
+  Completed = 'COMPLETED',
+  Pending = 'PENDING',
 }
 
 export enum VerificationType {
@@ -1726,6 +1727,7 @@ export interface UntraceablePropertyIndividualReportData {
 
 export interface Case {
   id: string;
+  caseId?: string; // Case ID for display
   title: string;
   description: string;
   customer: {
@@ -1749,6 +1751,12 @@ export interface Case {
   systemContactNumber?: string;
   customerCallingCode?: string;
   applicantStatus?: string;
+  // Required assignment fields
+  clientName?: string; // Client name
+  applicantType?: string; // Applicant Type
+  createdByBackendUser?: string; // Created By Backend User
+  backendContactNumber?: string; // Backend Contact Number
+  assignedToFieldUser?: string; // Assign to Field User
   verificationType: VerificationType;
   verificationOutcome: VerificationOutcome | null;
   order?: number;

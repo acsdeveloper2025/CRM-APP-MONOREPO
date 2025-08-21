@@ -154,9 +154,9 @@ export const CaseDetailPage: React.FC = () => {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Case #{caseItem.id.slice(-8)}
+              Case #{caseItem.caseId || caseItem.id?.slice(-8) || 'N/A'}
             </h1>
-            <p className="mt-2 text-gray-600">{caseItem.title}</p>
+            <p className="mt-2 text-gray-600">{caseItem.title || 'Case Details'}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -222,12 +222,18 @@ export const CaseDetailPage: React.FC = () => {
               </div>
 
               <div>
+                <div className="flex items-center space-x-2">
+                  <User className="h-4 w-4 text-gray-400" />
+                  <span className="font-medium">Created By Backend User</span>
+                </div>
+                <p className="mt-1 text-sm text-gray-600">
+                  {caseItem.createdByBackendUser || 'System'}
+                </p>
+              </div>
+
+              <div>
                 <h4 className="font-medium text-blue-900">Case Details</h4>
                 <div className="mt-2 space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">Case Number: {caseItem.caseNumber}</span>
-                  </div>
                   <div className="flex items-center space-x-2">
                     <FileText className="h-4 w-4 text-gray-400" />
                     <span className="text-sm">Case ID: {caseItem.caseId}</span>
@@ -303,15 +309,7 @@ export const CaseDetailPage: React.FC = () => {
                 </p>
               </div>
 
-              <div>
-                <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium">Created By</span>
-                </div>
-                <p className="mt-1 text-sm text-gray-600">
-                  {caseItem.createdByBackendUser || 'System'}
-                </p>
-              </div>
+
 
               <div>
                 <div className="flex items-center space-x-2">

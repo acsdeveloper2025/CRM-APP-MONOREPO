@@ -163,19 +163,19 @@ export const CaseTable: React.FC<CaseTableProps> = ({
         </TableHeader>
         <TableBody>
           {cases.map((caseItem) => (
-            <TableRow key={caseItem.id}>
+            <TableRow key={caseItem.caseId || caseItem.id}>
               <TableCell className="font-medium">
                 <Link
                   to={`/cases/${caseItem.id}`}
                   className="text-primary hover:underline"
                 >
-                  #{caseItem.caseId || caseItem.id.slice(-8)}
+                  #{caseItem.caseId || caseItem.id?.slice(-8) || 'N/A'}
                 </Link>
               </TableCell>
               <TableCell>
                 <div>
-                  <div className="font-medium">{caseItem.applicantName || caseItem.customerName}</div>
-                  <div className="text-sm text-gray-500">{caseItem.applicantPhone || caseItem.customerPhone}</div>
+                  <div className="font-medium">{caseItem.customerName || caseItem.applicantName}</div>
+                  <div className="text-sm text-gray-500">{caseItem.customerPhone || caseItem.applicantPhone}</div>
                 </div>
               </TableCell>
               <TableCell>
@@ -214,13 +214,13 @@ export const CaseTable: React.FC<CaseTableProps> = ({
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                      <Link to={`/cases/${caseItem.id}`}>
+                      <Link to={`/cases/${caseItem.caseId || caseItem.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to={`/cases/${caseItem.id}/edit`}>
+                      <Link to={`/cases/new?edit=${caseItem.caseId || caseItem.id}`}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Case
                       </Link>

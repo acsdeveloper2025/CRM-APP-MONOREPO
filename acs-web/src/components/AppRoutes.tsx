@@ -111,15 +111,11 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/cases/new"
         element={
-          <Layout>
-            <div style={{ padding: '20px', backgroundColor: 'green', color: 'white' }}>
-              <h1>🟢 ROUTE TEST - /cases/new</h1>
-              <p>If you see this, the route is working!</p>
-              <p>URL: {window.location.href}</p>
-              <p>Search: {window.location.search}</p>
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
+            <Layout>
               <NewCasePage />
-            </div>
-          </Layout>
+            </Layout>
+          </ProtectedRoute>
         }
       />
 

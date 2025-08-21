@@ -407,12 +407,19 @@ class CaseService {
       if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
       if (params.assignedToMe) queryParams.append('assignedToMe', 'true');
 
-      const response = await apiClient.get<CaseListResponse>(`/cases?${queryParams.toString()}`);
+      const response = await apiClient.get<CaseListResponse>(`/mobile/cases?${queryParams.toString()}`);
 
       if (response.success && response.data) {
         // Cache the cases locally for offline access
         await this.cacheApiCases(response.data.cases);
-        return response.data;
+
+        // Transform mobile cases to Case interface for return
+        const transformedCases = response.data.cases.map(mobileCase => this.transformMobileCaseToCase(mobileCase));
+
+        return {
+          cases: transformedCases,
+          pagination: response.data.pagination,
+        };
       } else {
         // Fallback to local data if API fails
         console.warn('API request failed, falling back to local data:', response.error);
@@ -495,8 +502,47 @@ class CaseService {
     };
   }
 
-  private async cacheApiCases(cases: Case[]): Promise<void> {
+  private transformMobileCaseToCase(mobileCase: any): Case {
+    return {
+      id: mobileCase.id,
+      caseId: mobileCase.caseId?.toString(),
+      title: mobileCase.title || `Case ${mobileCase.caseId || mobileCase.id}`,
+      description: mobileCase.description || '',
+      customer: {
+        name: mobileCase.customerName || '',
+        contact: mobileCase.customerPhone || '',
+      },
+      status: mobileCase.status as CaseStatus,
+      isSaved: false,
+      createdAt: mobileCase.assignedAt || new Date().toISOString(),
+      updatedAt: mobileCase.updatedAt || new Date().toISOString(),
+      completedAt: mobileCase.completedAt,
+      priority: mobileCase.priority,
+      verificationType: mobileCase.verificationType as VerificationType,
+      verificationOutcome: mobileCase.verificationOutcome as VerificationOutcome,
+      // Assignment fields
+      clientName: mobileCase.client?.name,
+      applicantType: mobileCase.applicantType,
+      createdByBackendUser: mobileCase.createdByBackendUser,
+      backendContactNumber: mobileCase.backendContactNumber,
+      assignedToFieldUser: mobileCase.assignedToFieldUser,
+      trigger: mobileCase.notes,
+      customerCallingCode: mobileCase.customerCallingCode,
+      // Legacy fields
+      product: mobileCase.product?.name,
+      bankName: mobileCase.client?.name, // Use client name as bank name for now
+      visitAddress: `${mobileCase.addressStreet}, ${mobileCase.addressCity}, ${mobileCase.addressState} ${mobileCase.addressPincode}`.trim(),
+      systemContactNumber: mobileCase.backendContactNumber,
+      applicantStatus: mobileCase.applicantType,
+      attachments: mobileCase.attachments || [],
+    };
+  }
+
+  private async cacheApiCases(mobileCases: any[]): Promise<void> {
     try {
+      // Transform mobile cases to Case interface
+      const cases = mobileCases.map(mobileCase => this.transformMobileCaseToCase(mobileCase));
+
       // Merge with existing local cases, preferring API data
       const localCases = await this.readFromStorage();
       const mergedCases = [...cases];
@@ -539,7 +585,7 @@ class CaseService {
     try {
       // Try to fetch from API first
       if (!this.useOfflineMode && navigator.onLine) {
-        const response = await apiClient.get<CaseDetailResponse>(`/cases/${id}`);
+        const response = await apiClient.get<CaseDetailResponse>(`/mobile/cases/${id}`);
 
         if (response.success && response.data) {
           // Cache the case locally
@@ -587,7 +633,7 @@ class CaseService {
 
       // Try to update via API first
       if (!this.useOfflineMode && navigator.onLine) {
-        const response = await apiClient.put<{ case: Case }>(`/cases/${id}`, apiUpdates);
+        const response = await apiClient.put<{ case: Case }>(`/mobile/cases/${id}`, apiUpdates);
 
         if (response.success && response.data) {
           // Update local cache
@@ -650,15 +696,15 @@ class CaseService {
 
           switch (item.action) {
             case 'update':
-              const updateResponse = await apiClient.put(`/cases/${item.caseId}`, item.data);
+              const updateResponse = await apiClient.put(`/mobile/cases/${item.caseId}`, item.data);
               success = updateResponse.success;
               break;
             case 'create':
-              const createResponse = await apiClient.post('/cases', item.data);
+              const createResponse = await apiClient.post('/mobile/cases', item.data);
               success = createResponse.success;
               break;
             case 'delete':
-              const deleteResponse = await apiClient.delete(`/cases/${item.caseId}`);
+              const deleteResponse = await apiClient.delete(`/mobile/cases/${item.caseId}`);
               success = deleteResponse.success;
               break;
           }
@@ -715,7 +761,7 @@ class CaseService {
       }
 
       // Submit to API
-      const response = await apiClient.post(`/cases/${id}/submit`, {
+      const response = await apiClient.post(`/mobile/cases/${id}/submit`, {
         caseData,
         timestamp: new Date().toISOString(),
       });
@@ -729,7 +775,7 @@ class CaseService {
         submissionStatus: 'success',
         submissionError: undefined,
         isSaved: false, // Clear saved status since it's now submitted
-        status: 'submitted' as CaseStatus,
+        status: CaseStatus.Completed,
       });
 
       console.log(`Case ${id} submitted successfully`);
@@ -746,7 +792,7 @@ class CaseService {
 
       // If offline, mark for sync
       if (!navigator.onLine) {
-        await this.markForSync(id, 'update', { status: 'submitted' });
+        await this.markForSync(id, 'update', { status: CaseStatus.Completed });
       }
 
       console.error(`Case ${id} submission failed:`, errorMessage);

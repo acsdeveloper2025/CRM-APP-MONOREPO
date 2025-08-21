@@ -56,13 +56,13 @@ export class MobileLocationController {
         const userRole = (req as any).user?.role;
         const where: any = { id: caseId };
         
-        if (userRole === 'FIELD') {
-          where.assignedToId = userId;
+        if (userRole === 'FIELD_AGENT') {
+          where.assignedTo = userId;
         }
 
         const caseSqlVals: any[] = [where.id];
         let caseSql = `SELECT id FROM cases WHERE id = $1`;
-        if (where.assignedToId) { caseSql += ` AND "assignedToId" = $2`; caseSqlVals.push(where.assignedToId); }
+        if (where.assignedTo) { caseSql += ` AND "assignedTo" = $2`; caseSqlVals.push(where.assignedTo); }
         const caseRes = await query(caseSql, caseSqlVals);
         const existingCase = caseRes.rows[0];
 

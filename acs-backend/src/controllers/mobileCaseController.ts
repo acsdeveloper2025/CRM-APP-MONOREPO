@@ -13,7 +13,7 @@ export class MobileCaseController {
   // Get cases for mobile app with optimized response
   static async getMobileCases(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
       
       const {
@@ -35,10 +35,10 @@ export class MobileCaseController {
       const where: any = {};
 
       // Role-based filtering
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
+      if (userRole === 'FIELD_AGENT') {
+        where.assignedTo = userId;
       } else if (assignedTo) {
-        where.assignedToId = assignedTo;
+        where.assignedTo = assignedTo;
       }
 
       if (status) {
@@ -60,12 +60,12 @@ export class MobileCaseController {
       }
 
       if (dateFrom || dateTo) {
-        where.assignedAt = {};
+        where.createdAt = {};
         if (dateFrom) {
-          where.assignedAt.gte = new Date(dateFrom);
+          where.createdAt.gte = new Date(dateFrom);
         }
         if (dateTo) {
-          where.assignedAt.lte = new Date(dateTo);
+          where.createdAt.lte = new Date(dateTo);
         }
       }
 
@@ -79,23 +79,32 @@ export class MobileCaseController {
       // Build dynamic SQL for where
       const vals: any[] = [];
       const wh: string[] = [];
-      if (where.assignedToId) { vals.push(where.assignedToId); wh.push(`c."assignedToId" = $${vals.length}`); }
+      if (where.assignedTo) { vals.push(where.assignedTo); wh.push(`c."assignedTo" = $${vals.length}`); }
       if (where.status) { vals.push(where.status); wh.push(`c.status = $${vals.length}`); }
       if (where.priority) { vals.push(where.priority); wh.push(`c.priority = $${vals.length}`); }
       if (where.updatedAt?.gt) { vals.push(where.updatedAt.gt); wh.push(`c."updatedAt" > $${vals.length}`); }
       if (search) {
-        vals.push(`%${search}%`); wh.push(`(c."customerName" ILIKE $${vals.length} OR c."customerPhone" ILIKE $${vals.length} OR c."customerEmail" ILIKE $${vals.length} OR c.title ILIKE $${vals.length} OR c.description ILIKE $${vals.length})`);
+        vals.push(`%${search}%`); wh.push(`(c."customerName" ILIKE $${vals.length} OR c."customerPhone" ILIKE $${vals.length} OR c.title ILIKE $${vals.length} OR c.description ILIKE $${vals.length})`);
       }
-      if (dateFrom) { vals.push(new Date(dateFrom)); wh.push(`c."assignedAt" >= $${vals.length}`); }
-      if (dateTo) { vals.push(new Date(dateTo)); wh.push(`c."assignedAt" <= $${vals.length}`); }
+      if (dateFrom) { vals.push(new Date(dateFrom)); wh.push(`c."createdAt" >= $${vals.length}`); }
+      if (dateTo) { vals.push(new Date(dateTo)); wh.push(`c."createdAt" <= $${vals.length}`); }
       const whereSql = wh.length ? `WHERE ${wh.join(' AND ')}` : '';
 
       const listSql = `
-        SELECT c.*, cl.id as "clientId", cl.name as "clientName", cl.code as "clientCode"
+        SELECT c.*,
+               cl.id as "clientId", cl.name as "clientName", cl.code as "clientCode",
+               p.id as "productId", p.name as "productName", p.code as "productCode",
+               vt.id as "verificationTypeId", vt.name as "verificationTypeName", vt.code as "verificationTypeCode",
+               cu.name as "createdByUserName",
+               au.name as "assignedToUserName"
         FROM cases c
         LEFT JOIN clients cl ON cl.id = c."clientId"
+        LEFT JOIN products p ON p.id = c."productId"
+        LEFT JOIN "verificationTypes" vt ON vt.id = c."verificationTypeId"
+        LEFT JOIN users cu ON cu.id = c."createdBy"
+        LEFT JOIN users au ON au.id = c."assignedTo"
         ${whereSql}
-        ORDER BY c.priority DESC, c."assignedAt" DESC
+        ORDER BY c.priority DESC, c."createdAt" DESC
         LIMIT $${vals.length + 1} OFFSET $${vals.length + 2}`;
       const casesRes = await query(listSql, [...vals, take, skip]);
 
@@ -103,12 +112,14 @@ export class MobileCaseController {
       const totalCount = Number(countRes.rows[0]?.count || 0);
       const cases = casesRes.rows as any[];
 
-      // Transform cases for mobile response
+      // Transform cases for mobile response with all required assignment fields
       const mobileCases: MobileCaseResponse[] = cases.map(caseItem => ({
         id: caseItem.id,
+        caseId: caseItem.caseId, // User-friendly auto-incrementing case ID
         title: caseItem.title,
         description: caseItem.description,
-        customerName: caseItem.customerName,
+        customerName: caseItem.customerName || caseItem.applicantName, // Customer Name
+        customerCallingCode: caseItem.customerCallingCode, // Customer Calling Code
         customerPhone: caseItem.customerPhone,
         customerEmail: caseItem.customerEmail,
         addressStreet: caseItem.addressStreet,
@@ -117,19 +128,33 @@ export class MobileCaseController {
         addressPincode: caseItem.addressPincode,
         latitude: caseItem.latitude,
         longitude: caseItem.longitude,
-        status: caseItem.status,
-        priority: caseItem.priority,
-        assignedAt: new Date(caseItem.assignedAt).toISOString(),
+        status: caseItem.status.toUpperCase().replace(/\s+/g, '_'),
+        priority: caseItem.priority, // Priority
+        assignedAt: new Date(caseItem.createdAt).toISOString(),
         updatedAt: new Date(caseItem.updatedAt).toISOString(),
         completedAt: caseItem.completedAt ? new Date(caseItem.completedAt).toISOString() : undefined,
-        notes: caseItem.notes,
+        notes: caseItem.notes, // TRIGGER field
         verificationType: caseItem.verificationType,
         verificationOutcome: caseItem.verificationOutcome,
+        applicantType: caseItem.applicantType, // Applicant Type
+        backendContactNumber: caseItem.backendContactNumber, // Backend Contact Number
+        createdByBackendUser: caseItem.createdByUserName, // Created By Backend User
+        assignedToFieldUser: caseItem.assignedToUserName, // Assign to Field User
         client: {
           id: caseItem.clientId || '',
-          name: caseItem.clientName || '',
+          name: caseItem.clientName || '', // Client
           code: caseItem.clientCode || '',
         },
+        product: caseItem.productId ? {
+          id: caseItem.productId,
+          name: caseItem.productName || '', // Product
+          code: caseItem.productCode || '',
+        } : undefined,
+        verificationTypeDetails: caseItem.verificationTypeId ? {
+          id: caseItem.verificationTypeId,
+          name: caseItem.verificationTypeName || '', // Verification Type
+          code: caseItem.verificationTypeCode || '',
+        } : undefined,
         attachments: [],
         formData: (caseItem as any).verificationData || null,
         syncStatus: 'SYNCED',
@@ -141,15 +166,17 @@ export class MobileCaseController {
       res.json({
         success: true,
         message: 'Cases retrieved successfully',
-        data: mobileCases,
-        pagination: {
-          page: Number(page),
-          limit: take,
-          total: totalCount,
-          totalPages,
-          hasMore,
+        data: {
+          cases: mobileCases,
+          pagination: {
+            page: Number(page),
+            limit: take,
+            total: totalCount,
+            totalPages,
+            hasMore,
+          },
+          syncTimestamp: new Date().toISOString(),
         },
-        syncTimestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Get mobile cases error:', error);
@@ -179,8 +206,21 @@ export class MobileCaseController {
       }
 
       const vals2: any[] = [caseId];
-      let caseSql = `SELECT c.*, cl.id as "clientId", cl.name as "clientName", cl.code as "clientCode" FROM cases c LEFT JOIN clients cl ON cl.id = c."clientId" WHERE c.id = $1`;
-      if (userRole === 'FIELD') { caseSql += ` AND c."assignedToId" = $2`; vals2.push(userId); }
+      let caseSql = `
+        SELECT c.*,
+               cl.id as "clientId", cl.name as "clientName", cl.code as "clientCode",
+               p.id as "productId", p.name as "productName", p.code as "productCode",
+               vt.id as "verificationTypeId", vt.name as "verificationTypeName", vt.code as "verificationTypeCode",
+               cu.name as "createdByUserName",
+               au.name as "assignedToUserName"
+        FROM cases c
+        LEFT JOIN clients cl ON cl.id = c."clientId"
+        LEFT JOIN products p ON p.id = c."productId"
+        LEFT JOIN "verificationTypes" vt ON vt.id = c."verificationTypeId"
+        LEFT JOIN users cu ON cu.id = c."createdBy"
+        LEFT JOIN users au ON au.id = c."assignedTo"
+        WHERE c.id = $1`;
+      if (userRole === 'FIELD_AGENT') { caseSql += ` AND c."assignedTo" = $2`; vals2.push(userId); }
       const caseRes = await query(caseSql, vals2);
       const caseItem = caseRes.rows[0];
 
@@ -204,9 +244,11 @@ export class MobileCaseController {
 
       const mobileCase: MobileCaseResponse = {
         id: caseItem.id,
+        caseId: caseItem.caseId, // User-friendly auto-incrementing case ID
         title: caseItem.title,
         description: caseItem.description,
-        customerName: caseItem.customerName,
+        customerName: caseItem.customerName || caseItem.applicantName, // Customer Name
+        customerCallingCode: caseItem.customerCallingCode, // Customer Calling Code
         customerPhone: caseItem.customerPhone,
         customerEmail: caseItem.customerEmail,
         addressStreet: caseItem.addressStreet,
@@ -215,19 +257,33 @@ export class MobileCaseController {
         addressPincode: caseItem.addressPincode,
         latitude: caseItem.latitude,
         longitude: caseItem.longitude,
-        status: caseItem.status,
-        priority: caseItem.priority,
-        assignedAt: new Date(caseItem.assignedAt).toISOString(),
+        status: caseItem.status.toUpperCase().replace(/\s+/g, '_'),
+        priority: caseItem.priority, // Priority
+        assignedAt: new Date(caseItem.createdAt).toISOString(),
         updatedAt: new Date(caseItem.updatedAt).toISOString(),
         completedAt: caseItem.completedAt ? new Date(caseItem.completedAt).toISOString() : undefined,
-        notes: caseItem.notes,
+        notes: caseItem.notes, // TRIGGER field
         verificationType: caseItem.verificationType,
         verificationOutcome: caseItem.verificationOutcome,
+        applicantType: caseItem.applicantType, // Applicant Type
+        backendContactNumber: caseItem.backendContactNumber, // Backend Contact Number
+        createdByBackendUser: caseItem.createdByUserName, // Created By Backend User
+        assignedToFieldUser: caseItem.assignedToUserName, // Assign to Field User
         client: {
           id: caseItem.clientId || '',
-          name: caseItem.clientName || '',
+          name: caseItem.clientName || '', // Client
           code: caseItem.clientCode || '',
         },
+        product: caseItem.productId ? {
+          id: caseItem.productId,
+          name: caseItem.productName || '', // Product
+          code: caseItem.productCode || '',
+        } : undefined,
+        verificationTypeDetails: caseItem.verificationTypeId ? {
+          id: caseItem.verificationTypeId,
+          name: caseItem.verificationTypeName || '', // Verification Type
+          code: caseItem.verificationTypeCode || '',
+        } : undefined,
         attachments: attRes2.rows.map((att: any) => ({
           id: att.id,
           filename: att.name,

@@ -2,23 +2,17 @@ import { Pool } from 'pg';
 import { logger } from '@/utils/logger';
 
 export interface DeduplicationCriteria {
-  applicantName?: string;
+  customerName?: string;
   panNumber?: string;
-  aadhaarNumber?: string;
-  applicantPhone?: string;
-  applicantEmail?: string;
-  bankAccountNumber?: string;
+  customerPhone?: string;
 }
 
 export interface DuplicateCase {
   id: string;
-  caseNumber: string;
-  applicantName: string;
-  applicantPhone?: string;
-  applicantEmail?: string;
+  caseId: number;
+  customerName: string;
+  customerPhone?: string;
   panNumber?: string;
-  aadhaarNumber?: string;
-  bankAccountNumber?: string;
   status: string;
   createdAt: string;
   clientName?: string;
@@ -60,38 +54,20 @@ export class DeduplicationService {
         paramIndex++;
       }
 
-      if (criteria.aadhaarNumber) {
-        searchConditions.push(`"aadhaarNumber" = $${paramIndex}`);
-        searchParams.push(criteria.aadhaarNumber);
-        paramIndex++;
-      }
-
-      if (criteria.applicantPhone) {
-        searchConditions.push(`"applicantPhone" = $${paramIndex}`);
-        searchParams.push(criteria.applicantPhone);
-        paramIndex++;
-      }
-
-      if (criteria.applicantEmail) {
-        searchConditions.push(`LOWER("applicantEmail") = LOWER($${paramIndex})`);
-        searchParams.push(criteria.applicantEmail);
-        paramIndex++;
-      }
-
-      if (criteria.bankAccountNumber) {
-        searchConditions.push(`"bankAccountNumber" = $${paramIndex}`);
-        searchParams.push(criteria.bankAccountNumber);
+      if (criteria.customerPhone) {
+        searchConditions.push(`"customerPhone" = $${paramIndex}`);
+        searchParams.push(criteria.customerPhone);
         paramIndex++;
       }
 
       // Fuzzy matching for names
-      if (criteria.applicantName) {
+      if (criteria.customerName) {
         searchConditions.push(`
-          (similarity("applicantName", $${paramIndex}) > 0.6 
-           OR "applicantName" ILIKE '%' || $${paramIndex} || '%'
-           OR $${paramIndex} ILIKE '%' || "applicantName" || '%')
+          (similarity("customerName", $${paramIndex}) > 0.6
+           OR "customerName" ILIKE '%' || $${paramIndex} || '%'
+           OR $${paramIndex} ILIKE '%' || "customerName" || '%')
         `);
-        searchParams.push(criteria.applicantName);
+        searchParams.push(criteria.customerName);
         paramIndex++;
       }
 
@@ -104,15 +80,11 @@ export class DeduplicationService {
       }
 
       const query = `
-        SELECT 
-          c.id,
-          c."caseNumber",
-          c."applicantName",
-          c."applicantPhone",
-          c."applicantEmail",
+        SELECT
+          c."caseId",
+          c."customerName",
+          c."customerPhone",
           c."panNumber",
-          c."aadhaarNumber",
-          c."bankAccountNumber",
           c.status,
           c."createdAt",
           cl.name as "clientName"
@@ -134,25 +106,13 @@ export class DeduplicationService {
           matchTypes.push('PAN');
           matchScore += 100;
         }
-        if (criteria.aadhaarNumber && row.aadhaarNumber === criteria.aadhaarNumber) {
-          matchTypes.push('Aadhaar');
-          matchScore += 100;
-        }
-        if (criteria.applicantPhone && row.applicantPhone === criteria.applicantPhone) {
+        if (criteria.customerPhone && row.customerPhone === criteria.customerPhone) {
           matchTypes.push('Phone');
           matchScore += 80;
         }
-        if (criteria.applicantEmail && row.applicantEmail?.toLowerCase() === criteria.applicantEmail?.toLowerCase()) {
-          matchTypes.push('Email');
-          matchScore += 70;
-        }
-        if (criteria.bankAccountNumber && row.bankAccountNumber === criteria.bankAccountNumber) {
-          matchTypes.push('Bank Account');
-          matchScore += 90;
-        }
-        if (criteria.applicantName) {
+        if (criteria.customerName) {
           // Simple name similarity check
-          const nameMatch = this.calculateNameSimilarity(criteria.applicantName, row.applicantName);
+          const nameMatch = this.calculateNameSimilarity(criteria.customerName, row.customerName);
           if (nameMatch > 0.6) {
             matchTypes.push('Name');
             matchScore += Math.floor(nameMatch * 60);
@@ -160,14 +120,11 @@ export class DeduplicationService {
         }
 
         return {
-          id: row.id,
-          caseNumber: row.caseNumber,
-          applicantName: row.applicantName,
-          applicantPhone: row.applicantPhone,
-          applicantEmail: row.applicantEmail,
+          id: row.caseId.toString(),
+          caseId: row.caseId,
+          customerName: row.customerName,
+          customerPhone: row.customerPhone,
           panNumber: row.panNumber,
-          aadhaarNumber: row.aadhaarNumber,
-          bankAccountNumber: row.bankAccountNumber,
           status: row.status,
           createdAt: row.createdAt,
           clientName: row.clientName,
