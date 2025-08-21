@@ -1,21 +1,59 @@
-import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useCase, useCaseAttachments } from '@/hooks/useCases';
-import { ArrowLeft, MapPin, Phone, Mail, Calendar, User, Building2, FileText } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { useCase, useCaseAttachments, useAssignCase } from '@/hooks/useCases';
+import { ReassignCaseModal } from '@/components/cases/ReassignCaseModal';
+import { ArrowLeft, MapPin, Phone, Mail, Calendar, User, Building2, FileText, Edit, UserCheck } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+
+// Helper function to safely format dates
+const safeFormatDistanceToNow = (dateValue: string | null | undefined): string => {
+  if (!dateValue) return 'Unknown';
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch (error) {
+    return 'Invalid date';
+  }
+};
 
 export const CaseDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: caseData, isLoading } = useCase(id!);
+  const navigate = useNavigate();
+  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+
+
+
+  const { data: caseData, isLoading, refetch } = useCase(id!);
   const { data: attachmentsData } = useCaseAttachments(id!);
+  const assignCaseMutation = useAssignCase();
   // const { data: historyData } = useCaseHistory(id!);
 
   const caseItem = caseData?.data;
   const attachments = attachmentsData?.data || [];
   // const history = historyData?.data || [];
+
+  // Handler functions
+  const handleEditCase = () => {
+    navigate(`/cases/new?edit=${id}`);
+  };
+
+  const handleReassignCase = async (assignedToId: string, reason: string) => {
+    try {
+      await assignCaseMutation.mutateAsync({
+        id: id!,
+        assignedToId,
+        reason
+      });
+      setIsReassignModalOpen(false);
+      refetch(); // Refresh case data to show updated assignment
+    } catch (error) {
+      console.error('Failed to reassign case:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -66,8 +104,12 @@ export const CaseDetailPage: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority: number) => {
-    switch (priority) {
+  const getPriorityColor = (priority: number | string) => {
+    const priorityNum = typeof priority === 'string' ?
+      (priority === 'LOW' ? 1 : priority === 'MEDIUM' ? 2 : priority === 'HIGH' ? 3 : priority === 'URGENT' ? 4 : parseInt(priority))
+      : priority;
+
+    switch (priorityNum) {
       case 1:
         return 'bg-gray-100 text-gray-800';
       case 2:
@@ -81,8 +123,12 @@ export const CaseDetailPage: React.FC = () => {
     }
   };
 
-  const getPriorityLabel = (priority: number) => {
-    switch (priority) {
+  const getPriorityLabel = (priority: number | string) => {
+    const priorityNum = typeof priority === 'string' ?
+      (priority === 'LOW' ? 1 : priority === 'MEDIUM' ? 2 : priority === 'HIGH' ? 3 : priority === 'URGENT' ? 4 : parseInt(priority))
+      : priority;
+
+    switch (priorityNum) {
       case 1:
         return 'Low';
       case 2:
@@ -92,7 +138,7 @@ export const CaseDetailPage: React.FC = () => {
       case 4:
         return 'Urgent';
       default:
-        return 'Unknown';
+        return typeof priority === 'string' ? priority : 'Unknown';
     }
   };
 
@@ -132,53 +178,77 @@ export const CaseDetailPage: React.FC = () => {
               <CardTitle>Case Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-medium text-gray-900">Description</h4>
-                <p className="mt-1 text-gray-600">{caseItem.description}</p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium text-gray-900">Customer Information</h4>
+                  <h4 className="font-medium text-blue-900">Applicant Information</h4>
                   <div className="mt-2 space-y-2">
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">{caseItem.customerName}</span>
+                      <span className="text-sm">{caseItem.applicantName}</span>
                     </div>
-                    {caseItem.customerPhone && (
+                    {caseItem.applicantPhone && (
                       <div className="flex items-center space-x-2">
                         <Phone className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">{caseItem.customerPhone}</span>
+                        <span className="text-sm">{caseItem.applicantPhone}</span>
                       </div>
                     )}
-                    {caseItem.customerEmail && (
+                    {caseItem.applicantEmail && (
                       <div className="flex items-center space-x-2">
                         <Mail className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">{caseItem.customerEmail}</span>
+                        <span className="text-sm">{caseItem.applicantEmail}</span>
+                      </div>
+                    )}
+                    {caseItem.applicantType && (
+                      <div className="flex items-center space-x-2">
+                        <User className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">Type: {caseItem.applicantType}</span>
                       </div>
                     )}
                   </div>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium text-gray-900">Address</h4>
+                  <h4 className="font-medium text-blue-900">Address</h4>
                   <div className="mt-2">
                     <div className="flex items-start space-x-2">
                       <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
                       <div className="text-sm">
-                        <div>{caseItem.addressStreet}</div>
-                        <div>{caseItem.addressCity}, {caseItem.addressState}</div>
-                        <div>{caseItem.addressPincode}</div>
+                        <div>{caseItem.address}</div>
+                        <div>Pincode: {caseItem.pincode}</div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {caseItem.notes && (
+              <div>
+                <h4 className="font-medium text-blue-900">Case Details</h4>
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm">Case Number: {caseItem.caseNumber}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm">Case ID: {caseItem.caseId}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Building2 className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm">Client: {caseItem.clientName}</span>
+                  </div>
+                  {caseItem.backendContactNumber && (
+                    <div className="flex items-center space-x-2">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm">Backend Contact: {caseItem.backendContactNumber}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {(caseItem.trigger || caseItem.notes) && (
                 <div>
-                  <h4 className="font-medium text-gray-900">Notes</h4>
-                  <p className="mt-1 text-gray-600">{caseItem.notes}</p>
+                  <h4 className="font-medium text-blue-900">TRIGGER</h4>
+                  <p className="mt-1 text-gray-600">{caseItem.trigger || caseItem.notes}</p>
                 </div>
               )}
             </CardContent>
@@ -229,37 +299,27 @@ export const CaseDetailPage: React.FC = () => {
                   <span className="font-medium">Assigned To</span>
                 </div>
                 <p className="mt-1 text-sm text-gray-600">
-                  {caseItem.assignedTo?.name || 'Unassigned'}
+                  {caseItem.assignedToName || 'Not assigned'}
                 </p>
               </div>
-              
+
               <div>
                 <div className="flex items-center space-x-2">
-                  <Building2 className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium">Client</span>
+                  <User className="h-4 w-4 text-gray-400" />
+                  <span className="font-medium">Created By</span>
                 </div>
                 <p className="mt-1 text-sm text-gray-600">
-                  {caseItem.client?.name}
+                  {caseItem.createdByBackendUser || 'System'}
                 </p>
               </div>
-              
-              <div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium">Assigned</span>
-                </div>
-                <p className="mt-1 text-sm text-gray-600">
-                  {format(new Date(caseItem.assignedAt), 'PPP')}
-                </p>
-              </div>
-              
+
               <div>
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-gray-400" />
                   <span className="font-medium">Last Updated</span>
                 </div>
                 <p className="mt-1 text-sm text-gray-600">
-                  {formatDistanceToNow(new Date(caseItem.updatedAt), { addSuffix: true })}
+                  {safeFormatDistanceToNow(caseItem.updatedAt)}
                 </p>
               </div>
             </CardContent>
@@ -271,14 +331,21 @@ export const CaseDetailPage: React.FC = () => {
               <CardTitle>Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full" variant="outline">
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={handleEditCase}
+              >
+                <Edit className="mr-2 h-4 w-4" />
                 Edit Case
               </Button>
-              <Button className="w-full" variant="outline">
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => setIsReassignModalOpen(true)}
+              >
+                <UserCheck className="mr-2 h-4 w-4" />
                 Reassign
-              </Button>
-              <Button className="w-full" variant="outline">
-                Add Note
               </Button>
               {caseItem.status !== 'COMPLETED' && (
                 <Button className="w-full">
@@ -289,6 +356,17 @@ export const CaseDetailPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Reassign Case Modal */}
+      {caseItem && (
+        <ReassignCaseModal
+          isOpen={isReassignModalOpen}
+          onClose={() => setIsReassignModalOpen(false)}
+          onReassign={handleReassignCase}
+          case={caseItem}
+          isLoading={assignCaseMutation.isPending}
+        />
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check, User, FileText } from 'lucide-react';
@@ -7,28 +7,80 @@ import { FullCaseFormStep, type FullCaseFormData } from './FullCaseFormStep';
 import { DeduplicationDialog } from './DeduplicationDialog';
 import { deduplicationService, type DeduplicationResult } from '@/services/deduplication';
 import { casesService, type CreateCaseData } from '@/services/cases';
+import { usePincodes } from '@/hooks/useLocations';
+import { useVerificationTypes } from '@/hooks/useClients';
 import toast from 'react-hot-toast';
 
 interface CaseCreationStepperProps {
   onSuccess?: (caseId: string) => void;
   onCancel?: () => void;
+  editMode?: boolean;
+  editCaseId?: string;
+  initialData?: {
+    customerInfo?: CustomerInfoData;
+    caseFormData?: FullCaseFormData;
+  };
 }
 
 type Step = 'customer-info' | 'case-details';
 
+// Helper function to map verification type names to backend expected values
+const mapVerificationType = (verificationType: string): string => {
+  const typeMap: Record<string, string> = {
+    'Residence Verification': 'RESIDENCE',
+    'Office Verification': 'OFFICE',
+    'Business Verification': 'BUSINESS',
+    'Other Verification': 'OTHER',
+    'RESIDENCE': 'RESIDENCE',
+    'OFFICE': 'OFFICE',
+    'BUSINESS': 'BUSINESS',
+    'OTHER': 'OTHER'
+  };
+  return typeMap[verificationType] || 'OTHER';
+};
+
 export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
   onSuccess,
-  onCancel
+  onCancel,
+  editMode = false,
+  editCaseId,
+  initialData
 }) => {
-  const [currentStep, setCurrentStep] = useState<Step>('customer-info');
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfoData | null>(null);
-  const [caseFormData, setCaseFormData] = useState<FullCaseFormData | null>(null);
-  
+  const [currentStep, setCurrentStep] = useState<Step>(
+    editMode ? 'case-details' : 'customer-info'
+  );
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfoData | null>(
+    initialData?.customerInfo || null
+  );
+  const [caseFormData, setCaseFormData] = useState<FullCaseFormData | null>(
+    initialData?.caseFormData || null
+  );
+
   // Deduplication state
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deduplicationResult, setDeduplicationResult] = useState<DeduplicationResult | null>(null);
   const [showDeduplicationDialog, setShowDeduplicationDialog] = useState(false);
+
+  // Fetch pincodes for code lookup
+  const { data: pincodesResponse } = usePincodes();
+  const pincodes = pincodesResponse?.data || [];
+
+  // Fetch verification types for ID lookup
+  const { data: verificationTypesResponse } = useVerificationTypes();
+  const verificationTypes = verificationTypesResponse?.data || [];
+
+  // Update state when initialData changes (for edit mode)
+  useEffect(() => {
+    if (editMode && initialData) {
+      if (initialData.customerInfo && !customerInfo) {
+        setCustomerInfo(initialData.customerInfo);
+      }
+      if (initialData.caseFormData && !caseFormData) {
+        setCaseFormData(initialData.caseFormData);
+      }
+    }
+  }, [editMode, initialData, customerInfo, caseFormData]);
 
   const steps = [
     {
@@ -36,7 +88,7 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
       title: 'Customer Information',
       description: 'Enter customer details',
       icon: User,
-      completed: currentStep === 'case-details' || (currentStep === 'customer-info' && customerInfo !== null),
+      completed: editMode || currentStep === 'case-details' || (currentStep === 'customer-info' && customerInfo !== null),
     },
     {
       id: 'case-details' as const,
@@ -108,28 +160,35 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
     setIsSubmitting(true);
     
     try {
+      // Get pincode code from pincode ID for backend compatibility
+      const selectedPincode = pincodes.find(p => p.id.toString() === data.pincodeId);
+      const pincodeCode = selectedPincode?.code || data.pincodeId;
+
+      // Get verification type ID from verification type name
+      const selectedVerificationType = verificationTypes.find(vt => vt.name === data.verificationType);
+      const verificationTypeId = selectedVerificationType?.id?.toString() || '';
+
       const caseData: CreateCaseData = {
-        title: `Case for ${customerInfo.customerName}`,
-        description: `Verification case for ${customerInfo.customerName}`,
+        // Business-required fields (keeping as requested)
         customerName: customerInfo.customerName,
         customerCallingCode: customerInfo.customerCallingCode,
-        customerPhone: customerInfo.mobileNumber,
         customerEmail: '',
-        addressStreet: data.addressStreet,
-        addressCity: data.addressCity,
-        addressState: data.addressState,
-        addressPincode: data.addressPincode,
+        createdByBackendUser: data.createdByBackendUser,
+        verificationType: mapVerificationType(data.verificationType),
+
+        // Core case fields
+        addressStreet: data.address,
+        addressPincode: pincodeCode, // Use actual pincode code, not ID
         assignedToId: data.assignedToId,
         clientId: data.clientId,
         productId: data.productId,
+        verificationTypeId: verificationTypeId,
         applicantType: data.applicantType,
-        createdByBackendUser: data.createdByBackendUser,
         backendContactNumber: data.backendContactNumber,
-        verificationType: data.verificationType,
-        verificationTypeId: data.verificationTypeId,
         priority: data.priority,
         notes: data.notes,
-        // Deduplication fields
+
+        // Deduplication fields - REQUIRED by backend
         applicantName: customerInfo.customerName,
         applicantPhone: customerInfo.mobileNumber,
         applicantEmail: '',
@@ -138,18 +197,27 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
         deduplicationRationale: 'Case created through two-step workflow',
       };
 
-      const result = await casesService.createCase(caseData);
+      let result;
+      if (editMode && editCaseId) {
+        result = await casesService.updateCaseDetails(editCaseId, caseData);
+      } else {
+        result = await casesService.createCase(caseData);
+      }
 
       if (result.success) {
         const caseId = result.data.caseId || result.data.id;
-        toast.success(`Case created successfully! Case ID: ${caseId}`);
+        const action = editMode ? 'updated' : 'created';
+        toast.success(`Case ${action} successfully! Case ID: ${caseId}`);
         onSuccess?.(result.data.id);
       } else {
-        toast.error('Failed to create case');
+        const action = editMode ? 'update' : 'create';
+        toast.error(`Failed to ${action} case`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Case creation failed:', error);
-      toast.error('Failed to create case');
+      console.error('Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || 'Failed to create case';
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -238,13 +306,14 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
           />
         )}
 
-        {currentStep === 'case-details' && customerInfo && (
+        {currentStep === 'case-details' && (editMode || customerInfo) && (
           <FullCaseFormStep
-            customerInfo={customerInfo}
+            customerInfo={customerInfo || initialData?.customerInfo || {}}
             onSubmit={handleCaseFormSubmit}
-            onBack={handleBackToCustomerInfo}
+            onBack={editMode ? undefined : handleBackToCustomerInfo}
             isSubmitting={isSubmitting}
             initialData={caseFormData || {}}
+            editMode={editMode}
           />
         )}
       </div>

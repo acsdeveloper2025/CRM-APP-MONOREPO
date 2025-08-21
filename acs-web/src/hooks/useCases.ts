@@ -107,14 +107,14 @@ export const useAssignCase = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, assignedToId }: { id: string; assignedToId: string }) =>
-      casesService.assignCase(id, assignedToId),
+    mutationFn: ({ id, assignedToId, reason }: { id: string; assignedToId: string; reason?: string }) =>
+      casesService.assignCase(id, assignedToId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: caseKeys.all });
-      toast.success('Case assigned successfully');
+      toast.success('Case reassigned successfully');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to assign case');
+      toast.error(error.response?.data?.message || 'Failed to reassign case');
     },
   });
 };

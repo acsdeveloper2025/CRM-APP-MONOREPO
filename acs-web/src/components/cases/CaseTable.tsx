@@ -43,8 +43,12 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const getPriorityColor = (priority: number) => {
-  switch (priority) {
+const getPriorityColor = (priority: number | string) => {
+  const priorityNum = typeof priority === 'string' ?
+    (priority === 'LOW' ? 1 : priority === 'MEDIUM' ? 2 : priority === 'HIGH' ? 3 : priority === 'URGENT' ? 4 : parseInt(priority))
+    : priority;
+
+  switch (priorityNum) {
     case 1:
       return 'bg-gray-100 text-gray-800';
     case 2:
@@ -58,8 +62,12 @@ const getPriorityColor = (priority: number) => {
   }
 };
 
-const getPriorityLabel = (priority: number) => {
-  switch (priority) {
+const getPriorityLabel = (priority: number | string) => {
+  const priorityNum = typeof priority === 'string' ?
+    (priority === 'LOW' ? 1 : priority === 'MEDIUM' ? 2 : priority === 'HIGH' ? 3 : priority === 'URGENT' ? 4 : parseInt(priority))
+    : priority;
+
+  switch (priorityNum) {
     case 1:
       return 'Low';
     case 2:
@@ -69,7 +77,7 @@ const getPriorityLabel = (priority: number) => {
     case 4:
       return 'Urgent';
     default:
-      return 'Unknown';
+      return typeof priority === 'string' ? priority : 'Unknown';
   }
 };
 
@@ -161,13 +169,13 @@ export const CaseTable: React.FC<CaseTableProps> = ({
                   to={`/cases/${caseItem.id}`}
                   className="text-primary hover:underline"
                 >
-                  #{caseItem.id.slice(-8)}
+                  #{caseItem.caseId || caseItem.id.slice(-8)}
                 </Link>
               </TableCell>
               <TableCell>
                 <div>
-                  <div className="font-medium">{caseItem.customerName}</div>
-                  <div className="text-sm text-gray-500">{caseItem.customerPhone}</div>
+                  <div className="font-medium">{caseItem.applicantName || caseItem.customerName}</div>
+                  <div className="text-sm text-gray-500">{caseItem.applicantPhone || caseItem.customerPhone}</div>
                 </div>
               </TableCell>
               <TableCell>
@@ -182,12 +190,12 @@ export const CaseTable: React.FC<CaseTableProps> = ({
               </TableCell>
               <TableCell>
                 <div className="text-sm">
-                  {caseItem.assignedTo?.name || 'Unassigned'}
+                  {caseItem.assignedToName || 'Unassigned'}
                 </div>
               </TableCell>
               <TableCell>
                 <div className="text-sm">
-                  {caseItem.client?.name}
+                  {caseItem.clientName || caseItem.client?.name}
                 </div>
               </TableCell>
               <TableCell>

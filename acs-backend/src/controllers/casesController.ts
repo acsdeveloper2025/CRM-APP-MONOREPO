@@ -405,8 +405,8 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
-    // Generate case number
-    const caseNumber = `CASE_${Date.now()}`;
+    // Generate case number - will be updated after getting caseId from database
+    let caseNumber = `CASE_TEMP_${Date.now()}`;
 
     // Prepare case data for database insertion
     const caseData = {
@@ -424,13 +424,13 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       assignedTo: assignedToId,
       createdBy: req.user?.id,
       panNumber: panNumber?.toUpperCase() || null,
-      aadhaarNumber,
-      bankAccountNumber,
-      bankIfscCode,
+      aadhaarNumber: aadhaarNumber || '',
+      bankAccountNumber: bankAccountNumber || '',
+      bankIfscCode: bankIfscCode || '',
       // New required fields
       applicantType,
       backendContactNumber,
-      notes, // TRIGGER field
+      trigger: notes, // TRIGGER field
       deduplicationChecked: !skipDeduplication,
       deduplicationDecision: deduplicationDecision || (skipDeduplication ? 'NO_DUPLICATES' : null),
       deduplicationRationale
@@ -444,7 +444,7 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
         "address", "pincode", "status", "priority",
         "assignedTo", "createdBy", "panNumber", "aadhaarNumber",
         "bankAccountNumber", "bankIfscCode", "applicantType",
-        "backendContactNumber", "notes", "deduplicationChecked",
+        "backendContactNumber", "trigger", "deduplicationChecked",
         "deduplicationDecision", "deduplicationRationale"
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
@@ -473,13 +473,23 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       caseData.bankIfscCode,
       caseData.applicantType,
       caseData.backendContactNumber,
-      caseData.notes,
+      caseData.trigger,
       caseData.deduplicationChecked,
       caseData.deduplicationDecision,
       caseData.deduplicationRationale
     ]);
 
     const newCase = result.rows[0];
+
+    // Update case number to use simplified format: CASE_1, CASE_2, etc.
+    const simplifiedCaseNumber = `CASE_${newCase.caseId}`;
+    await pool.query(
+      'UPDATE cases SET "caseNumber" = $1 WHERE id = $2',
+      [simplifiedCaseNumber, newCase.id]
+    );
+
+    // Update the returned case object
+    newCase.caseNumber = simplifiedCaseNumber;
 
     logger.info(`Created new case: ${newCase.id} (Case ID: ${newCase.caseId})`, {
       userId: req.user?.id,
@@ -510,10 +520,35 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
 export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const {
+      // Extract fields that can be updated
+      clientId,
+      productId,
+      verificationTypeId,
+      applicantName,
+      applicantPhone,
+      applicantEmail,
+      address,
+      addressStreet,
+      pincode,
+      addressPincode,
+      priority,
+      notes,
+      trigger,
+      assignedToId,
+      applicantType,
+      backendContactNumber,
+      panNumber,
+      aadhaarNumber,
+      bankAccountNumber,
+      bankIfscCode
+    } = req.body;
 
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
+    // Check if case exists
+    const checkQuery = 'SELECT id FROM cases WHERE id = $1';
+    const checkResult = await pool.query(checkQuery, [id]);
+
+    if (checkResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Case not found',
@@ -521,32 +556,129 @@ export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Update case
-    const updatedCase = {
-      ...cases[caseIndex],
-      ...updateData,
-      updatedAt: new Date().toISOString(),
-    };
+    // Build dynamic update query
+    const updateFields = [];
+    const updateValues = [];
+    let paramIndex = 1;
 
-    // Add history entry
-    updatedCase.history.push({
-      id: `hist_${Date.now()}`,
-      action: 'CASE_UPDATED',
-      description: `Case updated: ${Object.keys(updateData).join(', ')}`,
+    if (clientId !== undefined) {
+      updateFields.push(`"clientId" = $${paramIndex++}`);
+      updateValues.push(clientId);
+    }
+    if (productId !== undefined) {
+      updateFields.push(`"productId" = $${paramIndex++}`);
+      updateValues.push(productId);
+    }
+    if (verificationTypeId !== undefined) {
+      updateFields.push(`"verificationTypeId" = $${paramIndex++}`);
+      updateValues.push(verificationTypeId);
+    }
+    if (applicantName !== undefined) {
+      updateFields.push(`"applicantName" = $${paramIndex++}`);
+      updateValues.push(applicantName);
+    }
+    if (applicantPhone !== undefined) {
+      updateFields.push(`"applicantPhone" = $${paramIndex++}`);
+      updateValues.push(applicantPhone);
+    }
+    if (applicantEmail !== undefined) {
+      updateFields.push(`"applicantEmail" = $${paramIndex++}`);
+      updateValues.push(applicantEmail);
+    }
+    if (address !== undefined || addressStreet !== undefined) {
+      updateFields.push(`"address" = $${paramIndex++}`);
+      updateValues.push(address || addressStreet);
+    }
+    if (pincode !== undefined || addressPincode !== undefined) {
+      updateFields.push(`"pincode" = $${paramIndex++}`);
+      updateValues.push(pincode || addressPincode);
+    }
+    if (priority !== undefined) {
+      const priorityValue = typeof priority === 'number' ?
+        (priority === 1 ? 'LOW' : priority === 2 ? 'MEDIUM' : priority === 3 ? 'HIGH' : 'URGENT') :
+        priority;
+      updateFields.push(`"priority" = $${paramIndex++}`);
+      updateValues.push(priorityValue);
+    }
+    if (notes !== undefined || trigger !== undefined) {
+      updateFields.push(`"trigger" = $${paramIndex++}`);
+      updateValues.push(notes || trigger);
+    }
+    if (assignedToId !== undefined) {
+      updateFields.push(`"assignedTo" = $${paramIndex++}`);
+      updateValues.push(assignedToId);
+    }
+    if (applicantType !== undefined) {
+      updateFields.push(`"applicantType" = $${paramIndex++}`);
+      updateValues.push(applicantType);
+    }
+    if (backendContactNumber !== undefined) {
+      updateFields.push(`"backendContactNumber" = $${paramIndex++}`);
+      updateValues.push(backendContactNumber);
+    }
+    if (panNumber !== undefined) {
+      updateFields.push(`"panNumber" = $${paramIndex++}`);
+      updateValues.push(panNumber?.toUpperCase() || null);
+    }
+    if (aadhaarNumber !== undefined) {
+      updateFields.push(`"aadhaarNumber" = $${paramIndex++}`);
+      updateValues.push(aadhaarNumber || '');
+    }
+    if (bankAccountNumber !== undefined) {
+      updateFields.push(`"bankAccountNumber" = $${paramIndex++}`);
+      updateValues.push(bankAccountNumber || '');
+    }
+    if (bankIfscCode !== undefined) {
+      updateFields.push(`"bankIfscCode" = $${paramIndex++}`);
+      updateValues.push(bankIfscCode || '');
+    }
+
+    // Always update the updatedAt timestamp
+    updateFields.push(`"updatedAt" = CURRENT_TIMESTAMP`);
+    updateValues.push(id); // Add case ID as the last parameter
+
+    if (updateFields.length === 1) { // Only updatedAt field
+      return res.status(400).json({
+        success: false,
+        message: 'No valid fields to update',
+        error: { code: 'NO_UPDATE_FIELDS' },
+      });
+    }
+
+    // Execute update query
+    const updateQuery = `
+      UPDATE cases
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `;
+
+    const updateResult = await pool.query(updateQuery, updateValues);
+    const updatedCase = updateResult.rows[0];
+
+    // Get additional case details (assignee name, client info)
+    const detailsQuery = `
+      SELECT c.*,
+             u.name as "assignedToName",
+             cl.name as "clientName",
+             cl.code as "clientCode"
+      FROM cases c
+      LEFT JOIN users u ON c."assignedTo" = u.id
+      LEFT JOIN clients cl ON c."clientId" = cl.id
+      WHERE c.id = $1
+    `;
+
+    const detailsResult = await pool.query(detailsQuery, [id]);
+    const finalCase = detailsResult.rows[0];
+
+    logger.info(`Updated case: ${id}`, {
       userId: req.user?.id,
-      timestamp: new Date().toISOString(),
-    });
-
-    cases[caseIndex] = updatedCase;
-
-    logger.info(`Updated case: ${id}`, { 
-      userId: req.user?.id,
-      changes: Object.keys(updateData)
+      changes: Object.keys(req.body)
     });
 
     res.json({
       success: true,
-      data: updatedCase,
+      data: finalCase,
       message: 'Case updated successfully',
     });
   } catch (error) {
@@ -702,10 +834,23 @@ export const updateCasePriority = async (req: AuthenticatedRequest, res: Respons
 export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { assignedToId } = req.body;
+    const { assignedToId, reason } = req.body;
 
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
+    // Get current case data
+    const currentCaseQuery = `
+      SELECT c.*,
+             u.name as "assignedToName",
+             cl.name as "clientName",
+             cl.code as "clientCode"
+      FROM cases c
+      LEFT JOIN users u ON c."assignedTo" = u.id
+      LEFT JOIN clients cl ON c."clientId" = cl.id
+      WHERE c.id = $1
+    `;
+
+    const currentCaseResult = await pool.query(currentCaseQuery, [id]);
+
+    if (currentCaseResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Case not found',
@@ -713,28 +858,68 @@ export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    const oldAssignee = cases[caseIndex].assignedToId;
-    cases[caseIndex].assignedToId = assignedToId;
-    cases[caseIndex].updatedAt = new Date().toISOString();
+    const currentCase = currentCaseResult.rows[0];
+    const oldAssignee = currentCase.assignedTo;
 
-    // Add history entry
-    cases[caseIndex].history.push({
-      id: `hist_${Date.now()}`,
-      action: 'CASE_ASSIGNED',
-      description: `Case reassigned from ${oldAssignee || 'unassigned'} to ${assignedToId}`,
-      userId: req.user?.id,
-      timestamp: new Date().toISOString(),
-    });
+    // Get new assignee details
+    const newAssigneeQuery = 'SELECT name FROM users WHERE id = $1';
+    const newAssigneeResult = await pool.query(newAssigneeQuery, [assignedToId]);
+
+    if (newAssigneeResult.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Assigned user not found',
+        error: { code: 'INVALID_USER' },
+      });
+    }
+
+    const newAssigneeName = newAssigneeResult.rows[0].name;
+
+    // Update case assignment
+    const updateQuery = `
+      UPDATE cases
+      SET "assignedTo" = $1, "updatedAt" = CURRENT_TIMESTAMP
+      WHERE id = $2
+      RETURNING *
+    `;
+
+    const updateResult = await pool.query(updateQuery, [assignedToId, id]);
+    const updatedCase = updateResult.rows[0];
+
+    // Create assignment history entry
+    const historyQuery = `
+      INSERT INTO case_assignment_history (
+        "caseId", "previousAssignee", "newAssignee", "reason",
+        "assignedBy", "assignedAt"
+      ) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+    `;
+
+    await pool.query(historyQuery, [
+      id,
+      oldAssignee,
+      assignedToId,
+      reason || 'Case reassignment',
+      req.user?.id
+    ]);
 
     logger.info(`Assigned case: ${id}`, {
       userId: req.user?.id,
       oldAssignee,
-      newAssignee: assignedToId
+      newAssignee: assignedToId,
+      reason
     });
+
+    // Return updated case with assignee name
+    const finalCase = {
+      ...updatedCase,
+      assignedToName: newAssigneeName,
+      clientName: currentCase.clientName,
+      clientCode: currentCase.clientCode
+    };
 
     res.json({
       success: true,
-      data: cases[caseIndex],
+      data: finalCase,
       message: 'Case assigned successfully',
     });
   } catch (error) {

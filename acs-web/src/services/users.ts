@@ -242,7 +242,7 @@ export class UsersService {
   }
 
   async getFieldUsers(): Promise<ApiResponse<User[]>> {
-    return this.getUsers({ role: 'FIELD', isActive: true });
+    return this.getUsers({ role: 'FIELD_AGENT', isActive: true });
   }
 
   // Department and designation management

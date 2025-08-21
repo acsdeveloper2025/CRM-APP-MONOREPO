@@ -2,37 +2,58 @@ export type CaseStatus = 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED';
 
 export interface Case {
   id: string;
-  title: string;
-  description: string;
-  customerName: string;
+  caseId?: number;
+  caseNumber?: string;
+  title?: string;
+  description?: string;
+  customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
-  addressStreet: string;
-  addressCity: string;
-  addressState: string;
-  addressPincode: string;
+  addressStreet?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressPincode?: string;
+  address?: string;
+  pincode?: string;
   latitude?: number;
   longitude?: number;
   status: CaseStatus;
   verificationType?: string;
   verificationOutcome?: string;
-  assignedAt: string;
+  assignedAt?: string;
   updatedAt: string;
+  createdAt: string;
   completedAt?: string;
-  priority: number;
+  priority: number | string;
   notes?: string;
-  assignedToId: string;
-  clientId: string;
-  verificationTypeId?: string;
-  createdAt?: string;
+  trigger?: string;
+  assignedToId?: string;
+  assignedTo?: string; // UUID of assigned user
+  assignedToName?: string; // Name of assigned user
+  clientId: string | number;
+  clientName?: string;
+  clientCode?: string;
+  productId?: string | number;
+  verificationTypeId?: string | number;
   createdBy?: string;
   updatedBy?: string;
-  assignedTo: {
-    id: string;
-    name: string;
-    username: string;
-  };
-  client: {
+  // Applicant information
+  applicantName?: string;
+  applicantPhone?: string;
+  applicantEmail?: string;
+  applicantType?: string;
+  panNumber?: string;
+  aadhaarNumber?: string;
+  bankAccountNumber?: string;
+  bankIfscCode?: string;
+  backendContactNumber?: string;
+  createdByBackendUser?: string;
+  // Deduplication fields
+  deduplicationChecked?: boolean;
+  deduplicationDecision?: string;
+  deduplicationRationale?: string;
+  // Legacy nested objects (for backward compatibility)
+  client?: {
     id: string;
     name: string;
     code: string;

@@ -20,29 +20,28 @@ export interface CaseUpdateData {
 }
 
 export interface CreateCaseData {
-  title: string;
-  description: string;
+  // Business-required fields (keeping as requested)
   customerName: string;
   customerCallingCode?: string;
-  customerPhone?: string;
   customerEmail?: string;
+  createdByBackendUser?: string;
+  verificationType?: string;
+
+  // Core case fields
   addressStreet: string;
-  addressCity: string;
-  addressState: string;
   addressPincode: string;
   latitude?: number;
   longitude?: number;
-  verificationType?: string;
   verificationTypeId?: string;
   assignedToId: string;
   clientId: string;
   productId?: string;
   applicantType?: string;
-  createdByBackendUser?: string;
   backendContactNumber?: string;
   priority?: number;
   notes?: string;
-  // Deduplication fields
+
+  // Deduplication fields - REQUIRED by backend
   applicantName?: string;
   applicantPhone?: string;
   applicantEmail?: string;
@@ -64,6 +63,10 @@ export class CasesService {
     return apiService.post('/cases', data);
   }
 
+  async updateCaseDetails(id: string, data: CreateCaseData): Promise<ApiResponse<Case>> {
+    return apiService.put(`/cases/${id}`, data);
+  }
+
   async updateCaseStatus(id: string, status: string): Promise<ApiResponse<Case>> {
     return apiService.put(`/cases/${id}/status`, { status });
   }
@@ -76,8 +79,8 @@ export class CasesService {
     return apiService.put(`/cases/${id}`, data);
   }
 
-  async assignCase(id: string, assignedToId: string): Promise<ApiResponse<Case>> {
-    return apiService.put(`/cases/${id}/assign`, { assignedToId });
+  async assignCase(id: string, assignedToId: string, reason?: string): Promise<ApiResponse<Case>> {
+    return apiService.put(`/cases/${id}/assign`, { assignedToId, reason });
   }
 
   async addCaseNote(id: string, note: string): Promise<ApiResponse<Case>> {

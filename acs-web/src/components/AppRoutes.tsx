@@ -30,6 +30,8 @@ import { VerificationTypesPage } from '@/pages/VerificationTypesPage';
 import { RateManagementPage } from '@/pages/RateManagementPage';
 import { RateManagementTestPage } from '@/pages/RateManagementTestPage';
 
+
+
 // Default route component that handles authentication-based redirects
 const DefaultRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -48,6 +50,8 @@ const DefaultRoute: React.FC = () => {
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
+
+
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
 
@@ -107,13 +111,19 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/cases/new"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
-            <Layout>
+          <Layout>
+            <div style={{ padding: '20px', backgroundColor: 'green', color: 'white' }}>
+              <h1>🟢 ROUTE TEST - /cases/new</h1>
+              <p>If you see this, the route is working!</p>
+              <p>URL: {window.location.href}</p>
+              <p>Search: {window.location.search}</p>
               <NewCasePage />
-            </Layout>
-          </ProtectedRoute>
+            </div>
+          </Layout>
         }
       />
+
+
 
       {/* Clients routes */}
       <Route
