@@ -55,7 +55,13 @@ const ALL_SUPPORTED_EXTENSIONS = [
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), 'uploads', 'attachments');
+    // Get caseId from request body to create case-specific folder
+    const caseId = req.body.caseId;
+    if (!caseId) {
+      return cb(new Error('Case ID is required for file upload'), '');
+    }
+
+    const uploadDir = path.join(process.cwd(), 'uploads', 'attachments', `case_${caseId}`);
     // Ensure directory exists
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
@@ -122,23 +128,34 @@ export const uploadAttachment = async (req: AuthenticatedRequest, res: Response)
 
       const uploadedAttachments = [];
 
-      for (const file of files) {
-        const newAttachment = {
-          id: `attachment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          filename: file.filename,
-          originalName: file.originalname,
-          mimeType: file.mimetype,
-          size: file.size,
-          caseId,
-          uploadedBy: req.user?.id,
-          uploadedAt: new Date().toISOString(),
-          filePath: `/uploads/attachments/${file.filename}`,
-          description: description || `Uploaded file: ${file.originalname}`,
-          category,
-          isPublic: isPublic === 'true' || isPublic === true,
-        };
+      // Import query function
+      const { query } = await import('@/config/database');
 
-        attachments.push(newAttachment);
+      for (const file of files) {
+        // Insert attachment into database
+        const insertResult = await query(
+          `INSERT INTO attachments (
+            filename,
+            "originalName",
+            "mimeType",
+            "fileSize",
+            "filePath",
+            "uploadedBy",
+            "caseId"
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING id, filename, "originalName", "mimeType", "fileSize" as size, "filePath", "uploadedBy", "createdAt" as "uploadedAt", "caseId"`,
+          [
+            file.filename,
+            file.originalname,
+            file.mimetype,
+            file.size,
+            `/uploads/attachments/case_${caseId}/${file.filename}`,
+            req.user?.id,
+            caseId
+          ]
+        );
+
+        const newAttachment = insertResult.rows[0];
         uploadedAttachments.push(newAttachment);
       }
 
@@ -171,18 +188,31 @@ export const getAttachmentsByCase = async (req: AuthenticatedRequest, res: Respo
     const { caseId } = req.params;
     const { category, limit = 50 } = req.query;
 
-    let caseAttachments = attachments.filter(att => att.caseId === caseId);
+    // Import query function
+    const { query } = await import('@/config/database');
 
-    // Apply category filter
-    if (category) {
-      caseAttachments = caseAttachments.filter(att => att.category === category);
-    }
+    // Build query with optional category filter
+    let queryText = `
+      SELECT
+        id,
+        filename,
+        "originalName",
+        "mimeType",
+        "fileSize" as size,
+        "filePath",
+        "uploadedBy",
+        "createdAt" as "uploadedAt",
+        "caseId"
+      FROM attachments
+      WHERE "caseId" = $1
+    `;
+    const queryParams = [caseId];
 
-    // Apply limit
-    caseAttachments = caseAttachments.slice(0, Number(limit));
+    queryText += ` ORDER BY "createdAt" DESC LIMIT $${queryParams.length + 1}`;
+    queryParams.push(limit.toString());
 
-    // Sort by upload date (newest first)
-    caseAttachments.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+    const result = await query(queryText, queryParams);
+    const caseAttachments = result.rows;
 
     logger.info(`Retrieved ${caseAttachments.length} attachments for case ${caseId}`, {
       userId: req.user?.id,
@@ -239,8 +269,16 @@ export const deleteAttachment = async (req: AuthenticatedRequest, res: Response)
   try {
     const { id } = req.params;
 
-    const attachmentIndex = attachments.findIndex(att => att.id === id);
-    if (attachmentIndex === -1) {
+    // Import query function
+    const { query } = await import('@/config/database');
+
+    // Get attachment details before deletion
+    const attachmentResult = await query(
+      'SELECT filename, "filePath", "uploadedBy", "caseId" FROM attachments WHERE id = $1',
+      [id]
+    );
+
+    if (attachmentResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Attachment not found',
@@ -248,7 +286,7 @@ export const deleteAttachment = async (req: AuthenticatedRequest, res: Response)
       });
     }
 
-    const attachment = attachments[attachmentIndex];
+    const attachment = attachmentResult.rows[0];
 
     // Check if user has permission to delete (owner or admin)
     if (attachment.uploadedBy !== req.user?.id && req.user?.role !== 'ADMIN') {
@@ -260,13 +298,13 @@ export const deleteAttachment = async (req: AuthenticatedRequest, res: Response)
     }
 
     // Delete file from filesystem
-    const filePath = path.join(process.cwd(), 'uploads', 'attachments', attachment.filename);
+    const filePath = path.join(process.cwd(), 'uploads', 'attachments', `case_${attachment.caseId}`, attachment.filename);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
 
-    // Remove from array
-    attachments.splice(attachmentIndex, 1);
+    // Delete from database
+    await query('DELETE FROM attachments WHERE id = $1', [id]);
 
     logger.info(`Deleted attachment: ${id}`, {
       userId: req.user?.id,
@@ -343,9 +381,17 @@ export const updateAttachment = async (req: AuthenticatedRequest, res: Response)
 export const downloadAttachment = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const attachment = attachments.find(att => att.id === id);
 
-    if (!attachment) {
+    // Import query function
+    const { query } = await import('@/config/database');
+
+    // Get attachment details from database
+    const attachmentResult = await query(
+      'SELECT filename, "originalName", "mimeType", "fileSize", "caseId" FROM attachments WHERE id = $1',
+      [id]
+    );
+
+    if (attachmentResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Attachment not found',
@@ -353,8 +399,10 @@ export const downloadAttachment = async (req: AuthenticatedRequest, res: Respons
       });
     }
 
-    // Check if file exists
-    const filePath = path.join(process.cwd(), 'uploads', 'attachments', attachment.filename);
+    const attachment = attachmentResult.rows[0];
+
+    // Check if file exists in case-specific folder
+    const filePath = path.join(process.cwd(), 'uploads', 'attachments', `case_${attachment.caseId}`, attachment.filename);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
@@ -366,7 +414,7 @@ export const downloadAttachment = async (req: AuthenticatedRequest, res: Respons
     // Set appropriate headers
     res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
     res.setHeader('Content-Type', attachment.mimeType);
-    res.setHeader('Content-Length', attachment.size.toString());
+    res.setHeader('Content-Length', attachment.fileSize.toString());
 
     // Stream the file
     const fileStream = fs.createReadStream(filePath);
@@ -375,7 +423,8 @@ export const downloadAttachment = async (req: AuthenticatedRequest, res: Respons
     logger.info(`Downloaded attachment: ${id}`, {
       userId: req.user?.id,
       filename: attachment.originalName,
-      size: attachment.size
+      size: attachment.fileSize,
+      caseId: attachment.caseId
     });
   } catch (error) {
     logger.error('Error downloading attachment:', error);

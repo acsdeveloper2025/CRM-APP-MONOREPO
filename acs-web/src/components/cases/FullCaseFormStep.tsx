@@ -27,6 +27,7 @@ import { useClients, useVerificationTypes, useProductsByClient } from '@/hooks/u
 import { usePincodes } from '@/hooks/useLocations';
 import { useAreasByPincode } from '@/hooks/useAreas';
 import { useAuth } from '@/contexts/AuthContext';
+import { CaseFormAttachmentsSection, type CaseFormAttachment } from '@/components/attachments/CaseFormAttachmentsSection';
 import type { CustomerInfoData } from './CustomerInfoStep';
 
 const fullCaseFormSchema = z.object({
@@ -54,7 +55,7 @@ export type FullCaseFormData = z.infer<typeof fullCaseFormSchema>;
 
 interface FullCaseFormStepProps {
   customerInfo: CustomerInfoData;
-  onSubmit: (data: FullCaseFormData) => void;
+  onSubmit: (data: FullCaseFormData, attachments: CaseFormAttachment[]) => void;
   onBack?: () => void;
   isSubmitting?: boolean;
   initialData?: Partial<FullCaseFormData>;
@@ -125,6 +126,9 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
     },
   });
 
+  // Attachments state
+  const [attachments, setAttachments] = useState<CaseFormAttachment[]>([]);
+
   // Watch for client selection to fetch products
   const selectedClientId = form.watch('clientId');
   const { data: productsResponse } = useProductsByClient(selectedClientId);
@@ -162,7 +166,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
   }, [editMode, initialData, form, user]);
 
   const handleSubmit = (data: FullCaseFormData) => {
-    onSubmit(data);
+    onSubmit(data, attachments);
   };
 
   return (
@@ -545,7 +549,11 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
             </CardContent>
           </Card>
 
-
+          {/* Attachments Section */}
+          <CaseFormAttachmentsSection
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
+          />
 
           {/* Form Actions */}
           <div className={`flex items-center ${onBack ? 'justify-between' : 'justify-end'} pt-6 border-t`}>

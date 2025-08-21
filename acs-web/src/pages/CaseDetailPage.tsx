@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useCase, useCaseAttachments, useAssignCase } from '@/hooks/useCases';
+import { useCase, useAssignCase } from '@/hooks/useCases';
 import { ReassignCaseModal } from '@/components/cases/ReassignCaseModal';
 import { ArrowLeft, MapPin, Phone, Mail, Calendar, User, Building2, FileText, Edit, UserCheck } from 'lucide-react';
+import { CaseAttachmentsSection } from '@/components/attachments/CaseAttachmentsSection';
 import { formatDistanceToNow } from 'date-fns';
 
 // Helper function to safely format dates
@@ -28,12 +29,10 @@ export const CaseDetailPage: React.FC = () => {
 
 
   const { data: caseData, isLoading, refetch } = useCase(id!);
-  const { data: attachmentsData } = useCaseAttachments(id!);
   const assignCaseMutation = useAssignCase();
   // const { data: historyData } = useCaseHistory(id!);
 
   const caseItem = caseData?.data;
-  const attachments = attachmentsData?.data || [];
   // const history = historyData?.data || [];
 
   // Handler functions
@@ -257,38 +256,15 @@ export const CaseDetailPage: React.FC = () => {
                   <p className="mt-1 text-gray-600">{caseItem.trigger || caseItem.notes}</p>
                 </div>
               )}
+
+              {/* Attachments Section */}
+              <div className="mt-6 pt-4 border-t">
+                <CaseAttachmentsSection caseId={id!} />
+              </div>
             </CardContent>
           </Card>
 
-          {/* Attachments */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Attachments</CardTitle>
-              <CardDescription>
-                Documents and files related to this case
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {attachments.length > 0 ? (
-                <div className="space-y-2">
-                  {attachments.map((attachment: any) => (
-                    <div key={attachment.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                      <FileText className="h-5 w-5 text-gray-400" />
-                      <div className="flex-1">
-                        <div className="font-medium">{attachment.filename}</div>
-                        <div className="text-sm text-gray-500">{attachment.size}</div>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        Download
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-4">No attachments found</p>
-              )}
-            </CardContent>
-          </Card>
+
         </div>
 
         {/* Sidebar */}

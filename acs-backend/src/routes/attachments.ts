@@ -94,6 +94,13 @@ router.post('/:id/download',
   downloadAttachment
 );
 
+// File serve route for preview (GET)
+router.get('/:id/serve',
+  [param('id').trim().notEmpty().withMessage('Attachment ID is required')],
+  validate,
+  downloadAttachment
+);
+
 // File management routes
 router.put('/:id',
   updateAttachmentValidation,

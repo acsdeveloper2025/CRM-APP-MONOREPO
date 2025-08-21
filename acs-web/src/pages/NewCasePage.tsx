@@ -36,7 +36,7 @@ export const NewCasePage: React.FC = () => {
   const [pincodeIdForAreas, setPincodeIdForAreas] = useState<number | undefined>();
   const { data: areasResponse } = useAreasByPincode(pincodeIdForAreas);
 
-  // First useEffect: Set pincode ID for fetching areas
+  // First useEffect: Set pincode ID for fetching areas (if pincode exists)
   useEffect(() => {
     if (isEditMode && caseData?.data && pincodesResponse?.data) {
       const caseItem = caseData.data;
@@ -46,6 +46,9 @@ export const NewCasePage: React.FC = () => {
       const foundPincode = pincodes.find(p => p.code === caseItem.pincode);
       if (foundPincode) {
         setPincodeIdForAreas(foundPincode.id);
+      } else {
+        // If pincode doesn't exist, still proceed with mapping (without areas)
+        setPincodeIdForAreas(undefined);
       }
     }
   }, [isEditMode, caseData, pincodesResponse]);
@@ -62,7 +65,7 @@ export const NewCasePage: React.FC = () => {
         const foundPincode = pincodes.find(p => p.code === caseItem.pincode);
         const pincodeId = foundPincode?.id?.toString() || '';
 
-        // For now, select the first available area (we can improve this later)
+        // Select the first available area
         const areaId = areas.length > 0 ? areas[0].id.toString() : '';
 
         // Map case data to CustomerInfoData format

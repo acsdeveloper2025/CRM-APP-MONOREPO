@@ -96,13 +96,19 @@ export class MobileCaseController {
                p.id as "productId", p.name as "productName", p.code as "productCode",
                vt.id as "verificationTypeId", vt.name as "verificationTypeName", vt.code as "verificationTypeCode",
                cu.name as "createdByUserName",
-               au.name as "assignedToUserName"
+               au.name as "assignedToUserName",
+               COALESCE(att_count.attachment_count, 0) as "attachmentCount"
         FROM cases c
         LEFT JOIN clients cl ON cl.id = c."clientId"
         LEFT JOIN products p ON p.id = c."productId"
         LEFT JOIN "verificationTypes" vt ON vt.id = c."verificationTypeId"
         LEFT JOIN users cu ON cu.id = c."createdBy"
         LEFT JOIN users au ON au.id = c."assignedTo"
+        LEFT JOIN (
+          SELECT "caseId", COUNT(*) as attachment_count
+          FROM attachments
+          GROUP BY "caseId"
+        ) att_count ON att_count."caseId" = c."caseId"
         ${whereSql}
         ORDER BY c.priority DESC, c."createdAt" DESC
         LIMIT $${vals.length + 1} OFFSET $${vals.length + 2}`;
@@ -156,6 +162,7 @@ export class MobileCaseController {
           code: caseItem.verificationTypeCode || '',
         } : undefined,
         attachments: [],
+        attachmentCount: Number(caseItem.attachmentCount) || 0,
         formData: (caseItem as any).verificationData || null,
         syncStatus: 'SYNCED',
       }));
@@ -228,7 +235,21 @@ export class MobileCaseController {
         return res.status(404).json({ success: false, message: 'Case not found', error: { code: 'CASE_NOT_FOUND', timestamp: new Date().toISOString() } });
       }
 
-      const attRes2 = await query(`SELECT id, name, "originalName", "mimeType", size, url, "thumbnailUrl", "uploadedAt", "geoLocation" FROM attachments WHERE "caseId" = $1 ORDER BY "uploadedAt" DESC`, [caseId]);
+      const attRes2 = await query(`
+        SELECT
+          id,
+          filename,
+          "originalName",
+          "mimeType",
+          "fileSize" as size,
+          "filePath",
+          "uploadedBy",
+          "createdAt" as "uploadedAt",
+          "caseId"
+        FROM attachments
+        WHERE "caseId" = $1
+        ORDER BY "createdAt" DESC
+      `, [caseId]);
       const locRes = await query(`SELECT id, latitude, longitude, accuracy, timestamp, source FROM locations WHERE "caseId" = $1 ORDER BY timestamp DESC LIMIT 10`, [caseId]);
 
       if (!caseItem) {
@@ -286,14 +307,17 @@ export class MobileCaseController {
         } : undefined,
         attachments: attRes2.rows.map((att: any) => ({
           id: att.id,
-          filename: att.name,
+          filename: att.filename,
           originalName: att.originalName,
           mimeType: att.mimeType,
           size: att.size,
-          url: att.url,
-          thumbnailUrl: att.thumbnailUrl,
+          url: `${process.env.API_BASE_URL || 'http://localhost:3000'}/api/attachments/${att.id}/serve`,
+          downloadUrl: `${process.env.API_BASE_URL || 'http://localhost:3000'}/api/attachments/${att.id}/download`,
           uploadedAt: new Date(att.uploadedAt).toISOString(),
-          geoLocation: att.geoLocation ? JSON.parse(att.geoLocation) : undefined,
+          uploadedBy: att.uploadedBy,
+          type: att.mimeType.startsWith('image/') ? 'image' : 'document',
+          isImage: att.mimeType.startsWith('image/'),
+          caseId: att.caseId,
         })),
         formData: (caseItem as any).verificationData || null,
         syncStatus: 'SYNCED',

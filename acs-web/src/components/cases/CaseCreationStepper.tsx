@@ -151,7 +151,7 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
     setCaseFormData(null);
   };
 
-  const handleCaseFormSubmit = async (data: FullCaseFormData) => {
+  const handleCaseFormSubmit = async (data: FullCaseFormData, attachments: any[] = []) => {
     if (!customerInfo) {
       toast.error('Customer information is missing');
       return;
@@ -201,6 +201,36 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
 
       if (result.success) {
         const caseId = result.data.caseId || result.data.id;
+
+        // Upload attachments if any
+        if (attachments.length > 0) {
+          try {
+            const formData = new FormData();
+            attachments.forEach(attachment => {
+              formData.append('files', attachment.file);
+            });
+            formData.append('caseId', String(caseId));
+            formData.append('category', 'DOCUMENT');
+
+            const uploadResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/attachments/upload`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+              },
+              body: formData,
+            });
+
+            if (uploadResponse.ok) {
+              toast.success(`${attachments.length} file(s) uploaded successfully`);
+            } else {
+              toast.error('Case created but some attachments failed to upload');
+            }
+          } catch (uploadError) {
+            console.error('Attachment upload failed:', uploadError);
+            toast.error('Case created but attachments failed to upload');
+          }
+        }
+
         const action = editMode ? 'updated' : 'created';
         toast.success(`Case ${action} successfully! Case ID: ${caseId}`);
         onSuccess?.(String(caseId));
