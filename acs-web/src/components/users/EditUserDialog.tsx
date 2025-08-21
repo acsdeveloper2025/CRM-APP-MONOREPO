@@ -35,7 +35,7 @@ import { usersService } from '@/services/users';
 import { rolesService } from '@/services/roles';
 import { departmentsService } from '@/services/departments';
 import { designationsService } from '@/services/designations';
-import { TerritoryAssignmentSection } from './TerritoryAssignmentSection';
+
 
 import { User } from '@/types/user';
 
@@ -131,10 +131,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   const departments = departmentsData?.data || [];
   const designations = designationsData?.data || [];
 
-  // Get selected role for territory assignment
-  const selectedRoleId = form.watch('roleId');
-  const selectedRole = roles.find((role: any) => String(role.id) === String(selectedRoleId));
-  const isFieldAgent = selectedRole?.name === 'Field Agent' || selectedRole?.name === 'FIELD_AGENT' || selectedRole?.name === 'FIELD';
+
 
 
 
@@ -311,16 +308,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
               </form>
             </Form>
 
-            {/* Territory Assignment for Field Agents */}
-            {isFieldAgent && (
-              <div className="mt-6 border-t pt-6">
-                <h3 className="text-lg font-medium mb-4">Territory Assignment</h3>
-                <TerritoryAssignmentSection
-                  userId={user.id}
-                  userRole={selectedRole?.name}
-                />
-              </div>
-            )}
+
         </div>
       </DialogContent>
     </Dialog>

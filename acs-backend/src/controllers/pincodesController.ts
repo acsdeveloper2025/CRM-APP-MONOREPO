@@ -327,20 +327,45 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    // Create pincode in database (without area field)
-    const pincodeResult = await query(
-      'INSERT INTO pincodes (code, "cityId") VALUES ($1, $2) RETURNING id, code, "cityId" as "cityId", "createdAt" as "createdAt", "updatedAt" as "updatedAt"',
-      [code, cityId]
-    );
+    // Verify all area IDs exist before creating pincode
+    for (const areaId of areaIds) {
+      const areaCheck = await query('SELECT id FROM areas WHERE id = $1', [areaId]);
+      if (areaCheck.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Area with ID ${areaId} not found`,
+          error: { code: 'INVALID_AREA' },
+        });
+      }
+    }
 
-    const newPincode = pincodeResult.rows[0];
+    // Start transaction for pincode creation and area associations
+    await query('BEGIN');
 
-    // Associate pincode with areas
-    for (let i = 0; i < areaIds.length; i++) {
-      await query(
-        'INSERT INTO "pincodeAreas" ("pincodeId", "areaId", "displayOrder") VALUES ($1, $2, $3)',
-        [newPincode.id, areaIds[i], i + 1]
+    let newPincode;
+    try {
+      // Create pincode in database
+      const pincodeResult = await query(
+        'INSERT INTO pincodes (code, "cityId") VALUES ($1, $2) RETURNING id, code, "cityId" as "cityId", "createdAt" as "createdAt", "updatedAt" as "updatedAt"',
+        [code, cityId]
       );
+
+      newPincode = pincodeResult.rows[0];
+
+      // Associate pincode with areas
+      for (let i = 0; i < areaIds.length; i++) {
+        await query(
+          'INSERT INTO "pincodeAreas" ("pincodeId", "areaId", "displayOrder") VALUES ($1, $2, $3)',
+          [newPincode.id, areaIds[i], i + 1]
+        );
+      }
+
+      // Commit transaction
+      await query('COMMIT');
+    } catch (error) {
+      // Rollback transaction on error
+      await query('ROLLBACK');
+      throw error;
     }
 
     // Get complete pincode data with areas and city information
@@ -379,8 +404,10 @@ export const createPincode = async (req: AuthenticatedRequest, res: Response) =>
     logger.info(`Created new pincode: ${newPincode.id}`, {
       userId: req.user?.id,
       pincodeCode: code,
-      areas: responseData.areas,
-      cityName: responseData.cityName
+      requestedAreaIds: areaIds,
+      savedAreas: responseData.areas,
+      cityName: responseData.cityName,
+      areaCount: responseData.areas.length
     });
 
     res.status(201).json({
@@ -673,6 +700,53 @@ export const getPincodesByCity = async (req: AuthenticatedRequest, res: Response
     res.status(500).json({
       success: false,
       message: 'Failed to get pincodes by city',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// GET /api/pincodes/:id/areas - Get areas for a pincode
+export const getPincodeAreas = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id: pincodeId } = req.params;
+
+    // Check if pincode exists
+    const pincodeCheck = await query('SELECT id, code FROM pincodes WHERE id = $1', [pincodeId]);
+    if (pincodeCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Pincode not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    // Get areas for this pincode
+    const areasResult = await query(`
+      SELECT
+        a.id,
+        a.name,
+        pa."displayOrder"
+      FROM "pincodeAreas" pa
+      JOIN areas a ON pa."areaId" = a.id
+      WHERE pa."pincodeId" = $1
+      ORDER BY pa."displayOrder"
+    `, [pincodeId]);
+
+    logger.info(`Retrieved ${areasResult.rows.length} areas for pincode ${pincodeId}`, {
+      userId: req.user?.id,
+      pincodeId,
+      areaCount: areasResult.rows.length
+    });
+
+    res.json({
+      success: true,
+      data: areasResult.rows,
+    });
+  } catch (error) {
+    logger.error('Error getting pincode areas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get pincode areas',
       error: { code: 'INTERNAL_ERROR' },
     });
   }

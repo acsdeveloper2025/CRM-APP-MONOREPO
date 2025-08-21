@@ -307,6 +307,44 @@ class TerritoryAssignmentService {
       throw error;
     }
   }
+
+  /**
+   * Remove all territory assignments for a field agent
+   */
+  async removeAllTerritoryAssignments(userId: string): Promise<ApiResponse<{
+    userId: string;
+    removedPincodes: number;
+    removedAreas: number;
+    userName: string;
+  }>> {
+    try {
+      return await apiService.delete(`${this.baseUrl}/field-agents/${userId}/all`);
+    } catch (error) {
+      console.error('Error removing all territory assignments:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Assign a single pincode with areas to a field agent (incremental assignment)
+   */
+  async assignSinglePincodeWithAreas(
+    userId: string,
+    data: { pincodeId: number; areaIds: number[] }
+  ): Promise<ApiResponse<{
+    userId: string;
+    pincodeId: number;
+    pincodeCode: string;
+    assignedAreas: number;
+    userName: string;
+  }>> {
+    try {
+      return await apiService.post(`${this.baseUrl}/field-agents/${userId}/add-pincode`, data);
+    } catch (error) {
+      console.error('Error assigning single pincode with areas:', error);
+      throw error;
+    }
+  }
 }
 
 export const territoryAssignmentService = new TerritoryAssignmentService();

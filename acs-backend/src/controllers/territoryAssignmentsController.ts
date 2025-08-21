@@ -291,18 +291,18 @@ export const assignPincodesToFieldAgent = async (req: Request, res: Response) =>
     await query('BEGIN');
 
     try {
-      // First, delete all existing pincode assignments for this user (and their related area assignments)
-      const deleteAreasResult = await query(
-        'DELETE FROM "userAreaAssignments" WHERE "userId" = $1 RETURNING id',
+      // First, deactivate all existing pincode assignments for this user (and their related area assignments)
+      const deactivateAreasResult = await query(
+        'UPDATE "userAreaAssignments" SET "isActive" = false WHERE "userId" = $1 AND "isActive" = true RETURNING id',
         [userId]
       );
-      const deletedAreasCount = deleteAreasResult.rows.length;
+      const deactivatedAreasCount = deactivateAreasResult.rows.length;
 
-      const deletePincodesResult = await query(
-        'DELETE FROM "userPincodeAssignments" WHERE "userId" = $1 RETURNING id',
+      const deactivatePincodesResult = await query(
+        'UPDATE "userPincodeAssignments" SET "isActive" = false WHERE "userId" = $1 AND "isActive" = true RETURNING id',
         [userId]
       );
-      const deletedPincodesCount = deletePincodesResult.rows.length;
+      const deactivatedPincodesCount = deactivatePincodesResult.rows.length;
 
       let insertedCount = 0;
 
@@ -310,8 +310,8 @@ export const assignPincodesToFieldAgent = async (req: Request, res: Response) =>
       if (pincodeIds.length > 0) {
         const insertPromises = pincodeIds.map(async (pincodeId: number) => {
           const result = await query(
-            `INSERT INTO "userPincodeAssignments" ("userId", "pincodeId", "assignedBy")
-             VALUES ($1, $2, $3)
+            `INSERT INTO "userPincodeAssignments" ("userId", "pincodeId", "assignedBy", "isActive")
+             VALUES ($1, $2, $3, true)
              RETURNING id, "pincodeId", "assignedAt"`,
             [userId, pincodeId, (req as any).user?.id]
           );
@@ -329,8 +329,8 @@ export const assignPincodesToFieldAgent = async (req: Request, res: Response) =>
         userId: (req as any).user?.id,
         targetUserId: userId,
         pincodeIds,
-        deletedPincodesCount,
-        deletedAreasCount,
+        deactivatedPincodesCount,
+        deactivatedAreasCount,
         insertedCount
       });
 
@@ -338,8 +338,8 @@ export const assignPincodesToFieldAgent = async (req: Request, res: Response) =>
         success: true,
         data: {
           userId,
-          deletedPincodes: deletedPincodesCount,
-          deletedAreas: deletedAreasCount,
+          deactivatedPincodes: deactivatedPincodesCount,
+          deactivatedAreas: deactivatedAreasCount,
           newPincodeAssignments: insertedCount,
           totalRequested: pincodeIds.length
         },
@@ -403,8 +403,7 @@ export const assignAreasToFieldAgent = async (req: Request, res: Response) => {
 
     // Step 1: Remove all existing area assignments for this user
     const removeResult = await query(
-      `UPDATE "userAreaAssignments"
-       SET "isActive" = false, "updatedAt" = CURRENT_TIMESTAMP
+      `DELETE FROM "userAreaAssignments"
        WHERE "userId" = $1 AND "isActive" = true`,
       [userId]
     );
@@ -551,18 +550,16 @@ export const removePincodeAssignment = async (req: Request, res: Response) => {
     await query('BEGIN');
 
     try {
-      // Deactivate area assignments
+      // Delete area assignments
       await query(
-        `UPDATE "userAreaAssignments"
-         SET "isActive" = false, "updatedAt" = CURRENT_TIMESTAMP
+        `DELETE FROM "userAreaAssignments"
          WHERE "userId" = $1 AND "pincodeId" = $2 AND "isActive" = true`,
         [userId, pincodeId]
       );
 
-      // Deactivate pincode assignment
+      // Delete pincode assignment
       await query(
-        `UPDATE "userPincodeAssignments"
-         SET "isActive" = false, "updatedAt" = CURRENT_TIMESTAMP
+        `DELETE FROM "userPincodeAssignments"
          WHERE "userId" = $1 AND "pincodeId" = $2 AND "isActive" = true`,
         [userId, pincodeId]
       );
@@ -622,10 +619,9 @@ export const removeAreaAssignment = async (req: Request, res: Response) => {
       });
     }
 
-    // Deactivate area assignment
+    // Delete area assignment
     await query(
-      `UPDATE "userAreaAssignments"
-       SET "isActive" = false, "updatedAt" = CURRENT_TIMESTAMP
+      `DELETE FROM "userAreaAssignments"
        WHERE "userId" = $1 AND "areaId" = $2 AND "pincodeId" = $3 AND "isActive" = true`,
       [userId, areaId, pincodeId]
     );
@@ -646,6 +642,270 @@ export const removeAreaAssignment = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Failed to remove area assignment',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// POST /api/territory-assignments/field-agents/:userId/add-pincode - Add single pincode with areas (incremental)
+export const addSinglePincodeAssignment = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { pincodeId, areaIds = [] } = req.body;
+
+    // Validate input
+    if (!pincodeId || typeof pincodeId !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: 'pincodeId is required and must be a number',
+        error: { code: 'INVALID_INPUT' },
+      });
+    }
+
+    if (!Array.isArray(areaIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'areaIds must be an array',
+        error: { code: 'INVALID_INPUT' },
+      });
+    }
+
+    // Verify user exists and is a field agent
+    const userResult = await query(
+      'SELECT id, name, username, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    const user = userResult.rows[0];
+    if (user.role !== 'FIELD_AGENT') {
+      return res.status(400).json({
+        success: false,
+        message: 'User is not a field agent',
+        error: { code: 'INVALID_USER_ROLE' },
+      });
+    }
+
+    // Verify pincode exists
+    const pincodeCheck = await query(
+      'SELECT id, code FROM pincodes WHERE id = $1',
+      [pincodeId]
+    );
+
+    if (pincodeCheck.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pincode not found',
+        error: { code: 'INVALID_PINCODE' },
+      });
+    }
+
+    // Check if pincode is already assigned
+    const existingAssignment = await query(
+      'SELECT id FROM "userPincodeAssignments" WHERE "userId" = $1 AND "pincodeId" = $2 AND "isActive" = true',
+      [userId, pincodeId]
+    );
+
+    if (existingAssignment.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pincode is already assigned to this user',
+        error: { code: 'PINCODE_ALREADY_ASSIGNED' },
+      });
+    }
+
+    // Verify all area IDs exist (if provided)
+    if (areaIds.length > 0) {
+      const areaCheck = await query(
+        'SELECT id FROM areas WHERE id = ANY($1)',
+        [areaIds]
+      );
+
+      if (areaCheck.rows.length !== areaIds.length) {
+        const foundIds = areaCheck.rows.map(row => row.id);
+        const missingIds = areaIds.filter(id => !foundIds.includes(id));
+        return res.status(400).json({
+          success: false,
+          message: `Areas not found: ${missingIds.join(', ')}`,
+          error: { code: 'INVALID_AREAS' },
+        });
+      }
+    }
+
+    // Start transaction for incremental assignment
+    await query('BEGIN');
+
+    try {
+      // Add pincode assignment
+      const pincodeAssignmentResult = await query(
+        `INSERT INTO "userPincodeAssignments" ("userId", "pincodeId", "assignedBy", "isActive")
+         VALUES ($1, $2, $3, true)
+         RETURNING id`,
+        [userId, pincodeId, (req as any).user?.id]
+      );
+
+      // Add area assignments if provided
+      let assignedAreasCount = 0;
+      if (areaIds.length > 0) {
+        const userPincodeAssignmentId = pincodeAssignmentResult.rows[0].id;
+
+        for (const areaId of areaIds) {
+          await query(
+            `INSERT INTO "userAreaAssignments" ("userId", "pincodeId", "areaId", "userPincodeAssignmentId", "assignedBy", "isActive")
+             VALUES ($1, $2, $3, $4, $5, true)`,
+            [userId, pincodeId, areaId, userPincodeAssignmentId, (req as any).user?.id]
+          );
+          assignedAreasCount++;
+        }
+      }
+
+      // Commit transaction
+      await query('COMMIT');
+
+      logger.info(`Added single pincode assignment for field agent ${userId}`, {
+        userId: (req as any).user?.id,
+        targetUserId: userId,
+        targetUserName: user.name,
+        pincodeId,
+        pincodeCode: pincodeCheck.rows[0].code,
+        assignedAreasCount,
+        areaIds
+      });
+
+      res.json({
+        success: true,
+        data: {
+          userId,
+          pincodeId,
+          pincodeCode: pincodeCheck.rows[0].code,
+          assignedAreas: assignedAreasCount,
+          userName: user.name
+        },
+        message: `Successfully assigned pincode ${pincodeCheck.rows[0].code} with ${assignedAreasCount} areas`,
+      });
+
+    } catch (transactionError) {
+      // Rollback transaction on error
+      await query('ROLLBACK');
+      throw transactionError;
+    }
+
+  } catch (error) {
+    logger.error('Error adding single pincode assignment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add pincode assignment',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// DELETE /api/territory-assignments/field-agents/:userId/all - Remove all territory assignments
+export const removeAllTerritoryAssignments = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    // Verify user exists and is a field agent
+    const userResult = await query(
+      'SELECT id, name, username, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    const user = userResult.rows[0];
+    if (user.role !== 'FIELD_AGENT') {
+      return res.status(400).json({
+        success: false,
+        message: 'User is not a field agent',
+        error: { code: 'INVALID_USER_ROLE' },
+      });
+    }
+
+    // Start transaction to remove all assignments
+    await query('BEGIN');
+
+    try {
+      // Get current assignments for logging
+      const currentAssignments = await query(
+        `SELECT
+          COUNT(DISTINCT upa."pincodeId") as pincode_count,
+          COUNT(DISTINCT uaa."areaId") as area_count
+         FROM "userPincodeAssignments" upa
+         LEFT JOIN "userAreaAssignments" uaa ON upa."userId" = uaa."userId" AND upa."pincodeId" = uaa."pincodeId" AND uaa."isActive" = true
+         WHERE upa."userId" = $1 AND upa."isActive" = true`,
+        [userId]
+      );
+
+      const currentCounts = currentAssignments.rows[0];
+
+      // Delete all area assignments
+      const deleteAreasResult = await query(
+        `DELETE FROM "userAreaAssignments"
+         WHERE "userId" = $1 AND "isActive" = true
+         RETURNING id`,
+        [userId]
+      );
+
+      // Delete all pincode assignments
+      const deletePincodesResult = await query(
+        `DELETE FROM "userPincodeAssignments"
+         WHERE "userId" = $1 AND "isActive" = true
+         RETURNING id`,
+        [userId]
+      );
+
+      // Commit transaction
+      await query('COMMIT');
+
+      const removedPincodes = deletePincodesResult.rows.length;
+      const removedAreas = deleteAreasResult.rows.length;
+
+      logger.info(`Removed all territory assignments for field agent ${userId}`, {
+        userId: (req as any).user?.id,
+        targetUserId: userId,
+        targetUserName: user.name,
+        removedPincodes,
+        removedAreas,
+        previousPincodeCount: currentCounts.pincode_count,
+        previousAreaCount: currentCounts.area_count
+      });
+
+      res.json({
+        success: true,
+        data: {
+          userId,
+          removedPincodes,
+          removedAreas,
+          userName: user.name
+        },
+        message: `Successfully removed all territory assignments for ${user.name}`,
+      });
+
+    } catch (transactionError) {
+      // Rollback transaction on error
+      await query('ROLLBACK');
+      throw transactionError;
+    }
+
+  } catch (error) {
+    logger.error('Error removing all territory assignments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to remove all territory assignments',
       error: { code: 'INTERNAL_ERROR' },
     });
   }

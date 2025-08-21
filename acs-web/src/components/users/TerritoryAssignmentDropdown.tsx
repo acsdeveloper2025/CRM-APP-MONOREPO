@@ -22,10 +22,9 @@ interface AreaAssignment {
 }
 
 export function TerritoryAssignmentDropdown({ user }: TerritoryAssignmentDropdownProps) {
-  const [selectedPincodeIds, setSelectedPincodeIds] = useState<number[]>([]);
-  const [selectedAreaAssignments, setSelectedAreaAssignments] = useState<AreaAssignment[]>([]);
-  const [hasPincodeChanges, setHasPincodeChanges] = useState(false);
-  const [hasAreaChanges, setHasAreaChanges] = useState(false);
+  // Sequential assignment state
+  const [selectedPincodeId, setSelectedPincodeId] = useState<number | null>(null);
+  const [selectedAreaIds, setSelectedAreaIds] = useState<number[]>([]);
   const [pincodeSearchQuery, setPincodeSearchQuery] = useState('');
   const [areaSearchQuery, setAreaSearchQuery] = useState('');
   const queryClient = useQueryClient();
@@ -40,59 +39,45 @@ export function TerritoryAssignmentDropdown({ user }: TerritoryAssignmentDropdow
     enabled: !!user.id,
   });
 
-  // Fetch areas for selected pincodes
-  const areaQueries = useQuery({
-    queryKey: ['areas-for-pincodes', selectedPincodeIds],
-    queryFn: async () => {
-      if (selectedPincodeIds.length === 0) return [];
-      
-      const areaPromises = selectedPincodeIds.map(async (pincodeId) => {
-        try {
-          const response = await fetch(`/api/pincodes/${pincodeId}/areas`);
-          if (!response.ok) return { pincodeId, areas: [] };
-          const data = await response.json();
-          return { pincodeId, areas: data.data || [] };
-        } catch (error) {
-          console.error(`Error fetching areas for pincode ${pincodeId}:`, error);
-          return { pincodeId, areas: [] };
+  // Fetch areas for the selected pincode
+  const { data: areasData, isLoading: areasLoading } = useAreasByPincode(selectedPincodeId || undefined);
+
+  // Save individual pincode-area assignment mutation
+  const saveAssignmentMutation = useMutation({
+    mutationFn: (data: { pincodeId: number; areaIds: number[] }) =>
+      territoryAssignmentService.assignSinglePincodeWithAreas(user.id, data),
+    onSuccess: (response) => {
+      toast.success(`Pincode ${response.data.pincodeCode} assigned with ${response.data.assignedAreas} areas`);
+      // Reset form
+      setSelectedPincodeId(null);
+      setSelectedAreaIds([]);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return (
+            (Array.isArray(queryKey) && queryKey.includes(user.id)) ||
+            (Array.isArray(queryKey) && queryKey[0] === 'user-territory-assignments') ||
+            (Array.isArray(queryKey) && queryKey[0] === 'user' && queryKey[1] === user.id)
+          );
         }
       });
-      
-      return Promise.all(areaPromises);
     },
-    enabled: selectedPincodeIds.length > 0,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to save assignment');
+    },
   });
 
-  // Save pincode assignments mutation
-  const savePincodeAssignmentsMutation = useMutation({
-    mutationFn: (pincodeIds: number[]) => territoryAssignmentService.assignPincodesToFieldAgent(user.id, { pincodeIds }),
-    onSuccess: () => {
-      toast.success('Pincode assignments updated successfully');
+  // Remove all assignments mutation
+  const removeAllAssignmentsMutation = useMutation({
+    mutationFn: () => territoryAssignmentService.removeAllTerritoryAssignments(user.id),
+    onSuccess: (response) => {
+      toast.success(`All territory assignments removed for ${response.data.userName}`);
+      setSelectedPincodeIds([]);
+      setSelectedAreaAssignments([]);
       setHasPincodeChanges(false);
-      queryClient.invalidateQueries({ 
-        predicate: (query) => {
-          const queryKey = query.queryKey;
-          return (
-            (Array.isArray(queryKey) && queryKey.includes(user.id)) ||
-            (Array.isArray(queryKey) && queryKey[0] === 'user-territory-assignments') ||
-            (Array.isArray(queryKey) && queryKey[0] === 'user' && queryKey[1] === user.id)
-          );
-        }
-      });
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update pincode assignments');
-    },
-  });
-
-  // Save area assignments mutation
-  const saveAreaAssignmentsMutation = useMutation({
-    mutationFn: (assignments: AreaAssignment[]) => territoryAssignmentService.assignAreasToFieldAgent(user.id, { assignments }),
-    onSuccess: () => {
-      toast.success('Area assignments updated successfully');
       setHasAreaChanges(false);
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
           return (
@@ -104,48 +89,25 @@ export function TerritoryAssignmentDropdown({ user }: TerritoryAssignmentDropdow
       });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update area assignments');
+      toast.error(error.response?.data?.message || 'Failed to remove all assignments');
     },
   });
 
-  const currentAssignments = territoryData?.data?.pincodeAssignments || [];
-  const currentAreaAssignments = territoryData?.data?.areaAssignments || [];
+  const currentAssignments = territoryData?.data?.territoryAssignments || [];
   const availablePincodes = pincodesData?.data || [];
+  const availableAreas = areasData?.data || [];
 
-  // Initialize selected pincodes from current assignments
-  useEffect(() => {
-    if (currentAssignments.length > 0) {
-      const currentPincodeIds = currentAssignments.map(assignment => assignment.pincodeId);
-      setSelectedPincodeIds(currentPincodeIds);
-    }
-  }, [currentAssignments]);
-
-  // Initialize selected area assignments from current assignments
-  useEffect(() => {
-    if (currentAreaAssignments.length > 0) {
-      const groupedAssignments = currentAreaAssignments.reduce((acc, assignment) => {
-        const existing = acc.find(item => item.pincodeId === assignment.pincodeId);
-        if (existing) {
-          existing.areaIds.push(assignment.areaId);
-        } else {
-          acc.push({
-            pincodeId: assignment.pincodeId,
-            areaIds: [assignment.areaId]
-          });
-        }
-        return acc;
-      }, [] as AreaAssignment[]);
-      
-      setSelectedAreaAssignments(groupedAssignments);
-    }
-  }, [currentAreaAssignments]);
-
-  // Convert pincodes to dropdown options
+  // Convert pincodes to single-select dropdown options (exclude already assigned pincodes)
   const pincodeOptions: MultiSelectOption[] = useMemo(() => {
     if (!availablePincodes) return [];
-    
+
+    const assignedPincodeIds = new Set(currentAssignments.map(assignment => assignment.pincodeId));
+
     return availablePincodes
       .filter(pincode => {
+        // Exclude already assigned pincodes
+        if (assignedPincodeIds.has(pincode.id)) return false;
+
         if (!pincodeSearchQuery) return true;
         const query = pincodeSearchQuery.toLowerCase();
         return (
@@ -159,109 +121,61 @@ export function TerritoryAssignmentDropdown({ user }: TerritoryAssignmentDropdow
         label: pincode.code,
         description: `${pincode.cityName}, ${pincode.state}`
       }));
-  }, [availablePincodes, pincodeSearchQuery]);
+  }, [availablePincodes, pincodeSearchQuery, currentAssignments]);
 
-  // Convert areas to dropdown options
+  // Convert areas to dropdown options for the selected pincode
   const areaOptions: MultiSelectOption[] = useMemo(() => {
-    if (!areaQueries.data) return [];
-    
-    const allAreas: MultiSelectOption[] = [];
-    
-    areaQueries.data.forEach(({ pincodeId, areas }) => {
-      const pincode = availablePincodes.find(p => p.id === pincodeId);
-      const pincodeCode = pincode?.code || pincodeId.toString();
-      
-      areas.forEach((area: any) => {
-        if (!areaSearchQuery || area.name.toLowerCase().includes(areaSearchQuery.toLowerCase())) {
-          allAreas.push({
-            id: area.id,
-            label: area.name,
-            description: `Pincode: ${pincodeCode}`
-          });
-        }
-      });
-    });
-    
-    return allAreas;
-  }, [areaQueries.data, availablePincodes, areaSearchQuery]);
+    if (!availableAreas) return [];
 
-  // Get all selected area IDs for the dropdown
-  const selectedAreaIds = useMemo(() => {
-    return selectedAreaAssignments.flatMap(assignment => assignment.areaIds);
-  }, [selectedAreaAssignments]);
+    return availableAreas
+      .filter(area => {
+        if (!areaSearchQuery) return true;
+        return area.name.toLowerCase().includes(areaSearchQuery.toLowerCase());
+      })
+      .map(area => ({
+        id: area.id,
+        label: area.name,
+        description: area.description || ''
+      }));
+  }, [availableAreas, areaSearchQuery]);
 
-  // Handle pincode selection changes
+  // Handle single pincode selection
   const handlePincodeSelectionChange = (values: (string | number)[]) => {
-    const newPincodeIds = values.map(id => Number(id));
-    setSelectedPincodeIds(newPincodeIds);
-    
-    // Check if there are changes
-    const currentIds = currentAssignments.map(assignment => assignment.pincodeId).sort();
-    const newIds = newPincodeIds.sort();
-    setHasPincodeChanges(JSON.stringify(currentIds) !== JSON.stringify(newIds));
-    
-    // Remove area assignments for deselected pincodes
-    const removedPincodes = selectedPincodeIds.filter(id => !newPincodeIds.includes(id));
-    if (removedPincodes.length > 0) {
-      setSelectedAreaAssignments(prev => 
-        prev.filter(assignment => !removedPincodes.includes(assignment.pincodeId))
-      );
-      setHasAreaChanges(true);
-    }
+    const pincodeId = values.length > 0 ? Number(values[0]) : null;
+    setSelectedPincodeId(pincodeId);
+    // Reset area selection when pincode changes
+    setSelectedAreaIds([]);
   };
 
   // Handle area selection changes
   const handleAreaSelectionChange = (values: (string | number)[]) => {
     const newAreaIds = values.map(id => Number(id));
-    
-    // Group areas by pincode
-    const newAssignments: AreaAssignment[] = [];
-    
-    if (areaQueries.data) {
-      areaQueries.data.forEach(({ pincodeId, areas }) => {
-        const pincodeAreaIds = areas
-          .filter((area: any) => newAreaIds.includes(area.id))
-          .map((area: any) => area.id);
-        
-        if (pincodeAreaIds.length > 0) {
-          newAssignments.push({
-            pincodeId,
-            areaIds: pincodeAreaIds
-          });
-        }
-      });
+    setSelectedAreaIds(newAreaIds);
+  };
+
+  // Handle save assignment
+  const handleSaveAssignment = () => {
+    if (!selectedPincodeId) {
+      toast.error('Please select a pincode first');
+      return;
     }
-    
-    setSelectedAreaAssignments(newAssignments);
-    
-    // Check if there are changes
-    const currentGrouped = currentAreaAssignments.reduce((acc, assignment) => {
-      const existing = acc.find(item => item.pincodeId === assignment.pincodeId);
-      if (existing) {
-        existing.areaIds.push(assignment.areaId);
-      } else {
-        acc.push({
-          pincodeId: assignment.pincodeId,
-          areaIds: [assignment.areaId]
-        });
-      }
-      return acc;
-    }, [] as AreaAssignment[]);
-    
-    setHasAreaChanges(JSON.stringify(currentGrouped.sort()) !== JSON.stringify(newAssignments.sort()));
+
+    saveAssignmentMutation.mutate({
+      pincodeId: selectedPincodeId,
+      areaIds: selectedAreaIds
+    });
   };
 
-  // Handle save operations
-  const handleSavePincodes = () => {
-    savePincodeAssignmentsMutation.mutate(selectedPincodeIds);
-  };
-
-  const handleSaveAreas = () => {
-    saveAreaAssignmentsMutation.mutate(selectedAreaAssignments);
+  // Handle remove all assignments
+  const handleRemoveAllAssignments = () => {
+    if (window.confirm(`Are you sure you want to remove ALL territory assignments for ${user.name}? This action cannot be undone.`)) {
+      removeAllAssignmentsMutation.mutate();
+    }
   };
 
   const isLoading = pincodesLoading || territoryLoading;
-  const isSaving = savePincodeAssignmentsMutation.isPending || saveAreaAssignmentsMutation.isPending;
+  const isSaving = saveAssignmentMutation.isPending || removeAllAssignmentsMutation.isPending;
+  const canSave = selectedPincodeId !== null;
 
   if (isLoading) {
     return (
@@ -277,101 +191,125 @@ export function TerritoryAssignmentDropdown({ user }: TerritoryAssignmentDropdow
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <MapPin className="h-5 w-5" />
-          <span>Territory Assignments</span>
-        </CardTitle>
-        <CardDescription>
-          Assign pincodes and areas to this field agent for case routing and territory management
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center space-x-2">
+              <MapPin className="h-5 w-5" />
+              <span>Territory Assignments</span>
+            </CardTitle>
+            <CardDescription>
+              Sequential pincode-area assignment: Select one pincode, choose areas, then save
+            </CardDescription>
+          </div>
+          {currentAssignments.length > 0 && (
+            <Button
+              onClick={handleRemoveAllAssignments}
+              disabled={isSaving}
+              variant="destructive"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              {removeAllAssignmentsMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <span>🗑️</span>
+              )}
+              Remove All
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Current Assignments Summary */}
-        {(currentAssignments.length > 0 || currentAreaAssignments.length > 0) && (
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm">Current Assignments</h4>
-            <div className="space-y-2">
-              {currentAssignments.length > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Pincodes ({currentAssignments.length})</p>
-                  <div className="flex flex-wrap gap-1">
-                    {currentAssignments.map((assignment) => (
-                      <Badge key={assignment.pincodeId} variant="secondary" className="text-xs">
-                        {assignment.pincodeCode} - {assignment.cityName}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {currentAreaAssignments.length > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Areas ({currentAreaAssignments.length})</p>
-                  <div className="flex flex-wrap gap-1">
-                    {currentAreaAssignments.map((assignment) => (
-                      <Badge key={`${assignment.pincodeId}-${assignment.areaId}`} variant="outline" className="text-xs">
-                        {assignment.areaName} ({assignment.pincodeCode})
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <Separator />
-          </div>
-        )}
 
-        {/* Dropdown-based Assignment Interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pincode Selection */}
+        {/* Sequential Assignment Interface */}
+        <div className="space-y-6">
+          {/* Step 1: Pincode Selection */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <h4 className="font-medium">Pincode Assignment</h4>
-              </div>
-              {hasPincodeChanges && (
-                <Button 
-                  onClick={handleSavePincodes} 
-                  disabled={isSaving}
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  {isSaving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  Save Pincodes
-                </Button>
-              )}
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium flex items-center justify-center">1</div>
+              <h4 className="font-medium">Select Pincode</h4>
             </div>
-            
+
             <MultiSelectDropdown
               options={pincodeOptions}
-              selectedValues={selectedPincodeIds}
+              selectedValues={selectedPincodeId ? [selectedPincodeId] : []}
               onSelectionChange={handlePincodeSelectionChange}
-              placeholder="Select pincodes..."
+              placeholder="Select one pincode..."
               searchPlaceholder="Search by pincode or city..."
               onSearch={setPincodeSearchQuery}
               searchQuery={pincodeSearchQuery}
               isLoading={pincodesLoading}
               maxDisplayItems={50}
-              emptyMessage="No pincodes found"
+              emptyMessage={pincodeOptions.length === 0 ? "All available pincodes are already assigned" : "No pincodes found"}
             />
+
+            {pincodeOptions.length === 0 && (
+              <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
+                💡 All available pincodes have been assigned. Use "Remove All" to clear assignments if needed.
+              </div>
+            )}
           </div>
 
-          {/* Area Selection */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Step 2: Area Selection */}
+          {selectedPincodeId && (
+            <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                <h4 className="font-medium">Area Assignment</h4>
+                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium flex items-center justify-center">2</div>
+                <h4 className="font-medium">Select Areas for Pincode {pincodeOptions.find(p => p.id === selectedPincodeId)?.label}</h4>
               </div>
-              {hasAreaChanges && (
-                <Button 
-                  onClick={handleSaveAreas} 
-                  disabled={isSaving || selectedPincodeIds.length === 0}
-                  size="sm"
+
+              {areasLoading ? (
+                <div className="flex items-center gap-2 py-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">Loading areas...</span>
+                </div>
+              ) : areaOptions.length === 0 ? (
+                <div className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-3 rounded">
+                  ⚠️ No areas configured for this pincode. Configure areas in Location Management first.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                    <span className="font-medium">Available areas:</span> {areaOptions.length} areas for this pincode
+                  </div>
+
+                  <MultiSelectDropdown
+                    options={areaOptions}
+                    selectedValues={selectedAreaIds}
+                    onSelectionChange={handleAreaSelectionChange}
+                    placeholder="Select areas (optional)..."
+                    searchPlaceholder="Search areas..."
+                    onSearch={setAreaSearchQuery}
+                    searchQuery={areaSearchQuery}
+                    isLoading={areasLoading}
+                    maxDisplayItems={100}
+                    emptyMessage="No areas found"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Save Assignment */}
+          {selectedPincodeId && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium flex items-center justify-center">3</div>
+                <h4 className="font-medium">Save Assignment</h4>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                <div>
+                  <div className="font-medium">
+                    Pincode: {pincodeOptions.find(p => p.id === selectedPincodeId)?.label}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Areas: {selectedAreaIds.length === 0 ? 'None selected (entire pincode)' : `${selectedAreaIds.length} selected`}
+                  </div>
+                </div>
+                <Button
+                  onClick={handleSaveAssignment}
+                  disabled={isSaving}
                   className="flex items-center gap-2"
                 >
                   {isSaving ? (
@@ -379,31 +317,24 @@ export function TerritoryAssignmentDropdown({ user }: TerritoryAssignmentDropdow
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  Save Areas
+                  Save Assignment
                 </Button>
-              )}
-            </div>
-            
-            {selectedPincodeIds.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">Select pincodes first to assign areas</p>
               </div>
-            ) : (
-              <MultiSelectDropdown
-                options={areaOptions}
-                selectedValues={selectedAreaIds}
-                onSelectionChange={handleAreaSelectionChange}
-                placeholder="Select areas..."
-                searchPlaceholder="Search areas..."
-                onSearch={setAreaSearchQuery}
-                searchQuery={areaSearchQuery}
-                isLoading={areaQueries.isLoading}
-                maxDisplayItems={100}
-                emptyMessage="No areas found for selected pincodes"
-              />
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Instructions */}
+          {!selectedPincodeId && pincodeOptions.length > 0 && (
+            <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg">
+              <h5 className="font-medium mb-2">How to assign territories:</h5>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Select one pincode from the dropdown above</li>
+                <li>Choose areas within that pincode (optional)</li>
+                <li>Save the assignment</li>
+                <li>Repeat for additional pincodes</li>
+              </ol>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -11,6 +11,7 @@ import {
   searchPincodes,
   bulkImportPincodes,
   getPincodesByCity,
+  getPincodeAreas,
   addPincodeAreas,
   removePincodeArea
 } from '@/controllers/pincodesController';
@@ -294,6 +295,13 @@ const addAreasValidation = [
     .isInt({ min: 1 })
     .withMessage('Each area ID must be a valid positive integer'),
 ];
+
+// GET /api/pincodes/:id/areas - Get areas for a pincode
+router.get('/:id/areas',
+  [param('id').trim().notEmpty().withMessage('Pincode ID is required')],
+  validate,
+  getPincodeAreas
+);
 
 // POST /api/pincodes/:id/areas - Add areas to a pincode
 router.post('/:id/areas',
