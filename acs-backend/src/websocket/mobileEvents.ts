@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import { logger } from '../utils/logger';
+import { query } from '../config/database';
 
 export class MobileWebSocketEvents {
   private io: Server;
@@ -9,30 +10,92 @@ export class MobileWebSocketEvents {
   }
 
   // Notify mobile app about case assignment
-  notifyCaseAssigned(userId: string, caseData: any) {
-    this.io.to(`user:${userId}`).emit('mobile:case:assigned', {
+  async notifyCaseAssigned(userId: string, caseData: any) {
+    const notificationId = `case_assigned_${caseData.id || caseData.caseId}_${Date.now()}`;
+    const timestamp = new Date().toISOString();
+
+    const notificationData = {
       type: 'CASE_ASSIGNED',
       case: caseData,
-      timestamp: new Date().toISOString(),
+      timestamp,
       priority: caseData.priority,
       requiresImmediate: caseData.priority >= 3,
+      notificationId,
+    };
+
+    // Send WebSocket notification
+    this.io.to(`user:${userId}`).emit('mobile:case:assigned', notificationData);
+
+    // Log notification details
+    logger.info(`Case assigned notification sent to user ${userId}: ${caseData.id || caseData.caseId}`, {
+      notificationId,
+      userId,
+      caseId: caseData.id || caseData.caseId,
+      casePriority: caseData.priority,
+      requiresImmediate: caseData.priority >= 3,
+      timestamp,
+      notificationType: 'CASE_ASSIGNED',
     });
 
-    logger.info(`Case assigned notification sent to user ${userId}: ${caseData.id}`);
+    // Store notification audit log
+    try {
+      await this.logNotificationAudit({
+        notificationId,
+        userId,
+        caseId: caseData.id || caseData.caseId,
+        notificationType: 'CASE_ASSIGNED',
+        notificationData: JSON.stringify(notificationData),
+        sentAt: timestamp,
+        deliveryStatus: 'SENT',
+      });
+    } catch (error) {
+      logger.error('Failed to log case assignment notification audit:', error);
+    }
   }
 
   // Notify mobile app about case status changes
-  notifyCaseStatusChanged(caseId: string, oldStatus: string, newStatus: string, updatedBy: string) {
-    this.io.to(`case:${caseId}`).emit('mobile:case:status:changed', {
+  async notifyCaseStatusChanged(caseId: string, oldStatus: string, newStatus: string, updatedBy: string) {
+    const notificationId = `case_status_${caseId}_${Date.now()}`;
+    const timestamp = new Date().toISOString();
+
+    const notificationData = {
       type: 'CASE_STATUS_CHANGED',
       caseId,
       oldStatus,
       newStatus,
       updatedBy,
-      timestamp: new Date().toISOString(),
+      timestamp,
+      notificationId,
+    };
+
+    // Send WebSocket notification
+    this.io.to(`case:${caseId}`).emit('mobile:case:status:changed', notificationData);
+
+    // Log notification details
+    logger.info(`Case status change notification sent for case ${caseId}: ${oldStatus} -> ${newStatus}`, {
+      notificationId,
+      caseId,
+      oldStatus,
+      newStatus,
+      updatedBy,
+      timestamp,
+      notificationType: 'CASE_STATUS_CHANGED',
     });
 
-    logger.info(`Case status change notification sent for case ${caseId}: ${oldStatus} -> ${newStatus}`);
+    // Store notification audit log
+    try {
+      await this.logNotificationAudit({
+        notificationId,
+        caseId,
+        notificationType: 'CASE_STATUS_CHANGED',
+        notificationData: JSON.stringify(notificationData),
+        sentAt: timestamp,
+        deliveryStatus: 'SENT',
+        metadata: JSON.stringify({ oldStatus, newStatus, updatedBy }),
+      });
+    } catch (error) {
+      logger.error('Failed to log case status change notification audit:', error);
+    }
   }
 
   // Notify mobile app about case priority changes
@@ -265,5 +328,63 @@ export class MobileWebSocketEvents {
     });
 
     logger.info(`Broadcast sent to all mobile devices: ${event}`);
+  }
+
+  /**
+   * Log notification audit for tracking and compliance
+   */
+  private async logNotificationAudit(auditData: {
+    notificationId: string;
+    userId?: string;
+    caseId?: string;
+    notificationType: string;
+    notificationData: string;
+    sentAt: string;
+    deliveryStatus: 'SENT' | 'DELIVERED' | 'FAILED' | 'ACKNOWLEDGED';
+    metadata?: string;
+  }): Promise<void> {
+    try {
+      const insertQuery = `
+        INSERT INTO mobile_notification_audit (
+          "notificationId", "userId", "caseId", "notificationType",
+          "notificationData", "sentAt", "deliveryStatus", "metadata"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `;
+
+      await query(insertQuery, [
+        auditData.notificationId,
+        auditData.userId || null,
+        auditData.caseId || null,
+        auditData.notificationType,
+        auditData.notificationData,
+        auditData.sentAt,
+        auditData.deliveryStatus,
+        auditData.metadata || null,
+      ]);
+
+      logger.debug(`Notification audit logged: ${auditData.notificationId}`);
+    } catch (error) {
+      logger.error('Failed to log notification audit:', error);
+      // Don't throw error to avoid breaking notification flow
+    }
+  }
+
+  /**
+   * Update notification delivery status (called when mobile app acknowledges)
+   */
+  async updateNotificationStatus(notificationId: string, status: 'DELIVERED' | 'ACKNOWLEDGED' | 'FAILED'): Promise<void> {
+    try {
+      const updateQuery = `
+        UPDATE mobile_notification_audit
+        SET "deliveryStatus" = $1, "acknowledgedAt" = CURRENT_TIMESTAMP
+        WHERE "notificationId" = $2
+      `;
+
+      await query(updateQuery, [status, notificationId]);
+
+      logger.debug(`Notification status updated: ${notificationId} -> ${status}`);
+    } catch (error) {
+      logger.error('Failed to update notification status:', error);
+    }
   }
 }

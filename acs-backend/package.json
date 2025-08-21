@@ -20,7 +20,8 @@
     "port:kill": "lsof -ti:3000 | xargs kill -9 || echo 'No process found on port 3000'",
     "services:check": "echo 'Checking required services...' && lsof -i:5432 && lsof -i:6379 && echo 'All services running'",
     "start:force": "npm run port:kill && npm run build && npm start",
-    "db:studio": "echo 'no-op (prisma removed)'"
+    "db:studio": "echo 'no-op (prisma removed)'",
+    "test:realtime": "node test-scripts/test-realtime-case-assignment.js"
   },
   "repository": {
     "type": "git",
@@ -72,6 +73,7 @@
     "redis": "^5.8.0",
     "sharp": "^0.34.3",
     "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "winston": "^3.17.0"
   },
   "devDependencies": {

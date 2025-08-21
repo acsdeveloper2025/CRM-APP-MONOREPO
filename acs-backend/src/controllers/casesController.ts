@@ -4,6 +4,7 @@ import { AuthenticatedRequest } from '@/middleware/auth';
 import { pool } from '@/config/database';
 import { query } from '@/config/database';
 import { DeduplicationService } from '@/services/deduplicationService';
+import { emitCaseAssigned, emitCaseStatusChanged, emitCasePriorityChanged } from '@/websocket/server';
 
 // Helper function to get assigned client IDs for BACKEND_USER users
 const getAssignedClientIds = async (userId: string, userRole: string): Promise<number[] | null> => {
@@ -399,7 +400,7 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       status: assignedToId ? 'ASSIGNED' : 'PENDING',
       priority: priority === 2 ? 'MEDIUM' : priority === 1 ? 'LOW' : priority === 3 ? 'HIGH' : 'URGENT',
       assignedTo: assignedToId,
-      createdBy: req.user?.id,
+      createdByBackendUser: req.user?.id,
       panNumber: panNumber?.toUpperCase() || null,
       // Required fields
       applicantType,
@@ -416,7 +417,7 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
         "clientId", "productId", "verificationTypeId",
         "customerName", "customerCallingCode", "customerPhone",
         "address", "pincode", "verificationType", "status", "priority",
-        "assignedTo", "createdBy", "panNumber", "applicantType",
+        "assignedTo", "createdByBackendUser", "panNumber", "applicantType",
         "backendContactNumber", "trigger", "deduplicationChecked",
         "deduplicationDecision", "deduplicationRationale"
       ) VALUES (
@@ -438,7 +439,7 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       caseData.status,
       caseData.priority,
       caseData.assignedTo,
-      caseData.createdBy,
+      caseData.createdByBackendUser,
       caseData.panNumber,
       caseData.applicantType,
       caseData.backendContactNumber,
@@ -458,6 +459,36 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       assignedToId,
       deduplicationChecked: newCase.deduplicationChecked
     });
+
+    // Send real-time notification to assigned field agent if case is assigned
+    if (assignedToId) {
+      try {
+        emitCaseAssigned(assignedToId, {
+          id: newCase.id,
+          caseId: newCase.caseId,
+          customerName: newCase.customerName,
+          customerCallingCode: newCase.customerCallingCode,
+          customerPhone: newCase.customerPhone,
+          address: newCase.address,
+          pincode: newCase.pincode,
+          priority: newCase.priority,
+          status: newCase.status,
+          verificationType: newCase.verificationType,
+          applicantType: newCase.applicantType,
+          trigger: newCase.trigger,
+          createdAt: newCase.createdAt,
+          clientId: newCase.clientId,
+          productId: newCase.productId,
+          verificationTypeId: newCase.verificationTypeId,
+          backendContactNumber: newCase.backendContactNumber
+        });
+
+        logger.info(`Real-time case assignment notification sent to user ${assignedToId} for case ${newCase.caseId}`);
+      } catch (notificationError) {
+        logger.error('Failed to send case assignment notification:', notificationError);
+        // Don't fail the case creation if notification fails
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -709,6 +740,21 @@ export const updateCaseStatus = async (req: AuthenticatedRequest, res: Response)
       newStatus: status
     });
 
+    // Send real-time notification about status change
+    try {
+      emitCaseStatusChanged(
+        updatedCase.caseId.toString(),
+        oldStatus,
+        status,
+        req.user?.id || 'system'
+      );
+
+      logger.info(`Real-time case status change notification sent for case ${id}: ${oldStatus} -> ${status}`);
+    } catch (notificationError) {
+      logger.error('Failed to send case status change notification:', notificationError);
+      // Don't fail the status update if notification fails
+    }
+
     res.json({
       success: true,
       data: updatedCase,
@@ -760,6 +806,25 @@ export const updateCasePriority = async (req: AuthenticatedRequest, res: Respons
       oldPriority,
       newPriority: priority
     });
+
+    // Send real-time notification about priority change
+    try {
+      // Convert priority strings to numbers for comparison
+      const oldPriorityNum = oldPriority === 'LOW' ? 1 : oldPriority === 'MEDIUM' ? 2 : oldPriority === 'HIGH' ? 3 : 4;
+      const newPriorityNum = priority === 'LOW' ? 1 : priority === 'MEDIUM' ? 2 : priority === 'HIGH' ? 3 : 4;
+
+      emitCasePriorityChanged(
+        updatedCase.caseId.toString(),
+        oldPriorityNum,
+        newPriorityNum,
+        req.user?.id || 'system'
+      );
+
+      logger.info(`Real-time case priority change notification sent for case ${id}: ${oldPriority} -> ${priority}`);
+    } catch (notificationError) {
+      logger.error('Failed to send case priority change notification:', notificationError);
+      // Don't fail the priority update if notification fails
+    }
 
     res.json({
       success: true,
@@ -854,6 +919,39 @@ export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
       newAssignee: assignedToId,
       reason
     });
+
+    // Send real-time notification to newly assigned field agent
+    try {
+      emitCaseAssigned(assignedToId, {
+        id: updatedCase.id,
+        caseId: updatedCase.caseId,
+        customerName: updatedCase.customerName,
+        customerCallingCode: updatedCase.customerCallingCode,
+        customerPhone: updatedCase.customerPhone,
+        address: updatedCase.address,
+        pincode: updatedCase.pincode,
+        priority: updatedCase.priority,
+        status: updatedCase.status,
+        verificationType: updatedCase.verificationType,
+        applicantType: updatedCase.applicantType,
+        trigger: updatedCase.trigger,
+        createdAt: updatedCase.createdAt,
+        updatedAt: updatedCase.updatedAt,
+        clientId: updatedCase.clientId,
+        productId: updatedCase.productId,
+        verificationTypeId: updatedCase.verificationTypeId,
+        backendContactNumber: updatedCase.backendContactNumber,
+        assignedToName: newAssigneeName,
+        clientName: currentCase.clientName,
+        clientCode: currentCase.clientCode,
+        reason: reason || 'Case reassignment'
+      });
+
+      logger.info(`Real-time case assignment notification sent to user ${assignedToId} for case ${id}`);
+    } catch (notificationError) {
+      logger.error('Failed to send case assignment notification:', notificationError);
+      // Don't fail the assignment if notification fails
+    }
 
     // Return updated case with assignee name
     const finalCase = {

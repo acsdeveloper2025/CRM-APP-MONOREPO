@@ -12,6 +12,7 @@ import { validateEnvironmentConfig, getEnvironmentConfig } from './config/enviro
 import { dataCleanupService } from './services/dataCleanupService';
 import { backgroundTaskManager } from './services/backgroundTaskManager';
 import { initializeAppPermissions } from './utils/permissions';
+import { useWebSocket } from './hooks/useWebSocket';
 
 // Lazy load screens for better code splitting
 const NewLoginScreen = lazy(() => import('./screens/NewLoginScreen'));
@@ -26,6 +27,27 @@ const DigitalIdCardScreen = lazy(() => import('./screens/DigitalIdCardScreen'));
 
 const AppNavigator: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
+
+  // Initialize WebSocket connection with real-time notifications
+  const {
+    isConnected: wsConnected,
+    error: wsError,
+  } = useWebSocket({
+    autoConnect: true,
+    enableNotifications: true,
+    onCaseAssigned: (notification) => {
+      console.log('🎯 New case assigned via WebSocket:', notification.case.caseId);
+    },
+    onCaseStatusChanged: (notification) => {
+      console.log('📊 Case status changed via WebSocket:', notification.caseId, notification.newStatus);
+    },
+    onCasePriorityChanged: (notification) => {
+      console.log('⚡ Case priority changed via WebSocket:', notification.caseId, notification.newPriority);
+    },
+    onError: (error) => {
+      console.error('❌ WebSocket error:', error);
+    },
+  });
 
   // Initialize services on app start
   useEffect(() => {

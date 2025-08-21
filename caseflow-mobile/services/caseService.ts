@@ -366,10 +366,51 @@ const getInitialMockData = (): Case[] => [
 class CaseService {
   private config = getEnvironmentConfig();
   private useOfflineMode = false;
+  private lastSyncTimestamp: string | null = null;
+  private syncInProgress = false;
+  private syncInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     this.initializeData();
     this.useOfflineMode = this.config.features.enableOfflineMode;
+    this.initializeHybridSync();
+  }
+
+  /**
+   * Initialize hybrid sync strategy
+   */
+  private async initializeHybridSync(): Promise<void> {
+    // Load last sync timestamp
+    this.lastSyncTimestamp = await AsyncStorage.getItem('lastSyncTimestamp');
+
+    // Set up periodic sync as fallback
+    if (this.config.features.enableBackgroundSync) {
+      this.setupPeriodicSync();
+    }
+  }
+
+  /**
+   * Set up periodic sync as fallback for WebSocket notifications
+   */
+  private setupPeriodicSync(): void {
+    const syncInterval = this.config.offline.autoSyncInterval || 300000; // 5 minutes default
+
+    this.syncInterval = setInterval(async () => {
+      if (!this.syncInProgress && navigator.onLine) {
+        console.log('🔄 Performing periodic sync (fallback)');
+        await this.syncCases();
+      }
+    }, syncInterval);
+  }
+
+  /**
+   * Clean up sync resources
+   */
+  destroy(): void {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
+    }
   }
 
   private async initializeData() {
@@ -803,6 +844,105 @@ class CaseService {
   async resubmitCase(id: string): Promise<{ success: boolean; error?: string }> {
     console.log(`Re-attempting to submit case ${id}...`);
     return this.submitCase(id);
+  }
+
+  /**
+   * Intelligent sync method that combines real-time and periodic sync
+   */
+  async syncCases(): Promise<{ success: boolean; newCases: number; updatedCases: number; error?: string }> {
+    if (this.syncInProgress) {
+      console.log('⏳ Sync already in progress, skipping...');
+      return { success: false, newCases: 0, updatedCases: 0, error: 'Sync already in progress' };
+    }
+
+    if (!navigator.onLine) {
+      console.log('📴 Offline, skipping sync');
+      return { success: false, newCases: 0, updatedCases: 0, error: 'Device is offline' };
+    }
+
+    this.syncInProgress = true;
+    let newCases = 0;
+    let updatedCases = 0;
+
+    try {
+      console.log('🔄 Starting intelligent case sync...');
+
+      // Get current local cases
+      const localCases = await this.getLocalCases();
+      const localCaseIds = new Set(localCases.map(c => c.id));
+
+      // Prepare sync parameters
+      const syncParams = new URLSearchParams();
+      if (this.lastSyncTimestamp) {
+        syncParams.append('lastSyncTimestamp', this.lastSyncTimestamp);
+      }
+      syncParams.append('limit', '100'); // Batch size for sync
+
+      // Fetch updated cases from server
+      const response = await apiClient.get<CaseListResponse>(`/mobile/cases?${syncParams.toString()}`);
+
+      if (response.success && response.data) {
+        const serverCases = response.data.cases;
+
+        for (const serverCase of serverCases) {
+          const transformedCase = this.transformMobileCaseToCase(serverCase);
+
+          if (localCaseIds.has(transformedCase.id)) {
+            // Update existing case
+            await this.updateLocalCase(transformedCase);
+            updatedCases++;
+          } else {
+            // Add new case
+            await this.addLocalCase(transformedCase);
+            newCases++;
+          }
+        }
+
+        // Update sync timestamp
+        this.lastSyncTimestamp = new Date().toISOString();
+        await AsyncStorage.setItem('lastSyncTimestamp', this.lastSyncTimestamp);
+
+        console.log(`✅ Sync completed: ${newCases} new cases, ${updatedCases} updated cases`);
+        return { success: true, newCases, updatedCases };
+      } else {
+        throw new Error(response.error?.message || 'Sync failed');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
+      console.error('❌ Sync failed:', errorMessage);
+      return { success: false, newCases, updatedCases, error: errorMessage };
+    } finally {
+      this.syncInProgress = false;
+    }
+  }
+
+  /**
+   * Add a new case to local storage
+   */
+  private async addLocalCase(newCase: Case): Promise<void> {
+    const cases = await this.readFromStorage();
+    cases.push(newCase);
+    await this.writeToStorage(cases);
+  }
+
+
+
+  /**
+   * Force sync - useful when triggered by WebSocket notifications
+   */
+  async forceSyncCases(): Promise<{ success: boolean; newCases: number; updatedCases: number; error?: string }> {
+    console.log('🚀 Force sync triggered (likely from WebSocket notification)');
+    return this.syncCases();
+  }
+
+  /**
+   * Get sync status
+   */
+  getSyncStatus(): { inProgress: boolean; lastSync: string | null } {
+    return {
+      inProgress: this.syncInProgress,
+      lastSync: this.lastSyncTimestamp,
+    };
   }
 }
 

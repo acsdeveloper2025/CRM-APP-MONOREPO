@@ -3,6 +3,11 @@ import jwt from 'jsonwebtoken';
 import { config } from '@/config';
 import { logger } from '@/config/logger';
 import { JwtPayload } from '@/types/auth';
+import { MobileWebSocketEvents } from './mobileEvents';
+
+// Global WebSocket instance for use in controllers
+let globalSocketIO: SocketIOServer | null = null;
+let mobileEvents: MobileWebSocketEvents | null = null;
 
 interface AuthenticatedSocket extends Socket {
   user?: {
@@ -15,6 +20,10 @@ interface AuthenticatedSocket extends Socket {
 }
 
 export const initializeWebSocket = (io: SocketIOServer): void => {
+  // Store global reference for use in controllers
+  globalSocketIO = io;
+  mobileEvents = new MobileWebSocketEvents(io);
+
   // Authentication middleware for WebSocket
   io.use((socket: AuthenticatedSocket, next) => {
     const token = socket.handshake.auth.token;
@@ -203,9 +212,17 @@ export const initializeWebSocket = (io: SocketIOServer): void => {
     });
 
     // Handle mobile push notification acknowledgment
-    socket.on('mobile:notification:ack', (data: { notificationId: string }) => {
+    socket.on('mobile:notification:ack', async (data: { notificationId: string }) => {
       logger.info(`Push notification acknowledged by user ${socket.user?.username}: ${data.notificationId}`);
-      // Mark notification as read
+
+      // Update notification status in audit log
+      if (mobileEvents) {
+        try {
+          await mobileEvents.updateNotificationStatus(data.notificationId, 'ACKNOWLEDGED');
+        } catch (error) {
+          logger.error('Failed to update notification acknowledgment:', error);
+        }
+      }
     });
 
     // Handle disconnect
@@ -245,4 +262,36 @@ export const emitBroadcast = (io: SocketIOServer, role: string, data: any): void
     ...data,
     timestamp: new Date().toISOString(),
   });
+};
+
+// Export functions to access global WebSocket instance from controllers
+export const getSocketIO = (): SocketIOServer | null => globalSocketIO;
+
+export const getMobileEvents = (): MobileWebSocketEvents | null => mobileEvents;
+
+// Helper function to emit case assignment notification
+export const emitCaseAssigned = (userId: string, caseData: any): void => {
+  if (mobileEvents) {
+    mobileEvents.notifyCaseAssigned(userId, caseData);
+  } else {
+    logger.warn('Mobile events not initialized, cannot send case assignment notification');
+  }
+};
+
+// Helper function to emit case status change notification
+export const emitCaseStatusChanged = (caseId: string, oldStatus: string, newStatus: string, updatedBy: string): void => {
+  if (mobileEvents) {
+    mobileEvents.notifyCaseStatusChanged(caseId, oldStatus, newStatus, updatedBy);
+  } else {
+    logger.warn('Mobile events not initialized, cannot send case status change notification');
+  }
+};
+
+// Helper function to emit case priority change notification
+export const emitCasePriorityChanged = (caseId: string, oldPriority: number, newPriority: number, updatedBy: string): void => {
+  if (mobileEvents) {
+    mobileEvents.notifyCasePriorityChanged(caseId, oldPriority, newPriority, updatedBy);
+  } else {
+    logger.warn('Mobile events not initialized, cannot send case priority change notification');
+  }
 };
