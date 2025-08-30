@@ -8,7 +8,6 @@ import { ResponsiveLayoutProvider } from './components/ResponsiveLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthStatusIndicator from './components/AuthStatusIndicator';
 import ReauthModal from './components/ReauthModal';
-import SyncStatusIndicator from './components/SyncStatusIndicator';
 import { View } from 'react-native';
 import { googleMapsService } from './services/googleMapsService';
 import { validateEnvironmentConfig, getEnvironmentConfig } from './config/environment';
@@ -134,9 +133,6 @@ const AppNavigator: React.FC = () => {
     <MobileContainer>
       {/* Authentication Status Indicator */}
       {isAuthenticated && <AuthStatusIndicator />}
-
-      {/* Sync Status Indicator */}
-      {isAuthenticated && <SyncStatusIndicator />}
 
       <Suspense fallback={<RouteLoader />}>
         <Routes>

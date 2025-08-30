@@ -3,7 +3,6 @@ import { Case, CaseStatus } from '../types';
 import { CheckIcon } from './Icons';
 import CaseStatusService from '../services/caseStatusService';
 import AuditService from '../services/auditService';
-import NetworkService from '../services/networkService';
 
 /**
  * Enhanced Accept Case Button Component
@@ -43,17 +42,12 @@ const AcceptCaseButton: React.FC<AcceptCaseButtonProps> = ({
         caseTitle: caseData.title,
         address: caseData.address || caseData.visitAddress,
         acceptedAt: new Date().toISOString(),
-        networkStatus: NetworkService.isOnline() ? 'online' : 'offline',
       };
 
-      // Update case status with optimistic UI
+      // Update case status
       const result = await CaseStatusService.updateCaseStatus(
         caseData.id,
-        CaseStatus.InProgress,
-        {
-          optimistic: true,
-          auditMetadata,
-        }
+        CaseStatus.InProgress
       );
 
       if (result.success) {
@@ -76,14 +70,8 @@ const AcceptCaseButton: React.FC<AcceptCaseButtonProps> = ({
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
 
-        // Determine success message based on network status
-        let successMessage = 'Case accepted successfully!';
-        if (result.wasOffline) {
-          successMessage += ' (Will sync when online)';
-        } else if (result.error) {
-          successMessage += ' (Local update completed)';
-        }
-
+        // Show success message
+        const successMessage = 'Case accepted successfully!';
         onSuccess?.(successMessage);
 
         console.log(`✅ Case ${caseData.id} accepted successfully`);
@@ -135,13 +123,7 @@ const AcceptCaseButton: React.FC<AcceptCaseButtonProps> = ({
         ) : (
           <CheckIcon />
         )}
-        
-        {/* Network status indicator */}
-        {!NetworkService.isOnline() && !isAccepting && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border border-gray-800">
-            <div className="w-full h-full bg-orange-400 rounded-full animate-pulse"></div>
-          </div>
-        )}
+
       </div>
       
       <span className={`text-xs mt-1 transition-all duration-200 ${
@@ -153,13 +135,7 @@ const AcceptCaseButton: React.FC<AcceptCaseButtonProps> = ({
       }`}>
         {isAccepting ? 'Accepting...' : showSuccess ? 'Accepted!' : 'Accept'}
       </span>
-      
-      {/* Offline indicator text */}
-      {!NetworkService.isOnline() && !isAccepting && (
-        <span className="text-xs text-orange-400 mt-0.5">
-          (Offline)
-        </span>
-      )}
+
     </button>
   );
 };

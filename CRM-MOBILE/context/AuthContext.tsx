@@ -232,8 +232,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // Make real API call to backend
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
-      const deviceId = 'web-mobile-app'; // For web version of mobile app
+      // Auto-detect API URL based on platform
+      const getApiBaseUrl = () => {
+        // Check if running on physical device vs simulator/web
+        const isPhysicalDevice = typeof window !== 'undefined' &&
+          (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+
+        if (isPhysicalDevice) {
+          return import.meta.env.VITE_API_BASE_URL_DEVICE || 'http://172.20.10.8:3000/api';
+        }
+        return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+      };
+
+      const API_BASE_URL = getApiBaseUrl();
+      const deviceId = 'mobile-app-device'; // For mobile app
 
       const response = await fetch(`${API_BASE_URL}/mobile/auth/login`, {
         method: 'POST',

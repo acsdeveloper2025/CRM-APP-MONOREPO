@@ -184,9 +184,8 @@ class CaseService {
   }
 
   private async initializeData() {
-    // Clear any existing mock data from storage
-    await AsyncStorage.removeItem(LOCAL_STORAGE_KEY);
-    console.log('Mock data cleared from local storage');
+    // Initialize service - keep existing data
+    console.log('Case service initialized');
   }
 
   private async readFromStorage(): Promise<Case[]> {
@@ -260,6 +259,15 @@ class CaseService {
   }
 
   async getCases(): Promise<Case[]> {
+    // First try to get cases from local storage
+    const localCases = await this.readFromStorage();
+
+    if (localCases.length > 0) {
+      console.log(`Loaded ${localCases.length} cases from local storage`);
+      return localCases;
+    }
+
+    // If no local cases, fetch from API
     if (this.useRealAPI) {
       return this.fetchCasesFromAPI();
     } else {
