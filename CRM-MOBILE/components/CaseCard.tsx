@@ -720,32 +720,52 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                     <p>{caseData.customer.name}</p>
                 </div>
                 <div>
-                    <h4 className="font-bold text-sm text-medium-text">Bank Name</h4>
-                    <p>{caseData.bankName || 'N/A'}</p>
+                    <h4 className="font-bold text-sm text-medium-text">Case ID</h4>
+                    <p>{caseData.caseId || caseData.id}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Client</h4>
+                    <p>{caseData.clientName || 'N/A'}</p>
                 </div>
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Product</h4>
-                    <p>{caseData.product || 'N/A'}</p>
+                    <p>{caseData.productName || caseData.product || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Verification Type</h4>
+                    <p>{caseData.verificationTypeName || caseData.verificationType || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Applicant Type</h4>
+                    <p>{caseData.applicantType || caseData.applicantStatus || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Created By</h4>
+                    <p>{caseData.createdByBackendUserName || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Backend Contact</h4>
+                    <p>{caseData.backendContactNumber || caseData.systemContactNumber || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Assigned To</h4>
+                    <p>{caseData.assignedToName || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Priority</h4>
+                    <p>{caseData.priority || 'N/A'}</p>
                 </div>
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Trigger</h4>
                     <p>{caseData.trigger || 'N/A'}</p>
                 </div>
-                <div className="sm:col-span-2">
-                    <h4 className="font-bold text-sm text-medium-text">Visit Address</h4>
-                    <p>{caseData.visitAddress || 'N/A'}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">System Contact Number</h4>
-                    <p>{caseData.systemContactNumber || 'N/A'}</p>
-                </div>
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Customer Calling Code</h4>
                     <p>{caseData.customerCallingCode || 'N/A'}</p>
                 </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Applicant Status</h4>
-                    <p>{caseData.applicantStatus || 'N/A'}</p>
+                <div className="sm:col-span-2">
+                    <h4 className="font-bold text-sm text-medium-text">Address</h4>
+                    <p>{caseData.address || caseData.visitAddress || 'N/A'}</p>
                 </div>
             </div>
              <div className="flex justify-end pt-4">

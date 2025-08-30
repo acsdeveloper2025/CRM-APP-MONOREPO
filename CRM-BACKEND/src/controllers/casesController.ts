@@ -214,16 +214,31 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
     const offset = (Number(page) - 1) * Number(limit);
     const totalPages = Math.ceil(total / Number(limit));
 
-    // Get cases with pagination
+    // Enhanced query with all 13 required fields for mobile app
     const casesQuery = `
       SELECT
         c.*,
+        -- Client information (Field 3: Client)
         cl.name as "clientName",
         cl.code as "clientCode",
-        u.name as "assignedToName"
+        -- Assigned user information (Field 9: Assign to Field User)
+        assigned_user.name as "assignedToName",
+        assigned_user.email as "assignedToEmail",
+        -- Product information (Field 4: Product)
+        p.name as "productName",
+        p.code as "productCode",
+        -- Verification type information (Field 5: Verification Type)
+        vt.name as "verificationTypeName",
+        vt.code as "verificationTypeCode",
+        -- Created by backend user information (Field 7: Created By Backend User)
+        created_user.name as "createdByBackendUserName",
+        created_user.email as "createdByBackendUserEmail"
       FROM cases c
       LEFT JOIN clients cl ON c."clientId" = cl.id
-      LEFT JOIN users u ON c."assignedTo" = u.id
+      LEFT JOIN users assigned_user ON c."assignedTo" = assigned_user.id
+      LEFT JOIN users created_user ON c."createdByBackendUser" = created_user.id
+      LEFT JOIN products p ON c."productId" = p.id
+      LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
       ${whereClause}
       ORDER BY c."createdAt" DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -291,16 +306,31 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
-    // Query the case with client filtering
+    // Enhanced query with all 13 required fields for mobile app
     const caseQuery = `
       SELECT
         c.*,
+        -- Client information (Field 3: Client)
         cl.name as "clientName",
         cl.code as "clientCode",
-        u.name as "assignedToName"
+        -- Assigned user information (Field 9: Assign to Field User)
+        assigned_user.name as "assignedToName",
+        assigned_user.email as "assignedToEmail",
+        -- Product information (Field 4: Product)
+        p.name as "productName",
+        p.code as "productCode",
+        -- Verification type information (Field 5: Verification Type)
+        vt.name as "verificationTypeName",
+        vt.code as "verificationTypeCode",
+        -- Created by backend user information (Field 7: Created By Backend User)
+        created_user.name as "createdByBackendUserName",
+        created_user.email as "createdByBackendUserEmail"
       FROM cases c
       LEFT JOIN clients cl ON c."clientId" = cl.id
-      LEFT JOIN users u ON c."assignedTo" = u.id
+      LEFT JOIN users assigned_user ON c."assignedTo" = assigned_user.id
+      LEFT JOIN users created_user ON c."createdByBackendUser" = created_user.id
+      LEFT JOIN products p ON c."productId" = p.id
+      LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
       WHERE ${whereConditions.join(' AND ')}
     `;
 
@@ -847,15 +877,30 @@ export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const { assignedToId, reason } = req.body;
 
-    // Get current case data
+    // Get current case data with all required fields
     const currentCaseQuery = `
       SELECT c.*,
-             u.name as "assignedToName",
+             -- Client information (Field 3: Client)
              cl.name as "clientName",
-             cl.code as "clientCode"
+             cl.code as "clientCode",
+             -- Assigned user information (Field 9: Assign to Field User)
+             assigned_user.name as "assignedToName",
+             assigned_user.email as "assignedToEmail",
+             -- Product information (Field 4: Product)
+             p.name as "productName",
+             p.code as "productCode",
+             -- Verification type information (Field 5: Verification Type)
+             vt.name as "verificationTypeName",
+             vt.code as "verificationTypeCode",
+             -- Created by backend user information (Field 7: Created By Backend User)
+             created_user.name as "createdByBackendUserName",
+             created_user.email as "createdByBackendUserEmail"
       FROM cases c
-      LEFT JOIN users u ON c."assignedTo" = u.id
       LEFT JOIN clients cl ON c."clientId" = cl.id
+      LEFT JOIN users assigned_user ON c."assignedTo" = assigned_user.id
+      LEFT JOIN users created_user ON c."createdByBackendUser" = created_user.id
+      LEFT JOIN products p ON c."productId" = p.id
+      LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
       WHERE c."caseId" = $1
     `;
 
@@ -953,12 +998,20 @@ export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
       // Don't fail the assignment if notification fails
     }
 
-    // Return updated case with assignee name
+    // Return updated case with all enhanced fields for mobile app
     const finalCase = {
       ...updatedCase,
+      // Include all the enhanced fields from the current case query
       assignedToName: newAssigneeName,
+      assignedToEmail: currentCase.assignedToEmail,
       clientName: currentCase.clientName,
-      clientCode: currentCase.clientCode
+      clientCode: currentCase.clientCode,
+      productName: currentCase.productName,
+      productCode: currentCase.productCode,
+      verificationTypeName: currentCase.verificationTypeName,
+      verificationTypeCode: currentCase.verificationTypeCode,
+      createdByBackendUserName: currentCase.createdByBackendUserName,
+      createdByBackendUserEmail: currentCase.createdByBackendUserEmail
     };
 
     res.json({

@@ -4,6 +4,147 @@ import { migrateCasesVerificationOutcomes, isDeprecatedOutcome } from '../utils/
 
 const LOCAL_STORAGE_KEY = 'caseflow_cases';
 
+// Backend API configuration
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+
+// Backend case interface for API responses
+interface BackendCase {
+  caseId: number;
+  customerName: string;
+  customerCallingCode?: string;
+  customerPhone?: string;
+  clientId: number;
+  clientName?: string;
+  clientCode?: string;
+  productId?: number;
+  productName?: string;
+  productCode?: string;
+  verificationTypeId?: number;
+  verificationType?: string;
+  verificationTypeName?: string;
+  verificationTypeCode?: string;
+  applicantType?: string;
+  createdByBackendUser?: string;
+  createdByBackendUserName?: string;
+  createdByBackendUserEmail?: string;
+  backendContactNumber?: string;
+  assignedTo?: string;
+  assignedToName?: string;
+  assignedToEmail?: string;
+  priority?: string;
+  trigger?: string;
+  address?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: any;
+}
+
+// Function to map backend case data to mobile Case interface
+const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
+  // Map backend priority string to mobile priority number
+  const priorityMap: { [key: string]: number } = {
+    'LOW': 1,
+    'MEDIUM': 2,
+    'HIGH': 3,
+    'URGENT': 4
+  };
+
+  // Map backend status to mobile CaseStatus
+  const statusMap: { [key: string]: CaseStatus } = {
+    'ASSIGNED': CaseStatus.Assigned,
+    'IN_PROGRESS': CaseStatus.InProgress,
+    'COMPLETED': CaseStatus.Completed
+  };
+
+  // Map backend verification type to mobile VerificationType
+  const verificationTypeMap: { [key: string]: VerificationType } = {
+    'RESIDENCE': VerificationType.Residence,
+    'OFFICE': VerificationType.Office,
+    'BUSINESS': VerificationType.Business,
+    'RESIDENCE_CUM_OFFICE': VerificationType.ResidenceCumOffice,
+    'BUILDER': VerificationType.Builder,
+    'NOC': VerificationType.NOC,
+    'CONNECTOR': VerificationType.Connector,
+    'PROPERTY_APF': VerificationType.PropertyAPF,
+    'PROPERTY_INDIVIDUAL': VerificationType.PropertyIndividual
+  };
+
+  return {
+    // Core mobile app fields
+    id: `CASE-${backendCase.caseId}`, // Convert numeric ID to string format
+    title: `${backendCase.verificationType || 'Verification'} - ${backendCase.customerName}`,
+    description: `${backendCase.verificationType || 'Verification'} for ${backendCase.customerName}`,
+    customer: {
+      name: backendCase.customerName,
+      contact: backendCase.customerPhone || backendCase.customerCallingCode || ''
+    },
+    status: statusMap[backendCase.status] || CaseStatus.Assigned,
+    isSaved: false,
+    createdAt: backendCase.createdAt,
+    updatedAt: backendCase.updatedAt,
+    verificationType: verificationTypeMap[backendCase.verificationType || ''] || VerificationType.Residence,
+    verificationOutcome: null,
+    priority: priorityMap[backendCase.priority || 'MEDIUM'] || 2,
+
+    // Enhanced fields for 13 required case fields
+    // Field 1: Customer Name
+    customerName: backendCase.customerName,
+
+    // Field 2: Case ID
+    caseId: backendCase.caseId,
+
+    // Field 3: Client
+    clientId: backendCase.clientId,
+    clientName: backendCase.clientName,
+    clientCode: backendCase.clientCode,
+
+    // Field 4: Product
+    productId: backendCase.productId,
+    productName: backendCase.productName,
+    productCode: backendCase.productCode,
+    product: backendCase.productName, // Legacy compatibility
+
+    // Field 5: Verification Type
+    verificationTypeId: backendCase.verificationTypeId,
+    verificationTypeName: backendCase.verificationTypeName,
+    verificationTypeCode: backendCase.verificationTypeCode,
+
+    // Field 6: Applicant Type
+    applicantType: backendCase.applicantType,
+    applicantStatus: backendCase.applicantType, // Legacy compatibility
+
+    // Field 7: Created By Backend User
+    createdByBackendUser: backendCase.createdByBackendUser,
+    createdByBackendUserName: backendCase.createdByBackendUserName,
+    createdByBackendUserEmail: backendCase.createdByBackendUserEmail,
+
+    // Field 8: Backend Contact Number
+    backendContactNumber: backendCase.backendContactNumber,
+    systemContactNumber: backendCase.backendContactNumber, // Legacy compatibility
+
+    // Field 9: Assign to Field User
+    assignedTo: backendCase.assignedTo,
+    assignedToName: backendCase.assignedToName,
+    assignedToEmail: backendCase.assignedToEmail,
+
+    // Field 10: Priority (already mapped above)
+
+    // Field 11: Trigger
+    trigger: backendCase.trigger,
+
+    // Field 12: Customer Calling Code
+    customerCallingCode: backendCase.customerCallingCode,
+
+    // Field 13: Address
+    address: backendCase.address,
+    visitAddress: backendCase.address, // Legacy compatibility
+
+    // Generate mock attachments for now (will be replaced with real attachments later)
+    attachments: generateAttachments(`CASE-${backendCase.caseId}`, Math.floor(Math.random() * 5))
+  };
+};
+
 // Helper function to generate realistic attachments
 const generateAttachments = (caseId: string, count: number): Attachment[] => {
   const baseUrl = 'https://api.caseflow.com/v1';
@@ -318,15 +459,18 @@ const getInitialMockData = (): Case[] => [
 }));
 
 class CaseService {
+  private useRealAPI: boolean = true; // Toggle for API vs mock data
+
   constructor() {
     this.initializeData();
   }
 
   private async initializeData() {
-      const existingData = await AsyncStorage.getItem(LOCAL_STORAGE_KEY);
-      if (!existingData) {
-          await AsyncStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getInitialMockData()));
-      }
+    // Initialize mock data as fallback
+    const existingData = await AsyncStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!existingData) {
+      await AsyncStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getInitialMockData()));
+    }
   }
 
   private async readFromStorage(): Promise<Case[]> {
@@ -338,23 +482,73 @@ class CaseService {
     await AsyncStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cases));
   }
 
-  async getCases(): Promise<Case[]> {
-    const cases = await this.readFromStorage();
-
-    // Apply verification outcome migration for any deprecated outcomes
-    const migratedCases = migrateCasesVerificationOutcomes(cases);
-
-    // If any cases were migrated, save the updated data
-    const hasMigrations = migratedCases.some((migratedCase, index) =>
-      migratedCase.verificationOutcome !== cases[index].verificationOutcome
-    );
-
-    if (hasMigrations) {
-      console.log('Verification outcome migrations applied, saving updated cases...');
-      await this.writeToStorage(migratedCases);
+  // Get authentication token (placeholder - implement based on your auth system)
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem('auth_token');
+    } catch (error) {
+      console.error('Failed to get auth token:', error);
+      return null;
     }
+  }
 
-    return migratedCases;
+  // Fetch cases from backend API
+  private async fetchCasesFromAPI(): Promise<Case[]> {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        console.warn('No auth token available, falling back to mock data');
+        return this.getMockCases();
+      }
+
+      const response = await fetch(`${API_BASE_URL}/cases`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success || !result.data) {
+        throw new Error('Invalid API response format');
+      }
+
+      // Map backend cases to mobile format
+      const mobileCases = result.data.map((backendCase: BackendCase) =>
+        mapBackendCaseToMobile(backendCase)
+      );
+
+      // Cache the cases locally for offline access
+      await this.writeToStorage(mobileCases);
+
+      console.log(`Fetched ${mobileCases.length} cases from API`);
+      return mobileCases;
+
+    } catch (error) {
+      console.error('Failed to fetch cases from API:', error);
+      console.log('Falling back to cached/mock data');
+      return this.getMockCases();
+    }
+  }
+
+  // Get mock cases (fallback)
+  private async getMockCases(): Promise<Case[]> {
+    const cases = await this.readFromStorage();
+    return migrateCasesVerificationOutcomes(cases);
+  }
+
+  async getCases(): Promise<Case[]> {
+    if (this.useRealAPI) {
+      return this.fetchCasesFromAPI();
+    } else {
+      return this.getMockCases();
+    }
   }
 
   async getCase(id: string): Promise<Case | undefined> {
@@ -382,16 +576,17 @@ class CaseService {
   }
 
   async syncWithServer(): Promise<Case[]> {
-    console.log("Simulating sync with server...");
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network latency
+    console.log("Syncing with server...");
 
-    const localCases = await this.readFromStorage();
-
-    // In a real app, this would fetch new/updated cases from a server
-    // and merge them with local data. For this demo, we'll just log.
-
-    console.log("Sync complete. No new data from server.");
-    return localCases;
+    if (this.useRealAPI) {
+      // Fetch fresh data from API
+      return this.fetchCasesFromAPI();
+    } else {
+      // Simulate sync for mock data
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log("Sync complete (mock mode).");
+      return this.getMockCases();
+    }
   }
 
   async submitCase(id: string): Promise<{ success: boolean; error?: string }> {
@@ -443,6 +638,80 @@ class CaseService {
   async resubmitCase(id: string): Promise<{ success: boolean; error?: string }> {
     console.log(`Re-attempting to submit case ${id}...`);
     return this.submitCase(id);
+  }
+
+  // Method to toggle between API and mock data (for testing/development)
+  setUseRealAPI(useAPI: boolean): void {
+    this.useRealAPI = useAPI;
+    console.log(`Case service switched to ${useAPI ? 'real API' : 'mock data'} mode`);
+  }
+
+  // Method to check current mode
+  isUsingRealAPI(): boolean {
+    return this.useRealAPI;
+  }
+
+  // Test API connection and field mapping
+  async testAPIConnection(): Promise<{ success: boolean; message: string; sampleCase?: any }> {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        return { success: false, message: 'No authentication token available' };
+      }
+
+      const response = await fetch(`${API_BASE_URL}/cases?limit=1`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        return { success: false, message: `API request failed: ${response.status} ${response.statusText}` };
+      }
+
+      const result = await response.json();
+
+      if (!result.success || !result.data || result.data.length === 0) {
+        return { success: false, message: 'No cases available from API' };
+      }
+
+      const backendCase = result.data[0];
+      const mobileCase = mapBackendCaseToMobile(backendCase);
+
+      // Verify all 13 required fields are present
+      const requiredFields = [
+        'customerName', 'caseId', 'clientName', 'productName', 'verificationType',
+        'applicantType', 'createdByBackendUserName', 'backendContactNumber',
+        'assignedToName', 'priority', 'trigger', 'customerCallingCode', 'address'
+      ];
+
+      const missingFields = requiredFields.filter(field => {
+        const value = mobileCase[field as keyof Case];
+        return value === undefined || value === null || value === '';
+      });
+
+      if (missingFields.length > 0) {
+        return {
+          success: false,
+          message: `Missing required fields: ${missingFields.join(', ')}`,
+          sampleCase: mobileCase
+        };
+      }
+
+      return {
+        success: true,
+        message: 'API connection successful, all 13 required fields mapped correctly',
+        sampleCase: mobileCase
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        message: `API test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
   }
 }
 

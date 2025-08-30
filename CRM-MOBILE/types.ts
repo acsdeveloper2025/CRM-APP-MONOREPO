@@ -1742,17 +1742,66 @@ export interface Case {
   submissionStatus?: 'pending' | 'submitting' | 'success' | 'failed'; // Submission status for completed cases
   submissionError?: string; // Error message if submission failed
   lastSubmissionAttempt?: string; // Timestamp of last submission attempt
-  bankName?: string;
-  product?: string;
-  trigger?: string;
-  visitAddress?: string;
-  systemContactNumber?: string;
-  customerCallingCode?: string;
-  applicantStatus?: string;
+
+  // Enhanced fields for 13 required case fields from backend
+  // Field 1: Customer Name (already available as customer.name)
+  customerName?: string; // Direct field from backend
+
+  // Field 2: Case ID (already available as id)
+  caseId?: number; // Backend auto-increment case ID
+
+  // Field 3: Client
+  clientId?: number; // Client ID from backend
+  clientName?: string; // Client name from backend JOIN
+  clientCode?: string; // Client code from backend JOIN
+
+  // Field 4: Product
+  productId?: number; // Product ID from backend
+  productName?: string; // Product name from backend JOIN
+  productCode?: string; // Product code from backend JOIN
+  product?: string; // Legacy field for backward compatibility
+
+  // Field 5: Verification Type (already available)
   verificationType: VerificationType;
+  verificationTypeId?: number; // Verification type ID from backend
+  verificationTypeName?: string; // Verification type name from backend JOIN
+  verificationTypeCode?: string; // Verification type code from backend JOIN
+
+  // Field 6: Applicant Type (already available as applicantStatus)
+  applicantType?: string; // Direct field from backend
+  applicantStatus?: string; // Legacy field for backward compatibility
+
+  // Field 7: Created By Backend User
+  createdByBackendUser?: string; // Backend user ID
+  createdByBackendUserName?: string; // Backend user name from JOIN
+  createdByBackendUserEmail?: string; // Backend user email from JOIN
+
+  // Field 8: Backend Contact Number (already available as systemContactNumber)
+  backendContactNumber?: string; // Direct field from backend
+  systemContactNumber?: string; // Legacy field for backward compatibility
+
+  // Field 9: Assign to Field User
+  assignedTo?: string; // Assigned user ID
+  assignedToName?: string; // Assigned user name from JOIN
+  assignedToEmail?: string; // Assigned user email from JOIN
+
+  // Field 10: Priority (already available)
+  priority?: number; // User-defined priority for In Progress cases (1, 2, 3, etc.)
+
+  // Field 11: Trigger (already available)
+  trigger?: string; // Direct field from backend
+
+  // Field 12: Customer Calling Code (already available)
+  customerCallingCode?: string; // Direct field from backend
+
+  // Field 13: Address (already available as visitAddress)
+  address?: string; // Direct field from backend
+  visitAddress?: string; // Legacy field for backward compatibility
+
+  // Legacy fields maintained for backward compatibility
+  bankName?: string;
   verificationOutcome: VerificationOutcome | null;
   order?: number;
-  priority?: number; // User-defined priority for In Progress cases (1, 2, 3, etc.)
   notes?: string;
   attachments?: Attachment[]; // Case attachments (PDFs and images, max 10 attachments, 10MB each)
   residenceReport?: ResidenceReportData;
