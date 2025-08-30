@@ -115,6 +115,48 @@ backups/
 monitoring/
 elk/
 
+# Database and migration files
+*.sql
+*.dump
+*.backup
+migration_*.log
+data_migration_*.log
+simple_migration_*.log
+smart_migration_*.log
+*_backup_*.sql*
+acs_db_backup_*.sql*
+schema_only.sql
+data_only.sql
+migrate_*.sh
+*_migration.sh
+
+# Performance and monitoring
+performance_data/
+monitoring_logs/
+performance_reports/
+audit_reports/
+performance_*.json
+lighthouse_*.json
+
+# User uploads and attachments
+CRM-BACKEND/uploads/
+CRM-BACKEND/logs/
+CRM-BACKEND/temp/
+attachments/
+user-uploads/
+temp-uploads/
+public/uploads/
+static/uploads/
+
+# Document files (user uploads)
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
 # Mobile specific
 *.apk
 *.aab
