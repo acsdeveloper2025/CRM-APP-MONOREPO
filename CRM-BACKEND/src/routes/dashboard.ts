@@ -4,17 +4,9 @@ import { authenticateToken } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
 import {
   getDashboardData,
-  getDashboardStats,
-  getCaseStatusDistribution,
-  getClientStats,
-  getMonthlyTrends,
+  getChartData,
   getRecentActivities,
-  getPerformanceMetrics,
-  getTurnaroundTimes,
-  getTopPerformers,
-  getUpcomingDeadlines,
-  getAlerts,
-  exportDashboardReport
+  getPerformanceMetrics
 } from '@/controllers/dashboardController';
 
 const router = express.Router();
@@ -87,33 +79,41 @@ router.get('/',
   getDashboardData
 );
 
-router.get('/stats', 
-  authenticateToken, 
-  dashboardQueryValidation, 
-  validate, 
-  getDashboardStats
+router.get('/charts',
+  authenticateToken,
+  dashboardQueryValidation,
+  validate,
+  getChartData
 );
 
-router.get('/case-status-distribution', 
-  authenticateToken, 
-  dashboardQueryValidation, 
-  validate, 
-  getCaseStatusDistribution
-);
+// TODO: Implement remaining dashboard functions
+// router.get('/stats',
+//   authenticateToken,
+//   dashboardQueryValidation,
+//   validate,
+//   getDashboardStats
+// );
 
-router.get('/client-stats', 
-  authenticateToken, 
-  dashboardQueryValidation, 
-  validate, 
-  getClientStats
-);
+// router.get('/case-status-distribution',
+//   authenticateToken,
+//   dashboardQueryValidation,
+//   validate,
+//   getCaseStatusDistribution
+// );
 
-router.get('/monthly-trends', 
-  authenticateToken, 
-  monthlyTrendsValidation, 
-  validate, 
-  getMonthlyTrends
-);
+// router.get('/client-stats',
+//   authenticateToken,
+//   dashboardQueryValidation,
+//   validate,
+//   getClientStats
+// );
+
+// router.get('/monthly-trends',
+//   authenticateToken,
+//   monthlyTrendsValidation,
+//   validate,
+//   getMonthlyTrends
+// );
 
 router.get('/recent-activities', 
   authenticateToken, 
@@ -129,35 +129,36 @@ router.get('/performance-metrics',
   getPerformanceMetrics
 );
 
-router.get('/turnaround-times', 
-  authenticateToken, 
-  dashboardQueryValidation, 
-  validate, 
-  getTurnaroundTimes
-);
+// TODO: Implement remaining dashboard functions
+// router.get('/turnaround-times',
+//   authenticateToken,
+//   dashboardQueryValidation,
+//   validate,
+//   getTurnaroundTimes
+// );
 
-router.get('/top-performers', 
-  authenticateToken, 
-  topPerformersValidation, 
-  validate, 
-  getTopPerformers
-);
+// router.get('/top-performers',
+//   authenticateToken,
+//   topPerformersValidation,
+//   validate,
+//   getTopPerformers
+// );
 
-router.get('/upcoming-deadlines', 
-  authenticateToken, 
-  getUpcomingDeadlines
-);
+// router.get('/upcoming-deadlines',
+//   authenticateToken,
+//   getUpcomingDeadlines
+// );
 
-router.get('/alerts', 
-  authenticateToken, 
-  getAlerts
-);
+// router.get('/alerts',
+//   authenticateToken,
+//   getAlerts
+// );
 
-router.post('/export', 
-  authenticateToken, 
-  exportValidation, 
-  validate, 
-  exportDashboardReport
-);
+// router.post('/export',
+//   authenticateToken,
+//   exportValidation,
+//   validate,
+//   exportDashboardReport
+// );
 
 export default router;

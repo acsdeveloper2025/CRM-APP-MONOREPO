@@ -50,23 +50,44 @@ wait_for_service() {
     local service=$2
     local max_attempts=30
     local attempt=1
-    
+
     print_info "Waiting for $service to be ready on port $port..."
-    
+
     while [ $attempt -le $max_attempts ]; do
-        if curl -s -o /dev/null -w "%{http_code}" http://localhost:$port >/dev/null 2>&1; then
-            print_status "$service is ready on port $port"
-            return 0
+        # Check if port is listening
+        if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+            # For HTTP services, check specific endpoints
+            case "$port" in
+                "3000")
+                    # Backend API - check health endpoint or any API endpoint
+                    if curl -s -o /dev/null -w "%{http_code}" http://localhost:$port/api/health 2>/dev/null | grep -q "200\|404"; then
+                        print_status "$service is ready on port $port"
+                        return 0
+                    fi
+                    ;;
+                "5173"|"5180")
+                    # Frontend/Mobile - check if they respond (even 404 is fine for Vite)
+                    if curl -s -o /dev/null -w "%{http_code}" http://localhost:$port 2>/dev/null | grep -q "200\|404"; then
+                        print_status "$service is ready on port $port"
+                        return 0
+                    fi
+                    ;;
+                *)
+                    # For other services (PostgreSQL, Redis), just check if port is listening
+                    print_status "$service is ready on port $port"
+                    return 0
+                    ;;
+            esac
         fi
-        
+
         if [ $((attempt % 5)) -eq 0 ]; then
             print_info "Still waiting for $service... (attempt $attempt/$max_attempts)"
         fi
-        
+
         sleep 2
         attempt=$((attempt + 1))
     done
-    
+
     print_error "$service failed to start on port $port after $max_attempts attempts"
     return 1
 }
@@ -128,14 +149,14 @@ fi
 # Start Backend API
 print_info "Starting Backend API..."
 if ! check_port 3000 "Backend API"; then
-    cd acs-backend
+    cd CRM-BACKEND
     print_status "Installing backend dependencies..."
     npm install --silent
     print_status "Starting backend server on port 3000..."
     npm run dev &
     BACKEND_PID=$!
     cd ..
-    
+
     # Wait for backend to be ready
     wait_for_service 3000 "Backend API"
 fi
@@ -143,31 +164,31 @@ fi
 # Start Web Frontend
 print_info "Starting Web Frontend..."
 if ! check_port 5173 "Web Frontend"; then
-    cd acs-web
+    cd CRM-FRONTEND
     print_status "Installing frontend dependencies..."
     npm install --silent
     print_status "Starting web frontend on port 5173..."
     npm run dev &
     WEB_PID=$!
     cd ..
-    
+
     # Wait for web to be ready
     wait_for_service 5173 "Web Frontend"
 fi
 
 # Start Mobile App
 print_info "Starting Mobile App..."
-if ! check_port 5174 "Mobile App"; then
-    cd caseflow-mobile
+if ! check_port 5180 "Mobile App"; then
+    cd CRM-MOBILE
     print_status "Installing mobile dependencies..."
     npm install --silent
-    print_status "Starting mobile app on port 5174..."
-    npm run dev:port &
+    print_status "Starting mobile app on port 5180..."
+    npm run dev &
     MOBILE_PID=$!
     cd ..
-    
+
     # Wait for mobile to be ready
-    wait_for_service 5174 "Mobile App"
+    wait_for_service 5180 "Mobile App"
 fi
 
 # Display status
@@ -176,7 +197,7 @@ echo "🎉 All CaseFlow services are now running!"
 echo "========================================"
 print_status "Backend API:    http://localhost:3000"
 print_status "Web Frontend:   http://localhost:5173"
-print_status "Mobile App:     http://localhost:5174"
+print_status "Mobile App:     http://localhost:5180"
 print_status "PostgreSQL:     localhost:5432"
 print_status "Redis:          localhost:6379"
 echo ""

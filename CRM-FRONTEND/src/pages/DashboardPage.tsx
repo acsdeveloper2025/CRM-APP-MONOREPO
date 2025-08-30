@@ -41,6 +41,23 @@ export const DashboardPage: React.FC = () => {
   const caseDistribution: any[] = [];
   const trends: any[] = [];
 
+  // Fallback data for charts when API data is not available
+  const mockCaseDistribution = [
+    { status: 'PENDING', count: 0, percentage: 0 },
+    { status: 'IN_PROGRESS', count: 0, percentage: 0 },
+    { status: 'COMPLETED', count: 0, percentage: 0 },
+    { status: 'PENDING_REVIEW', count: 0, percentage: 0 }
+  ];
+
+  const mockTrends = [
+    { month: 'Jan', cases: 0, revenue: 0, completionRate: 0 },
+    { month: 'Feb', cases: 0, revenue: 0, completionRate: 0 },
+    { month: 'Mar', cases: 0, revenue: 0, completionRate: 0 },
+    { month: 'Apr', cases: 0, revenue: 0, completionRate: 0 },
+    { month: 'May', cases: 0, revenue: 0, completionRate: 0 },
+    { month: 'Jun', cases: 0, revenue: 0, completionRate: 0 }
+  ];
+
   const mockActivities = [
     {
       id: '1',

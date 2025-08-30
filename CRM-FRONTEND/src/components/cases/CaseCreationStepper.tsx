@@ -195,21 +195,15 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
       let result;
       if (editMode && editCaseId) {
         result = await casesService.updateCaseDetails(editCaseId, caseData);
-      } else {
-        result = await casesService.createCase(caseData);
-      }
 
-      if (result.success) {
-        const caseId = result.data.caseId || result.data.id;
-
-        // Upload attachments if any
+        // Handle attachments separately for edit mode (if needed)
         if (attachments.length > 0) {
           try {
             const formData = new FormData();
             attachments.forEach(attachment => {
               formData.append('files', attachment.file);
             });
-            formData.append('caseId', String(caseId));
+            formData.append('caseId', String(editCaseId));
             formData.append('category', 'DOCUMENT');
 
             const uploadResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/attachments/upload`, {
@@ -223,13 +217,30 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
             if (uploadResponse.ok) {
               toast.success(`${attachments.length} file(s) uploaded successfully`);
             } else {
-              toast.error('Case created but some attachments failed to upload');
+              toast.error('Case updated but some attachments failed to upload');
             }
           } catch (uploadError) {
             console.error('Attachment upload failed:', uploadError);
-            toast.error('Case created but attachments failed to upload');
+            toast.error('Case updated but attachments failed to upload');
           }
         }
+      } else {
+        // Create new case with attachments in single request
+        if (attachments.length > 0) {
+          const attachmentFiles = attachments.map(att => att.file);
+          result = await casesService.createCaseWithAttachments(caseData, attachmentFiles);
+
+          if (result.success) {
+            toast.success(`Case created successfully with ${result.data.attachmentCount || attachments.length} attachment(s)`);
+          }
+        } else {
+          // No attachments, use regular create endpoint
+          result = await casesService.createCase(caseData);
+        }
+      }
+
+      if (result.success) {
+        const caseId = result.data.caseId || result.data.id;
 
         const action = editMode ? 'updated' : 'created';
         toast.success(`Case ${action} successfully! Case ID: ${caseId}`);

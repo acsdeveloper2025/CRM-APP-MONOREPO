@@ -8,17 +8,8 @@ import {
   getCases,
   getCaseById,
   createCase,
-  updateCase,
-  deleteCase,
-  updateCaseStatus,
-  updateCasePriority,
-  assignCase,
-  addCaseNote,
-  getCaseHistory,
-  completeCase,
-  approveCase,
-  rejectCase,
-  requestRework
+  createCaseWithAttachments,
+  assignCase
 } from '@/controllers/casesController';
 
 const router = express.Router();
@@ -246,6 +237,12 @@ router.post('/',
   createCase
 );
 
+// Create case with attachments in single request
+// Note: No validation middleware here as multer handles form data parsing
+router.post('/with-attachments',
+  createCaseWithAttachments
+);
+
 router.get('/:id',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   validate,
@@ -253,37 +250,39 @@ router.get('/:id',
   getCaseById
 );
 
-router.put('/:id',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  updateCaseValidation,
-  validate,
-  validateCaseAccess,
-  updateCase
-);
+// TODO: Implement updateCase function
+// router.put('/:id',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   updateCaseValidation,
+//   validate,
+//   validateCaseAccess,
+//   updateCase
+// );
 
-router.delete('/:id',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  validate,
-  validateCaseAccess,
-  deleteCase
-);
+// TODO: Implement deleteCase function
+// router.delete('/:id',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   validate,
+//   validateCaseAccess,
+//   deleteCase
+// );
 
-// Case workflow routes
-router.put('/:id/status',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  statusUpdateValidation,
-  validate,
-  validateCaseAccess,
-  updateCaseStatus
-);
+// Case workflow routes - TODO: Implement these functions
+// router.put('/:id/status',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   statusUpdateValidation,
+//   validate,
+//   validateCaseAccess,
+//   updateCaseStatus
+// );
 
-router.put('/:id/priority',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  priorityUpdateValidation,
-  validate,
-  validateCaseAccess,
-  updateCasePriority
-);
+// router.put('/:id/priority',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   priorityUpdateValidation,
+//   validate,
+//   validateCaseAccess,
+//   updateCasePriority
+// );
 
 router.put('/:id/assign',
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
@@ -293,51 +292,52 @@ router.put('/:id/assign',
   assignCase
 );
 
-router.post('/:id/notes',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  noteValidation,
-  validate,
-  validateCaseAccess,
-  addCaseNote
-);
+// TODO: Implement remaining case workflow functions
+// router.post('/:id/notes',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   noteValidation,
+//   validate,
+//   validateCaseAccess,
+//   addCaseNote
+// );
 
-router.get('/:id/history',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  validate,
-  validateCaseAccess,
-  getCaseHistory
-);
+// router.get('/:id/history',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   validate,
+//   validateCaseAccess,
+//   getCaseHistory
+// );
 
-router.post('/:id/complete',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  completeValidation,
-  validate,
-  validateCaseAccess,
-  completeCase
-);
+// router.post('/:id/complete',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   completeValidation,
+//   validate,
+//   validateCaseAccess,
+//   completeCase
+// );
 
-router.post('/:id/approve',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  approveValidation,
-  validate,
-  validateCaseAccess,
-  approveCase
-);
+// router.post('/:id/approve',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   approveValidation,
+//   validate,
+//   validateCaseAccess,
+//   approveCase
+// );
 
-router.post('/:id/reject',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  rejectValidation,
-  validate,
-  validateCaseAccess,
-  rejectCase
-);
+// router.post('/:id/reject',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   rejectValidation,
+//   validate,
+//   validateCaseAccess,
+//   rejectCase
+// );
 
-router.post('/:id/rework',
-  [param('id').trim().notEmpty().withMessage('Case ID is required')],
-  reworkValidation,
-  validate,
-  validateCaseAccess,
-  requestRework
-);
+// router.post('/:id/rework',
+//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
+//   reworkValidation,
+//   validate,
+//   validateCaseAccess,
+//   requestRework
+// );
 
 export default router;

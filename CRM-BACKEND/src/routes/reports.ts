@@ -4,13 +4,8 @@ import { authenticateToken } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
 import {
   getCasesReport,
-  getUsersReport,
-  getClientsReport,
-  getFinancialReport,
-  getProductivityReport,
-  getCustomReport,
-  getReportTemplates,
-  scheduleReport
+  getUserPerformanceReport,
+  getClientReport
 } from '@/controllers/reportsController';
 
 const router = express.Router();
@@ -169,42 +164,43 @@ router.get('/cases',
   getCasesReport
 );
 
-router.get('/users', 
-  usersReportValidation, 
-  validate, 
-  getUsersReport
+router.get('/users',
+  usersReportValidation,
+  validate,
+  getUserPerformanceReport
 );
 
-router.get('/clients', 
-  clientsReportValidation, 
-  validate, 
-  getClientsReport
+router.get('/clients',
+  clientsReportValidation,
+  validate,
+  getClientReport
 );
 
-router.get('/financial', 
-  financialReportValidation, 
-  validate, 
-  getFinancialReport
-);
+// TODO: Implement remaining report functions
+// router.get('/financial',
+//   financialReportValidation,
+//   validate,
+//   getFinancialReport
+// );
 
-router.get('/productivity', 
-  productivityReportValidation, 
-  validate, 
-  getProductivityReport
-);
+// router.get('/productivity',
+//   productivityReportValidation,
+//   validate,
+//   getProductivityReport
+// );
 
-router.post('/custom', 
-  customReportValidation, 
-  validate, 
-  getCustomReport
-);
+// router.post('/custom',
+//   customReportValidation,
+//   validate,
+//   getCustomReport
+// );
 
-router.get('/templates', getReportTemplates);
+// router.get('/templates', getReportTemplates);
 
-router.post('/schedule', 
-  scheduleReportValidation, 
-  validate, 
-  scheduleReport
-);
+// router.post('/schedule',
+//   scheduleReportValidation,
+//   validate,
+//   scheduleReport
+// );
 
 export default router;

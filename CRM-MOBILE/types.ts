@@ -1853,11 +1853,12 @@ export interface User {
   id: string;
   name: string;
   username: string;
+  email?: string;
+  role?: string;
   profilePhotoUrl?: string;
   profilePhoto?: string;
   employeeId?: string;
   designation?: string;
   department?: string;
   phone?: string;
-  email?: string;
 }

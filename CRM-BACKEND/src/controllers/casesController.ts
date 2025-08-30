@@ -1,39 +1,72 @@
 import { Request, Response } from 'express';
-import { logger } from '@/config/logger';
-import { AuthenticatedRequest } from '@/middleware/auth';
-import { pool } from '@/config/database';
-import { query } from '@/config/database';
-import { DeduplicationService } from '@/services/deduplicationService';
-import { emitCaseAssigned, emitCaseStatusChanged, emitCasePriorityChanged } from '@/websocket/server';
-
-// Helper function to get assigned client IDs for BACKEND_USER users
-const getAssignedClientIds = async (userId: string, userRole: string): Promise<number[] | null> => {
-  // Only apply client filtering for BACKEND_USER users
-  if (userRole !== 'BACKEND_USER') {
-    return null; // null means no filtering (access to all clients)
-  }
-
-  try {
-    const result = await query(
-      'SELECT "clientId" FROM "userClientAssignments" WHERE "userId" = $1',
-      [userId]
-    );
-
-    return result.rows.map(row => row.clientId);
-  } catch (error) {
-    logger.error('Error fetching assigned client IDs:', error);
-    throw error;
-  }
-};
+import { AuthenticatedRequest } from '../middleware/auth';
+import { logger } from '../utils/logger';
+import { pool } from '../config/database';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 // Mock data removed - using database operations only
 
-// GET /api/cases - List cases with pagination and filters
+// Supported file types for case attachments (PDF, Images, Word only)
+const ALLOWED_FILE_TYPES = {
+  'application/pdf': '.pdf',
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx'
+};
+
+const ALLOWED_EXTENSIONS = Object.values(ALLOWED_FILE_TYPES);
+const ALLOWED_MIME_TYPES = Object.keys(ALLOWED_FILE_TYPES);
+
+// Configure multer for case creation with attachments
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Create temporary directory for case creation
+    const tempDir = path.join(process.cwd(), 'uploads', 'temp', `case_creation_${Date.now()}`);
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    cb(null, tempDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    cb(null, `attachment_${uniqueSuffix}${extension}`);
+  }
+});
+
+const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const extension = path.extname(file.originalname).toLowerCase();
+  const mimeType = file.mimetype.toLowerCase();
+
+  if (ALLOWED_EXTENSIONS.includes(extension) && ALLOWED_MIME_TYPES.includes(mimeType)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`File type not allowed. Only PDF, images (JPG, PNG, GIF), and Word documents (DOC, DOCX) are supported.`));
+  }
+};
+
+const uploadForCaseCreation = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit per file
+    files: 10, // Maximum 10 files per case creation
+  }
+});
+
+// GET /api/cases - List cases with filtering, sorting, and pagination
 export const getCases = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       page = 1,
-      limit = 20,
+      limit = 10,
+      sortBy = 'updatedAt',
+      sortOrder = 'desc',
       status,
       search,
       assignedTo,
@@ -43,87 +76,73 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
       dateTo
     } = req.query;
 
-    // Get user info for client filtering
-    const userId = req.user?.id;
-    const userRole = req.user?.role;
-
     // Build WHERE conditions
-    const whereConditions: string[] = [];
-    const queryParams: any[] = [];
+    const conditions: string[] = [];
+    const params: any[] = [];
     let paramIndex = 1;
 
-    // Apply client filtering for BACKEND_USER users (SUPER_ADMIN bypasses all restrictions)
-    if (userRole === 'BACKEND_USER') {
-      const assignedClientIds = await getAssignedClientIds(userId!, userRole);
-
-      if (assignedClientIds && assignedClientIds.length === 0) {
-        // BACKEND_USER user has no client assignments, return empty result
-        return res.json({
-          success: true,
-          data: [],
-          pagination: {
-            page: Number(page),
-            limit: Number(limit),
-            total: 0,
-            totalPages: 0,
-          },
-          message: 'No cases found - user has no assigned clients',
-        });
-      }
-
-      // Filter cases by assigned client IDs
-      if (assignedClientIds) {
-        whereConditions.push(`c."clientId" = ANY($${paramIndex}::int[])`);
-        queryParams.push(assignedClientIds);
-        paramIndex++;
-      }
-    }
-
-    // Apply other filters
+    // Status filter
     if (status) {
-      whereConditions.push(`c.status = $${paramIndex}`);
-      queryParams.push(status);
+      conditions.push(`c.status = $${paramIndex}`);
+      params.push(status);
       paramIndex++;
     }
-    if (assignedTo) {
-      whereConditions.push(`c."assignedTo" = $${paramIndex}`);
-      queryParams.push(assignedTo);
-      paramIndex++;
-    }
-    if (clientId) {
-      whereConditions.push(`c."clientId" = $${paramIndex}`);
-      queryParams.push(Number(clientId));
-      paramIndex++;
-    }
-    if (priority) {
-      whereConditions.push(`c.priority = $${paramIndex}`);
-      queryParams.push(Number(priority));
-      paramIndex++;
-    }
+
+    // Search filter (customer name, case ID, address)
     if (search) {
-      whereConditions.push(`(
-        c."caseNumber" ILIKE $${paramIndex} OR
-        c."applicantName" ILIKE $${paramIndex} OR
-        c."applicantPhone" ILIKE $${paramIndex} OR
-        c."applicantEmail" ILIKE $${paramIndex} OR
+      conditions.push(`(
+        c."customerName" ILIKE $${paramIndex} OR
+        c."caseId"::text ILIKE $${paramIndex} OR
         c.address ILIKE $${paramIndex}
       )`);
-      queryParams.push(`%${search}%`);
-      paramIndex++;
-    }
-    if (dateFrom) {
-      whereConditions.push(`c."createdAt" >= $${paramIndex}`);
-      queryParams.push(new Date(dateFrom as string));
-      paramIndex++;
-    }
-    if (dateTo) {
-      whereConditions.push(`c."createdAt" <= $${paramIndex}`);
-      queryParams.push(new Date(dateTo as string));
+      params.push(`%${search}%`);
       paramIndex++;
     }
 
-    // Build the WHERE clause
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    // Assigned to filter
+    if (assignedTo) {
+      conditions.push(`c."assignedTo" = $${paramIndex}`);
+      params.push(assignedTo);
+      paramIndex++;
+    }
+
+    // Client filter
+    if (clientId) {
+      conditions.push(`c."clientId" = $${paramIndex}`);
+      params.push(parseInt(clientId as string));
+      paramIndex++;
+    }
+
+    // Priority filter
+    if (priority) {
+      conditions.push(`c.priority = $${paramIndex}`);
+      params.push(priority);
+      paramIndex++;
+    }
+
+    // Date range filter
+    if (dateFrom) {
+      conditions.push(`c."createdAt" >= $${paramIndex}`);
+      params.push(dateFrom);
+      paramIndex++;
+    }
+
+    if (dateTo) {
+      conditions.push(`c."createdAt" <= $${paramIndex}`);
+      params.push(dateTo);
+      paramIndex++;
+    }
+
+    // Build WHERE clause
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Validate sort column
+    const allowedSortColumns = ['createdAt', 'updatedAt', 'customerName', 'priority', 'status'];
+    const safeSortBy = allowedSortColumns.includes(sortBy as string) ? sortBy : 'updatedAt';
+    const safeSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+
+    // Calculate offset
+    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     // Get total count
     const countQuery = `
@@ -131,12 +150,9 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
       FROM cases c
       ${whereClause}
     `;
-    const countResult = await query(countQuery, queryParams);
-    const total = parseInt(countResult.rows[0].total);
 
-    // Calculate pagination
-    const offset = (Number(page) - 1) * Number(limit);
-    const totalPages = Math.ceil(total / Number(limit));
+    const countResult = await pool.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total);
 
     // Enhanced query with all 13 required fields for mobile app
     const casesQuery = `
@@ -164,30 +180,26 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
       LEFT JOIN products p ON c."productId" = p.id
       LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
       ${whereClause}
-      ORDER BY c."createdAt" DESC
+      ORDER BY c."${safeSortBy}" ${safeSortOrder}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
-    queryParams.push(Number(limit), offset);
 
-    const casesResult = await query(casesQuery, queryParams);
+    params.push(parseInt(limit as string), offset);
+    const casesResult = await pool.query(casesQuery, params);
 
-    logger.info(`Retrieved ${casesResult.rows.length} cases`, {
-      userId: req.user?.id,
-      userRole,
-      filters: { status, assignedTo, clientId, priority, search },
-      pagination: { page, limit },
-      total
-    });
+    // Calculate pagination info
+    const totalPages = Math.ceil(total / parseInt(limit as string));
 
     res.json({
       success: true,
       data: casesResult.rows,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
         total,
         totalPages,
       },
+      message: 'Cases retrieved successfully',
     });
   } catch (error) {
     logger.error('Error retrieving cases:', error);
@@ -203,32 +215,6 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
 export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
-    const userRole = req.user?.role;
-
-    // Build WHERE conditions for client filtering
-    const whereConditions: string[] = ['c."caseId" = $1'];
-    const queryParams: any[] = [parseInt(id)];
-    let paramIndex = 2;
-
-    // Apply client filtering for BACKEND_USER users (SUPER_ADMIN bypasses all restrictions)
-    if (userRole === 'BACKEND_USER') {
-      const assignedClientIds = await getAssignedClientIds(userId!, userRole);
-
-      if (assignedClientIds && assignedClientIds.length === 0) {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied - user has no assigned clients',
-          error: { code: 'ACCESS_DENIED' },
-        });
-      }
-
-      if (assignedClientIds) {
-        whereConditions.push(`c."clientId" = ANY($${paramIndex}::int[])`);
-        queryParams.push(assignedClientIds);
-        paramIndex++;
-      }
-    }
 
     // Enhanced query with all 13 required fields for mobile app
     const caseQuery = `
@@ -255,26 +241,28 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
       LEFT JOIN users created_user ON c."createdByBackendUser" = created_user.id
       LEFT JOIN products p ON c."productId" = p.id
       LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
-      WHERE ${whereConditions.join(' AND ')}
+      WHERE c."caseId" = $1
     `;
 
-    const caseResult = await query(caseQuery, queryParams);
+    const result = await pool.query(caseQuery, [parseInt(id)]);
 
-    if (caseResult.rows.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Case not found or access denied',
+        message: 'Case not found',
         error: { code: 'NOT_FOUND' },
       });
     }
 
-    const caseData = caseResult.rows[0];
-
-    logger.info(`Retrieved case ${id}`, { userId: req.user?.id });
+    logger.info('Case retrieved', {
+      userId: req.user?.id,
+      caseId: id,
+    });
 
     res.json({
       success: true,
-      data: caseData,
+      data: result.rows[0],
+      message: 'Case retrieved successfully',
     });
   } catch (error) {
     logger.error('Error retrieving case:', error);
@@ -286,168 +274,60 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-// POST /api/cases - Create new case with deduplication check
+// POST /api/cases - Create new case
 export const createCase = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
-      // Core case fields
       customerName,
-      customerCallingCode,
       customerPhone,
-      createdByBackendUser,
-      verificationType,
-      address,
-      pincode,
+      customerCallingCode,
       clientId,
-      assignedToId,
       productId,
       verificationTypeId,
-      applicantType,
-      backendContactNumber,
-      priority = 2,
-      notes, // TRIGGER field
-      // Deduplication fields
-      panNumber,
-      deduplicationDecision,
-      deduplicationRationale,
-      skipDeduplication = false
+      address,
+      pincode,
+      priority = 'MEDIUM',
+      trigger,
+      applicantType = 'APPLICANT'
     } = req.body;
 
-    // Validate required fields
-    if (!customerName || !clientId || !assignedToId || !applicantType || !backendContactNumber || !notes) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Missing required fields: customerName, clientId, assignedToId, applicantType, backendContactNumber, notes',
-          code: 'MISSING_REQUIRED_FIELDS'
-        }
-      });
-    }
-
-    // Validate client access for BACKEND_USER users (SUPER_ADMIN bypasses all restrictions)
-    const userId = req.user?.id;
-    const userRole = req.user?.role;
-
-    if (userRole === 'BACKEND_USER') {
-      const assignedClientIds = await getAssignedClientIds(userId!, userRole);
-
-      if (assignedClientIds && !assignedClientIds.includes(Number(clientId))) {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied - cannot create case for unassigned client',
-          error: { code: 'CLIENT_ACCESS_DENIED' },
-        });
-      }
-    }
-
-    // Prepare case data for database insertion
-    const caseData = {
-      clientId,
-      productId: productId || null,
-      verificationTypeId: verificationTypeId || null,
-      customerName,
-      customerCallingCode: customerCallingCode || null,
-      customerPhone: customerPhone || null,
-      address: address || null,
-      pincode: pincode || null,
-      verificationType: verificationType || null,
-      status: assignedToId ? 'ASSIGNED' : 'PENDING',
-      priority: priority === 2 ? 'MEDIUM' : priority === 1 ? 'LOW' : priority === 3 ? 'HIGH' : 'URGENT',
-      assignedTo: assignedToId,
-      createdByBackendUser: req.user?.id,
-      panNumber: panNumber?.toUpperCase() || null,
-      // Required fields
-      applicantType,
-      backendContactNumber,
-      trigger: notes, // TRIGGER field
-      deduplicationChecked: !skipDeduplication,
-      deduplicationDecision: deduplicationDecision || (skipDeduplication ? 'NO_DUPLICATES' : null),
-      deduplicationRationale
-    };
-
-    // Insert case into database
     const insertQuery = `
       INSERT INTO cases (
+        "customerName", "customerPhone", "customerCallingCode",
         "clientId", "productId", "verificationTypeId",
-        "customerName", "customerCallingCode", "customerPhone",
-        "address", "pincode", "verificationType", "status", "priority",
-        "assignedTo", "createdByBackendUser", "panNumber", "applicantType",
-        "backendContactNumber", "trigger", "deduplicationChecked",
-        "deduplicationDecision", "deduplicationRationale"
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
-      ) RETURNING *, "caseId"
+        address, pincode, priority, trigger, "applicantType",
+        status, "createdByBackendUser", "createdAt", "updatedAt"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+      RETURNING *
     `;
 
-    const result = await pool.query(insertQuery, [
-      caseData.clientId,
-      caseData.productId,
-      caseData.verificationTypeId,
-      caseData.customerName,
-      caseData.customerCallingCode,
-      caseData.customerPhone,
-      caseData.address,
-      caseData.pincode,
-      caseData.verificationType,
-      caseData.status,
-      caseData.priority,
-      caseData.assignedTo,
-      caseData.createdByBackendUser,
-      caseData.panNumber,
-      caseData.applicantType,
-      caseData.backendContactNumber,
-      caseData.trigger,
-      caseData.deduplicationChecked,
-      caseData.deduplicationDecision,
-      caseData.deduplicationRationale
-    ]);
-
-    const newCase = result.rows[0];
-
-    logger.info(`Created new case: Case ID ${newCase.caseId}`, {
-      userId: req.user?.id,
-      caseId: newCase.caseId,
-      customerName: newCase.customerName,
+    const values = [
+      customerName,
+      customerPhone,
+      customerCallingCode,
       clientId,
-      assignedToId,
-      deduplicationChecked: newCase.deduplicationChecked
+      productId,
+      verificationTypeId,
+      address,
+      pincode,
+      priority,
+      trigger,
+      applicantType,
+      'PENDING',
+      req.user?.id
+    ];
+
+    const result = await pool.query(insertQuery, values);
+
+    logger.info('Case created', {
+      userId: req.user?.id,
+      caseId: result.rows[0].caseId,
     });
-
-    // Send real-time notification to assigned field agent if case is assigned
-    if (assignedToId) {
-      try {
-        emitCaseAssigned(assignedToId, {
-          id: newCase.id,
-          caseId: newCase.caseId,
-          customerName: newCase.customerName,
-          customerCallingCode: newCase.customerCallingCode,
-          customerPhone: newCase.customerPhone,
-          address: newCase.address,
-          pincode: newCase.pincode,
-          priority: newCase.priority,
-          status: newCase.status,
-          verificationType: newCase.verificationType,
-          applicantType: newCase.applicantType,
-          trigger: newCase.trigger,
-          createdAt: newCase.createdAt,
-          clientId: newCase.clientId,
-          productId: newCase.productId,
-          verificationTypeId: newCase.verificationTypeId,
-          backendContactNumber: newCase.backendContactNumber
-        });
-
-        logger.info(`Real-time case assignment notification sent to user ${assignedToId} for case ${newCase.caseId}`);
-      } catch (notificationError) {
-        logger.error('Failed to send case assignment notification:', notificationError);
-        // Don't fail the case creation if notification fails
-      }
-    }
 
     res.status(201).json({
       success: true,
-      data: newCase,
-      message: `Case created successfully with Case ID: ${newCase.caseId}`,
+      data: result.rows[0],
+      message: 'Case created successfully',
     });
   } catch (error) {
     logger.error('Error creating case:', error);
@@ -459,488 +339,39 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-// PUT /api/cases/:id - Update case
-export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const {
-      // Extract fields that can be updated
-      clientId,
-      productId,
-      verificationTypeId,
-      customerName,
-      customerCallingCode,
-      customerPhone,
-      address,
-      pincode,
-      verificationType,
-      priority,
-      notes,
-      trigger,
-      assignedToId,
-      applicantType,
-      backendContactNumber,
-      panNumber
-    } = req.body;
-
-    // Check if case exists
-    const checkQuery = 'SELECT "caseId" FROM cases WHERE "caseId" = $1';
-    const checkResult = await pool.query(checkQuery, [parseInt(id)]);
-
-    if (checkResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
-      });
-    }
-
-    // Build dynamic update query
-    const updateFields = [];
-    const updateValues = [];
-    let paramIndex = 1;
-
-    if (clientId !== undefined) {
-      updateFields.push(`"clientId" = $${paramIndex++}`);
-      updateValues.push(clientId);
-    }
-    if (productId !== undefined) {
-      updateFields.push(`"productId" = $${paramIndex++}`);
-      updateValues.push(productId);
-    }
-    if (verificationTypeId !== undefined) {
-      updateFields.push(`"verificationTypeId" = $${paramIndex++}`);
-      updateValues.push(verificationTypeId);
-    }
-    if (customerName !== undefined) {
-      updateFields.push(`"customerName" = $${paramIndex++}`);
-      updateValues.push(customerName);
-    }
-    if (customerCallingCode !== undefined) {
-      updateFields.push(`"customerCallingCode" = $${paramIndex++}`);
-      updateValues.push(customerCallingCode);
-    }
-    if (customerPhone !== undefined) {
-      updateFields.push(`"customerPhone" = $${paramIndex++}`);
-      updateValues.push(customerPhone);
-    }
-    if (address !== undefined) {
-      updateFields.push(`"address" = $${paramIndex++}`);
-      updateValues.push(address);
-    }
-    if (pincode !== undefined) {
-      updateFields.push(`"pincode" = $${paramIndex++}`);
-      updateValues.push(pincode);
-    }
-    if (verificationType !== undefined) {
-      updateFields.push(`"verificationType" = $${paramIndex++}`);
-      updateValues.push(verificationType);
-    }
-    if (priority !== undefined) {
-      const priorityValue = typeof priority === 'number' ?
-        (priority === 1 ? 'LOW' : priority === 2 ? 'MEDIUM' : priority === 3 ? 'HIGH' : 'URGENT') :
-        priority;
-      updateFields.push(`"priority" = $${paramIndex++}`);
-      updateValues.push(priorityValue);
-    }
-    if (notes !== undefined || trigger !== undefined) {
-      updateFields.push(`"trigger" = $${paramIndex++}`);
-      updateValues.push(notes || trigger);
-    }
-    if (assignedToId !== undefined) {
-      updateFields.push(`"assignedTo" = $${paramIndex++}`);
-      updateValues.push(assignedToId);
-    }
-    if (applicantType !== undefined) {
-      updateFields.push(`"applicantType" = $${paramIndex++}`);
-      updateValues.push(applicantType);
-    }
-    if (backendContactNumber !== undefined) {
-      updateFields.push(`"backendContactNumber" = $${paramIndex++}`);
-      updateValues.push(backendContactNumber);
-    }
-    if (panNumber !== undefined) {
-      updateFields.push(`"panNumber" = $${paramIndex++}`);
-      updateValues.push(panNumber?.toUpperCase() || null);
-    }
-    // Always update the updatedAt timestamp
-    updateFields.push(`"updatedAt" = CURRENT_TIMESTAMP`);
-    updateValues.push(parseInt(id)); // Add case ID as the last parameter
-
-    if (updateFields.length === 1) { // Only updatedAt field
-      return res.status(400).json({
-        success: false,
-        message: 'No valid fields to update',
-        error: { code: 'NO_UPDATE_FIELDS' },
-      });
-    }
-
-    // Execute update query
-    const updateQuery = `
-      UPDATE cases
-      SET ${updateFields.join(', ')}
-      WHERE "caseId" = $${paramIndex}
-      RETURNING *
-    `;
-
-    const updateResult = await pool.query(updateQuery, updateValues);
-    const updatedCase = updateResult.rows[0];
-
-    // Get additional case details (assignee name, client info)
-    const detailsQuery = `
-      SELECT c.*,
-             u.name as "assignedToName",
-             cl.name as "clientName",
-             cl.code as "clientCode"
-      FROM cases c
-      LEFT JOIN users u ON c."assignedTo" = u.id
-      LEFT JOIN clients cl ON c."clientId" = cl.id
-      WHERE c."caseId" = $1
-    `;
-
-    const detailsResult = await pool.query(detailsQuery, [parseInt(id)]);
-    const finalCase = detailsResult.rows[0];
-
-    logger.info(`Updated case: ${id}`, {
-      userId: req.user?.id,
-      changes: Object.keys(req.body)
-    });
-
-    res.json({
-      success: true,
-      data: finalCase,
-      message: 'Case updated successfully',
-    });
-  } catch (error) {
-    logger.error('Error updating case:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update case',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// DELETE /api/cases/:id - Delete case
-export const deleteCase = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
-      });
-    }
-
-    const deletedCase = cases[caseIndex];
-    cases.splice(caseIndex, 1);
-
-    logger.info(`Deleted case: ${id}`, { 
-      userId: req.user?.id,
-      caseTitle: deletedCase.title
-    });
-
-    res.json({
-      success: true,
-      message: 'Case deleted successfully',
-    });
-  } catch (error) {
-    logger.error('Error deleting case:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete case',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// PUT /api/cases/:id/status - Update case status
-export const updateCaseStatus = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    // Check if case exists
-    const checkQuery = 'SELECT "caseId", status FROM cases WHERE "caseId" = $1';
-    const checkResult = await pool.query(checkQuery, [parseInt(id)]);
-
-    if (checkResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
-      });
-    }
-
-    const oldStatus = checkResult.rows[0].status;
-
-    // Update case status
-    const updateQuery = `
-      UPDATE cases
-      SET status = $1, "updatedAt" = CURRENT_TIMESTAMP
-      WHERE "caseId" = $2
-      RETURNING *
-    `;
-
-    const updateResult = await pool.query(updateQuery, [status, parseInt(id)]);
-    const updatedCase = updateResult.rows[0];
-
-    logger.info(`Updated case status: ${id}`, {
-      userId: req.user?.id,
-      oldStatus,
-      newStatus: status
-    });
-
-    // Send real-time notification about status change
-    try {
-      emitCaseStatusChanged(
-        updatedCase.caseId.toString(),
-        oldStatus,
-        status,
-        req.user?.id || 'system'
-      );
-
-      logger.info(`Real-time case status change notification sent for case ${id}: ${oldStatus} -> ${status}`);
-    } catch (notificationError) {
-      logger.error('Failed to send case status change notification:', notificationError);
-      // Don't fail the status update if notification fails
-    }
-
-    res.json({
-      success: true,
-      data: updatedCase,
-      message: 'Case status updated successfully',
-    });
-  } catch (error) {
-    logger.error('Error updating case status:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update case status',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// PUT /api/cases/:id/priority - Update case priority
-export const updateCasePriority = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { priority } = req.body;
-
-    // Check if case exists and get current priority
-    const checkQuery = 'SELECT "caseId", priority FROM cases WHERE "caseId" = $1';
-    const checkResult = await pool.query(checkQuery, [parseInt(id)]);
-
-    if (checkResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
-      });
-    }
-
-    const oldPriority = checkResult.rows[0].priority;
-
-    // Update case priority
-    const updateQuery = `
-      UPDATE cases
-      SET priority = $1, "updatedAt" = CURRENT_TIMESTAMP
-      WHERE "caseId" = $2
-      RETURNING *
-    `;
-
-    const updateResult = await pool.query(updateQuery, [priority, parseInt(id)]);
-    const updatedCase = updateResult.rows[0];
-
-    logger.info(`Updated case priority: ${id}`, {
-      userId: req.user?.id,
-      oldPriority,
-      newPriority: priority
-    });
-
-    // Send real-time notification about priority change
-    try {
-      // Convert priority strings to numbers for comparison
-      const oldPriorityNum = oldPriority === 'LOW' ? 1 : oldPriority === 'MEDIUM' ? 2 : oldPriority === 'HIGH' ? 3 : 4;
-      const newPriorityNum = priority === 'LOW' ? 1 : priority === 'MEDIUM' ? 2 : priority === 'HIGH' ? 3 : 4;
-
-      emitCasePriorityChanged(
-        updatedCase.caseId.toString(),
-        oldPriorityNum,
-        newPriorityNum,
-        req.user?.id || 'system'
-      );
-
-      logger.info(`Real-time case priority change notification sent for case ${id}: ${oldPriority} -> ${priority}`);
-    } catch (notificationError) {
-      logger.error('Failed to send case priority change notification:', notificationError);
-      // Don't fail the priority update if notification fails
-    }
-
-    res.json({
-      success: true,
-      data: updatedCase,
-      message: 'Case priority updated successfully',
-    });
-  } catch (error) {
-    logger.error('Error updating case priority:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update case priority',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// PUT /api/cases/:id/assign - Assign case
+// POST /api/cases/:id/assign - Assign case to user
 export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { assignedToId, reason } = req.body;
-
-    // Get current case data with all required fields
-    const currentCaseQuery = `
-      SELECT c.*,
-             -- Client information (Field 3: Client)
-             cl.name as "clientName",
-             cl.code as "clientCode",
-             -- Assigned user information (Field 9: Assign to Field User)
-             assigned_user.name as "assignedToName",
-             assigned_user.email as "assignedToEmail",
-             -- Product information (Field 4: Product)
-             p.name as "productName",
-             p.code as "productCode",
-             -- Verification type information (Field 5: Verification Type)
-             vt.name as "verificationTypeName",
-             vt.code as "verificationTypeCode",
-             -- Created by backend user information (Field 7: Created By Backend User)
-             created_user.name as "createdByBackendUserName",
-             created_user.email as "createdByBackendUserEmail"
-      FROM cases c
-      LEFT JOIN clients cl ON c."clientId" = cl.id
-      LEFT JOIN users assigned_user ON c."assignedTo" = assigned_user.id
-      LEFT JOIN users created_user ON c."createdByBackendUser" = created_user.id
-      LEFT JOIN products p ON c."productId" = p.id
-      LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
-      WHERE c."caseId" = $1
-    `;
-
-    const currentCaseResult = await pool.query(currentCaseQuery, [parseInt(id)]);
-
-    if (currentCaseResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
-      });
-    }
-
-    const currentCase = currentCaseResult.rows[0];
-    const oldAssignee = currentCase.assignedTo;
-
-    // Get new assignee details
-    const newAssigneeQuery = 'SELECT name FROM users WHERE id = $1';
-    const newAssigneeResult = await pool.query(newAssigneeQuery, [assignedToId]);
-
-    if (newAssigneeResult.rows.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Assigned user not found',
-        error: { code: 'INVALID_USER' },
-      });
-    }
-
-    const newAssigneeName = newAssigneeResult.rows[0].name;
+    const { assignedToId } = req.body;
 
     // Update case assignment
     const updateQuery = `
       UPDATE cases
-      SET "assignedTo" = $1, "status" = 'ASSIGNED', "updatedAt" = CURRENT_TIMESTAMP
+      SET "assignedTo" = $1, status = 'ASSIGNED', "updatedAt" = NOW()
       WHERE "caseId" = $2
       RETURNING *
     `;
 
-    const updateResult = await pool.query(updateQuery, [assignedToId, parseInt(id)]);
-    const updatedCase = updateResult.rows[0];
+    const result = await pool.query(updateQuery, [assignedToId, parseInt(id)]);
 
-    // Create assignment history entry
-    const historyQuery = `
-      INSERT INTO case_assignment_history (
-        "caseId", "previousAssignee", "newAssignee", "reason",
-        "assignedBy", "assignedAt"
-      ) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-    `;
-
-    await pool.query(historyQuery, [
-      parseInt(id),
-      oldAssignee,
-      assignedToId,
-      reason || 'Case reassignment',
-      req.user?.id
-    ]);
-
-    logger.info(`Assigned case: ${id}`, {
-      userId: req.user?.id,
-      oldAssignee,
-      newAssignee: assignedToId,
-      reason
-    });
-
-    // Send real-time notification to newly assigned field agent
-    try {
-      emitCaseAssigned(assignedToId, {
-        id: updatedCase.id,
-        caseId: updatedCase.caseId,
-        customerName: updatedCase.customerName,
-        customerCallingCode: updatedCase.customerCallingCode,
-        customerPhone: updatedCase.customerPhone,
-        address: updatedCase.address,
-        pincode: updatedCase.pincode,
-        priority: updatedCase.priority,
-        status: updatedCase.status,
-        verificationType: updatedCase.verificationType,
-        applicantType: updatedCase.applicantType,
-        trigger: updatedCase.trigger,
-        createdAt: updatedCase.createdAt,
-        updatedAt: updatedCase.updatedAt,
-        clientId: updatedCase.clientId,
-        productId: updatedCase.productId,
-        verificationTypeId: updatedCase.verificationTypeId,
-        backendContactNumber: updatedCase.backendContactNumber,
-        assignedToName: newAssigneeName,
-        clientName: currentCase.clientName,
-        clientCode: currentCase.clientCode,
-        reason: reason || 'Case reassignment'
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Case not found',
+        error: { code: 'NOT_FOUND' },
       });
-
-      logger.info(`Real-time case assignment notification sent to user ${assignedToId} for case ${id}`);
-    } catch (notificationError) {
-      logger.error('Failed to send case assignment notification:', notificationError);
-      // Don't fail the assignment if notification fails
     }
 
-    // Return updated case with all enhanced fields for mobile app
-    const finalCase = {
-      ...updatedCase,
-      // Include all the enhanced fields from the current case query
-      assignedToName: newAssigneeName,
-      assignedToEmail: currentCase.assignedToEmail,
-      clientName: currentCase.clientName,
-      clientCode: currentCase.clientCode,
-      productName: currentCase.productName,
-      productCode: currentCase.productCode,
-      verificationTypeName: currentCase.verificationTypeName,
-      verificationTypeCode: currentCase.verificationTypeCode,
-      createdByBackendUserName: currentCase.createdByBackendUserName,
-      createdByBackendUserEmail: currentCase.createdByBackendUserEmail
-    };
+    logger.info('Case assigned', {
+      userId: req.user?.id,
+      caseId: id,
+      assignedTo: assignedToId,
+    });
 
     res.json({
       success: true,
-      data: finalCase,
+      data: result.rows[0],
       message: 'Case assigned successfully',
     });
   } catch (error) {
@@ -953,323 +384,209 @@ export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-// POST /api/cases/:id/notes - Add case note
-export const addCaseNote = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { note } = req.body;
-
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
-      return res.status(404).json({
+// POST /api/cases/with-attachments - Create case with attachments in single request
+export const createCaseWithAttachments = async (req: AuthenticatedRequest, res: Response) => {
+  // Use multer middleware to handle file uploads
+  uploadForCaseCreation.array('attachments', 10)(req, res, async (err) => {
+    if (err) {
+      logger.error('File upload error during case creation:', err);
+      return res.status(400).json({
         success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
+        message: err.message || 'File upload failed during case creation',
+        error: { code: 'UPLOAD_ERROR' },
       });
     }
 
-    const newNote = {
-      id: `note_${Date.now()}`,
-      text: note,
-      createdBy: req.user?.id,
-      createdAt: new Date().toISOString(),
-    };
+    const client = await pool.connect();
 
-    cases[caseIndex].notes.push(newNote);
-    cases[caseIndex].updatedAt = new Date().toISOString();
+    try {
+      await client.query('BEGIN');
 
-    // Add history entry
-    cases[caseIndex].history.push({
-      id: `hist_${Date.now()}`,
-      action: 'NOTE_ADDED',
-      description: 'Note added to case',
-      userId: req.user?.id,
-      timestamp: new Date().toISOString(),
-    });
+      const {
+        customerName,
+        customerPhone,
+        customerCallingCode,
+        clientId,
+        productId,
+        verificationTypeId,
+        address,
+        pincode,
+        priority = 'MEDIUM',
+        trigger,
+        applicantType = 'APPLICANT'
+      } = req.body;
 
-    logger.info(`Added note to case: ${id}`, {
-      userId: req.user?.id,
-      noteLength: note.length
-    });
+      // Validate required fields
+      if (!customerName || !customerPhone || !clientId || !productId || !verificationTypeId || !address) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields',
+          error: { code: 'VALIDATION_ERROR' },
+        });
+      }
 
-    res.json({
-      success: true,
-      data: cases[caseIndex],
-      message: 'Note added successfully',
-    });
-  } catch (error) {
-    logger.error('Error adding case note:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to add case note',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
+      // Validate client access (inline since middleware can't access form data)
+      const userRole = req.user?.role;
+      const userId = req.user?.id;
 
-// GET /api/cases/:id/history - Get case history
-export const getCaseHistory = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const caseData = cases.find(c => c.id === id);
+      if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+        // Check if user has access to this client
+        const clientAccessQuery = `
+          SELECT 1 FROM user_client_access
+          WHERE "userId" = $1 AND "clientId" = $2
+        `;
+        const accessResult = await client.query(clientAccessQuery, [userId, clientId]);
 
-    if (!caseData) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
+        if (accessResult.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied: You do not have permission to create cases for this client',
+            error: { code: 'ACCESS_DENIED' },
+          });
+        }
+      }
+
+      // Step 1: Create the case
+      const insertCaseQuery = `
+        INSERT INTO cases (
+          "customerName", "customerPhone", "customerCallingCode",
+          "clientId", "productId", "verificationTypeId",
+          address, pincode, priority, trigger, "applicantType",
+          status, "createdByBackendUser", "backendContactNumber", "createdAt", "updatedAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const caseValues = [
+        customerName,
+        customerPhone,
+        customerCallingCode,
+        clientId,
+        productId,
+        verificationTypeId,
+        address,
+        pincode,
+        priority,
+        trigger,
+        applicantType,
+        'PENDING',
+        req.user?.id,
+        customerPhone // Use customer phone as backend contact number for now
+      ];
+
+      const caseResult = await client.query(insertCaseQuery, caseValues);
+      const newCase = caseResult.rows[0];
+      const caseId = newCase.caseId;
+
+      // Step 2: Process uploaded files if any
+      const files = req.files as Express.Multer.File[];
+      const uploadedAttachments: any[] = [];
+
+      if (files && files.length > 0) {
+        // Create permanent directory for this case
+        const permanentDir = path.join(process.cwd(), 'uploads', 'attachments', `case_${caseId}`);
+        if (!fs.existsSync(permanentDir)) {
+          fs.mkdirSync(permanentDir, { recursive: true });
+        }
+
+        for (const file of files) {
+          try {
+            // Move file from temp to permanent location
+            const tempPath = file.path;
+            const permanentPath = path.join(permanentDir, file.filename);
+            fs.renameSync(tempPath, permanentPath);
+
+            // Insert attachment record into database
+            const insertAttachmentQuery = `
+              INSERT INTO attachments (
+                filename, "originalName", "filePath", "fileSize",
+                "mimeType", "uploadedBy", "caseId", "createdAt"
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+              RETURNING *
+            `;
+
+            const attachmentValues = [
+              file.filename,
+              file.originalname,
+              `/uploads/attachments/case_${caseId}/${file.filename}`,
+              file.size,
+              file.mimetype,
+              req.user?.id,
+              caseId
+            ];
+
+            const attachmentResult = await client.query(insertAttachmentQuery, attachmentValues);
+            uploadedAttachments.push(attachmentResult.rows[0]);
+
+            logger.info('Attachment uploaded and saved', {
+              caseId,
+              filename: file.filename,
+              originalName: file.originalname,
+              size: file.size,
+              userId: req.user?.id,
+            });
+
+          } catch (fileError) {
+            logger.error('Error processing individual file:', fileError);
+            // Continue with other files, don't fail the entire operation
+          }
+        }
+
+        // Clean up temp directory
+        try {
+          const tempDir = path.dirname(files[0].path);
+          if (fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+          }
+        } catch (cleanupError) {
+          logger.warn('Failed to clean up temp directory:', cleanupError);
+        }
+      }
+
+      await client.query('COMMIT');
+
+      logger.info('Case created with attachments', {
+        userId: req.user?.id,
+        caseId: caseId,
+        attachmentCount: uploadedAttachments.length,
       });
-    }
 
-    res.json({
-      success: true,
-      data: caseData.history,
-    });
-  } catch (error) {
-    logger.error('Error getting case history:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get case history',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// POST /api/cases/:id/complete - Complete case
-export const completeCase = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { notes, attachments } = req.body;
-
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
+      res.status(201).json({
+        success: true,
+        data: {
+          case: newCase,
+          attachments: uploadedAttachments,
+          attachmentCount: uploadedAttachments.length,
+        },
+        message: `Case created successfully with ${uploadedAttachments.length} attachment(s)`,
       });
-    }
 
-    // Update case status and completion date
-    cases[caseIndex].status = 'COMPLETED';
-    cases[caseIndex].completedAt = new Date().toISOString();
-    cases[caseIndex].updatedAt = new Date().toISOString();
+    } catch (error) {
+      await client.query('ROLLBACK');
 
-    // Add completion notes if provided
-    if (notes) {
-      const completionNote = {
-        id: `note_${Date.now()}`,
-        text: notes,
-        createdBy: req.user?.id,
-        createdAt: new Date().toISOString(),
-      };
-      cases[caseIndex].notes.push(completionNote);
-    }
+      // Clean up any uploaded files on error
+      const files = req.files as Express.Multer.File[];
+      if (files && files.length > 0) {
+        try {
+          const tempDir = path.dirname(files[0].path);
+          if (fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+          }
+        } catch (cleanupError) {
+          logger.warn('Failed to clean up files after error:', cleanupError);
+        }
+      }
 
-    // Add attachments if provided
-    if (attachments && Array.isArray(attachments)) {
-      cases[caseIndex].attachments.push(...attachments);
-    }
-
-    // Add history entry
-    cases[caseIndex].history.push({
-      id: `hist_${Date.now()}`,
-      action: 'CASE_COMPLETED',
-      description: 'Case marked as completed',
-      userId: req.user?.id,
-      timestamp: new Date().toISOString(),
-    });
-
-    logger.info(`Completed case: ${id}`, {
-      userId: req.user?.id,
-      hasNotes: !!notes,
-      attachmentCount: attachments?.length || 0
-    });
-
-    res.json({
-      success: true,
-      data: cases[caseIndex],
-      message: 'Case completed successfully',
-    });
-  } catch (error) {
-    logger.error('Error completing case:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to complete case',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// POST /api/cases/:id/approve - Approve case
-export const approveCase = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { feedback } = req.body;
-
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
-      return res.status(404).json({
+      logger.error('Error creating case with attachments:', error);
+      res.status(500).json({
         success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
+        message: 'Failed to create case with attachments',
+        error: { code: 'INTERNAL_ERROR' },
       });
+    } finally {
+      client.release();
     }
-
-    // Update case status
-    cases[caseIndex].status = 'APPROVED';
-    cases[caseIndex].updatedAt = new Date().toISOString();
-
-    // Add feedback as note if provided
-    if (feedback) {
-      const feedbackNote = {
-        id: `note_${Date.now()}`,
-        text: `Approval feedback: ${feedback}`,
-        createdBy: req.user?.id,
-        createdAt: new Date().toISOString(),
-      };
-      cases[caseIndex].notes.push(feedbackNote);
-    }
-
-    // Add history entry
-    cases[caseIndex].history.push({
-      id: `hist_${Date.now()}`,
-      action: 'CASE_APPROVED',
-      description: 'Case approved',
-      userId: req.user?.id,
-      timestamp: new Date().toISOString(),
-    });
-
-    logger.info(`Approved case: ${id}`, {
-      userId: req.user?.id,
-      hasFeedback: !!feedback
-    });
-
-    res.json({
-      success: true,
-      data: cases[caseIndex],
-      message: 'Case approved successfully',
-    });
-  } catch (error) {
-    logger.error('Error approving case:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to approve case',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// POST /api/cases/:id/reject - Reject case
-export const rejectCase = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { reason } = req.body;
-
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
-      });
-    }
-
-    // Update case status
-    cases[caseIndex].status = 'REJECTED';
-    cases[caseIndex].updatedAt = new Date().toISOString();
-
-    // Add rejection reason as note
-    const rejectionNote = {
-      id: `note_${Date.now()}`,
-      text: `Rejection reason: ${reason}`,
-      createdBy: req.user?.id,
-      createdAt: new Date().toISOString(),
-    };
-    cases[caseIndex].notes.push(rejectionNote);
-
-    // Add history entry
-    cases[caseIndex].history.push({
-      id: `hist_${Date.now()}`,
-      action: 'CASE_REJECTED',
-      description: 'Case rejected',
-      userId: req.user?.id,
-      timestamp: new Date().toISOString(),
-    });
-
-    logger.info(`Rejected case: ${id}`, {
-      userId: req.user?.id,
-      reason
-    });
-
-    res.json({
-      success: true,
-      data: cases[caseIndex],
-      message: 'Case rejected successfully',
-    });
-  } catch (error) {
-    logger.error('Error rejecting case:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to reject case',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
-};
-
-// POST /api/cases/:id/rework - Request rework
-export const requestRework = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { feedback } = req.body;
-
-    const caseIndex = cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
-      });
-    }
-
-    // Update case status
-    cases[caseIndex].status = 'REWORK_REQUIRED';
-    cases[caseIndex].updatedAt = new Date().toISOString();
-
-    // Add rework feedback as note
-    const reworkNote = {
-      id: `note_${Date.now()}`,
-      text: `Rework required: ${feedback}`,
-      createdBy: req.user?.id,
-      createdAt: new Date().toISOString(),
-    };
-    cases[caseIndex].notes.push(reworkNote);
-
-    // Add history entry
-    cases[caseIndex].history.push({
-      id: `hist_${Date.now()}`,
-      action: 'REWORK_REQUESTED',
-      description: 'Rework requested',
-      userId: req.user?.id,
-      timestamp: new Date().toISOString(),
-    });
-
-    logger.info(`Requested rework for case: ${id}`, {
-      userId: req.user?.id,
-      feedback
-    });
-
-    res.json({
-      success: true,
-      data: cases[caseIndex],
-      message: 'Rework requested successfully',
-    });
-  } catch (error) {
-    logger.error('Error requesting rework:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to request rework',
-      error: { code: 'INTERNAL_ERROR' },
-    });
-  }
+  });
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, lazy } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CaseProvider } from './context/CaseContext';
@@ -6,6 +6,9 @@ import BottomNavigation from './components/BottomNavigation';
 import { SafeAreaProvider, MobileContainer } from './components/SafeAreaProvider';
 import { ResponsiveLayoutProvider } from './components/ResponsiveLayout';
 import ErrorBoundary from './components/ErrorBoundary';
+import AuthStatusIndicator from './components/AuthStatusIndicator';
+import ReauthModal from './components/ReauthModal';
+import SyncStatusIndicator from './components/SyncStatusIndicator';
 import { View } from 'react-native';
 import { googleMapsService } from './services/googleMapsService';
 import { validateEnvironmentConfig, getEnvironmentConfig } from './config/environment';
@@ -25,7 +28,9 @@ const ProfileScreen = lazy(() => import('./screens/ProfileScreen'));
 const DigitalIdCardScreen = lazy(() => import('./screens/DigitalIdCardScreen'));
 
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, authStatus } = useAuth();
+  const [showReauthModal, setShowReauthModal] = useState(false);
+  const [reauthReason, setReauthReason] = useState<string>('');
 
   // Initialize services on app start
   useEffect(() => {
@@ -69,6 +74,28 @@ const AppNavigator: React.FC = () => {
     initializeServices();
   }, []);
 
+  // Listen for re-authentication events
+  useEffect(() => {
+    const handleReauthRequired = (event: any) => {
+      setReauthReason(event.detail?.reason || 'Authentication expired');
+      setShowReauthModal(true);
+    };
+
+    window.addEventListener('authReauthRequired', handleReauthRequired);
+
+    return () => {
+      window.removeEventListener('authReauthRequired', handleReauthRequired);
+    };
+  }, []);
+
+  // Check if re-auth is needed based on auth status
+  useEffect(() => {
+    if (authStatus && authStatus.needsAction && authStatus.actionRequired === 'Re-authentication required') {
+      setReauthReason('Your 30-day authentication period has expired');
+      setShowReauthModal(true);
+    }
+  }, [authStatus]);
+
   if (isLoading) {
     return (
       <MobileContainer>
@@ -105,6 +132,12 @@ const AppNavigator: React.FC = () => {
 
   return (
     <MobileContainer>
+      {/* Authentication Status Indicator */}
+      {isAuthenticated && <AuthStatusIndicator />}
+
+      {/* Sync Status Indicator */}
+      {isAuthenticated && <SyncStatusIndicator />}
+
       <Suspense fallback={<RouteLoader />}>
         <Routes>
           {isAuthenticated ? (
@@ -127,7 +160,16 @@ const AppNavigator: React.FC = () => {
           )}
         </Routes>
       </Suspense>
+
+      {/* Bottom Navigation */}
       {isAuthenticated && <BottomNavigation />}
+
+      {/* Re-authentication Modal */}
+      <ReauthModal
+        visible={showReauthModal}
+        onClose={() => setShowReauthModal(false)}
+        reason={reauthReason}
+      />
     </MobileContainer>
   );
 };

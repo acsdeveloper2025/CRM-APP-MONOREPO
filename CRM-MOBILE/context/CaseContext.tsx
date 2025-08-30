@@ -2,6 +2,10 @@ import React, { createContext, useState, useContext, useEffect, ReactNode, useCa
 import { Case, CaseStatus, VerificationOutcome, ResidenceReportData, ShiftedResidenceReportData, NspResidenceReportData, EntryRestrictedResidenceReportData, UntraceableResidenceReportData, ResiCumOfficeReportData, ShiftedResiCumOfficeReportData, NspResiCumOfficeReportData, EntryRestrictedResiCumOfficeReportData, UntraceableResiCumOfficeReportData, PositiveOfficeReportData, ShiftedOfficeReportData, NspOfficeReportData, EntryRestrictedOfficeReportData, UntraceableOfficeReportData, PositiveBusinessReportData, ShiftedBusinessReportData, NspBusinessReportData, EntryRestrictedBusinessReportData, UntraceableBusinessReportData, PositiveBuilderReportData, ShiftedBuilderReportData, NspBuilderReportData, EntryRestrictedBuilderReportData, UntraceableBuilderReportData, PositiveNocReportData, ShiftedNocReportData, NspNocReportData, EntryRestrictedNocReportData, UntraceableNocReportData, PositiveDsaReportData, ShiftedDsaReportData, NspDsaReportData, EntryRestrictedDsaReportData, UntraceableDsaReportData, PositivePropertyApfReportData, NspPropertyApfReportData, EntryRestrictedPropertyApfReportData, UntraceablePropertyApfReportData, PositivePropertyIndividualReportData, NspPropertyIndividualReportData, EntryRestrictedPropertyIndividualReportData, UntraceablePropertyIndividualReportData, RevokeReason } from '../types';
 import { caseService } from '../services/caseService';
 import { priorityService } from '../services/priorityService';
+import CaseStatusService from '../services/caseStatusService';
+import AuditService from '../services/auditService';
+import NetworkService from '../services/networkService';
+import CaseCounterService from '../services/caseCounterService';
 import { useAuth } from './AuthContext';
 import { getReportInfo } from '../data/initialReportData';
 
@@ -82,7 +86,13 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
     try {
       const data = await caseService.getCases();
-      setCases(data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+      const sortedCases = data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      setCases(sortedCases);
+
+      // Update case counters
+      await CaseCounterService.updateCounts(sortedCases);
+
+      console.log(`📊 Fetched ${sortedCases.length} cases and updated counters`);
     } catch (err) {
       setError('Failed to fetch cases.');
       console.error(err);
@@ -104,22 +114,70 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const currentCase = cases.find(c => c.id === caseId);
       if (!currentCase) throw new Error("Case not found");
 
-      const updates: Partial<Case> = { status };
-      
-      if (status === CaseStatus.InProgress && !currentCase.inProgressAt) {
-        updates.inProgressAt = new Date().toISOString();
-      }
+      console.log(`🔄 Updating case ${caseId} from ${currentCase.status} to ${status}...`);
 
-      if (status === CaseStatus.Completed) {
-        updates.isSaved = false;
-        updates.completedAt = new Date().toISOString();
-        updates.submissionStatus = 'pending'; // Mark as pending submission
+      // Prepare audit metadata
+      const auditMetadata = {
+        customerName: currentCase.customer.name,
+        verificationType: currentCase.verificationType,
+        caseTitle: currentCase.title,
+        address: currentCase.address || currentCase.visitAddress,
+        updatedAt: new Date().toISOString(),
+        networkStatus: NetworkService.isOnline() ? 'online' : 'offline',
+      };
+
+      // Use enhanced case status service with optimistic UI and offline support
+      const result = await CaseStatusService.updateCaseStatus(caseId, status, {
+        optimistic: true,
+        auditMetadata,
+      });
+
+      if (result.success) {
+        // Log the status change for audit purposes
+        await AuditService.logCaseStatusChange(
+          caseId,
+          currentCase.status,
+          status,
+          {
+            customerName: currentCase.customer.name,
+            verificationType: currentCase.verificationType,
+            metadata: auditMetadata,
+          }
+        );
+
+        // Record status change for counter tracking
+        await CaseCounterService.recordStatusChange(caseId, currentCase.status, status);
+
+        // Update local state immediately instead of refetching from API
+        // This preserves the optimistic UI update
+        const updatedCases = cases.map(c =>
+          c.id === caseId
+            ? { ...c, status, updatedAt: new Date().toISOString(),
+                ...(status === CaseStatus.InProgress && !c.inProgressAt ? { inProgressAt: new Date().toISOString() } : {}),
+                ...(status === CaseStatus.Completed ? { completedAt: new Date().toISOString(), submissionStatus: 'pending' as const, isSaved: false } : {})
+              }
+            : c
+        );
+        setCases(updatedCases);
+
+        // Update case counters with the new state
+        await CaseCounterService.updateCounts(updatedCases);
+
+        // Show user feedback based on result
+        if (result.wasOffline) {
+          console.log(`📱 Case ${caseId} updated offline, will sync when online`);
+        } else if (result.error) {
+          console.log(`⚠️ Case ${caseId} updated locally: ${result.error}`);
+        } else {
+          console.log(`✅ Case ${caseId} updated and synced successfully`);
+        }
+      } else {
+        throw new Error(result.error || 'Failed to update case status');
       }
-      await caseService.updateCase(caseId, updates);
-      fetchCases(); // Refetch to update UI
     } catch (err) {
-      setError('Failed to update case status.');
-      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update case status';
+      setError(errorMessage);
+      console.error(`❌ Error updating case ${caseId}:`, err);
     }
   };
   
@@ -141,11 +199,24 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
   
+      console.log(`🔄 Updating verification outcome for case ${caseId}: ${outcome || 'null'}`);
+
       await caseService.updateCase(caseId, updates);
-      fetchCases(); // Refetch to update UI and ensure form has data
+
+      // Update local state immediately instead of refetching from API
+      // This preserves any local status changes (like In Progress status)
+      const updatedCases = cases.map(c =>
+        c.id === caseId
+          ? { ...c, ...updates, updatedAt: new Date().toISOString() }
+          : c
+      );
+      setCases(updatedCases);
+
+      console.log(`✅ Verification outcome updated for case ${caseId}: ${outcome || 'cleared'}`);
     } catch (err) {
-      setError('Failed to update verification outcome.');
-      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update verification outcome';
+      setError(errorMessage);
+      console.error(`❌ Error updating verification outcome for case ${caseId}:`, err);
     }
   };
 

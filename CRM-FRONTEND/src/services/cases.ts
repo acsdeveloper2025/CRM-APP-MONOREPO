@@ -56,6 +56,39 @@ export class CasesService {
     return apiService.post('/cases', data);
   }
 
+  async createCaseWithAttachments(data: CreateCaseData, attachments: File[]): Promise<ApiResponse<Case>> {
+    const formData = new FormData();
+
+    // Add case data as JSON string
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, String(value));
+      }
+    });
+
+    // Add attachment files
+    attachments.forEach((file) => {
+      formData.append('attachments', file);
+    });
+
+    // Use fetch directly for FormData to avoid setting Content-Type header
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cases/with-attachments`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        // Don't set Content-Type - let browser set it with boundary for multipart/form-data
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(errorData.message || `HTTP ${response.status}`);
+    }
+
+    return response.json();
+  }
+
   async updateCaseDetails(id: string, data: CreateCaseData): Promise<ApiResponse<Case>> {
     return apiService.put(`/cases/${id}`, data);
   }

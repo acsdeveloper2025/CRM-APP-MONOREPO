@@ -102,6 +102,11 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
   const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
   const [isAttachmentsModalOpen, setIsAttachmentsModalOpen] = useState(false);
 
+  // Enhanced state for Accept button
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [acceptMessage, setAcceptMessage] = useState<string | null>(null);
+  const [showAcceptSuccess, setShowAcceptSuccess] = useState(false);
+
   // Check for auto-saved data for this case
   const { hasAutoSaveData } = useCaseAutoSaveStatus(caseData.id);
 
@@ -193,6 +198,46 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
       setSubmissionMessage('Resubmission failed - please try again');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Enhanced Accept button handler with optimistic UI and offline support
+   */
+  const handleAcceptCase = async () => {
+    if (isAccepting || caseData.status !== CaseStatus.Assigned) {
+      return;
+    }
+
+    setIsAccepting(true);
+    setAcceptMessage(null);
+
+    try {
+      console.log(`🎯 Accepting case ${caseData.id}...`);
+
+      // Call the enhanced updateCaseStatus which handles optimistic UI, offline support, and audit logging
+      await updateCaseStatus(caseData.id, CaseStatus.InProgress);
+
+      // Show success feedback
+      setShowAcceptSuccess(true);
+      setAcceptMessage('Case accepted successfully!');
+
+      // Clear success state after animation
+      setTimeout(() => {
+        setShowAcceptSuccess(false);
+        setAcceptMessage(null);
+      }, 2000);
+
+      console.log(`✅ Case ${caseData.id} accepted successfully`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to accept case';
+      setAcceptMessage(errorMessage);
+      console.error(`❌ Error accepting case ${caseData.id}:`, error);
+
+      // Clear error message after 5 seconds
+      setTimeout(() => setAcceptMessage(null), 5000);
+    } finally {
+      setIsAccepting(false);
     }
   };
 
@@ -630,12 +675,44 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
       <div className="mt-4 pt-4 border-t border-dark-border">
         {isAssigned ? (
             <div className="flex justify-around items-center">
-                <button 
-                    onClick={() => updateCaseStatus(caseData.id, CaseStatus.InProgress)}
-                    className="flex flex-col items-center text-green-400 hover:text-green-300 transition-colors"
+                <button
+                    onClick={handleAcceptCase}
+                    disabled={isAccepting}
+                    className={`
+                      flex flex-col items-center transition-all duration-200
+                      ${isAccepting
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : showAcceptSuccess
+                        ? 'text-green-300 scale-110'
+                        : 'text-green-400 hover:text-green-300 hover:scale-105 active:scale-95'
+                      }
+                    `}
+                    aria-label={isAccepting ? 'Accepting case...' : 'Accept case'}
                 >
-                    <CheckIcon />
-                    <span className="text-xs mt-1">Accept</span>
+                    <div className="relative">
+                      {isAccepting ? (
+                        <div className="w-6 h-6 flex items-center justify-center">
+                          <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : showAcceptSuccess ? (
+                        <div className="w-6 h-6 flex items-center justify-center">
+                          <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <CheckIcon />
+                      )}
+                    </div>
+                    <span className={`text-xs mt-1 transition-all duration-200 ${
+                      isAccepting
+                        ? 'text-gray-400'
+                        : showAcceptSuccess
+                        ? 'text-green-300 font-semibold'
+                        : 'text-current'
+                    }`}>
+                      {isAccepting ? 'Accepting...' : showAcceptSuccess ? 'Accepted!' : 'Accept'}
+                    </span>
                 </button>
                 <button 
                     onClick={() => setIsRevokeModalOpen(true)}
@@ -720,52 +797,32 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                     <p>{caseData.customer.name}</p>
                 </div>
                 <div>
-                    <h4 className="font-bold text-sm text-medium-text">Case ID</h4>
-                    <p>{caseData.caseId || caseData.id}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Client</h4>
-                    <p>{caseData.clientName || 'N/A'}</p>
+                    <h4 className="font-bold text-sm text-medium-text">Bank Name</h4>
+                    <p>{caseData.bankName || 'N/A'}</p>
                 </div>
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Product</h4>
-                    <p>{caseData.productName || caseData.product || 'N/A'}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Verification Type</h4>
-                    <p>{caseData.verificationTypeName || caseData.verificationType || 'N/A'}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Applicant Type</h4>
-                    <p>{caseData.applicantType || caseData.applicantStatus || 'N/A'}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Created By</h4>
-                    <p>{caseData.createdByBackendUserName || 'N/A'}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Backend Contact</h4>
-                    <p>{caseData.backendContactNumber || caseData.systemContactNumber || 'N/A'}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Assigned To</h4>
-                    <p>{caseData.assignedToName || 'N/A'}</p>
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-medium-text">Priority</h4>
-                    <p>{caseData.priority || 'N/A'}</p>
+                    <p>{caseData.product || 'N/A'}</p>
                 </div>
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Trigger</h4>
                     <p>{caseData.trigger || 'N/A'}</p>
                 </div>
+                <div className="sm:col-span-2">
+                    <h4 className="font-bold text-sm text-medium-text">Visit Address</h4>
+                    <p>{caseData.visitAddress || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">System Contact Number</h4>
+                    <p>{caseData.systemContactNumber || 'N/A'}</p>
+                </div>
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Customer Calling Code</h4>
                     <p>{caseData.customerCallingCode || 'N/A'}</p>
                 </div>
-                <div className="sm:col-span-2">
-                    <h4 className="font-bold text-sm text-medium-text">Address</h4>
-                    <p>{caseData.address || caseData.visitAddress || 'N/A'}</p>
+                <div>
+                    <h4 className="font-bold text-sm text-medium-text">Applicant Status</h4>
+                    <p>{caseData.applicantStatus || 'N/A'}</p>
                 </div>
             </div>
              <div className="flex justify-end pt-4">

@@ -1,13 +1,26 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import AsyncStorage from '../polyfills/AsyncStorage';
+import AuthStorageService from '../services/authStorageService';
+import TokenRefreshService from '../services/tokenRefreshService';
+import NetworkService from '../services/networkService';
+
+interface AuthStatus {
+  daysUntilExpiry: number;
+  lastLoginDate?: string;
+  needsAction: boolean;
+  actionRequired?: string;
+}
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   isLoading: boolean;
+  authStatus: AuthStatus | null;
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  refreshTokens: () => Promise<{ success: boolean; error?: string }>;
+  checkAuthStatus: () => Promise<void>;
   updateUserProfile: (updates: Partial<Pick<User, 'profilePhotoUrl'>>) => Promise<void>;
 }
 
@@ -17,45 +30,185 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
 
+  // Initialize persistent authentication on app startup
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const token = await AsyncStorage.getItem('auth_token');
-        if (token) {
-          const storedUser = await AsyncStorage.getItem('user');
-          if(storedUser) {
-            setUser(JSON.parse(storedUser));
-          }
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error("Failed to check auth status", error);
-      } finally {
-        setIsLoading(false);
-      }
+    initializeAuth();
+    setupEventListeners();
+    startBackgroundServices();
+
+    return () => {
+      cleanupEventListeners();
     };
-
-    // Add timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      console.warn('Auth check timeout, setting loading to false');
-      setIsLoading(false);
-    }, 5000);
-
-    checkAuthStatus().finally(() => {
-      clearTimeout(timeoutId);
-    });
-
-    return () => clearTimeout(timeoutId);
   }, []);
+
+  /**
+   * Initialize authentication system on app startup
+   */
+  const initializeAuth = async () => {
+    console.log('🚀 Initializing persistent authentication system...');
+
+    try {
+      // Validate authentication on startup with token refresh if needed
+      const startupResult = await TokenRefreshService.validateOnStartup();
+
+      if (startupResult.isValid && startupResult.user) {
+        // User is authenticated with valid tokens
+        setUser(startupResult.user);
+        setIsAuthenticated(true);
+        console.log('✅ Authentication restored:', startupResult.message);
+
+        // Update auth status
+        await updateAuthStatus();
+      } else {
+        // User needs to log in
+        console.log('🔐 Authentication required:', startupResult.message);
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('❌ Authentication initialization failed:', error);
+      setIsAuthenticated(false);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Setup event listeners for re-authentication and network changes
+   */
+  const setupEventListeners = () => {
+    // Listen for re-authentication required events
+    window.addEventListener('authReauthRequired', handleReauthRequired);
+
+    // Listen for network state changes
+    NetworkService.addNetworkListener(handleNetworkChange);
+
+    // Listen for app visibility changes (foreground/background)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+  };
+
+  /**
+   * Cleanup event listeners
+   */
+  const cleanupEventListeners = () => {
+    window.removeEventListener('authReauthRequired', handleReauthRequired);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+
+  /**
+   * Start background services
+   */
+  const startBackgroundServices = () => {
+    // Start background token validation
+    TokenRefreshService.startBackgroundValidation();
+
+    // Start network monitoring
+    NetworkService.startPeriodicConnectivityCheck();
+  };
+
+  /**
+   * Handle re-authentication required event
+   */
+  const handleReauthRequired = (event: any) => {
+    console.log('🔐 Re-authentication required:', event.detail?.reason);
+    setIsAuthenticated(false);
+    setUser(null);
+    // Could show a modal or notification here
+  };
+
+  /**
+   * Handle network state changes
+   */
+  const handleNetworkChange = (networkState: any) => {
+    console.log('🌐 Network state changed:', networkState);
+    if (networkState.isOnline && isAuthenticated) {
+      // When coming back online, check if tokens need refresh
+      setTimeout(() => {
+        checkAuthStatus();
+      }, 2000);
+    }
+  };
+
+  /**
+   * Handle app visibility changes
+   */
+  const handleVisibilityChange = () => {
+    if (!document.hidden && isAuthenticated) {
+      // App came to foreground, check auth status
+      NetworkService.handleAppForeground();
+      setTimeout(() => {
+        checkAuthStatus();
+      }, 1000);
+    }
+  };
+
+  /**
+   * Update authentication status information
+   */
+  const updateAuthStatus = async () => {
+    try {
+      const status = await AuthStorageService.getAuthStatus();
+      setAuthStatus({
+        daysUntilExpiry: status.daysUntilExpiry,
+        lastLoginDate: status.lastLoginDate,
+        needsAction: status.needsAction,
+        actionRequired: status.actionRequired,
+      });
+    } catch (error) {
+      console.error('❌ Failed to update auth status:', error);
+    }
+  };
+
+  /**
+   * Check current authentication status and refresh if needed
+   */
+  const checkAuthStatus = async () => {
+    try {
+      const result = await TokenRefreshService.checkAndRefreshIfNeeded();
+
+      if (result.validationResult.needsReauth) {
+        setIsAuthenticated(false);
+        setUser(null);
+        setAuthStatus(null);
+      } else {
+        await updateAuthStatus();
+      }
+    } catch (error) {
+      console.error('❌ Auth status check failed:', error);
+    }
+  };
+
+  /**
+   * Manual token refresh
+   */
+  const refreshTokens = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const result = await TokenRefreshService.refreshTokens();
+
+      if (result.success) {
+        await updateAuthStatus();
+        return { success: true };
+      } else {
+        if (result.requiresReauth) {
+          setIsAuthenticated(false);
+          setUser(null);
+          setAuthStatus(null);
+        }
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('❌ Manual token refresh failed:', error);
+      return { success: false, error: 'Token refresh failed' };
+    }
+  };
 
   const login = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
 
     try {
-      // Simulate network delay
-      await new Promise(res => setTimeout(res, 1000));
-
       // Comprehensive validation for required fields
       if (!username.trim()) {
         setIsLoading(false);
@@ -78,52 +231,102 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: false, error: 'Password must be at least 4 characters long' };
       }
 
-      // Demo authentication logic - In production, this would make an API call
-      // For demo purposes, accept specific test credentials or any valid format
-      const isValidDemo = (
-        (username.toLowerCase() === 'demo' && password === 'demo123') ||
-        (username.toLowerCase() === 'admin' && password === 'admin123') ||
-        (username.length >= 3 && password.length >= 4)
-      );
+      // Make real API call to backend
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+      const deviceId = 'web-mobile-app'; // For web version of mobile app
 
-      if (!isValidDemo) {
+      const response = await fetch(`${API_BASE_URL}/mobile/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+          deviceId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
         setIsLoading(false);
-        return { success: false, error: 'Invalid credentials. Please check your username and password.' };
-      }
-
-      // Create or retrieve user data
-      const storedUser = await AsyncStorage.getItem('user');
-      let mockUser: User;
-
-      if (storedUser && JSON.parse(storedUser).username === username) {
-        mockUser = JSON.parse(storedUser);
-      } else {
-        mockUser = {
-          id: `user-${Date.now()}`,
-          name: username === 'demo' ? 'Demo User' : username === 'admin' ? 'Administrator' : 'Field Agent',
-          username
+        return {
+          success: false,
+          error: result.message || 'Login failed. Please check your credentials.'
         };
       }
 
-      // Store authentication data
-      await AsyncStorage.setItem('auth_token', 'mock_jwt_token');
-      await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      // Extract user and token data from API response
+      const { user: apiUser, tokens } = result.data;
+
+      const user: User = {
+        id: apiUser.id,
+        name: apiUser.name,
+        username: apiUser.username,
+        email: apiUser.email,
+        role: apiUser.role,
+        employeeId: apiUser.employeeId,
+      };
+
+      // Store authentication data using the new persistent storage service
+      await AuthStorageService.storeAuthData({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        user: apiUser,
+        deviceId,
+      });
+
+      // Also maintain backward compatibility with old storage for other services
+      await AsyncStorage.setItem('auth_token', tokens.accessToken);
+      await AsyncStorage.setItem('refresh_token', tokens.refreshToken);
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+
+      setUser(user);
       setIsAuthenticated(true);
+
+      // Update auth status after successful login
+      await updateAuthStatus();
+
       setIsLoading(false);
 
+      console.log('✅ Login successful with 30-day persistent authentication:', user.name);
       return { success: true };
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       setIsLoading(false);
-      return { success: false, error: 'An unexpected error occurred. Please try again.' };
+      return {
+        success: false,
+        error: 'Network error. Please check your connection and try again.'
+      };
     }
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('auth_token');
-    setUser(null);
-    setIsAuthenticated(false);
+    console.log('🚪 Logging out and clearing persistent authentication...');
+
+    try {
+      // Clear persistent authentication storage
+      await AuthStorageService.clearAuthData();
+
+      // Clear legacy storage for backward compatibility
+      await AsyncStorage.removeItem('auth_token');
+      await AsyncStorage.removeItem('refresh_token');
+      await AsyncStorage.removeItem('user');
+
+      // Reset state
+      setUser(null);
+      setIsAuthenticated(false);
+      setAuthStatus(null);
+
+      console.log('✅ Logout completed successfully');
+    } catch (error) {
+      console.error('❌ Error during logout:', error);
+      // Still reset state even if storage clearing fails
+      setUser(null);
+      setIsAuthenticated(false);
+      setAuthStatus(null);
+    }
   };
 
   const updateUserProfile = async (updates: Partial<Pick<User, 'profilePhotoUrl'>>) => {
@@ -135,7 +338,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, logout, updateUserProfile }}>
+    <AuthContext.Provider value={{
+      isAuthenticated,
+      user,
+      isLoading,
+      authStatus,
+      login,
+      logout,
+      refreshTokens,
+      checkAuthStatus,
+      updateUserProfile
+    }}>
       {children}
     </AuthContext.Provider>
   );
