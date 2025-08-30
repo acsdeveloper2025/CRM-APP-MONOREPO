@@ -28,24 +28,18 @@ export const DashboardPage: React.FC = () => {
     monthlyRevenue: 125000,
   };
 
-  const stats = statsData?.data || mockStats;
+  const stats = statsData?.data || {
+    totalCases: 0,
+    pendingCases: 0,
+    inProgressCases: 0,
+    completedCases: 0,
+    activeUsers: 0,
+    activeClients: 0
+  };
 
-  // Mock data for charts
-  const mockCaseDistribution = [
-    { status: 'ASSIGNED', count: 234, percentage: 25 },
-    { status: 'IN_PROGRESS', count: 456, percentage: 48 },
-    { status: 'COMPLETED', count: 234, percentage: 25 },
-    { status: 'PENDING_REVIEW', count: 23, percentage: 2 },
-  ];
-
-  const mockTrends = [
-    { month: 'Jan', cases: 120, revenue: 85000, completionRate: 85 },
-    { month: 'Feb', cases: 150, revenue: 95000, completionRate: 88 },
-    { month: 'Mar', cases: 180, revenue: 110000, completionRate: 92 },
-    { month: 'Apr', cases: 200, revenue: 125000, completionRate: 90 },
-    { month: 'May', cases: 220, revenue: 140000, completionRate: 94 },
-    { month: 'Jun', cases: 250, revenue: 155000, completionRate: 96 },
-  ];
+  // Mock data removed - using real API data only
+  const caseDistribution: any[] = [];
+  const trends: any[] = [];
 
   const mockActivities = [
     {

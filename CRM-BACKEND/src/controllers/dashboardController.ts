@@ -2,25 +2,7 @@ import { Request, Response } from 'express';
 import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from '@/middleware/auth';
 
-// Mock data for demonstration (replace with actual database operations)
-const mockCases = [
-  { id: 'case_1', status: 'PENDING', priority: 1, clientId: 'client_1', assignedToId: 'user_1', createdAt: '2024-01-01T00:00:00.000Z', completedAt: null },
-  { id: 'case_2', status: 'IN_PROGRESS', priority: 2, clientId: 'client_2', assignedToId: 'user_2', createdAt: '2024-01-02T00:00:00.000Z', completedAt: null },
-  { id: 'case_3', status: 'COMPLETED', priority: 1, clientId: 'client_1', assignedToId: 'user_1', createdAt: '2024-01-03T00:00:00.000Z', completedAt: '2024-01-05T00:00:00.000Z' },
-  { id: 'case_4', status: 'APPROVED', priority: 3, clientId: 'client_2', assignedToId: 'user_2', createdAt: '2024-01-04T00:00:00.000Z', completedAt: '2024-01-06T00:00:00.000Z' },
-  { id: 'case_5', status: 'REJECTED', priority: 2, clientId: 'client_1', assignedToId: 'user_1', createdAt: '2024-01-05T00:00:00.000Z', completedAt: '2024-01-07T00:00:00.000Z' },
-];
-
-const mockClients = [
-  { id: 'client_1', name: 'Acme Corporation', code: 'ACME_CORP', createdAt: '2024-01-01T00:00:00.000Z' },
-  { id: 'client_2', name: 'Tech Solutions Inc', code: 'TECH_SOL', createdAt: '2024-01-02T00:00:00.000Z' },
-];
-
-const mockUsers = [
-  { id: 'user_1', name: 'John Doe', role: 'FIELD', isActive: true, department: 'Operations' },
-  { id: 'user_2', name: 'Jane Smith', role: 'FIELD', isActive: true, department: 'Operations' },
-  { id: 'user_3', name: 'Admin User', role: 'ADMIN', isActive: true, department: 'IT' },
-];
+// Mock data removed - using database operations only
 
 const mockActivities = [
   { id: 'activity_1', type: 'CASE_CREATED', description: 'New case created', userId: 'user_1', timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
