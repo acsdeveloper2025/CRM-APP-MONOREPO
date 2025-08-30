@@ -27,8 +27,8 @@ const startServer = async (): Promise<void> => {
     // Connect to database
     await connectDatabase();
 
-    // Run database migrations
-    await runMigrations();
+    // Run database migrations (temporarily disabled)
+    // await runMigrations();
 
     // Connect to Redis
     await connectRedis();

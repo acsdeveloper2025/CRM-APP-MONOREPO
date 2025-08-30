@@ -186,7 +186,7 @@ async function checkRedis(): Promise<ServiceHealth> {
     
     // Test set/get operations
     const testKey = `health_check_${Date.now()}`;
-    await redisClient.set(testKey, 'test_value', 'EX', 10);
+    await redisClient.setEx(testKey, 10, 'test_value');
     const testValue = await redisClient.get(testKey);
     await redisClient.del(testKey);
     

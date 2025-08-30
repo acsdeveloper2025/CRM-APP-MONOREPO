@@ -44,10 +44,10 @@ export const performanceMonitoring = (
   
   // Override res.end to capture metrics
   const originalEnd = res.end;
-  res.end = function(chunk?: any, encoding?: any) {
+  res.end = function(chunk?: any, encoding?: any, cb?: () => void): any {
     const endTime = performance.now();
     const responseTime = endTime - startTime;
-    
+
     const metrics: PerformanceMetrics = {
       requestId,
       method: req.method,
@@ -60,12 +60,12 @@ export const performanceMonitoring = (
       ipAddress: getClientIP(req),
       timestamp: new Date()
     };
-    
+
     // Log and store performance metrics
     processPerformanceMetrics(metrics);
-    
-    // Call original end method
-    originalEnd.call(this, chunk, encoding);
+
+    // Call original end method and return its result
+    return originalEnd.call(this, chunk, encoding, cb);
   };
   
   next();

@@ -83,10 +83,10 @@ app.use(morgan('combined', {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Performance monitoring middleware
-app.use(performanceMonitoring);
-app.use(memoryMonitoring);
-app.use(databaseMonitoring);
+// Performance monitoring middleware (temporarily disabled)
+// app.use(performanceMonitoring);
+// app.use(memoryMonitoring);
+// app.use(databaseMonitoring);
 
 // Rate limiting
 app.use(generalRateLimit);
