@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://crm_user:crm_secure_password_2025@localhost:5432/crm_db',
+  connectionString: process.env.DATABASE_URL || 'postgresql://acs_user:acs_password@localhost:5432/acs_db',
 });
 
 const TEST_USERS = {
@@ -43,24 +43,25 @@ async function seedTestUsers() {
     
     // Insert test users
     await client.query(`
-      INSERT INTO users (id, name, username, email, "passwordHash", role, "roleId", "departmentId", "designationId", "employeeId", "isActive") VALUES 
-      ($1, $2, $3, $4, $5, $6, 1, 1, 1, 'EMP001', true),
-      ($7, $8, $9, $10, $11, $12, 3, 2, 3, 'EMP002', true),
-      ($13, $14, $15, $16, $17, $18, 2, 1, 2, 'EMP003', true)
+      INSERT INTO users (id, name, username, email, password, "passwordHash", role, "roleId", "departmentId", "designationId", "employeeId", "isActive") VALUES
+      ($1, $2, $3, $4, $5, $6, $7, 1, 1, 1, 'EMP001', true),
+      ($8, $9, $10, $11, $12, $13, $14, 3, 2, 3, 'EMP002', true),
+      ($15, $16, $17, $18, $19, $20, $21, 2, 1, 2, 'EMP003', true)
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         username = EXCLUDED.username,
         email = EXCLUDED.email,
+        password = EXCLUDED.password,
         "passwordHash" = EXCLUDED."passwordHash",
         role = EXCLUDED.role,
         "isActive" = true
     `, [
-      TEST_USERS.admin.id, TEST_USERS.admin.name, TEST_USERS.admin.username, 
-      TEST_USERS.admin.email, hashedPassword, TEST_USERS.admin.role,
+      TEST_USERS.admin.id, TEST_USERS.admin.name, TEST_USERS.admin.username,
+      TEST_USERS.admin.email, TEST_USERS.admin.password, hashedPassword, TEST_USERS.admin.role,
       TEST_USERS.fieldAgent.id, TEST_USERS.fieldAgent.name, TEST_USERS.fieldAgent.username,
-      TEST_USERS.fieldAgent.email, hashedPassword, TEST_USERS.fieldAgent.role,
+      TEST_USERS.fieldAgent.email, TEST_USERS.fieldAgent.password, hashedPassword, TEST_USERS.fieldAgent.role,
       TEST_USERS.manager.id, TEST_USERS.manager.name, TEST_USERS.manager.username,
-      TEST_USERS.manager.email, hashedPassword, TEST_USERS.manager.role
+      TEST_USERS.manager.email, TEST_USERS.manager.password, hashedPassword, TEST_USERS.manager.role
     ]);
     
     console.log('✅ Test users created successfully!');

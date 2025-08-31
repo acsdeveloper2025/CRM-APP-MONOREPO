@@ -232,15 +232,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // Make real API call to backend
-      // Auto-detect API URL based on platform
+      // Simple API URL selection based on platform
       const getApiBaseUrl = () => {
         // Check if running on physical device vs simulator/web
         const isPhysicalDevice = typeof window !== 'undefined' &&
           (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
 
         if (isPhysicalDevice) {
-          return import.meta.env.VITE_API_BASE_URL_DEVICE || 'http://172.20.10.8:3000/api';
+          // Use your Mac's IP for physical device
+          return import.meta.env.VITE_API_BASE_URL_DEVICE || 'http://192.168.1.36:3000/api';
         }
+        // Use localhost for simulator/web
         return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
       };
 
