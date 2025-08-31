@@ -18,6 +18,7 @@ import { UsersPage } from '@/pages/UsersPage';
 import { UserPermissionsPage } from '@/pages/UserPermissionsPage';
 import RoleManagementPage from '@/pages/RoleManagementPage';
 import { ReportsPage } from '@/pages/ReportsPage';
+import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { BillingPage } from '@/pages/BillingPage';
 import { LocationsPage } from '@/pages/LocationsPage';
 import { RealTimePage } from '@/pages/RealTimePage';
@@ -232,6 +233,18 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <ReportsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Analytics routes */}
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
+            <Layout>
+              <AnalyticsPage />
             </Layout>
           </ProtectedRoute>
         }

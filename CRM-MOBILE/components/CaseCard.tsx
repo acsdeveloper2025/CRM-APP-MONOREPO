@@ -495,7 +495,7 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
               {timestamp.value && <p className="text-xs text-gray-400 text-right shrink-0 ml-2">{`${timestamp.label}`}<br/>{`${timestamp.value}`}</p>}
           </div>
           <div className="flex justify-between items-center mt-1">
-            <p className="text-sm text-medium-text">{caseData.customer.name} - {caseData.id}</p>
+            <p className="text-sm text-medium-text">{caseData.customer.name} - #{caseData.caseId || caseData.id?.slice(-8)}</p>
             <div className="flex items-center gap-3">
               {/* Show attachment button for In Progress cases */}
               {caseData.status === CaseStatus.InProgress && (

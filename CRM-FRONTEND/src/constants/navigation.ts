@@ -188,6 +188,13 @@ export const navigationItems: NavigationItem[] = [
     permission: { resource: 'reports', action: 'read' },
     children: [
       {
+        id: 'analytics',
+        label: 'Analytics Dashboard',
+        href: '/analytics',
+        icon: BarChart3,
+        permission: { resource: 'reports', action: 'read' },
+      },
+      {
         id: 'bank-bills',
         label: 'Bank Bills',
         href: '/reports/bank-bills',

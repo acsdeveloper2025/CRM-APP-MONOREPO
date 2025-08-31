@@ -163,7 +163,7 @@ export const CaseTable: React.FC<CaseTableProps> = ({
         </TableHeader>
         <TableBody>
           {cases.map((caseItem) => (
-            <TableRow key={caseItem.caseId || caseItem.id}>
+            <TableRow key={caseItem.id}>
               <TableCell className="font-medium">
                 <Link
                   to={`/cases/${caseItem.id}`}
@@ -214,13 +214,13 @@ export const CaseTable: React.FC<CaseTableProps> = ({
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                      <Link to={`/cases/${caseItem.caseId || caseItem.id}`}>
+                      <Link to={`/cases/${caseItem.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to={`/cases/new?edit=${caseItem.caseId || caseItem.id}`}>
+                      <Link to={`/cases/new?edit=${caseItem.id}`}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Case
                       </Link>

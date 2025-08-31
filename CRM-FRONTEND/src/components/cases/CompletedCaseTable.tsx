@@ -148,7 +148,7 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
                   to={`/cases/${caseItem.id}`}
                   className="text-primary hover:underline"
                 >
-                  #{caseItem.id.slice(-8)}
+                  #{caseItem.caseId || caseItem.id?.slice(-8) || 'N/A'}
                 </Link>
               </TableCell>
               <TableCell>

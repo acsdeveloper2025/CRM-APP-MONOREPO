@@ -9,7 +9,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000
 
 // Backend case interface for API responses
 interface BackendCase {
-  caseId: number;
+  id: string; // UUID primary key
+  caseId: number; // Business identifier
   customerName: string;
   customerCallingCode?: string;
   customerPhone?: string;
@@ -72,7 +73,7 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
 
   return {
     // Core mobile app fields
-    id: `CASE-${backendCase.caseId}`, // Convert numeric ID to string format
+    id: backendCase.id, // Use the actual UUID from backend
     title: `${backendCase.verificationType || 'Verification'} - ${backendCase.customerName}`,
     description: `${backendCase.verificationType || 'Verification'} for ${backendCase.customerName}`,
     customer: {
