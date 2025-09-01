@@ -288,7 +288,9 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       pincode,
       priority = 'MEDIUM',
       trigger,
-      applicantType = 'APPLICANT'
+      applicantType = 'APPLICANT',
+      backendContactNumber,
+      assignedToId
     } = req.body;
 
     const insertQuery = `
@@ -296,8 +298,9 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
         "customerName", "customerPhone", "customerCallingCode",
         "clientId", "productId", "verificationTypeId",
         address, pincode, priority, trigger, "applicantType",
+        "backendContactNumber", "assignedTo",
         status, "createdByBackendUser", "createdAt", "updatedAt"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
       RETURNING *
     `;
 
@@ -313,6 +316,8 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       priority,
       trigger,
       applicantType,
+      backendContactNumber,
+      assignedToId,
       'PENDING',
       req.user?.id
     ];
