@@ -272,8 +272,10 @@ const UntraceableOfficeForm: React.FC<UntraceableOfficeFormProps> = ({ caseData 
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' : 
-                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' : 'PARTIAL',
+                            outcome: report.finalStatus === FinalStatusUntraceable.Negative ? 'NOT_VERIFIED' :
+                                    report.finalStatus === FinalStatusUntraceable.Fraud ? 'FRAUD' :
+                                    report.finalStatus === FinalStatusUntraceable.Refer ? 'REFER' :
+                                    report.finalStatus === FinalStatusUntraceable.Hold ? 'HOLD' : 'PARTIAL',
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };
