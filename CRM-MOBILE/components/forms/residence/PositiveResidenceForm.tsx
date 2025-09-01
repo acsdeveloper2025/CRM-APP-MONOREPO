@@ -518,10 +518,26 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
                             recommendationStatus: report.finalStatus === FinalStatus.Positive ? 'POSITIVE' : 'NEGATIVE'
                         };
 
-                        // Combine all images (regular + selfie)
+                        // Combine all images (regular + selfie) and ensure they have geoLocation property
+                        const migrateImageFormat = (img: CapturedImage): CapturedImage => {
+                            // If image has latitude/longitude but no geoLocation, migrate it
+                            if (img.latitude !== undefined && img.longitude !== undefined && !img.geoLocation) {
+                                return {
+                                    ...img,
+                                    geoLocation: {
+                                        latitude: img.latitude,
+                                        longitude: img.longitude,
+                                        accuracy: (img as any).accuracy,
+                                        timestamp: img.timestamp
+                                    }
+                                };
+                            }
+                            return img;
+                        };
+
                         const allImages = [
-                            ...(report.images || []),
-                            ...(report.selfieImages || [])
+                            ...(report.images || []).map(migrateImageFormat),
+                            ...(report.selfieImages || []).map(migrateImageFormat)
                         ];
 
                         // Get current location if available

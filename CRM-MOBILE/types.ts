@@ -460,6 +460,12 @@ export interface CapturedImage {
   longitude: number;
   timestamp: string;
   componentType?: 'photo' | 'selfie'; // Added to distinguish between regular photos and selfies for auto-save
+  geoLocation?: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+    timestamp?: string;
+  };
 }
 
 export interface Attachment {
