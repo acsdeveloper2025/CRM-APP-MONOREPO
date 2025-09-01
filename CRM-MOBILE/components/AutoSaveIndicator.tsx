@@ -1,6 +1,6 @@
 import React from 'react';
 import { AutoSaveStatus } from '../hooks/useAutoSave';
-import { CheckCircleIcon, ExclamationTriangleIcon, ArrowPathIcon } from './Icons';
+import { CheckCircle2Icon, ExclamationTriangleIcon, ArrowPathIcon } from './Icons';
 import Spinner from './Spinner';
 
 interface AutoSaveIndicatorProps {
@@ -53,7 +53,7 @@ const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
     if (lastSaved) {
       const timeAgo = getTimeAgo(lastSaved);
       return {
-        icon: <CheckCircleIcon width={16} height={16} className="text-green-400" />,
+        icon: <CheckCircle2Icon width={16} height={16} className="text-green-400" />,
         text: 'Saved',
         detail: `Last saved ${timeAgo}`,
         className: 'text-green-400 bg-green-900/20 border-green-500/30'
@@ -62,7 +62,7 @@ const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
 
     if (hasSavedData) {
       return {
-        icon: <CheckCircleIcon width={16} height={16} className="text-green-400" />,
+        icon: <CheckCircle2Icon width={16} height={16} className="text-green-400" />,
         text: 'Draft saved',
         detail: 'Previous draft available',
         className: 'text-green-400 bg-green-900/20 border-green-500/30'

@@ -7,6 +7,7 @@ import { CameraIcon, LogOutIcon, UserIcon } from '../components/Icons';
 import Modal from '../components/Modal';
 import ProfilePhotoCapture from '../components/ProfilePhotoCapture';
 import DataCleanupManager from '../components/DataCleanupManager';
+import { CompactVersionInfo } from '../components/VersionInfo';
 
 const ProfileScreen: React.FC = () => {
   const { user, logout, updateUserProfile } = useAuth();
@@ -106,6 +107,18 @@ const ProfileScreen: React.FC = () => {
               {showCleanupManager ? 'Hide Data Cleanup' : 'Data Cleanup Manager'}
             </Text>
           </TouchableOpacity>
+
+          {/* App Version Information */}
+          <View style={{
+            backgroundColor: '#1F2937',
+            padding: 16,
+            borderRadius: 8,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: '#374151'
+          }}>
+            <CompactVersionInfo />
+          </View>
 
           <TouchableOpacity
             onPress={logout}

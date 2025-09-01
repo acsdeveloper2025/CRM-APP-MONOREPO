@@ -70,6 +70,7 @@ app.use(cors({
     'X-Device-ID',
     'X-Device-Model',
     'X-OS-Version',
+    'X-Client-Type',
   ],
 }));
 

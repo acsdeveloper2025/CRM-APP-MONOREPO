@@ -7,6 +7,9 @@ import { MobileLocationController } from '../controllers/mobileLocationControlle
 import { MobileSyncController } from '../controllers/mobileSyncController';
 import { authenticateToken } from '../middleware/auth';
 import { validateMobileVersion, mobileRateLimit } from '../middleware/mobileValidation';
+import { createAuditLog } from '../controllers/auditLogsController';
+import { body } from 'express-validator';
+import { validate } from '../middleware/validation';
 
 const router = Router();
 
@@ -68,5 +71,38 @@ router.get('/location/trail', authenticateToken, validateMobileVersion, MobileLo
 router.post('/sync/upload', authenticateToken, validateMobileVersion, MobileSyncController.uploadSync);
 router.get('/sync/download', authenticateToken, validateMobileVersion, MobileSyncController.downloadSync);
 router.get('/sync/status', authenticateToken, validateMobileVersion, MobileSyncController.getSyncStatus);
+
+// Mobile Audit Routes
+const createAuditLogValidation = [
+  body('action')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Action is required and must be less than 100 characters'),
+  body('resource')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Resource is required and must be less than 100 characters'),
+  body('resourceId')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Resource ID must be less than 100 characters'),
+  body('details')
+    .optional(),
+  body('severity')
+    .optional()
+    .isIn(['INFO', 'WARN', 'ERROR', 'CRITICAL'])
+    .withMessage('Invalid severity'),
+  body('category')
+    .optional()
+    .isIn(['AUTHENTICATION', 'USER_MANAGEMENT', 'CASE_MANAGEMENT', 'CLIENT_MANAGEMENT', 'FILE_MANAGEMENT', 'FINANCIAL', 'SYSTEM', 'SECURITY', 'DATA_MANAGEMENT', 'REPORTING'])
+    .withMessage('Invalid category'),
+];
+
+router.post('/audit/logs', authenticateToken, validateMobileVersion, createAuditLogValidation, validate, createAuditLog);
+
+// Mobile Version Management Routes
+router.post('/version/check', authenticateToken, MobileAuthController.checkVersion);
+router.get('/version/config', authenticateToken, MobileAuthController.getAppConfig);
 
 export default router;

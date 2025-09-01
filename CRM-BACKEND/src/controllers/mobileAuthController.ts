@@ -270,21 +270,71 @@ export class MobileAuthController {
   // Check app version compatibility
   static async checkVersion(req: Request, res: Response) {
     try {
-      const { currentVersion, platform }: MobileVersionCheckRequest = req.body;
+      const { currentVersion, platform, buildNumber }: MobileVersionCheckRequest = req.body;
 
       const forceUpdate = MobileAuthController.shouldForceUpdate(currentVersion);
       const updateRequired = MobileAuthController.shouldUpdate(currentVersion);
+      const hasUpdate = forceUpdate || updateRequired;
+
+      // Enhanced release information
+      const releaseInfo = {
+        version: config.mobile.apiVersion,
+        releaseDate: '2025-09-01T00:00:00.000Z',
+        size: platform === 'IOS' ? '28.5 MB' : '32.1 MB',
+        releaseNotes: [
+          'Enhanced form submission with photo geo-tagging',
+          'Improved offline sync reliability',
+          'Better case status real-time updates',
+          'Performance optimizations for large datasets',
+          'Fixed location accuracy issues',
+          'Enhanced security with biometric authentication'
+        ].join('\n'),
+        features: [
+          'Real-time case status synchronization',
+          'Enhanced photo gallery with geo-location',
+          'Improved search and filtering capabilities',
+          'Better offline mode support',
+          'Enhanced security features'
+        ],
+        bugFixes: [
+          'Fixed case acceptance not updating status',
+          'Resolved CORS issues with API calls',
+          'Fixed audit log creation errors',
+          'Improved location tracking accuracy',
+          'Fixed form validation edge cases'
+        ],
+        urgent: forceUpdate,
+        critical: forceUpdate
+      };
 
       const response: MobileVersionCheckResponse = {
-        updateRequired,
+        success: true,
+        updateRequired: hasUpdate,
         forceUpdate,
+        urgent: forceUpdate,
         latestVersion: config.mobile.apiVersion,
-        downloadUrl: platform === 'IOS' 
-          ? 'https://apps.apple.com/app/caseflow' 
+        currentVersion,
+        downloadUrl: platform === 'IOS'
+          ? 'https://apps.apple.com/app/caseflow'
           : 'https://play.google.com/store/apps/details?id=com.caseflow',
-        releaseNotes: 'Bug fixes and performance improvements',
-        features: ['Enhanced security', 'Improved offline sync', 'Better performance'],
+        releaseNotes: releaseInfo.releaseNotes,
+        features: releaseInfo.features,
+        bugFixes: releaseInfo.bugFixes,
+        size: releaseInfo.size,
+        releaseDate: releaseInfo.releaseDate,
+        buildNumber,
+        checkTimestamp: new Date().toISOString(),
       };
+
+      // Log version check for analytics
+      console.log(`📱 Version check: ${currentVersion} -> ${config.mobile.apiVersion} (${platform})`, {
+        currentVersion,
+        latestVersion: config.mobile.apiVersion,
+        platform,
+        buildNumber,
+        updateRequired: hasUpdate,
+        forceUpdate,
+      });
 
       res.json(response);
     } catch (error) {

@@ -30,11 +30,11 @@ const defaultConfig: EnvironmentConfig = {
   },
   nominatim: {
     baseUrl: 'https://nominatim.openstreetmap.org',
-    userAgent: 'CaseFlow-Mobile/2.1.0'
+    userAgent: 'CaseFlow-Mobile/4.0.0'
   },
   app: {
     environment: 'development',
-    version: '2.1.0'
+    version: '4.0.0'
   }
 };
 

@@ -422,14 +422,23 @@ export interface MobileAutoSaveResponse {
 
 export interface MobileVersionCheckRequest {
   currentVersion: string;
-  platform: 'IOS' | 'ANDROID';
+  platform: 'IOS' | 'ANDROID' | 'WEB';
+  buildNumber?: string;
 }
 
 export interface MobileVersionCheckResponse {
+  success: boolean;
   updateRequired: boolean;
   forceUpdate: boolean;
+  urgent?: boolean;
   latestVersion: string;
-  downloadUrl?: string;
-  releaseNotes?: string;
-  features?: string[];
+  currentVersion: string;
+  downloadUrl: string;
+  releaseNotes: string;
+  features: string[];
+  bugFixes?: string[];
+  size?: string;
+  releaseDate?: string;
+  buildNumber?: string;
+  checkTimestamp: string;
 }

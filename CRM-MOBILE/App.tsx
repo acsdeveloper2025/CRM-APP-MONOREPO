@@ -8,6 +8,7 @@ import { ResponsiveLayoutProvider } from './components/ResponsiveLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthStatusIndicator from './components/AuthStatusIndicator';
 import ReauthModal from './components/ReauthModal';
+import { UpdateManager } from './components/UpdateNotification';
 import { View } from 'react-native';
 import { googleMapsService } from './services/googleMapsService';
 import { validateEnvironmentConfig, getEnvironmentConfig } from './config/environment';
@@ -182,7 +183,9 @@ const App: React.FC = () => {
             <ResponsiveLayoutProvider>
               <AuthProvider>
                 <CaseProvider>
-                  <AppNavigator />
+                  <UpdateManager>
+                    <AppNavigator />
+                  </UpdateManager>
                 </CaseProvider>
               </AuthProvider>
             </ResponsiveLayoutProvider>

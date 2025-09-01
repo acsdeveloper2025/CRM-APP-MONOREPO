@@ -208,8 +208,8 @@ export class MobileCaseController {
       const where: any = { id: caseId };
       
       // Role-based access control
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
+      if (userRole === 'FIELD_AGENT') {
+        where.assignedTo = userId;
       }
 
       const vals2: any[] = [caseId];
@@ -352,13 +352,13 @@ export class MobileCaseController {
       const where: any = { id: caseId };
       
       // Role-based access control
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
+      if (userRole === 'FIELD_AGENT') {
+        where.assignedTo = userId;
       }
 
       const vals3: any[] = [caseId];
-      let exSql = `SELECT id, status, notes, completedAt FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') { exSql += ` AND "assignedToId" = $2`; vals3.push(userId); }
+      let exSql = `SELECT id, status, notes, "completedAt" FROM cases WHERE id = $1`;
+      if (userRole === 'FIELD_AGENT') { exSql += ` AND "assignedTo" = $2`; vals3.push(userId); }
       const exRes = await query(exSql, vals3);
       const existingCase = exRes.rows[0];
       if (!existingCase) {
@@ -415,7 +415,7 @@ export class MobileCaseController {
       const userId = (req as any).user?.userId;
       const userRole = (req as any).user?.role;
 
-      if (userRole === 'FIELD') {
+      if (userRole === 'FIELD_AGENT') {
         return res.status(403).json({
           success: false,
           message: 'Insufficient permissions to update priority',
@@ -428,7 +428,7 @@ export class MobileCaseController {
 
       const vals6: any[] = [caseId];
       let exSql4 = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') { exSql4 += ` AND "assignedToId" = $2`; vals6.push(userId); }
+      if (userRole === 'FIELD_AGENT') { exSql4 += ` AND "assignedTo" = $2`; vals6.push(userId); }
       const exRes4 = await query(exSql4, vals6);
       const existingCase = exRes4.rows[0];
       if (!existingCase) {
@@ -493,13 +493,13 @@ export class MobileCaseController {
       const where: any = { id: caseId };
       
       // Role-based access control
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
+      if (userRole === 'FIELD_AGENT') {
+        where.assignedTo = userId;
       }
 
       const vals5: any[] = [caseId];
       let exSql3 = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') { exSql3 += ` AND "assignedToId" = $2`; vals5.push(userId); }
+      if (userRole === 'FIELD_AGENT') { exSql3 += ` AND "assignedTo" = $2`; vals5.push(userId); }
       const exRes3 = await query(exSql3, vals5);
       const existingCase = exRes3.rows[0];
       if (!existingCase) {
@@ -550,13 +550,13 @@ export class MobileCaseController {
       const where: any = { id: caseId };
       
       // Role-based access control
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
+      if (userRole === 'FIELD_AGENT') {
+        where.assignedTo = userId;
       }
 
       const vals7: any[] = [caseId];
       let exSql5 = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') { exSql5 += ` AND "assignedToId" = $2`; vals7.push(userId); }
+      if (userRole === 'FIELD_AGENT') { exSql5 += ` AND "assignedTo" = $2`; vals7.push(userId); }
       const exRes5 = await query(exSql5, vals7);
       const existingCase = exRes5.rows[0];
 
