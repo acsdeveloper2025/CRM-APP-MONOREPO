@@ -197,7 +197,16 @@ export const DeduplicationDialog: React.FC<DeduplicationDialogProps> = ({
                       </div>
                     </div>
                     
-                    <Button variant="ghost" size="sm" className="ml-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(`/cases/${duplicate.id}`, '_blank');
+                      }}
+                      title="View case details in new tab"
+                    >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                   </div>

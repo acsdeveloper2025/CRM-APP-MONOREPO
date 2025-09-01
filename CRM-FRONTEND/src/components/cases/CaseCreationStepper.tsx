@@ -267,11 +267,39 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
     }
   };
 
-  const handleUseExistingFromDialog = (caseId: string, rationale: string) => {
-    toast.success(`Redirecting to existing case: ${caseId}`);
-    setShowDeduplicationDialog(false);
-    setDeduplicationResult(null);
-    onCancel?.();
+  const handleUseExistingFromDialog = async (caseId: string, rationale: string) => {
+    try {
+      // Record the deduplication decision
+      if (deduplicationResult && customerInfo) {
+        const decision = {
+          caseId: 'NEW_CASE_PLACEHOLDER', // This will be updated by the backend
+          decision: 'USE_EXISTING' as const,
+          rationale,
+          selectedExistingCaseId: caseId
+        };
+
+        await deduplicationService.recordDeduplicationDecision(
+          decision,
+          deduplicationResult.duplicatesFound,
+          deduplicationResult.searchCriteria
+        );
+      }
+
+      toast.success(`Redirecting to existing case: ${caseId}`);
+      setShowDeduplicationDialog(false);
+      setDeduplicationResult(null);
+
+      // Navigate to the existing case instead of canceling
+      onSuccess?.(caseId);
+    } catch (error) {
+      console.error('Error recording deduplication decision:', error);
+      toast.error('Failed to record decision, but redirecting to case anyway');
+
+      // Still navigate even if recording fails
+      setShowDeduplicationDialog(false);
+      setDeduplicationResult(null);
+      onSuccess?.(caseId);
+    }
   };
 
   return (
