@@ -335,3 +335,304 @@ export const getPerformanceMetrics = async (req: AuthenticatedRequest, res: Resp
     });
   }
 };
+
+// GET /api/dashboard/stats - Get dashboard statistics
+export const getDashboardStats = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { period = 'month', clientId, userId } = req.query;
+
+    // Calculate date range based on period
+    const now = new Date();
+    let startDate: Date;
+
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'quarter':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default: // month
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+    }
+
+    // Get comprehensive statistics from database
+    const statsQuery = `
+      SELECT
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1) as "totalCases",
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'PENDING') as "pendingCases",
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'IN_PROGRESS') as "inProgressCases",
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND (status = 'COMPLETED' OR status = 'APPROVED')) as "completedCases",
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'REJECTED') as "rejectedCases",
+        (SELECT COUNT(*) FROM clients WHERE "isActive" = true) as "totalClients",
+        (SELECT COUNT(*) FROM users WHERE "isActive" = true) as "activeUsers",
+        (SELECT AVG(EXTRACT(EPOCH FROM ("completedAt" - "createdAt")) / 86400)
+         FROM cases
+         WHERE "completedAt" IS NOT NULL AND "createdAt" >= $1) as "avgTurnaroundDays"
+    `;
+
+    const result = await pool.query(statsQuery, [startDate]);
+    const stats = result.rows[0];
+
+    const totalCases = parseInt(stats.totalCases) || 0;
+    const completedCases = parseInt(stats.completedCases) || 0;
+
+    const dashboardStats = {
+      period,
+      dateRange: {
+        start: startDate.toISOString(),
+        end: now.toISOString(),
+      },
+      stats: {
+        totalCases,
+        pendingCases: parseInt(stats.pendingCases) || 0,
+        inProgressCases: parseInt(stats.inProgressCases) || 0,
+        completedCases,
+        rejectedCases: parseInt(stats.rejectedCases) || 0,
+        totalClients: parseInt(stats.totalClients) || 0,
+        activeUsers: parseInt(stats.activeUsers) || 0,
+        completionRate: totalCases > 0 ? Math.round((completedCases / totalCases) * 100) : 0,
+        avgTurnaroundDays: Math.round((parseFloat(stats.avgTurnaroundDays) || 0) * 100) / 100,
+      },
+    };
+
+    logger.info('Dashboard stats retrieved', {
+      userId: req.user?.id,
+      period,
+      totalCases,
+    });
+
+    res.json({
+      success: true,
+      data: dashboardStats,
+      message: 'Dashboard statistics retrieved successfully',
+    });
+  } catch (error) {
+    logger.error('Error retrieving dashboard stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve dashboard statistics',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// GET /api/dashboard/case-status-distribution - Get case status distribution
+export const getCaseStatusDistribution = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { period = 'month', clientId, userId } = req.query;
+
+    // Calculate date range based on period
+    const now = new Date();
+    let startDate: Date;
+
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'quarter':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default: // month
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+    }
+
+    // Build query with filters
+    let statusQuery = `
+      SELECT
+        status,
+        COUNT(*) as count,
+        ROUND((COUNT(*) * 100.0 / SUM(COUNT(*)) OVER()), 2) as percentage
+      FROM cases
+      WHERE "createdAt" >= $1
+    `;
+    const queryParams: any[] = [startDate];
+    let paramIndex = 2;
+
+    if (clientId) {
+      statusQuery += ` AND "clientId" = $${paramIndex}`;
+      queryParams.push(parseInt(clientId as string));
+      paramIndex++;
+    }
+
+    if (userId) {
+      statusQuery += ` AND "assignedTo" = $${paramIndex}`;
+      queryParams.push(parseInt(userId as string));
+      paramIndex++;
+    }
+
+    statusQuery += ` GROUP BY status ORDER BY count DESC`;
+
+    const result = await pool.query(statusQuery, queryParams);
+
+    const distribution = result.rows.map(row => ({
+      status: row.status,
+      count: parseInt(row.count),
+      percentage: parseFloat(row.percentage),
+    }));
+
+    // Calculate totals
+    const totalCases = distribution.reduce((sum, item) => sum + item.count, 0);
+
+    logger.info('Case status distribution retrieved', {
+      userId: req.user?.id,
+      period,
+      totalCases,
+      statusTypes: distribution.length,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        period,
+        dateRange: {
+          start: startDate.toISOString(),
+          end: now.toISOString(),
+        },
+        distribution,
+        totalCases,
+      },
+      message: 'Case status distribution retrieved successfully',
+    });
+  } catch (error) {
+    logger.error('Error retrieving case status distribution:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve case status distribution',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// GET /api/dashboard/monthly-trends - Get monthly trends data
+export const getMonthlyTrends = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { months = 6, clientId, userId } = req.query;
+    const monthsCount = parseInt(months as string);
+
+    // Calculate start date based on months parameter
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - monthsCount + 1, 1);
+
+    // Build query with filters
+    let trendsQuery = `
+      SELECT
+        DATE_TRUNC('month', "createdAt") as month,
+        COUNT(*) as "totalCases",
+        COUNT(CASE WHEN status = 'COMPLETED' OR status = 'APPROVED' THEN 1 END) as "completedCases",
+        COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as "pendingCases",
+        COUNT(CASE WHEN status = 'IN_PROGRESS' THEN 1 END) as "inProgressCases",
+        COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) as "rejectedCases",
+        AVG(CASE
+          WHEN "completedAt" IS NOT NULL
+          THEN EXTRACT(EPOCH FROM ("completedAt" - "createdAt")) / 86400
+        END) as "avgTurnaroundDays"
+      FROM cases
+      WHERE "createdAt" >= $1
+    `;
+    const queryParams: any[] = [startDate];
+    let paramIndex = 2;
+
+    if (clientId) {
+      trendsQuery += ` AND "clientId" = $${paramIndex}`;
+      queryParams.push(parseInt(clientId as string));
+      paramIndex++;
+    }
+
+    if (userId) {
+      trendsQuery += ` AND "assignedTo" = $${paramIndex}`;
+      queryParams.push(parseInt(userId as string));
+      paramIndex++;
+    }
+
+    trendsQuery += `
+      GROUP BY DATE_TRUNC('month', "createdAt")
+      ORDER BY month ASC
+    `;
+
+    const result = await pool.query(trendsQuery, queryParams);
+
+    const trends = result.rows.map(row => {
+      const totalCases = parseInt(row.totalCases);
+      const completedCases = parseInt(row.completedCases);
+
+      return {
+        month: row.month,
+        monthName: new Date(row.month).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long'
+        }),
+        totalCases,
+        completedCases: parseInt(row.completedCases),
+        pendingCases: parseInt(row.pendingCases),
+        inProgressCases: parseInt(row.inProgressCases),
+        rejectedCases: parseInt(row.rejectedCases),
+        completionRate: totalCases > 0 ? Math.round((completedCases / totalCases) * 100) : 0,
+        avgTurnaroundDays: Math.round((parseFloat(row.avgTurnaroundDays) || 0) * 100) / 100,
+      };
+    });
+
+    // Fill in missing months with zero data
+    const completeMonths = [];
+    for (let i = 0; i < monthsCount; i++) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const existingData = trends.find(t =>
+        new Date(t.month).getMonth() === monthDate.getMonth() &&
+        new Date(t.month).getFullYear() === monthDate.getFullYear()
+      );
+
+      if (existingData) {
+        completeMonths.unshift(existingData);
+      } else {
+        completeMonths.unshift({
+          month: monthDate.toISOString(),
+          monthName: monthDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long'
+          }),
+          totalCases: 0,
+          completedCases: 0,
+          pendingCases: 0,
+          inProgressCases: 0,
+          rejectedCases: 0,
+          completionRate: 0,
+          avgTurnaroundDays: 0,
+        });
+      }
+    }
+
+    logger.info('Monthly trends retrieved', {
+      userId: req.user?.id,
+      months: monthsCount,
+      dataPoints: completeMonths.length,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        months: monthsCount,
+        dateRange: {
+          start: startDate.toISOString(),
+          end: now.toISOString(),
+        },
+        trends: completeMonths,
+      },
+      message: 'Monthly trends retrieved successfully',
+    });
+  } catch (error) {
+    logger.error('Error retrieving monthly trends:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve monthly trends',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};

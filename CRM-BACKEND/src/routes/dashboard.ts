@@ -6,7 +6,10 @@ import {
   getDashboardData,
   getChartData,
   getRecentActivities,
-  getPerformanceMetrics
+  getPerformanceMetrics,
+  getDashboardStats,
+  getCaseStatusDistribution,
+  getMonthlyTrends
 } from '@/controllers/dashboardController';
 
 const router = express.Router();
@@ -86,33 +89,36 @@ router.get('/charts',
   getChartData
 );
 
-// TODO: Implement remaining dashboard functions
-// router.get('/stats',
-//   authenticateToken,
-//   dashboardQueryValidation,
-//   validate,
-//   getDashboardStats
-// );
+// Dashboard statistics
+router.get('/stats',
+  authenticateToken,
+  dashboardQueryValidation,
+  validate,
+  getDashboardStats
+);
 
-// router.get('/case-status-distribution',
-//   authenticateToken,
-//   dashboardQueryValidation,
-//   validate,
-//   getCaseStatusDistribution
-// );
+// Case status distribution
+router.get('/case-status-distribution',
+  authenticateToken,
+  dashboardQueryValidation,
+  validate,
+  getCaseStatusDistribution
+);
 
+// Monthly trends
+router.get('/monthly-trends',
+  authenticateToken,
+  monthlyTrendsValidation,
+  validate,
+  getMonthlyTrends
+);
+
+// TODO: Implement client stats
 // router.get('/client-stats',
 //   authenticateToken,
 //   dashboardQueryValidation,
 //   validate,
 //   getClientStats
-// );
-
-// router.get('/monthly-trends',
-//   authenticateToken,
-//   monthlyTrendsValidation,
-//   validate,
-//   getMonthlyTrends
 // );
 
 router.get('/recent-activities', 
