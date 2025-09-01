@@ -1,9 +1,11 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useResponsive } from '@/hooks/useResponsive';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { PermissionProtectedRoute } from '@/components/auth/PermissionProtectedRoute';
 import { Layout } from '@/components/layout/Layout';
+import { MobileApp } from '@/components/mobile/MobileApp';
 
 // Import all page components
 import { LoginPage } from '@/pages/LoginPage';
@@ -35,6 +37,7 @@ import { RateManagementPage } from '@/pages/RateManagementPage';
 // Default route component that handles authentication-based redirects
 const DefaultRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const { isMobile, isTouchDevice } = useResponsive();
 
   if (isLoading) {
     return (
@@ -42,6 +45,11 @@ const DefaultRoute: React.FC = () => {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  // Redirect to mobile app for mobile devices
+  if (isAuthenticated && (isMobile || isTouchDevice)) {
+    return <Navigate to="/mobile" replace />;
   }
 
   return <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />;
@@ -54,6 +62,16 @@ export const AppRoutes: React.FC = () => {
 
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Mobile app route */}
+      <Route
+        path="/mobile"
+        element={
+          <ProtectedRoute>
+            <MobileApp />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected routes with layout */}
       <Route
