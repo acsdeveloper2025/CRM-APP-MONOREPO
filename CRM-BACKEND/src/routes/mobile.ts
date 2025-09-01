@@ -47,6 +47,13 @@ router.delete('/attachments/:attachmentId', authenticateToken, validateMobileVer
 // Mobile Form Submission Routes
 router.post('/cases/:caseId/verification/residence', authenticateToken, validateMobileVersion, MobileFormController.submitResidenceVerification);
 router.post('/cases/:caseId/verification/office', authenticateToken, validateMobileVersion, MobileFormController.submitOfficeVerification);
+router.post('/cases/:caseId/verification/business', authenticateToken, validateMobileVersion, MobileFormController.submitBusinessVerification);
+router.post('/cases/:caseId/verification/builder', authenticateToken, validateMobileVersion, MobileFormController.submitBuilderVerification);
+router.post('/cases/:caseId/verification/residence-cum-office', authenticateToken, validateMobileVersion, MobileFormController.submitResidenceCumOfficeVerification);
+router.post('/cases/:caseId/verification/dsa-connector', authenticateToken, validateMobileVersion, MobileFormController.submitDsaConnectorVerification);
+router.post('/cases/:caseId/verification/property-individual', authenticateToken, validateMobileVersion, MobileFormController.submitPropertyIndividualVerification);
+router.post('/cases/:caseId/verification/property-apf', authenticateToken, validateMobileVersion, MobileFormController.submitPropertyApfVerification);
+router.post('/cases/:caseId/verification/noc', authenticateToken, validateMobileVersion, MobileFormController.submitNocVerification);
 router.get('/forms/:formType/template', authenticateToken, validateMobileVersion, MobileFormController.getFormTemplate);
 
 // Mobile Location Services Routes

@@ -12,6 +12,7 @@ import SelfieCapture from '../../SelfieCapture';
 import PermissionStatus from '../../PermissionStatus';
 import AutoSaveFormWrapper from '../../AutoSaveFormWrapper';
 import { FORM_TYPES } from '../../../constants/formTypes';
+import VerificationFormService from '../../../services/verificationFormService';
 import {
   createImageChangeHandler,
   createSelfieImageChangeHandler,

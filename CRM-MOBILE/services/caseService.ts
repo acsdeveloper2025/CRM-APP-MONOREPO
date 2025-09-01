@@ -324,17 +324,33 @@ class CaseService {
         lastSubmissionAttempt: new Date().toISOString()
       });
 
-      // Simulate network request with potential failure
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Simulate 20% failure rate for testing
-          if (Math.random() < 0.2) {
-            reject(new Error('Network timeout - please check your connection and try again'));
-          } else {
-            resolve(true);
-          }
-        }, 2000); // Simulate network latency
-      });
+      // Get the case data to determine verification type and form data
+      const caseData = await this.getCase(id);
+      if (!caseData) {
+        throw new Error('Case not found');
+      }
+
+      // Check if this is a real API submission or mock mode
+      if (!this.useRealAPI) {
+        // Mock mode - simulate network request with potential failure
+        await new Promise((resolve, reject) => {
+          setTimeout(() => {
+            // Simulate 20% failure rate for testing
+            if (Math.random() < 0.2) {
+              reject(new Error('Network timeout - please check your connection and try again'));
+            } else {
+              resolve(true);
+            }
+          }, 2000); // Simulate network latency
+        });
+      } else {
+        // Real API mode - this method is now deprecated in favor of VerificationFormService
+        // The actual submission should be handled by the form components using VerificationFormService
+        console.warn('submitCase is deprecated. Use VerificationFormService for form submission.');
+
+        // For backward compatibility, we'll just update the status
+        // The actual verification submission should be done through the form components
+      }
 
       // Mark as successfully submitted
       await this.updateCase(id, {
