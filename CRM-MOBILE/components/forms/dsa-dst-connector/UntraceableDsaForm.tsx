@@ -10,6 +10,7 @@ import SelfieCapture from '../../SelfieCapture';
 import PermissionStatus from '../../PermissionStatus';
 import AutoSaveFormWrapper from '../../AutoSaveFormWrapper';
 import { FORM_TYPES } from '../../../constants/formTypes';
+import VerificationFormService from '../../../services/verificationFormService';
 import {
   createImageChangeHandler,
   createSelfieImageChangeHandler,
@@ -30,6 +31,8 @@ const getEnumOptions = (enumObject: object) => Object.values(enumObject).map(val
 const UntraceableDsaForm: React.FC<UntraceableDsaFormProps> = ({ caseData }) => {
   const { updateUntraceableDsaReport, updateCaseStatus, toggleSaveCase } = useCases();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const report = caseData.untraceableDsaReport;
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
@@ -242,31 +245,94 @@ const UntraceableDsaForm: React.FC<UntraceableDsaFormProps> = ({ caseData }) => 
             <div className="mt-6">
                 <button 
                     onClick={() => setIsConfirmModalOpen(true)}
-                    disabled={!isFormValid}
+                    disabled={!isFormValid || isSubmitting}
                     className="w-full px-6 py-3 text-sm font-semibold rounded-md bg-brand-primary hover:bg-brand-secondary text-white transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
-                >
-                    Submit
-                </button>
-                {!isFormValid && <p className="text-xs text-red-400 text-center mt-2">Please fill all fields and capture at least {MIN_IMAGES} photos to submit.</p>}
+                >{isSubmitting ? 'Submitting...' : 'Submit'}</button>
+                {!isFormValid && <p className="text-xs text-red-400 text-center mt-2">Please fill all required fields and capture at least {MIN_IMAGES} photos to submit.</p>}
+                {submissionError && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-red-600 text-sm">{submissionError}</p>
+                    </div>
+                )}
             </div>
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
-                onClose={() => setIsConfirmModalOpen(false)}
+                onClose={() => {
+                    setIsConfirmModalOpen(false);
+                    setSubmissionError(null);
+                }}
                 onSave={() => {
                     toggleSaveCase(caseData.id, true);
                     setIsConfirmModalOpen(false);
                 }}
-                onConfirm={() => {
-                    updateCaseStatus(caseData.id, CaseStatus.Completed);
-                    setIsConfirmModalOpen(false);
+                onConfirm={async () => {
+                    setIsSubmitting(true);
+                    setSubmissionError(null);
+                    
+                    try {
+                        // Prepare form data for submission
+                        const formData = {
+                            outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' : 
+                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' : 'PARTIAL',
+                            remarks: report.otherObservation || '',
+                            ...report // Include all report data
+                        };
+
+                        // Combine all images (regular + selfie)
+                        const allImages = [
+                            ...(report.images || []),
+                            ...(report.selfieImages || [])
+                        ];
+
+                        // Get current location if available
+                        const geoLocation = report.images?.[0]?.geoLocation ? {
+                            latitude: report.images[0].geoLocation.latitude,
+                            longitude: report.images[0].geoLocation.longitude,
+                            accuracy: report.images[0].geoLocation.accuracy
+                        } : undefined;
+
+                        // Submit verification form to backend
+                        const result = await VerificationFormService.submitDsaConnectorVerification(
+                            caseData.id,
+                            formData,
+                            allImages,
+                            geoLocation
+                        );
+
+                        if (result.success) {
+                            // Update local case status
+                            updateCaseStatus(caseData.id, CaseStatus.Completed);
+                            
+                            // Mark auto-save as completed
+                            if ((window as any).markAutoSaveFormCompleted) {
+                                (window as any).markAutoSaveFormCompleted();
+                            }
+                            
+                            setIsConfirmModalOpen(false);
+                            console.log('✅ Dsa dst-connector verification submitted successfully');
+                        } else {
+                            setSubmissionError(result.error || 'Failed to submit verification form');
+                        }
+                    } catch (error) {
+                        console.error('❌ Verification submission error:', error);
+                        setSubmissionError(error instanceof Error ? error.message : 'Unknown error occurred');
+                    } finally {
+                        setIsSubmitting(false);
+                    }
                 }}
                 title="Submit or Save Case"
-                confirmText="Submit Case"
+                confirmText={isSubmitting ? "Submitting..." : "Submit Case"}
                 saveText="Save for Offline"
             >
-                <p className="text-medium-text">
-                    You can submit the case to mark it as complete, or save it for offline access if you have a poor internet connection.
-                </p>
+                <div className="text-medium-text">
+                    <p>You can submit the case to mark it as complete, or save it for offline access if you have a poor internet connection.</p>
+                    {submissionError && (
+                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                            <p className="text-red-600 text-sm font-medium">Submission Error:</p>
+                            <p className="text-red-600 text-sm">{submissionError}</p>
+                        </div>
+                    )}
+                </div>
             </ConfirmationModal>
           </>
       )}
