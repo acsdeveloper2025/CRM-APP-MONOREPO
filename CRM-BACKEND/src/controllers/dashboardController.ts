@@ -370,9 +370,9 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'REJECTED') as "rejectedCases",
         (SELECT COUNT(*) FROM clients WHERE "isActive" = true) as "totalClients",
         (SELECT COUNT(*) FROM users WHERE "isActive" = true) as "activeUsers",
-        (SELECT AVG(EXTRACT(EPOCH FROM ("completedAt" - "createdAt")) / 86400)
+        (SELECT AVG(EXTRACT(EPOCH FROM ("updatedAt" - "createdAt")) / 86400)
          FROM cases
-         WHERE "completedAt" IS NOT NULL AND "createdAt" >= $1) as "avgTurnaroundDays"
+         WHERE status IN ('COMPLETED', 'APPROVED') AND "createdAt" >= $1) as "avgTurnaroundDays"
     `;
 
     const result = await pool.query(statsQuery, [startDate]);
@@ -532,8 +532,8 @@ export const getMonthlyTrends = async (req: AuthenticatedRequest, res: Response)
         COUNT(CASE WHEN status = 'IN_PROGRESS' THEN 1 END) as "inProgressCases",
         COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) as "rejectedCases",
         AVG(CASE
-          WHEN "completedAt" IS NOT NULL
-          THEN EXTRACT(EPOCH FROM ("completedAt" - "createdAt")) / 86400
+          WHEN status IN ('COMPLETED', 'APPROVED')
+          THEN EXTRACT(EPOCH FROM ("updatedAt" - "createdAt")) / 86400
         END) as "avgTurnaroundDays"
       FROM cases
       WHERE "createdAt" >= $1

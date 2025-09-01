@@ -175,11 +175,11 @@ export const DashboardPage: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <CaseStatusChart
-          data={caseDistributionData?.data || mockCaseDistribution}
+          data={caseDistributionData?.data?.distribution || mockCaseDistribution}
           isLoading={distributionLoading}
         />
         <MonthlyTrendsChart
-          data={trendsData?.data || mockTrends}
+          data={trendsData?.data?.trends || mockTrends}
           isLoading={trendsLoading}
         />
       </div>
