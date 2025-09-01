@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Case, UntraceableBusinessReportData, CallRemarkUntraceable, LocalityTypeResiCumOffice, DominatedArea, FinalStatusUntraceable, CaseStatus, CapturedImage
+  Case, UntraceableBusinessReportData, CallRemarkUntraceable, LocalityTypeResiCumOffice, DominatedArea, FinalStatus, CaseStatus, CapturedImage
 } from '../../../types';
 import { useCases } from '../../../context/CaseContext';
 import { FormField, SelectField, TextAreaField } from '../../FormControls';
@@ -12,12 +12,7 @@ import AutoSaveFormWrapper from '../../AutoSaveFormWrapper';
 import { FORM_TYPES } from '../../../constants/formTypes';
 import VerificationFormService from '../../../services/verificationFormService';
 import {
-  createImageChangeHandler,
-  createSelfieImageChangeHandler,
-  createAutoSaveImagesChangeHandler,
-  combineImagesForAutoSave,
-  createFormDataChangeHandler,
-  createDataRestoredHandler
+  combineImagesForAutoSave
 } from '../../../utils/imageAutoSaveHelpers';
 
 interface UntraceableBusinessFormProps {
@@ -79,7 +74,7 @@ const UntraceableBusinessForm: React.FC<UntraceableBusinessFormProps> = ({ caseD
     ];
     if (!checkFields(baseFields)) return false;
 
-    if (report.finalStatus === FinalStatusUntraceable.Hold) {
+    if (report.finalStatus === FinalStatus.Hold) {
         if (!report.holdReason || report.holdReason.trim() === '') return false;
     }
 
@@ -110,7 +105,7 @@ const UntraceableBusinessForm: React.FC<UntraceableBusinessFormProps> = ({ caseD
     callRemark: getEnumOptions(CallRemarkUntraceable),
     localityType: getEnumOptions(LocalityTypeResiCumOffice),
     dominatedArea: getEnumOptions(DominatedArea),
-    finalStatus: getEnumOptions(FinalStatusUntraceable),
+    finalStatus: getEnumOptions(FinalStatus),
   }), []);
 
   return (
@@ -213,7 +208,7 @@ const UntraceableBusinessForm: React.FC<UntraceableBusinessFormProps> = ({ caseD
           <option value="">Select...</option>
           {options.finalStatus}
         </SelectField>
-        {report.finalStatus === FinalStatusUntraceable.Hold && (
+        {report.finalStatus === FinalStatus.Hold && (
           <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />
         )}
       </div>
@@ -272,10 +267,10 @@ const UntraceableBusinessForm: React.FC<UntraceableBusinessFormProps> = ({ caseD
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatusUntraceable.Negative ? 'NOT_VERIFIED' :
-                                    report.finalStatus === FinalStatusUntraceable.Fraud ? 'FRAUD' :
-                                    report.finalStatus === FinalStatusUntraceable.Refer ? 'REFER' :
-                                    report.finalStatus === FinalStatusUntraceable.Hold ? 'HOLD' : 'PARTIAL',
+                            outcome: report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
+                                    report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
+                                    report.finalStatus === FinalStatus.Refer ? 'REFER' :
+                                    report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };

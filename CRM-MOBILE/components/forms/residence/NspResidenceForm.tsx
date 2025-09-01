@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   Case, NspResidenceReportData, AddressLocatable, AddressRating, HouseStatus, MetPersonStatusShifted as MetPersonStatusNsp,
   TPCMetPerson, LocalityType, SightStatus, PoliticalConnection, DominatedArea,
-  FeedbackFromNeighbour, FinalStatusShifted as FinalStatusNsp, CaseStatus, CapturedImage
+  FeedbackFromNeighbour, FinalStatus, CaseStatus, CapturedImage
 } from '../../../types';
 import { useCases } from '../../../context/CaseContext';
 import { FormField, SelectField, TextAreaField, NumberDropdownField } from '../../FormControls';
@@ -121,7 +121,7 @@ const NspResidenceForm: React.FC<NspResidenceFormProps> = ({ caseData }) => {
         if (!report.nameOnSocietyBoard || report.nameOnSocietyBoard.trim() === '') return false;
     }
 
-    if (report.finalStatus === FinalStatusNsp.Hold) {
+    if (report.finalStatus === FinalStatus.Hold) {
         if (!report.holdReason || report.holdReason.trim() === '') return false;
     }
 
@@ -187,7 +187,7 @@ const NspResidenceForm: React.FC<NspResidenceFormProps> = ({ caseData }) => {
     politicalConnection: getEnumOptions(PoliticalConnection),
     dominatedArea: getEnumOptions(DominatedArea),
     feedbackFromNeighbour: getEnumOptions(FeedbackFromNeighbour),
-    finalStatus: getEnumOptions(FinalStatusNsp),
+    finalStatus: getEnumOptions(FinalStatus),
   }), []);
 
   return (
@@ -377,7 +377,7 @@ const NspResidenceForm: React.FC<NspResidenceFormProps> = ({ caseData }) => {
           <option value="">Select...</option>
           {options.finalStatus}
         </SelectField>
-        {report.finalStatus === FinalStatusNsp.Hold && (
+        {report.finalStatus === FinalStatus.Hold && (
           <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />
         )}
       </div>

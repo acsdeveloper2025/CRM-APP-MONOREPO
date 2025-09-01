@@ -136,6 +136,7 @@ export enum FeedbackFromNeighbour {
   NoAdverse = 'No Adverse',
 }
 
+// Unified Final Status enum for all form types
 export enum FinalStatus {
   Positive = 'Positive',
   Negative = 'Negative',
@@ -160,11 +161,8 @@ export enum PremisesStatus {
     Rented = 'Rented',
 }
 
-export enum FinalStatusShifted {
-    Negative = 'Negative',
-    Fraud = 'Fraud',
-    Hold = 'Hold',
-}
+// DEPRECATED: Use FinalStatus instead
+// export enum FinalStatusShifted - Now using unified FinalStatus enum
 
 // Enums for Entry Restricted Residence Report
 export enum MetPersonErt {
@@ -191,12 +189,8 @@ export enum CallRemarkUntraceable {
     RefusedToGuide = 'Refused to Guide Address',
 }
 
-export enum FinalStatusUntraceable {
-    Negative = 'Negative',
-    Refer = 'Refer',
-    Fraud = 'Fraud',
-    Hold = 'Hold',
-}
+// DEPRECATED: Use FinalStatus instead
+// export enum FinalStatusUntraceable - Now using unified FinalStatus enum
 
 // Enums for Positive Resi-cum-Office Report
 export enum ResiCumOfficeStatus {
@@ -320,12 +314,8 @@ export enum DesignationShiftedOffice {
     Other = 'Other',
 }
 
-export enum FinalStatusShiftedOffice {
-    Negative = 'Negative',
-    Refer = 'Refer',
-    Fraud = 'Fraud',
-    Hold = 'Hold',
-}
+// DEPRECATED: Use FinalStatus instead
+// export enum FinalStatusShiftedOffice - Now using unified FinalStatus enum
 
 // Enums for NSP Office Report
 export enum OfficeExistence {
@@ -369,13 +359,8 @@ export enum PremisesStatusBusiness {
     OwnedBy = 'Owned By',
 }
 
-export enum FinalStatusShiftedBusiness {
-    Positive = 'Positive',
-    Negative = 'Negative',
-    Refer = 'Refer',
-    Fraud = 'Fraud',
-    Hold = 'Hold',
-}
+// DEPRECATED: Use FinalStatus instead
+// export enum FinalStatusShiftedBusiness - Now using unified FinalStatus enum
 
 // Enums for NSP Business Report
 export enum BusinessExistence {
@@ -552,7 +537,7 @@ export interface ShiftedResidenceReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShifted | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -588,7 +573,7 @@ export interface NspResidenceReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShifted | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -629,7 +614,7 @@ export interface UntraceableResidenceReportData {
     landmark4: string;
     dominatedArea: DominatedArea | null;
     otherObservation: string;
-    finalStatus: FinalStatusUntraceable | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -860,7 +845,7 @@ export interface ShiftedOfficeReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShiftedOffice | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -891,7 +876,7 @@ export interface NspOfficeReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShiftedOffice | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -930,7 +915,7 @@ export interface UntraceableOfficeReportData {
     landmark4: string;
     dominatedArea: DominatedArea | null;
     otherObservation: string;
-    finalStatus: FinalStatusUntraceable | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1005,7 +990,7 @@ export interface ShiftedBusinessReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShiftedBusiness | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1038,7 +1023,7 @@ export interface NspBusinessReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShiftedBusiness | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1076,7 +1061,7 @@ export interface UntraceableBusinessReportData {
     landmark4: string;
     dominatedArea: DominatedArea | null;
     otherObservation: string;
-    finalStatus: FinalStatusUntraceable | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1151,7 +1136,7 @@ export interface ShiftedBuilderReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShiftedBusiness | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1184,7 +1169,7 @@ export interface NspBuilderReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShiftedBusiness | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1222,7 +1207,7 @@ export interface UntraceableBuilderReportData {
     landmark4: string;
     dominatedArea: DominatedArea | null;
     otherExtraRemark: string;
-    finalStatus: FinalStatusUntraceable | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1313,7 +1298,7 @@ export interface NspNocReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShiftedBusiness | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1352,7 +1337,7 @@ export interface UntraceableNocReportData {
     landmark4: string;
     dominatedArea: DominatedArea | null;
     otherExtraRemark: string;
-    finalStatus: FinalStatusUntraceable | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1427,7 +1412,7 @@ export interface ShiftedDsaReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShiftedBusiness | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1460,7 +1445,7 @@ export interface NspDsaReportData {
     dominatedArea: DominatedArea | null;
     feedbackFromNeighbour: FeedbackFromNeighbour | null;
     otherObservation: string;
-    finalStatus: FinalStatusShiftedBusiness | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1499,7 +1484,7 @@ export interface UntraceableDsaReportData {
     landmark4: string;
     dominatedArea: DominatedArea | null;
     otherExtraRemark: string;
-    finalStatus: FinalStatusUntraceable | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1611,7 +1596,7 @@ export interface UntraceablePropertyApfReportData {
     landmark4: string;
     dominatedArea: DominatedArea | null;
     otherObservation: string;
-    finalStatus: FinalStatusUntraceable | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
@@ -1723,7 +1708,7 @@ export interface UntraceablePropertyIndividualReportData {
     landmark4: string;
     dominatedArea: DominatedArea | null;
     otherObservation: string;
-    finalStatus: FinalStatusUntraceable | null;
+    finalStatus: FinalStatus | null;
     holdReason: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
