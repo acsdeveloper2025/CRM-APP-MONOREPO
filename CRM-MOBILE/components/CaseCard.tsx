@@ -760,7 +760,7 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
             </div>
 
             <div className="flex items-center gap-2">
-              {caseData.isSaved && (
+              {caseData.isSaved && caseData.status !== CaseStatus.Completed && (
                   <button
                       onClick={async (e) => {
                           e.stopPropagation();

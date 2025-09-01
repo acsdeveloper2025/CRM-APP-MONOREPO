@@ -65,8 +65,8 @@ const createCaseValidation = [
     .withMessage('Verification type must be one of: RESIDENCE, OFFICE, BUSINESS, OTHER'),
   body('priority')
     .optional()
-    .isInt({ min: 1, max: 5 })
-    .withMessage('Priority must be between 1 and 5'),
+    .isIn(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+    .withMessage('Priority must be one of: LOW, MEDIUM, HIGH, URGENT'),
   body('deadline')
     .optional()
     .isISO8601()
@@ -146,8 +146,8 @@ const listCasesValidation = [
     .withMessage('Invalid status'),
   query('priority')
     .optional()
-    .isInt({ min: 1, max: 5 })
-    .withMessage('Priority must be between 1 and 5'),
+    .isIn(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+    .withMessage('Priority must be one of: LOW, MEDIUM, HIGH, URGENT'),
   query('search')
     .optional()
     .trim()
@@ -171,8 +171,8 @@ const statusUpdateValidation = [
 
 const priorityUpdateValidation = [
   body('priority')
-    .isInt({ min: 1, max: 5 })
-    .withMessage('Priority must be between 1 and 5'),
+    .isIn(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+    .withMessage('Priority must be one of: LOW, MEDIUM, HIGH, URGENT'),
 ];
 
 const assignValidation = [

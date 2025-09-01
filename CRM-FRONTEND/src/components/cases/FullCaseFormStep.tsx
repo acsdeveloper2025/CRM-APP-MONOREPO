@@ -48,7 +48,7 @@ const fullCaseFormSchema = z.object({
   pincodeId: z.string().min(1, 'Pincode selection is required'),
   areaId: z.string().min(1, 'Area selection is required'),
   assignedToId: z.string().min(1, 'Field user assignment is required'),
-  priority: z.number().min(1, 'Priority is required').max(5),
+  priority: z.string().min(1, 'Priority is required'),
 });
 
 export type FullCaseFormData = z.infer<typeof fullCaseFormSchema>;
@@ -122,7 +122,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
       pincodeId: initialData.pincodeId || '',
       areaId: initialData.areaId || '',
       assignedToId: initialData.assignedToId || '',
-      priority: initialData.priority || 2,
+      priority: initialData.priority || 'MEDIUM',
     },
   });
 
@@ -160,7 +160,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
         pincodeId: initialData.pincodeId || '',
         areaId: initialData.areaId || '',
         assignedToId: initialData.assignedToId || '',
-        priority: initialData.priority || 2,
+        priority: initialData.priority || 'MEDIUM',
       });
     }
   }, [editMode, initialData, form, user]);
@@ -528,17 +528,17 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Priority *</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select priority" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="1">Low</SelectItem>
-                          <SelectItem value="2">Medium</SelectItem>
-                          <SelectItem value="3">High</SelectItem>
-                          <SelectItem value="4">Urgent</SelectItem>
+                          <SelectItem value="LOW">Low</SelectItem>
+                          <SelectItem value="MEDIUM">Medium</SelectItem>
+                          <SelectItem value="HIGH">High</SelectItem>
+                          <SelectItem value="URGENT">Urgent</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

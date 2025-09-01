@@ -7,14 +7,14 @@ export interface CaseListQuery extends PaginationQuery {
   search?: string;
   assignedTo?: string;
   clientId?: string;
-  priority?: number;
+  priority?: string;
   dateFrom?: string;
   dateTo?: string;
 }
 
 export interface CaseUpdateData {
   status?: string;
-  priority?: number;
+  priority?: string;
   notes?: string;
   assignedToId?: string;
 }
@@ -34,7 +34,7 @@ export interface CreateCaseData {
   productId?: string;
   applicantType?: string;
   backendContactNumber?: string;
-  priority?: number;
+  priority?: string;
   trigger?: string;
 
   // Deduplication fields
@@ -97,7 +97,7 @@ export class CasesService {
     return apiService.put(`/cases/${id}/status`, { status });
   }
 
-  async updateCasePriority(id: string, priority: number): Promise<ApiResponse<Case>> {
+  async updateCasePriority(id: string, priority: string): Promise<ApiResponse<Case>> {
     return apiService.put(`/cases/${id}/priority`, { priority });
   }
 
