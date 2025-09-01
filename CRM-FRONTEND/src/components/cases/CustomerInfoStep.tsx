@@ -40,13 +40,17 @@ interface CustomerInfoStepProps {
   onCreateNew: (data: CustomerInfoData) => void;
   isSearching?: boolean;
   initialData?: Partial<CustomerInfoData>;
+  deduplicationCompleted?: boolean;
+  onDataChange?: () => void;
 }
 
 export const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
   onSearchExisting,
   onCreateNew,
   isSearching = false,
-  initialData = {}
+  initialData = {},
+  deduplicationCompleted = false,
+  onDataChange
 }) => {
   const form = useForm<CustomerInfoData>({
     resolver: zodResolver(customerInfoSchema),
@@ -77,6 +81,17 @@ export const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
       form.setValue('customerCallingCode', newCallingCode);
     }
   }, [form]);
+
+  // Watch for form changes to reset deduplication
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      // Reset deduplication when key fields change
+      if (name && ['customerName', 'panNumber', 'mobileNumber'].includes(name) && deduplicationCompleted) {
+        onDataChange?.();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, deduplicationCompleted, onDataChange]);
 
   const handleSearchExisting = (data: CustomerInfoData) => {
     onSearchExisting(data);
@@ -238,21 +253,36 @@ export const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
                 <Button
                   type="button"
                   onClick={form.handleSubmit(handleCreateNew)}
-                  disabled={!hasMinimumData || isSearching}
+                  disabled={!hasMinimumData || isSearching || !deduplicationCompleted}
                   className="flex-1"
+                  title={!deduplicationCompleted ? "Please search for existing cases first" : ""}
                 >
                   <ArrowRight className="h-4 w-4 mr-2" />
                   Create New Case
+                  {!deduplicationCompleted && (
+                    <span className="ml-2 text-xs opacity-60">(Search Required)</span>
+                  )}
                 </Button>
               </div>
 
               {/* Help Text */}
               <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg">
-                <p className="font-medium mb-2">What happens next?</p>
+                <p className="font-medium mb-2">Mandatory Deduplication Process</p>
                 <ul className="space-y-1 text-xs">
-                  <li>• <strong>Search for Existing Cases:</strong> We'll check if this customer already has cases in the system</li>
-                  <li>• <strong>Create New Case:</strong> Skip the search and proceed directly to case creation</li>
+                  <li>• <strong>Step 1:</strong> Search for existing cases to prevent duplicates</li>
+                  <li>• <strong>Step 2:</strong> Review any potential duplicates found</li>
+                  <li>• <strong>Step 3:</strong> Create new case only after deduplication check</li>
                 </ul>
+                {!deduplicationCompleted && (
+                  <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-amber-800">
+                    <p className="text-xs font-medium">⚠️ Deduplication search is required before creating a new case</p>
+                  </div>
+                )}
+                {deduplicationCompleted && (
+                  <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-green-800">
+                    <p className="text-xs font-medium">✅ Deduplication check completed. You can now create a new case.</p>
+                  </div>
+                )}
               </div>
             </div>
           </Form>

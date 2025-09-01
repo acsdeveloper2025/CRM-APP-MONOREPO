@@ -61,6 +61,7 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deduplicationResult, setDeduplicationResult] = useState<DeduplicationResult | null>(null);
   const [showDeduplicationDialog, setShowDeduplicationDialog] = useState(false);
+  const [deduplicationCompleted, setDeduplicationCompleted] = useState(false);
 
   // Fetch pincodes for code lookup
   const { data: pincodesResponse } = usePincodes();
@@ -120,14 +121,15 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
       if (result.success && result.data.duplicatesFound.length > 0) {
         setDeduplicationResult(result.data);
         setShowDeduplicationDialog(true);
+        setDeduplicationCompleted(true);
       } else {
-        toast.success('No duplicate cases found. Proceeding to case creation.');
-        proceedToCaseDetails(data);
+        toast.success('No duplicate cases found. You can now create a new case.');
+        setDeduplicationCompleted(true);
       }
     } catch (error) {
       console.error('Deduplication search failed:', error);
-      toast.error('Deduplication search failed. Proceeding to case creation.');
-      proceedToCaseDetails(data);
+      toast.error('Deduplication search failed. You can still create a new case.');
+      setDeduplicationCompleted(true);
     } finally {
       setIsSearching(false);
     }
@@ -146,9 +148,18 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
     proceedToCaseDetails(data);
   };
 
+  const handleCustomerDataChange = () => {
+    // Reset deduplication when customer data changes
+    setDeduplicationCompleted(false);
+    setDeduplicationResult(null);
+  };
+
   const handleBackToCustomerInfo = () => {
     setCurrentStep('customer-info');
     setCaseFormData(null);
+    // Reset deduplication when going back to customer info
+    setDeduplicationCompleted(false);
+    setDeduplicationResult(null);
   };
 
   const handleCaseFormSubmit = async (data: FullCaseFormData, attachments: any[] = []) => {
@@ -367,6 +378,8 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
             onCreateNew={handleCreateNew}
             isSearching={isSearching}
             initialData={customerInfo || {}}
+            deduplicationCompleted={deduplicationCompleted}
+            onDataChange={handleCustomerDataChange}
           />
         )}
 
