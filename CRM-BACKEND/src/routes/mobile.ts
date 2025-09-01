@@ -54,6 +54,7 @@ router.post('/cases/:caseId/verification/dsa-connector', authenticateToken, vali
 router.post('/cases/:caseId/verification/property-individual', authenticateToken, validateMobileVersion, MobileFormController.submitPropertyIndividualVerification);
 router.post('/cases/:caseId/verification/property-apf', authenticateToken, validateMobileVersion, MobileFormController.submitPropertyApfVerification);
 router.post('/cases/:caseId/verification/noc', authenticateToken, validateMobileVersion, MobileFormController.submitNocVerification);
+router.get('/cases/:caseId/forms', authenticateToken, validateMobileVersion, MobileFormController.getCaseFormSubmissions);
 router.get('/forms/:formType/template', authenticateToken, validateMobileVersion, MobileFormController.getFormTemplate);
 
 // Mobile Location Services Routes

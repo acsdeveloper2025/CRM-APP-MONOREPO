@@ -1,26 +1,39 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, FileText, MapPin, Clock, User, Eye, Download } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, MapPin, Clock, User, Eye, Download, Camera, Smartphone, Wifi, WifiOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FormViewerProps, FormSection, FormField } from '@/types/form';
+import { FormSubmission, FormSection, FormField } from '@/types/form';
 import { FormFieldViewer } from './FormFieldViewer';
 import { FormAttachmentsViewer } from './FormAttachmentsViewer';
 import { FormLocationViewer } from './FormLocationViewer';
 import { FormMetadataViewer } from './FormMetadataViewer';
+import { FormPhotosGallery } from './FormPhotosGallery';
+import { formatDistanceToNow } from 'date-fns';
+
+interface EnhancedFormViewerProps {
+  submission: FormSubmission;
+  readonly?: boolean;
+  showAttachments?: boolean;
+  showPhotos?: boolean;
+  showLocation?: boolean;
+  showMetadata?: boolean;
+  onFieldChange?: (fieldId: string, value: any) => void;
+  onSectionToggle?: (sectionId: string, expanded: boolean) => void;
+}
 
 export function FormViewer({
   submission,
-  template,
   readonly = true,
   showAttachments = true,
+  showPhotos = true,
   showLocation = true,
   showMetadata = true,
   onFieldChange,
   onSectionToggle,
-}: FormViewerProps) {
+}: EnhancedFormViewerProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(submission.sections.filter(s => s.defaultExpanded !== false).map(s => s.id))
   );
@@ -51,9 +64,44 @@ export function FormViewer({
 
   const getFormTypeLabel = (formType: string) => {
     return formType
-      .split('-')
+      .split(/[-_]/)
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  };
+
+  const getValidationBadge = (status: string) => {
+    const statusConfig = {
+      VALID: { variant: 'default' as const, label: 'Valid', color: 'text-green-600' },
+      INVALID: { variant: 'destructive' as const, label: 'Invalid', color: 'text-red-600' },
+      WARNING: { variant: 'outline' as const, label: 'Warning', color: 'text-yellow-600' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.VALID;
+    return <Badge variant={config.variant} className={config.color}>{config.label}</Badge>;
+  };
+
+  const getDeviceIcon = (platform: string) => {
+    switch (platform) {
+      case 'IOS':
+        return <Smartphone className="h-4 w-4" />;
+      case 'ANDROID':
+        return <Smartphone className="h-4 w-4" />;
+      default:
+        return <Smartphone className="h-4 w-4" />;
+    }
+  };
+
+  const getNetworkIcon = (type: string) => {
+    switch (type) {
+      case 'WIFI':
+        return <Wifi className="h-4 w-4 text-green-600" />;
+      case 'CELLULAR':
+        return <Wifi className="h-4 w-4 text-blue-600" />;
+      case 'OFFLINE':
+        return <WifiOff className="h-4 w-4 text-red-600" />;
+      default:
+        return <Wifi className="h-4 w-4 text-gray-600" />;
+    }
   };
 
   return (
@@ -70,13 +118,20 @@ export function FormViewer({
                 <CardTitle className="text-xl">
                   {getFormTypeLabel(submission.formType)} Form
                 </CardTitle>
-                <CardDescription>
-                  {submission.verificationType} • {submission.outcome}
+                <CardDescription className="space-y-1">
+                  <div>{submission.verificationType} • {submission.outcome}</div>
+                  <div className="flex items-center space-x-2 text-sm">
+                    <User className="h-3 w-3" />
+                    <span>Submitted by {submission.submittedByName}</span>
+                    <Clock className="h-3 w-3 ml-2" />
+                    <span>{formatDistanceToNow(new Date(submission.submittedAt), { addSuffix: true })}</span>
+                  </div>
                 </CardDescription>
               </div>
             </div>
             <div className="flex items-center space-x-2">
               {getStatusBadge(submission.status)}
+              {getValidationBadge(submission.validationStatus)}
               <Badge variant="outline">
                 Case #{submission.caseId}
               </Badge>
@@ -85,9 +140,97 @@ export function FormViewer({
         </CardHeader>
       </Card>
 
-      {/* Form Metadata */}
+      {/* Enhanced Form Metadata */}
       {showMetadata && (
-        <FormMetadataViewer submission={submission} />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Smartphone className="h-5 w-5" />
+              <span>Submission Details</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Device Information */}
+              <div className="space-y-2">
+                <h4 className="font-medium flex items-center space-x-2">
+                  {getDeviceIcon(submission.metadata.deviceInfo.platform)}
+                  <span>Device Info</span>
+                </h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div>Platform: {submission.metadata.deviceInfo.platform}</div>
+                  <div>Model: {submission.metadata.deviceInfo.model}</div>
+                  <div>OS: {submission.metadata.deviceInfo.osVersion}</div>
+                  <div>App: v{submission.metadata.deviceInfo.appVersion}</div>
+                </div>
+              </div>
+
+              {/* Network Information */}
+              <div className="space-y-2">
+                <h4 className="font-medium flex items-center space-x-2">
+                  {getNetworkIcon(submission.metadata.networkInfo.type)}
+                  <span>Network Info</span>
+                </h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div>Type: {submission.metadata.networkInfo.type}</div>
+                  {submission.metadata.networkInfo.strength && (
+                    <div>Strength: {submission.metadata.networkInfo.strength}%</div>
+                  )}
+                  {submission.metadata.isOfflineSubmission && (
+                    <Badge variant="outline" className="text-orange-600">
+                      Offline Submission
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Submission Information */}
+              <div className="space-y-2">
+                <h4 className="font-medium flex items-center space-x-2">
+                  <Clock className="h-4 w-4" />
+                  <span>Submission Info</span>
+                </h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div>Form Version: {submission.metadata.formVersion}</div>
+                  <div>Attempts: {submission.metadata.submissionAttempts}</div>
+                  {submission.metadata.syncedAt && (
+                    <div>Synced: {formatDistanceToNow(new Date(submission.metadata.syncedAt), { addSuffix: true })}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Validation Errors */}
+            {submission.validationErrors && submission.validationErrors.length > 0 && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <h4 className="font-medium text-red-800 mb-2">Validation Issues</h4>
+                <ul className="text-sm text-red-700 space-y-1">
+                  {submission.validationErrors.map((error, index) => (
+                    <li key={index}>• {error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Photos Gallery */}
+      {showPhotos && submission.photos && submission.photos.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Camera className="h-5 w-5" />
+              <span>Photos ({submission.photos.length})</span>
+            </CardTitle>
+            <CardDescription>
+              Verification photos with geo-location data
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FormPhotosGallery photos={submission.photos} />
+          </CardContent>
+        </Card>
       )}
 
       {/* Form Sections */}

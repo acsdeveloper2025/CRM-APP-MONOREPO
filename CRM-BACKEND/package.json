@@ -9,6 +9,7 @@
     "start:prod": "npm run build && npm start",
     "dev": "nodemon src/index.ts",
     "lint": "eslint src/**/*.ts --max-warnings=0",
+    "clean-and-seed": "node scripts/clean-and-seed-cases.js",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
     "format:check": "prettier --check src/**/*.ts",

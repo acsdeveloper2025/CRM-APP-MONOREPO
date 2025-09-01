@@ -1,10 +1,102 @@
 import { Request, Response } from 'express';
-import { MobileFormSubmissionRequest } from '../types/mobile';
+import { MobileFormSubmissionRequest, FormSubmissionData, FormSection, FormField } from '../types/mobile';
 import { createAuditLog } from '../utils/auditLogger';
 import { config } from '../config';
 import { query } from '@/config/database';
 
 export class MobileFormController {
+  // Helper method to organize form data into sections for display
+  private static organizeFormDataIntoSections(formData: any, verificationType: string): FormSection[] {
+    const sections: FormSection[] = [];
+
+    // Customer Information Section
+    if (formData.customerName || formData.bankName || formData.product) {
+      sections.push({
+        id: 'customer_info',
+        title: 'Customer Information',
+        order: 1,
+        isRequired: true,
+        defaultExpanded: true,
+        fields: [
+          { id: 'customerName', name: 'customerName', label: 'Customer Name', type: 'text' as const, value: formData.customerName, isRequired: true, displayValue: formData.customerName },
+          { id: 'bankName', name: 'bankName', label: 'Bank Name', type: 'text' as const, value: formData.bankName, isRequired: false, displayValue: formData.bankName },
+          { id: 'product', name: 'product', label: 'Product', type: 'text' as const, value: formData.product, isRequired: false, displayValue: formData.product },
+        ].filter(field => field.value !== undefined && field.value !== null && field.value !== ''),
+      });
+    }
+
+    // Address Verification Section
+    if (formData.addressLocatable || formData.addressRating || formData.houseStatus) {
+      sections.push({
+        id: 'address_verification',
+        title: 'Address Verification',
+        order: 2,
+        isRequired: true,
+        defaultExpanded: true,
+        fields: [
+          { id: 'addressLocatable', name: 'addressLocatable', label: 'Address Locatable', type: 'select' as const, value: formData.addressLocatable, isRequired: true, displayValue: formData.addressLocatable },
+          { id: 'addressRating', name: 'addressRating', label: 'Address Rating', type: 'select' as const, value: formData.addressRating, isRequired: true, displayValue: formData.addressRating },
+          { id: 'houseStatus', name: 'houseStatus', label: 'House Status', type: 'select' as const, value: formData.houseStatus, isRequired: true, displayValue: formData.houseStatus },
+        ].filter(field => field.value !== undefined && field.value !== null && field.value !== ''),
+      });
+    }
+
+    // Personal Details Section (for residence verification)
+    if (verificationType === 'RESIDENCE' && (formData.metPersonName || formData.relation || formData.totalFamilyMembers)) {
+      sections.push({
+        id: 'personal_details',
+        title: 'Personal Details',
+        order: 3,
+        isRequired: true,
+        defaultExpanded: true,
+        fields: [
+          { id: 'metPersonName', name: 'metPersonName', label: 'Met Person Name', type: 'text' as const, value: formData.metPersonName, isRequired: true, displayValue: formData.metPersonName },
+          { id: 'relation', name: 'relation', label: 'Relation', type: 'select' as const, value: formData.relation, isRequired: true, displayValue: formData.relation },
+          { id: 'totalFamilyMembers', name: 'totalFamilyMembers', label: 'Total Family Members', type: 'number' as const, value: formData.totalFamilyMembers, isRequired: true, displayValue: formData.totalFamilyMembers?.toString() },
+          { id: 'totalEarning', name: 'totalEarning', label: 'Total Earning (₹)', type: 'number' as const, value: formData.totalEarning, isRequired: false, displayValue: formData.totalEarning ? `₹${formData.totalEarning}` : undefined },
+          { id: 'workingStatus', name: 'workingStatus', label: 'Working Status', type: 'select' as const, value: formData.workingStatus, isRequired: false, displayValue: formData.workingStatus },
+          { id: 'companyName', name: 'companyName', label: 'Company Name', type: 'text' as const, value: formData.companyName, isRequired: false, displayValue: formData.companyName },
+        ].filter(field => field.value !== undefined && field.value !== null && field.value !== ''),
+      });
+    }
+
+    // Property Details Section
+    if (formData.locality || formData.addressStructure || formData.doorColor) {
+      sections.push({
+        id: 'property_details',
+        title: 'Property Details',
+        order: 4,
+        isRequired: false,
+        defaultExpanded: false,
+        fields: [
+          { id: 'locality', name: 'locality', label: 'Locality', type: 'select' as const, value: formData.locality, isRequired: false, displayValue: formData.locality },
+          { id: 'addressStructure', name: 'addressStructure', label: 'Address Structure', type: 'select' as const, value: formData.addressStructure, isRequired: false, displayValue: formData.addressStructure },
+          { id: 'doorColor', name: 'doorColor', label: 'Door Color', type: 'text' as const, value: formData.doorColor, isRequired: false, displayValue: formData.doorColor },
+          { id: 'doorNamePlate', name: 'doorNamePlate', label: 'Door Name Plate', type: 'select' as const, value: formData.doorNamePlate, isRequired: false, displayValue: formData.doorNamePlate },
+          { id: 'nameOnDoorPlate', name: 'nameOnDoorPlate', label: 'Name on Door Plate', type: 'text' as const, value: formData.nameOnDoorPlate, isRequired: false, displayValue: formData.nameOnDoorPlate },
+        ].filter(field => field.value !== undefined && field.value !== null && field.value !== ''),
+      });
+    }
+
+    // Final Status Section
+    if (formData.finalStatus || formData.outcome) {
+      sections.push({
+        id: 'final_status',
+        title: 'Final Status',
+        order: 10,
+        isRequired: true,
+        defaultExpanded: true,
+        fields: [
+          { id: 'finalStatus', name: 'finalStatus', label: 'Final Status', type: 'select' as const, value: formData.finalStatus, isRequired: true, displayValue: formData.finalStatus },
+          { id: 'outcome', name: 'outcome', label: 'Outcome', type: 'select' as const, value: formData.outcome, isRequired: false, displayValue: formData.outcome },
+          { id: 'otherObservation', name: 'otherObservation', label: 'Other Observation', type: 'textarea' as const, value: formData.otherObservation, isRequired: false, displayValue: formData.otherObservation },
+        ].filter(field => field.value !== undefined && field.value !== null && field.value !== ''),
+      });
+    }
+
+    return sections.filter(section => section.fields.length > 0);
+  }
+
   // Generic verification submission method
   private static async submitGenericVerification(
     req: Request,
@@ -14,7 +106,7 @@ export class MobileFormController {
   ) {
     try {
       const { caseId } = req.params;
-      const { formData, attachmentIds, geoLocation, photos }: MobileFormSubmissionRequest = req.body;
+      const { formData, attachmentIds, geoLocation, photos, metadata }: MobileFormSubmissionRequest = req.body;
       const userId = (req as any).user?.userId;
       const userRole = (req as any).user?.role;
 
@@ -93,18 +185,73 @@ export class MobileFormController {
         });
       }
 
-      // Prepare verification data
+      // Get user details for comprehensive data
+      const userRes = await query(`SELECT name, username FROM users WHERE id = $1`, [userId]);
+      const user = userRes.rows[0];
+
+      // Prepare comprehensive verification data
       const verificationData = {
+        id: `form_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        caseId,
         formType: verificationType,
+        verificationType: formData.outcome || 'VERIFIED',
+        outcome: formData.finalStatus || formData.outcome || 'POSITIVE',
+        status: 'SUBMITTED',
         submittedAt: new Date().toISOString(),
         submittedBy: userId,
-        geoLocation,
-        formData,
-        attachments: attachmentIds,
-        photos: photos.map(photo => ({
-          attachmentId: photo.attachmentId,
-          geoLocation: photo.geoLocation,
+        submittedByName: user?.name || 'Unknown',
+
+        // Organize form data into sections (this will be enhanced based on form type)
+        sections: this.organizeFormDataIntoSections(formData, verificationType),
+
+        // Enhanced attachments and photos
+        attachments: attachmentIds.map(id => ({
+          id,
+          category: 'DOCUMENT' as const,
         })),
+        photos: photos.map(photo => ({
+          id: `photo_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+          attachmentId: photo.attachmentId,
+          type: photo.type,
+          geoLocation: {
+            ...photo.geoLocation,
+            address: photo.geoLocation.address || 'Address not available',
+          },
+          metadata: photo.metadata || {
+            fileSize: 0,
+            dimensions: { width: 0, height: 0 },
+            capturedAt: new Date().toISOString(),
+          },
+        })),
+
+        // Enhanced geo-location
+        geoLocation: {
+          ...geoLocation,
+          address: geoLocation.address || 'Address not available',
+        },
+
+        // Enhanced metadata
+        metadata: metadata || {
+          submissionTimestamp: new Date().toISOString(),
+          deviceInfo: {
+            platform: 'UNKNOWN' as const,
+            model: 'Unknown',
+            osVersion: 'Unknown',
+            appVersion: 'Unknown',
+          },
+          networkInfo: {
+            type: 'UNKNOWN' as const,
+          },
+          formVersion: '1.0',
+          submissionAttempts: 1,
+          isOfflineSubmission: false,
+        },
+
+        // Validation status
+        validationStatus: 'VALID',
+        validationErrors: [],
+
+        // Legacy verification object for backward compatibility
         verification: {
           ...formData,
           photoCount: photos.length,
@@ -156,6 +303,105 @@ export class MobileFormController {
         message: 'Internal server error',
         error: {
           code: 'VERIFICATION_SUBMISSION_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+  }
+
+  // Get form submissions for a case
+  static async getCaseFormSubmissions(req: Request, res: Response) {
+    try {
+      const { caseId } = req.params;
+      const userId = (req as any).user?.userId;
+      const userRole = (req as any).user?.role;
+
+      // Verify case access
+      const vals: any[] = [caseId];
+      let caseSql = `SELECT id, "verificationData" FROM cases WHERE id = $1`;
+      if (userRole === 'FIELD') {
+        caseSql += ` AND "assignedToId" = $2`;
+        vals.push(userId);
+      }
+
+      const caseRes = await query(caseSql, vals);
+      const caseData = caseRes.rows[0];
+
+      if (!caseData) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found or access denied',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Get form submissions from verification data
+      const verificationData = caseData.verificationData;
+      const formSubmissions: FormSubmissionData[] = [];
+
+      if (verificationData) {
+        // Convert legacy verification data to new format
+        const submission: FormSubmissionData = {
+          id: verificationData.id || `legacy_${Date.now()}`,
+          caseId,
+          formType: verificationData.formType || 'UNKNOWN',
+          verificationType: verificationData.verificationType || 'VERIFIED',
+          outcome: verificationData.outcome || 'POSITIVE',
+          status: 'SUBMITTED',
+          submittedAt: verificationData.submittedAt || new Date().toISOString(),
+          submittedBy: verificationData.submittedBy || 'unknown',
+          submittedByName: verificationData.submittedByName || 'Unknown User',
+          sections: verificationData.sections || [],
+          attachments: verificationData.attachments || [],
+          photos: verificationData.photos || [],
+          geoLocation: verificationData.geoLocation || {
+            latitude: 0,
+            longitude: 0,
+            accuracy: 0,
+            timestamp: new Date().toISOString(),
+            address: 'Unknown location',
+          },
+          metadata: verificationData.metadata || {
+            submissionTimestamp: new Date().toISOString(),
+            deviceInfo: {
+              platform: 'UNKNOWN' as const,
+              model: 'Unknown',
+              osVersion: 'Unknown',
+              appVersion: 'Unknown',
+            },
+            networkInfo: {
+              type: 'UNKNOWN' as const,
+            },
+            formVersion: '1.0',
+            submissionAttempts: 1,
+            isOfflineSubmission: false,
+          },
+          validationStatus: verificationData.validationStatus || 'VALID',
+          validationErrors: verificationData.validationErrors || [],
+        };
+
+        formSubmissions.push(submission);
+      }
+
+      res.json({
+        success: true,
+        message: 'Form submissions retrieved successfully',
+        data: {
+          caseId,
+          submissions: formSubmissions,
+          totalCount: formSubmissions.length,
+        },
+      });
+    } catch (error) {
+      console.error('Get case form submissions error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'FORM_RETRIEVAL_FAILED',
           timestamp: new Date().toISOString(),
         },
       });

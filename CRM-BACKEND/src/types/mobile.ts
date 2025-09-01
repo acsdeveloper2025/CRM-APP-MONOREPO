@@ -130,24 +130,167 @@ export interface MobileFileUploadRequest {
 
 export interface MobileFormSubmissionRequest {
   caseId: string;
-  formType: 'RESIDENCE' | 'OFFICE';
-  formData: any;
+  formType: 'RESIDENCE' | 'OFFICE' | 'BUSINESS' | 'BUILDER' | 'RESIDENCE_CUM_OFFICE' | 'DSA_CONNECTOR' | 'PROPERTY_INDIVIDUAL' | 'PROPERTY_APF' | 'NOC';
+  formData: {
+    [key: string]: any;
+    outcome?: string;
+    finalStatus?: string;
+    verificationType?: string;
+  };
   attachmentIds: string[];
   geoLocation: {
     latitude: number;
     longitude: number;
     accuracy: number;
     timestamp: string;
+    address?: string;
   };
   photos: {
     attachmentId: string;
+    type: 'verification' | 'selfie';
     geoLocation: {
       latitude: number;
       longitude: number;
       accuracy: number;
       timestamp: string;
+      address?: string;
+    };
+    metadata?: {
+      fileSize: number;
+      dimensions?: { width: number; height: number };
+      capturedAt: string;
     };
   }[];
+  metadata: {
+    submissionTimestamp: string;
+    deviceInfo: {
+      platform: 'IOS' | 'ANDROID';
+      model: string;
+      osVersion: string;
+      appVersion: string;
+    };
+    networkInfo: {
+      type: 'WIFI' | 'CELLULAR' | 'OFFLINE';
+      strength?: number;
+    };
+    formVersion: string;
+    validationStatus: 'VALID' | 'INVALID' | 'WARNING';
+    validationErrors?: string[];
+    submissionAttempts: number;
+    isOfflineSubmission: boolean;
+  };
+}
+
+// Enhanced form submission data structure for comprehensive display
+export interface FormSubmissionData {
+  id: string;
+  caseId: string;
+  formType: string;
+  verificationType: string;
+  outcome: string;
+  status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
+  submittedAt: string;
+  submittedBy: string;
+  submittedByName: string;
+
+  // Form field data organized by sections
+  sections: FormSection[];
+
+  // Attachments and photos
+  attachments: FormAttachment[];
+  photos: FormPhoto[];
+
+  // Location and metadata
+  geoLocation: FormGeoLocation;
+  metadata: FormMetadata;
+
+  // Validation and review
+  validationStatus: 'VALID' | 'INVALID' | 'WARNING';
+  validationErrors?: string[];
+  reviewNotes?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+}
+
+export interface FormSection {
+  id: string;
+  title: string;
+  fields: FormField[];
+  order: number;
+  isRequired: boolean;
+  defaultExpanded?: boolean;
+}
+
+export interface FormField {
+  id: string;
+  name: string;
+  label: string;
+  type: 'text' | 'number' | 'select' | 'multiselect' | 'date' | 'boolean' | 'textarea';
+  value: any;
+  displayValue?: string;
+  options?: { value: string; label: string }[];
+  isRequired: boolean;
+  validation?: {
+    isValid: boolean;
+    errors: string[];
+  };
+}
+
+export interface FormAttachment {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  thumbnailUrl?: string;
+  uploadedAt: string;
+  category: 'DOCUMENT' | 'PHOTO' | 'OTHER';
+}
+
+export interface FormPhoto {
+  id: string;
+  attachmentId: string;
+  type: 'verification' | 'selfie';
+  url: string;
+  thumbnailUrl: string;
+  geoLocation: FormGeoLocation;
+  metadata: {
+    fileSize: number;
+    dimensions: { width: number; height: number };
+    capturedAt: string;
+    deviceInfo?: string;
+  };
+}
+
+export interface FormGeoLocation {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+}
+
+export interface FormMetadata {
+  submissionTimestamp: string;
+  deviceInfo: {
+    platform: 'IOS' | 'ANDROID';
+    model: string;
+    osVersion: string;
+    appVersion: string;
+  };
+  networkInfo: {
+    type: 'WIFI' | 'CELLULAR' | 'OFFLINE';
+    strength?: number;
+  };
+  formVersion: string;
+  submissionAttempts: number;
+  isOfflineSubmission: boolean;
+  syncedAt?: string;
 }
 
 export interface MobileLocationCaptureRequest {

@@ -3,9 +3,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCase, useAssignCase } from '@/hooks/useCases';
+import { useCaseFormSubmissions } from '@/hooks/useForms';
 import { ReassignCaseModal } from '@/components/cases/ReassignCaseModal';
-import { ArrowLeft, MapPin, Phone, Mail, Calendar, User, Building2, FileText, Edit, UserCheck } from 'lucide-react';
+import { FormViewer } from '@/components/forms/FormViewer';
+import { ArrowLeft, MapPin, Phone, Mail, Calendar, User, Building2, FileText, Edit, UserCheck, FormInput, Camera, Clock } from 'lucide-react';
 import { CaseAttachmentsSection } from '@/components/attachments/CaseAttachmentsSection';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -29,10 +32,12 @@ export const CaseDetailPage: React.FC = () => {
 
 
   const { data: caseData, isLoading, refetch } = useCase(id!);
+  const { data: formSubmissionsData, isLoading: formSubmissionsLoading } = useCaseFormSubmissions(id!);
   const assignCaseMutation = useAssignCase();
   // const { data: historyData } = useCaseHistory(id!);
 
   const caseItem = caseData?.data;
+  const formSubmissions = formSubmissionsData?.data?.submissions || [];
   // const history = historyData?.data || [];
 
   // Handler functions
@@ -170,101 +175,165 @@ export const CaseDetailPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Case Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Case Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-blue-900">Applicant Information</h4>
-                  <div className="mt-2 space-y-2">
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="details" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="details" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span>Case Details</span>
+              </TabsTrigger>
+              <TabsTrigger value="forms" className="flex items-center space-x-2">
+                <FormInput className="h-4 w-4" />
+                <span>Form Submissions</span>
+                {formSubmissions.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {formSubmissions.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="attachments" className="flex items-center space-x-2">
+                <Camera className="h-4 w-4" />
+                <span>Attachments</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="details">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Case Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium text-blue-900">Applicant Information</h4>
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <User className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">{caseItem.applicantName}</span>
+                        </div>
+                        {caseItem.applicantPhone && (
+                          <div className="flex items-center space-x-2">
+                            <Phone className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm">{caseItem.applicantPhone}</span>
+                          </div>
+                        )}
+                        {caseItem.applicantEmail && (
+                          <div className="flex items-center space-x-2">
+                            <Mail className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm">{caseItem.applicantEmail}</span>
+                          </div>
+                        )}
+                        {caseItem.applicantType && (
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm">Type: {caseItem.applicantType}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-blue-900">Address</h4>
+                      <div className="mt-2">
+                        <div className="flex items-start space-x-2">
+                          <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                          <div className="text-sm">
+                            <div>{caseItem.address}</div>
+                            <div>Pincode: {caseItem.pincode}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">{caseItem.applicantName}</span>
+                      <span className="font-medium">Created By Backend User</span>
                     </div>
-                    {caseItem.applicantPhone && (
-                      <div className="flex items-center space-x-2">
-                        <Phone className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">{caseItem.applicantPhone}</span>
-                      </div>
-                    )}
-                    {caseItem.applicantEmail && (
-                      <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">{caseItem.applicantEmail}</span>
-                      </div>
-                    )}
-                    {caseItem.applicantType && (
-                      <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">Type: {caseItem.applicantType}</span>
-                      </div>
-                    )}
+                    <p className="mt-1 text-sm text-gray-600">
+                      {caseItem.createdByBackendUser || 'System'}
+                    </p>
                   </div>
-                </div>
 
-                <div>
-                  <h4 className="font-medium text-blue-900">Address</h4>
-                  <div className="mt-2">
-                    <div className="flex items-start space-x-2">
-                      <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                      <div className="text-sm">
-                        <div>{caseItem.address}</div>
-                        <div>Pincode: {caseItem.pincode}</div>
+                  <div>
+                    <h4 className="font-medium text-blue-900">Case Details</h4>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">Case ID: {caseItem.caseId}</span>
                       </div>
+                      <div className="flex items-center space-x-2">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">Client: {caseItem.clientName}</span>
+                      </div>
+                      {caseItem.backendContactNumber && (
+                        <div className="flex items-center space-x-2">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">Backend Contact: {caseItem.backendContactNumber}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <div>
-                <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium">Created By Backend User</span>
-                </div>
-                <p className="mt-1 text-sm text-gray-600">
-                  {caseItem.createdByBackendUser || 'System'}
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-blue-900">Case Details</h4>
-                <div className="mt-2 space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">Case ID: {caseItem.caseId}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Building2 className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">Client: {caseItem.clientName}</span>
-                  </div>
-                  {caseItem.backendContactNumber && (
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">Backend Contact: {caseItem.backendContactNumber}</span>
+                  {(caseItem.trigger || caseItem.notes) && (
+                    <div>
+                      <h4 className="font-medium text-blue-900">TRIGGER</h4>
+                      <p className="mt-1 text-gray-600">{caseItem.trigger || caseItem.notes}</p>
                     </div>
                   )}
-                </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="forms">
+              <div className="space-y-6">
+                {formSubmissionsLoading ? (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span className="ml-2">Loading form submissions...</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : formSubmissions.length > 0 ? (
+                  formSubmissions.map((submission, index) => (
+                    <FormViewer
+                      key={submission.id}
+                      submission={submission}
+                      readonly={true}
+                      showAttachments={true}
+                      showPhotos={true}
+                      showLocation={true}
+                      showMetadata={true}
+                    />
+                  ))
+                ) : (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <FormInput className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Form Submissions</h3>
+                      <p className="text-gray-600">
+                        No verification forms have been submitted for this case yet.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
+            </TabsContent>
 
-              {(caseItem.trigger || caseItem.notes) && (
-                <div>
-                  <h4 className="font-medium text-blue-900">TRIGGER</h4>
-                  <p className="mt-1 text-gray-600">{caseItem.trigger || caseItem.notes}</p>
-                </div>
-              )}
-
-              {/* Attachments Section */}
-              <div className="mt-6 pt-4 border-t">
-                <CaseAttachmentsSection caseId={id!} />
-              </div>
-            </CardContent>
-          </Card>
-
-
+            <TabsContent value="attachments">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Case Attachments</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CaseAttachmentsSection caseId={id!} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Sidebar */}

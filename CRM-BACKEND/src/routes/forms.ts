@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, requireFieldOrHigher } from '@/middleware/auth';
+import { MobileFormController } from '@/controllers/mobileFormController';
 
 const router = Router();
 
@@ -36,5 +37,8 @@ router.get('/auto-save/:caseId', (req, res) => {
     data: [],
   });
 });
+
+// Get form submissions for a case (for web frontend)
+router.get('/cases/:caseId/submissions', MobileFormController.getCaseFormSubmissions);
 
 export default router;
