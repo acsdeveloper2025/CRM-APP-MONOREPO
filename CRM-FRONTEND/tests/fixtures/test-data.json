@@ -1,0 +1,308 @@
+{
+  "testUsers": {
+    "fieldAgent": {
+      "email": "field_agent_test@example.com",
+      "password": "TestPassword123!",
+      "role": "FIELD_AGENT",
+      "name": "Test Field Agent",
+      "employeeId": "FA001",
+      "department": "Field Operations",
+      "territory": "Bangalore South"
+    },
+    "backendUser": {
+      "email": "backend_user_test@example.com",
+      "password": "TestPassword123!",
+      "role": "BACKEND_USER",
+      "name": "Test Backend User",
+      "employeeId": "BU001",
+      "department": "Operations",
+      "permissions": ["VALIDATE_CASES", "REVIEW_SUBMISSIONS", "GENERATE_REPORTS"]
+    },
+    "manager": {
+      "email": "manager_test@example.com",
+      "password": "TestPassword123!",
+      "role": "MANAGER",
+      "name": "Test Manager",
+      "employeeId": "MG001",
+      "department": "Management",
+      "permissions": ["ALL"]
+    },
+    "admin": {
+      "email": "admin_test@example.com",
+      "password": "TestPassword123!",
+      "role": "ADMIN",
+      "name": "Test Admin",
+      "employeeId": "AD001",
+      "department": "IT",
+      "permissions": ["ALL"]
+    }
+  },
+  "testCases": {
+    "residence": {
+      "formType": "RESIDENCE",
+      "customerName": "John Doe",
+      "customerEmail": "john.doe@example.com",
+      "customerPhone": "+91-9876543210",
+      "propertyAddress": "123 MG Road, Bangalore, Karnataka 560001",
+      "propertyType": "APARTMENT",
+      "propertySize": "1200",
+      "roomCount": "3",
+      "propertyCondition": "GOOD",
+      "priority": "MEDIUM"
+    },
+    "office": {
+      "formType": "OFFICE",
+      "customerName": "ABC Corporation",
+      "customerEmail": "contact@abccorp.com",
+      "customerPhone": "+91-9876543211",
+      "propertyAddress": "456 Business Park, Whitefield, Bangalore 560066",
+      "propertyType": "OFFICE_SPACE",
+      "propertySize": "5000",
+      "roomCount": "15",
+      "propertyCondition": "EXCELLENT",
+      "priority": "HIGH"
+    },
+    "business": {
+      "formType": "BUSINESS",
+      "customerName": "XYZ Enterprises",
+      "customerEmail": "info@xyzenterprises.com",
+      "customerPhone": "+91-9876543212",
+      "propertyAddress": "789 Industrial Area, Electronic City, Bangalore 560100",
+      "propertyType": "WAREHOUSE",
+      "propertySize": "10000",
+      "roomCount": "5",
+      "propertyCondition": "GOOD",
+      "priority": "LOW"
+    }
+  },
+  "validationChecklist": {
+    "residence": [
+      {
+        "id": "identity-verified",
+        "label": "Customer identity verified",
+        "required": true,
+        "description": "Verify customer identity using government-issued ID"
+      },
+      {
+        "id": "documents-complete",
+        "label": "All required documents submitted",
+        "required": true,
+        "description": "Check that all necessary documents are provided and complete"
+      },
+      {
+        "id": "property-inspected",
+        "label": "Property physically inspected",
+        "required": true,
+        "description": "Conduct on-site property inspection"
+      },
+      {
+        "id": "photos-taken",
+        "label": "Property photos captured",
+        "required": true,
+        "description": "Take comprehensive photos of the property"
+      },
+      {
+        "id": "customer-signature",
+        "label": "Customer signature obtained",
+        "required": true,
+        "description": "Get customer signature on all required forms"
+      }
+    ],
+    "office": [
+      {
+        "id": "business-license",
+        "label": "Business license verified",
+        "required": true,
+        "description": "Verify valid business license and registration"
+      },
+      {
+        "id": "authorized-signatory",
+        "label": "Authorized signatory verified",
+        "required": true,
+        "description": "Confirm person has authority to sign for the business"
+      },
+      {
+        "id": "office-inspection",
+        "label": "Office premises inspected",
+        "required": true,
+        "description": "Conduct thorough inspection of office premises"
+      },
+      {
+        "id": "compliance-check",
+        "label": "Regulatory compliance verified",
+        "required": true,
+        "description": "Check compliance with local regulations"
+      },
+      {
+        "id": "documentation-complete",
+        "label": "All business documents complete",
+        "required": true,
+        "description": "Verify all required business documentation"
+      }
+    ]
+  },
+  "testFiles": {
+    "images": [
+      {
+        "name": "property-front.jpg",
+        "type": "image/jpeg",
+        "size": 2048576,
+        "description": "Front view of the property"
+      },
+      {
+        "name": "property-interior.jpg",
+        "type": "image/jpeg",
+        "size": 1536000,
+        "description": "Interior view of the property"
+      },
+      {
+        "name": "property-documents.jpg",
+        "type": "image/jpeg",
+        "size": 1024000,
+        "description": "Photo of property documents"
+      }
+    ],
+    "documents": [
+      {
+        "name": "property-deed.pdf",
+        "type": "application/pdf",
+        "size": 512000,
+        "description": "Property ownership deed"
+      },
+      {
+        "name": "identity-proof.pdf",
+        "type": "application/pdf",
+        "size": 256000,
+        "description": "Customer identity proof"
+      },
+      {
+        "name": "address-proof.pdf",
+        "type": "application/pdf",
+        "size": 128000,
+        "description": "Address verification document"
+      }
+    ]
+  },
+  "apiEndpoints": {
+    "auth": {
+      "login": "/api/auth/login",
+      "logout": "/api/auth/logout",
+      "refresh": "/api/auth/refresh",
+      "profile": "/api/auth/profile"
+    },
+    "cases": {
+      "list": "/api/cases",
+      "create": "/api/cases",
+      "get": "/api/cases/:id",
+      "update": "/api/cases/:id",
+      "submit": "/api/cases/:id/submit",
+      "accept": "/api/cases/:id/accept",
+      "validate": "/api/cases/:id/validate"
+    },
+    "forms": {
+      "get": "/api/forms/:caseId",
+      "save": "/api/forms/:caseId",
+      "submit": "/api/forms/:caseId/submit"
+    },
+    "uploads": {
+      "image": "/api/uploads/images",
+      "document": "/api/uploads/documents",
+      "delete": "/api/uploads/:fileId"
+    },
+    "analytics": {
+      "dashboard": "/api/enhanced-analytics/dashboard",
+      "submissions": "/api/enhanced-analytics/form-submissions",
+      "performance": "/api/enhanced-analytics/agent-performance",
+      "cases": "/api/enhanced-analytics/case-analytics"
+    }
+  },
+  "errorMessages": {
+    "validation": {
+      "required": "This field is required",
+      "email": "Please enter a valid email address",
+      "phone": "Please enter a valid phone number",
+      "minLength": "Minimum length is {min} characters",
+      "maxLength": "Maximum length is {max} characters"
+    },
+    "network": {
+      "timeout": "Request timed out. Please try again.",
+      "offline": "You are currently offline. Please check your connection.",
+      "serverError": "Server error occurred. Please try again later.",
+      "unauthorized": "You are not authorized to perform this action."
+    },
+    "upload": {
+      "fileSize": "File size exceeds maximum limit of {max}MB",
+      "fileType": "File type not supported. Allowed types: {types}",
+      "uploadFailed": "File upload failed. Please try again."
+    }
+  },
+  "successMessages": {
+    "case": {
+      "accepted": "Case accepted successfully",
+      "submitted": "Case submitted for review",
+      "validated": "Case validated successfully"
+    },
+    "form": {
+      "saved": "Form saved successfully",
+      "submitted": "Form submitted successfully"
+    },
+    "upload": {
+      "success": "File uploaded successfully",
+      "multiple": "{count} files uploaded successfully"
+    }
+  },
+  "timeouts": {
+    "pageLoad": 30000,
+    "apiRequest": 10000,
+    "fileUpload": 60000,
+    "formSubmission": 30000,
+    "navigation": 15000
+  },
+  "selectors": {
+    "common": {
+      "loadingSpinner": "[data-testid='loading-spinner']",
+      "errorMessage": "[data-testid='error-message']",
+      "successMessage": "[data-testid='success-message']",
+      "confirmButton": "[data-testid='confirm-button']",
+      "cancelButton": "[data-testid='cancel-button']"
+    },
+    "login": {
+      "emailInput": "[data-testid='email-input']",
+      "passwordInput": "[data-testid='password-input']",
+      "loginButton": "[data-testid='login-button']",
+      "forgotPassword": "[data-testid='forgot-password-link']"
+    },
+    "navigation": {
+      "dashboard": "[data-testid='nav-dashboard']",
+      "cases": "[data-testid='nav-cases']",
+      "analytics": "[data-testid='nav-analytics']",
+      "reports": "[data-testid='nav-reports']",
+      "userMenu": "[data-testid='user-menu']"
+    },
+    "cases": {
+      "casesList": "[data-testid='cases-list']",
+      "caseRow": "[data-testid='case-row-{caseNumber}']",
+      "caseStatus": "[data-testid='case-status']",
+      "acceptButton": "[data-testid='accept-case-button']",
+      "startButton": "[data-testid='start-case-button']",
+      "openFormButton": "[data-testid='open-form-button']"
+    },
+    "form": {
+      "customerName": "[data-testid='customer-name']",
+      "customerEmail": "[data-testid='customer-email']",
+      "customerPhone": "[data-testid='customer-phone']",
+      "propertyAddress": "[data-testid='property-address']",
+      "formTypeSelect": "[data-testid='form-type-select']",
+      "submitButton": "[data-testid='submit-case-button']",
+      "saveButton": "[data-testid='save-form-button']"
+    },
+    "mobile": {
+      "app": "[data-testid='mobile-app']",
+      "navigation": "[data-testid='mobile-navigation']",
+      "casesList": "[data-testid='mobile-cases-list']",
+      "caseCard": "[data-testid='mobile-case-{caseNumber}']",
+      "acceptButton": "[data-testid='mobile-accept-button']",
+      "cameraButton": "[data-testid='mobile-camera-button']"
+    }
+  }
+}
