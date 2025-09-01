@@ -81,7 +81,7 @@ const createCaseValidation = [
     .trim()
     .matches(/^[+]?[\d\s\-\(\)]{10,15}$/)
     .withMessage('Backend contact number must be valid'),
-  body('notes')
+  body('trigger')
     .trim()
     .isLength({ min: 1 })
     .withMessage('TRIGGER field is required'),

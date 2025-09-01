@@ -195,7 +195,7 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
         applicantType: data.applicantType,
         backendContactNumber: data.backendContactNumber,
         priority: data.priority,
-        notes: data.notes,
+        trigger: data.trigger,
 
         // Deduplication fields
         panNumber: customerInfo.panNumber,

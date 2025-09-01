@@ -34,7 +34,7 @@ const fullCaseFormSchema = z.object({
   // Customer Information (new fields)
   applicantType: z.string().min(1, 'Applicant type is required'),
   address: z.string().min(1, 'Address is required').max(500, 'Address must be less than 500 characters'),
-  notes: z.string().min(1, 'TRIGGER is required'), // Required TRIGGER field
+  trigger: z.string().min(1, 'TRIGGER is required'), // Required TRIGGER field
 
   // Client Information
   clientId: z.string().min(1, 'Client selection is required'),
@@ -112,7 +112,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
     defaultValues: {
       applicantType: initialData.applicantType || '',
       address: initialData.address || '',
-      notes: initialData.notes || '', // TRIGGER field
+      trigger: initialData.trigger || '', // TRIGGER field
       clientId: initialData.clientId || '',
       productId: initialData.productId || '',
       verificationType: initialData.verificationType || '',
@@ -150,7 +150,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
       form.reset({
         applicantType: initialData.applicantType || '',
         address: initialData.address || '',
-        notes: initialData.notes || '', // TRIGGER field
+        trigger: initialData.trigger || '', // TRIGGER field
         clientId: initialData.clientId || '',
         productId: initialData.productId || '',
         verificationType: initialData.verificationType || '',
@@ -259,7 +259,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
               {/* TRIGGER */}
               <FormField
                 control={form.control}
-                name="notes"
+                name="trigger"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>TRIGGER *</FormLabel>

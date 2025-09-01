@@ -35,7 +35,7 @@ export interface CreateCaseData {
   applicantType?: string;
   backendContactNumber?: string;
   priority?: number;
-  notes?: string;
+  trigger?: string;
 
   // Deduplication fields
   panNumber?: string;
