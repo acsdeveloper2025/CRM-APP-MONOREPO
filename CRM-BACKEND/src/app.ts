@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { config } from '@/config';
 import { logger } from '@/config/logger';
 import { errorHandler, notFoundHandler } from '@/middleware/errorHandler';
+import { ScheduledReportsService } from '@/services/ScheduledReportsService';
 import { generalRateLimit } from '@/middleware/rateLimiter';
 import { performanceMonitoring, memoryMonitoring, databaseMonitoring } from '@/middleware/performanceMonitoring';
 
@@ -31,6 +32,8 @@ import designationsRoutes from '@/routes/designations';
 
 // Removed mock locations routes - using individual database-driven routes instead
 import reportsRoutes from '@/routes/reports';
+import enhancedAnalyticsRoutes from '@/routes/enhancedAnalytics';
+import exportsRoutes from '@/routes/exports';
 import auditLogsRoutes from '@/routes/audit-logs';
 import geolocationRoutes from '@/routes/geolocation';
 import formRoutes from '@/routes/forms';
@@ -130,6 +133,8 @@ app.use('/api/designations', designationsRoutes);
 
 // Removed mock locations routes - using individual database-driven routes instead
 app.use('/api/reports', reportsRoutes);
+app.use('/api/enhanced-analytics', enhancedAnalyticsRoutes);
+app.use('/api/exports', exportsRoutes);
 app.use('/api/audit-logs', auditLogsRoutes);
 app.use('/api/geolocation', geolocationRoutes);
 app.use('/api/forms', formRoutes);
@@ -153,5 +158,21 @@ app.use(notFoundHandler);
 
 // Global error handler
 app.use(errorHandler);
+
+// Initialize Scheduled Reports Service
+const initializeScheduledReports = async () => {
+  try {
+    const scheduledReportsService = ScheduledReportsService.getInstance();
+    await scheduledReportsService.initialize();
+    logger.info('Scheduled Reports Service initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize Scheduled Reports Service:', error);
+  }
+};
+
+// Initialize scheduled reports when the app starts
+if (process.env.NODE_ENV !== 'test') {
+  initializeScheduledReports();
+}
 
 export default app;

@@ -4,6 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FormSubmissionsDashboard } from '@/components/analytics/FormSubmissionsDashboard';
 import { CaseAnalyticsDashboard } from '@/components/analytics/CaseAnalyticsDashboard';
 import { AgentPerformanceDashboard } from '@/components/analytics/AgentPerformanceDashboard';
+import { FormSubmissionsTable } from '@/components/analytics/FormSubmissionsTable';
+import { FormValidationStatus } from '@/components/analytics/FormValidationStatus';
+import { FormTypeDistribution } from '@/components/analytics/FormTypeDistribution';
+import { CaseStatusDistribution } from '@/components/analytics/CaseStatusDistribution';
+import { AgentPerformanceCharts } from '@/components/analytics/AgentPerformanceCharts';
+import { CaseCompletionTimeAnalysis } from '@/components/analytics/CaseCompletionTimeAnalysis';
+import { DataExportReporting } from '@/components/analytics/DataExportReporting';
 import { 
   useFormSubmissionStats, 
   useCaseCompletionMetrics, 
@@ -44,22 +51,38 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <BarChart3 className="h-4 w-4" />
             <span>Overview</span>
           </TabsTrigger>
           <TabsTrigger value="forms" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
-            <span>Form Submissions</span>
+            <span>Forms</span>
+          </TabsTrigger>
+          <TabsTrigger value="validation" className="flex items-center space-x-2">
+            <CheckCircle className="h-4 w-4" />
+            <span>Validation</span>
+          </TabsTrigger>
+          <TabsTrigger value="distribution" className="flex items-center space-x-2">
+            <Target className="h-4 w-4" />
+            <span>Distribution</span>
           </TabsTrigger>
           <TabsTrigger value="cases" className="flex items-center space-x-2">
-            <Target className="h-4 w-4" />
-            <span>Case Analytics</span>
+            <BarChart3 className="h-4 w-4" />
+            <span>Cases</span>
+          </TabsTrigger>
+          <TabsTrigger value="timing" className="flex items-center space-x-2">
+            <Clock className="h-4 w-4" />
+            <span>Timing</span>
           </TabsTrigger>
           <TabsTrigger value="agents" className="flex items-center space-x-2">
             <Users className="h-4 w-4" />
-            <span>Agent Performance</span>
+            <span>Agents</span>
+          </TabsTrigger>
+          <TabsTrigger value="export" className="flex items-center space-x-2">
+            <TrendingUp className="h-4 w-4" />
+            <span>Export</span>
           </TabsTrigger>
         </TabsList>
 
@@ -208,26 +231,61 @@ export const AnalyticsPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div className="text-center p-4 border rounded-lg">
                   <FileText className="mx-auto h-8 w-8 text-blue-600 mb-2" />
-                  <h3 className="font-semibold">Form Submissions</h3>
+                  <h3 className="font-semibold">Form Analysis</h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Track form completion rates, validation status, and submission trends
+                    Comprehensive form submission data with interactive charts and validation tracking
                   </p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <Target className="mx-auto h-8 w-8 text-green-600 mb-2" />
+                  <CheckCircle className="mx-auto h-8 w-8 text-green-600 mb-2" />
+                  <h3 className="font-semibold">Validation Status</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Track validation performance, quality trends, and form type breakdown
+                  </p>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <Target className="mx-auto h-8 w-8 text-purple-600 mb-2" />
+                  <h3 className="font-semibold">Distribution Charts</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Visual breakdown of form types, case status, and performance distributions
+                  </p>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <BarChart3 className="mx-auto h-8 w-8 text-orange-600 mb-2" />
                   <h3 className="font-semibold">Case Analytics</h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Monitor case progress, completion times, and status distributions
+                    Monitor case progress, completion times, and workflow bottlenecks
                   </p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <Users className="mx-auto h-8 w-8 text-purple-600 mb-2" />
+                  <Clock className="mx-auto h-8 w-8 text-red-600 mb-2" />
+                  <h3 className="font-semibold">Timing Analysis</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Analyze completion times, identify delays, and optimize workflows
+                  </p>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <Users className="mx-auto h-8 w-8 text-indigo-600 mb-2" />
                   <h3 className="font-semibold">Agent Performance</h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Analyze agent productivity, quality scores, and performance metrics
+                    Comprehensive agent analytics with radar charts and productivity metrics
+                  </p>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <TrendingUp className="mx-auto h-8 w-8 text-teal-600 mb-2" />
+                  <h3 className="font-semibold">Data Export</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Export analytics data in multiple formats with scheduled reporting
+                  </p>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <BarChart3 className="mx-auto h-8 w-8 text-pink-600 mb-2" />
+                  <h3 className="font-semibold">Interactive Charts</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Rich visualizations with filters, trends, and comparative analysis
                   </p>
                 </div>
               </div>
@@ -236,15 +294,31 @@ export const AnalyticsPage: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="forms">
-          <FormSubmissionsDashboard />
+          <FormSubmissionsTable />
+        </TabsContent>
+
+        <TabsContent value="validation">
+          <FormValidationStatus />
+        </TabsContent>
+
+        <TabsContent value="distribution">
+          <FormTypeDistribution />
         </TabsContent>
 
         <TabsContent value="cases">
-          <CaseAnalyticsDashboard />
+          <CaseStatusDistribution />
+        </TabsContent>
+
+        <TabsContent value="timing">
+          <CaseCompletionTimeAnalysis />
         </TabsContent>
 
         <TabsContent value="agents">
-          <AgentPerformanceDashboard />
+          <AgentPerformanceCharts />
+        </TabsContent>
+
+        <TabsContent value="export">
+          <DataExportReporting />
         </TabsContent>
       </Tabs>
     </div>
