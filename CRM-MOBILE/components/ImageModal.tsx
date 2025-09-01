@@ -67,8 +67,20 @@ const ImageModal: React.FC<ImageModalProps> = ({
   const hasLocation = image.latitude !== 0 && image.longitude !== 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="bg-gray-900 rounded-lg max-w-4xl max-h-[90vh] w-full overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      style={{
+        touchAction: 'none' // Prevent background scrolling
+      }}
+    >
+      <div
+        className="bg-gray-900 rounded-lg max-w-4xl w-full flex flex-col"
+        style={{
+          maxHeight: '90vh',
+          height: 'auto',
+          touchAction: 'auto' // Allow scrolling within modal
+        }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h3 className="text-lg font-semibold text-light-text">Image Details</h3>
@@ -91,8 +103,23 @@ const ImageModal: React.FC<ImageModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{
+            maxHeight: 'calc(90vh - 80px)',
+            minHeight: '300px',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            WebkitOverflowScrolling: 'touch', // Enable smooth scrolling on iOS
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#4B5563 #1F2937',
+            // Ensure scrolling works on mobile
+            touchAction: 'pan-y',
+            // Add momentum scrolling for iOS
+            WebkitMomentumScrolling: 'touch'
+          }}
+        >
+          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 p-6">
             {/* Image */}
             <div className="space-y-4">
               <img

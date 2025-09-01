@@ -265,8 +265,20 @@ const CompactImageDisplay: React.FC<CompactImageDisplayProps> = ({
 
       {/* Simple Image Modal */}
       {selectedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-gray-900 rounded-lg max-w-4xl max-h-[90vh] w-full overflow-hidden">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          style={{
+            touchAction: 'none' // Prevent background scrolling
+          }}
+        >
+          <div
+            className="bg-gray-900 rounded-lg max-w-4xl w-full flex flex-col"
+            style={{
+              maxHeight: '90vh',
+              height: 'auto',
+              touchAction: 'auto' // Allow scrolling within modal
+            }}
+          >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-700">
               <h3 className="text-lg font-semibold text-light-text">
@@ -294,14 +306,29 @@ const CompactImageDisplay: React.FC<CompactImageDisplayProps> = ({
             </div>
 
             {/* Content */}
-            <div className="p-4 max-h-[calc(90vh-120px)] overflow-y-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+              className="flex-1 p-4 overflow-y-auto"
+              style={{
+                maxHeight: 'calc(90vh - 120px)',
+                minHeight: '300px',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                WebkitOverflowScrolling: 'touch', // Enable smooth scrolling on iOS
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#4B5563 #1F2937',
+                // Ensure scrolling works on mobile
+                touchAction: 'pan-y',
+                // Add momentum scrolling for iOS
+                WebkitMomentumScrolling: 'touch'
+              }}
+            >
+              <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6">
                 {/* Image */}
-                <div className="space-y-4">
+                <div className="space-y-4 flex-shrink-0">
                   <img
                     src={selectedImage.dataUrl}
                     alt={componentType === 'selfie' ? 'Selfie photo' : 'Captured photo'}
-                    className="w-full h-auto max-h-96 object-contain rounded-lg border border-gray-700"
+                    className="w-full h-auto max-h-80 lg:max-h-96 object-contain rounded-lg border border-gray-700"
                   />
                 </div>
 
