@@ -1,6 +1,7 @@
 import { Case, CaseStatus } from '../types';
 import { caseService } from './caseService';
 import AuthStorageService from './authStorageService';
+import { getEnvironmentConfig } from '../config/environment';
 
 /**
  * Simple Case Status Service
@@ -104,12 +105,13 @@ class CaseStatusService {
       // Map mobile status to backend status
       const backendStatus = this.mapMobileStatusToBackend(status);
 
+      const envConfig = getEnvironmentConfig();
       const response = await fetch(`${API_BASE_URL}/mobile/cases/${caseId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
-          'X-App-Version': '1.0.0', // Add required app version header
+          'X-App-Version': envConfig.app.version,
           'X-Client-Type': 'mobile',
         },
         body: JSON.stringify({

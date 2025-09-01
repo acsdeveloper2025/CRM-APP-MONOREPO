@@ -113,23 +113,32 @@ class VersionService {
       const data = response;
       
       if (data.success) {
-        this.updateInfo = {
-          available: data.updateRequired || data.forceUpdate,
-          required: data.forceUpdate || false,
-          urgent: data.urgent || false,
-          version: data.latestVersion,
-          downloadUrl: data.downloadUrl,
-          releaseNotes: data.releaseNotes ? data.releaseNotes.split('\n') : [],
-          features: data.features || [],
-          bugFixes: data.bugFixes || [],
-          size: data.size,
-          releaseDate: data.releaseDate || new Date().toISOString(),
-        };
+        // Only create update info if there's actually an update available
+        const hasUpdate = this.compareVersions(data.currentVersion, data.latestVersion) < 0;
 
-        console.log('✅ Version check completed:', this.updateInfo);
-        return this.updateInfo;
+        if (hasUpdate || data.forceUpdate) {
+          this.updateInfo = {
+            available: hasUpdate,
+            required: data.forceUpdate || data.updateRequired,
+            urgent: data.urgent || false,
+            version: data.latestVersion,
+            downloadUrl: data.downloadUrl,
+            releaseNotes: data.releaseNotes ? data.releaseNotes.split('\n') : [],
+            features: data.features || [],
+            bugFixes: data.bugFixes || [],
+            size: data.size,
+            releaseDate: data.releaseDate || new Date().toISOString(),
+          };
+
+          console.log('✅ Update available:', this.updateInfo);
+          return this.updateInfo;
+        } else {
+          console.log('ℹ️ App is up to date');
+          this.updateInfo = null;
+          return null;
+        }
       } else {
-        console.log('ℹ️ No updates available');
+        console.log('ℹ️ Version check failed or no updates available');
         this.updateInfo = null;
         return null;
       }
@@ -270,7 +279,7 @@ class VersionService {
   /**
    * Compare version strings
    */
-  compareVersions(version1: string, version2: string): number {
+  private compareVersions(version1: string, version2: string): number {
     const v1Parts = version1.split('.').map(Number);
     const v2Parts = version2.split('.').map(Number);
     

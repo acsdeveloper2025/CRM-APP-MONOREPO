@@ -273,8 +273,10 @@ export class MobileAuthController {
       const { currentVersion, platform, buildNumber }: MobileVersionCheckRequest = req.body;
 
       const forceUpdate = MobileAuthController.shouldForceUpdate(currentVersion);
-      const updateRequired = MobileAuthController.shouldUpdate(currentVersion);
-      const hasUpdate = forceUpdate || updateRequired;
+      const isVersionSupported = MobileAuthController.isVersionSupported(currentVersion);
+      const hasNewerVersion = MobileAuthController.hasNewerVersion(currentVersion);
+      const updateRequired = forceUpdate || !isVersionSupported;
+      const hasUpdate = hasNewerVersion;
 
       // Enhanced release information
       const releaseInfo = {
@@ -309,7 +311,7 @@ export class MobileAuthController {
 
       const response: MobileVersionCheckResponse = {
         success: true,
-        updateRequired: hasUpdate,
+        updateRequired: updateRequired,
         forceUpdate,
         urgent: forceUpdate,
         latestVersion: config.mobile.apiVersion,
@@ -317,11 +319,11 @@ export class MobileAuthController {
         downloadUrl: platform === 'IOS'
           ? 'https://apps.apple.com/app/caseflow'
           : 'https://play.google.com/store/apps/details?id=com.caseflow',
-        releaseNotes: releaseInfo.releaseNotes,
-        features: releaseInfo.features,
-        bugFixes: releaseInfo.bugFixes,
-        size: releaseInfo.size,
-        releaseDate: releaseInfo.releaseDate,
+        releaseNotes: hasUpdate ? releaseInfo.releaseNotes : '',
+        features: hasUpdate ? releaseInfo.features : [],
+        bugFixes: hasUpdate ? releaseInfo.bugFixes : [],
+        size: hasUpdate ? releaseInfo.size : undefined,
+        releaseDate: hasUpdate ? releaseInfo.releaseDate : undefined,
         buildNumber,
         checkTimestamp: new Date().toISOString(),
       };
@@ -332,8 +334,10 @@ export class MobileAuthController {
         latestVersion: config.mobile.apiVersion,
         platform,
         buildNumber,
-        updateRequired: hasUpdate,
+        hasNewerVersion: hasUpdate,
+        updateRequired: updateRequired,
         forceUpdate,
+        isVersionSupported,
       });
 
       res.json(response);
@@ -420,8 +424,12 @@ export class MobileAuthController {
     return MobileAuthController.compareVersions(currentVersion, config.mobile.forceUpdateVersion) < 0;
   }
 
-  private static shouldUpdate(currentVersion: string): boolean {
-    return MobileAuthController.compareVersions(currentVersion, config.mobile.minSupportedVersion) < 0;
+  private static isVersionSupported(currentVersion: string): boolean {
+    return MobileAuthController.compareVersions(currentVersion, config.mobile.minSupportedVersion) >= 0;
+  }
+
+  private static hasNewerVersion(currentVersion: string): boolean {
+    return MobileAuthController.compareVersions(currentVersion, config.mobile.apiVersion) < 0;
   }
 
   private static compareVersions(version1: string, version2: string): number {

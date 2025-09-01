@@ -1,6 +1,7 @@
 import { Case, CapturedImage } from '../types';
 import AuthStorageService from './authStorageService';
 import NetworkService from './networkService';
+import { getEnvironmentConfig } from '../config/environment';
 
 export interface VerificationFormData {
   [key: string]: any;
@@ -307,12 +308,13 @@ class VerificationFormService {
       }
 
       // Make API request
+      const envConfig = getEnvironmentConfig();
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
-          'X-App-Version': '1.0.0',
+          'X-App-Version': envConfig.app.version,
           'X-Client-Type': 'mobile',
         },
         body: JSON.stringify(data),

@@ -7,6 +7,12 @@ export const validateMobileVersion = (req: Request, res: Response, next: NextFun
     const appVersion = req.headers['x-app-version'] as string;
     const platform = req.headers['x-platform'] as string;
 
+    console.log(`📱 Received headers:`, {
+      'x-app-version': appVersion,
+      'x-platform': platform,
+      'user-agent': req.headers['user-agent']
+    });
+
     if (!appVersion) {
       return res.status(400).json({
         success: false,
@@ -19,7 +25,11 @@ export const validateMobileVersion = (req: Request, res: Response, next: NextFun
     }
 
     // Check if force update is required
-    if (compareVersions(appVersion, config.mobile.forceUpdateVersion) < 0) {
+    const comparisonResult = compareVersions(appVersion, config.mobile.forceUpdateVersion);
+    console.log(`🔍 Version validation: ${appVersion} vs ${config.mobile.forceUpdateVersion} = ${comparisonResult}`);
+
+    if (comparisonResult < 0) {
+      console.log(`❌ Force update required: ${appVersion} < ${config.mobile.forceUpdateVersion}`);
       return res.status(426).json({
         success: false,
         message: 'App update required',
@@ -56,6 +66,8 @@ export const validateMobileVersion = (req: Request, res: Response, next: NextFun
       });
     }
 
+    // Version validation passed
+    console.log(`✅ Version validation passed: ${appVersion} >= ${config.mobile.forceUpdateVersion}`);
     next();
   } catch (error) {
     console.error('Mobile version validation error:', error);

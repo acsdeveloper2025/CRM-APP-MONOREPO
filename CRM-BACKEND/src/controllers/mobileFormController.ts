@@ -107,18 +107,18 @@ export class MobileFormController {
     try {
       const { caseId } = req.params;
       const { formData, attachmentIds, geoLocation, photos, metadata }: MobileFormSubmissionRequest = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
       // Verify case access
       const where: any = { id: caseId };
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
+      if (userRole === 'FIELD_AGENT') {
+        where.assignedTo = userId;
       }
 
       const vals: any[] = [caseId];
       let caseSql = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') { caseSql += ` AND "assignedToId" = $2`; vals.push(userId); }
+      if (userRole === 'FIELD_AGENT') { caseSql += ` AND "assignedTo" = $2`; vals.push(userId); }
       const caseRes = await query(caseSql, vals);
       const existingCase = caseRes.rows[0];
 
@@ -313,14 +313,14 @@ export class MobileFormController {
   static async getCaseFormSubmissions(req: Request, res: Response) {
     try {
       const { caseId } = req.params;
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
       // Verify case access
       const vals: any[] = [caseId];
       let caseSql = `SELECT id, "verificationData" FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') {
-        caseSql += ` AND "assignedToId" = $2`;
+      if (userRole === 'FIELD_AGENT') {
+        caseSql += ` AND "assignedTo" = $2`;
         vals.push(userId);
       }
 
@@ -413,18 +413,18 @@ export class MobileFormController {
     try {
       const { caseId } = req.params;
       const { formData, attachmentIds, geoLocation, photos }: MobileFormSubmissionRequest = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
       // Verify case access
       const where: any = { id: caseId };
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
+      if (userRole === 'FIELD_AGENT') {
+        where.assignedTo = userId;
       }
 
       const vals: any[] = [caseId];
       let caseSql = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') { caseSql += ` AND "assignedToId" = $2`; vals.push(userId); }
+      if (userRole === 'FIELD_AGENT') { caseSql += ` AND "assignedTo" = $2`; vals.push(userId); }
       const caseRes = await query(caseSql, vals);
       const existingCase = caseRes.rows[0];
 
@@ -599,18 +599,18 @@ export class MobileFormController {
     try {
       const { caseId } = req.params;
       const { formData, attachmentIds, geoLocation, photos }: MobileFormSubmissionRequest = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
       // Verify case access
       const where: any = { id: caseId };
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
+      if (userRole === 'FIELD_AGENT') {
+        where.assignedTo = userId;
       }
 
       const vals2: any[] = [caseId];
       let caseSql2 = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') { caseSql2 += ` AND "assignedToId" = $2`; vals2.push(userId); }
+      if (userRole === 'FIELD_AGENT') { caseSql2 += ` AND "assignedTo" = $2`; vals2.push(userId); }
       const caseRes2 = await query(caseSql2, vals2);
       const existingCase = caseRes2.rows[0];
 
