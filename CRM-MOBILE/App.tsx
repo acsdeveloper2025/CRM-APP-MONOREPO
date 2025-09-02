@@ -48,7 +48,7 @@ const AppNavigator: React.FC = () => {
         const isValid = validateEnvironmentConfig(config);
 
         if (isValid) {
-          // Initialize Google Maps service
+          // Initialize Google Maps service with the new API key
           const initialized = await googleMapsService.initialize();
           if (initialized) {
             console.log('✅ Google Maps API initialized successfully');

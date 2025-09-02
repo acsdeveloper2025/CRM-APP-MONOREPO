@@ -51,8 +51,8 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
     (import.meta.env?.VITE_GOOGLE_MAPS_API_KEY) ||
     // 2. Local storage (for runtime configuration)
     (typeof window !== 'undefined' ? localStorage.getItem('GOOGLE_MAPS_API_KEY') : null) ||
-    // 3. Your API key as fallback
-    'AIzaSyDCl8zO1ysulgTpIHg3mw4hcuxLIM4kcJc';
+    // 3. No fallback - API key must be provided via environment variable
+    '';
 
   config.googleMaps.apiKey = googleMapsApiKey;
 
@@ -77,12 +77,15 @@ export const setGoogleMapsApiKey = (apiKey: string): void => {
  */
 export const validateEnvironmentConfig = (config: EnvironmentConfig): boolean => {
   if (!config.googleMaps.apiKey) {
-    console.warn('Google Maps API key is not configured');
+    console.warn('Google Maps API key is not configured. Please set VITE_GOOGLE_MAPS_API_KEY environment variable.');
     return false;
   }
-  
-  if (config.googleMaps.apiKey === 'AIzaSyDCl8zO1ysulgTpIHg3mw4hcuxLIM4kcJc') {
+
+  if (config.googleMaps.apiKey.startsWith('AIzaSy')) {
     console.log('Using configured Google Maps API key');
+  } else {
+    console.warn('Google Maps API key format appears invalid');
+    return false;
   }
 
   return true;
