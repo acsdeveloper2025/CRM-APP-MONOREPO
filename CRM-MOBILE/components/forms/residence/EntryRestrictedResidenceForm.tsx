@@ -39,24 +39,25 @@ const EntryRestrictedResidenceForm: React.FC<EntryRestrictedResidenceFormProps> 
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateEntryRestrictedResidenceReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateEntryRestrictedResidenceReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateEntryRestrictedResidenceReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateEntryRestrictedResidenceReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateEntryRestrictedResidenceReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateEntryRestrictedResidenceReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Entry Restricted report data available for this case.</p>;
@@ -107,13 +108,19 @@ const EntryRestrictedResidenceForm: React.FC<EntryRestrictedResidenceFormProps> 
     updateEntryRestrictedResidenceReport(caseData.id, updates);
   };
 
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateEntryRestrictedResidenceReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateEntryRestrictedResidenceReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateEntryRestrictedResidenceReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateEntryRestrictedResidenceReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),

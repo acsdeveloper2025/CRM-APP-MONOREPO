@@ -39,33 +39,25 @@ const NspResidenceForm: React.FC<NspResidenceFormProps> = ({ caseData }) => {
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateNspResidenceReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateNspResidenceReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (allImages: CapturedImage[]) => {
-    // This callback is used by AutoSaveFormWrapper for auto-save restoration
-    // Split images based on componentType metadata
-    if (!isReadOnly && report) {
-      const selfieImages = allImages.filter(img => img.componentType === 'selfie');
-      const regularImages = allImages.filter(img => img.componentType !== 'selfie');
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateNspResidenceReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-      updateNspResidenceReport(caseData.id, {
-        ...report,
-        images: regularImages,
-        selfieImages: selfieImages
-      });
-    }
-  };
-
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateNspResidenceReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateNspResidenceReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No NSP residence report data available for this case.</p>;
@@ -140,41 +132,19 @@ const NspResidenceForm: React.FC<NspResidenceFormProps> = ({ caseData }) => {
     updateNspResidenceReport(caseData.id, updates);
   };
   
-  const handleImagesChange = (images: CapturedImage[]) => {
-    // Add metadata to identify these as regular images
-    const imagesWithMetadata = images.map(img => ({
-      ...img,
-      componentType: 'photo' as const
-    }));
+  const handleImagesChange = createImageChangeHandler(
+    updateNspResidenceReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-    const updatedReport = { ...report, images: imagesWithMetadata };
-    updateNspResidenceReport(caseData.id, updatedReport);
-
-    // Trigger auto-save with all images (regular + selfie)
-    const allImages = [
-      ...imagesWithMetadata,
-      ...(report.selfieImages || []).map(img => ({ ...img, componentType: 'selfie' as const }))
-    ];
-    handleAutoSaveImagesChange(allImages);
-  };
-
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    // Add metadata to identify these as selfie images
-    const selfieImagesWithMetadata = selfieImages.map(img => ({
-      ...img,
-      componentType: 'selfie' as const
-    }));
-
-    const updatedReport = { ...report, selfieImages: selfieImagesWithMetadata };
-    updateNspResidenceReport(caseData.id, updatedReport);
-
-    // Trigger auto-save with all images (regular + selfie)
-    const allImages = [
-      ...(report.images || []).map(img => ({ ...img, componentType: 'photo' as const })),
-      ...selfieImagesWithMetadata
-    ];
-    handleAutoSaveImagesChange(allImages);
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateNspResidenceReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),

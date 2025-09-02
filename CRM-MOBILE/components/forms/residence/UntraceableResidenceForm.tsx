@@ -12,7 +12,12 @@ import AutoSaveFormWrapper from '../../AutoSaveFormWrapper';
 import { FORM_TYPES } from '../../../constants/formTypes';
 import VerificationFormService from '../../../services/verificationFormService';
 import {
-  combineImagesForAutoSave
+  createImageChangeHandler,
+  createSelfieImageChangeHandler,
+  createAutoSaveImagesChangeHandler,
+  combineImagesForAutoSave,
+  createFormDataChangeHandler,
+  createDataRestoredHandler
 } from '../../../utils/imageAutoSaveHelpers';
 
 interface UntraceableResidenceFormProps {
@@ -32,24 +37,25 @@ const UntraceableResidenceForm: React.FC<UntraceableResidenceFormProps> = ({ cas
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateUntraceableResidenceReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateUntraceableResidenceReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateUntraceableResidenceReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateUntraceableResidenceReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateUntraceableResidenceReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateUntraceableResidenceReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Untraceable Residence report data available for this case.</p>;
@@ -94,13 +100,19 @@ const UntraceableResidenceForm: React.FC<UntraceableResidenceFormProps> = ({ cas
     updateUntraceableResidenceReport(caseData.id, updates);
   };
   
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateUntraceableResidenceReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateUntraceableResidenceReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateUntraceableResidenceReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateUntraceableResidenceReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
   const options = useMemo(() => ({
     callRemark: getEnumOptions(CallRemarkUntraceable),
