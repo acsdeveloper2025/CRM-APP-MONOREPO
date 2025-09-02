@@ -40,24 +40,25 @@ const PositiveResiCumOfficeForm: React.FC<PositiveResiCumOfficeFormProps> = ({ c
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateResiCumOfficeReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateResiCumOfficeReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateResiCumOfficeReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateResiCumOfficeReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateResiCumOfficeReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateResiCumOfficeReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Resi-cum-Office report data available for this case.</p>;
@@ -144,13 +145,19 @@ const PositiveResiCumOfficeForm: React.FC<PositiveResiCumOfficeFormProps> = ({ c
     updateResiCumOfficeReport(caseData.id, updates);
   };
 
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateResiCumOfficeReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateResiCumOfficeReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateResiCumOfficeReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateResiCumOfficeReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
   
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),
