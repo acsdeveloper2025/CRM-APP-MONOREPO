@@ -51,28 +51,8 @@ export const TEST_CLIENTS = {
   }
 };
 
-export const TEST_CASES = {
-  case1: {
-    caseId: 'CASE001',
-    customerName: 'John Doe',
-    customerPhone: '9876543210',
-    address: '123 Test Street, Test City',
-    clientId: 1,
-    assignedTo: TEST_USERS.fieldAgent.id,
-    status: 'PENDING',
-    priority: 'HIGH'
-  },
-  case2: {
-    caseId: 'CASE002',
-    customerName: 'Jane Smith',
-    customerPhone: '9876543211',
-    address: '456 Another Street, Test City',
-    clientId: 2,
-    assignedTo: TEST_USERS.fieldAgent.id,
-    status: 'IN_PROGRESS',
-    priority: 'MEDIUM'
-  }
-};
+// Test case data removed - use empty object for tests
+export const TEST_CASES = {};
 
 // Global setup - runs once before all tests
 beforeAll(async () => {

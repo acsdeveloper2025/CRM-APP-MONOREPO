@@ -18,18 +18,8 @@ export const mockUser = {
   updatedAt: new Date().toISOString()
 };
 
-export const mockCase = {
-  caseId: 'CASE001',
-  customerName: 'John Doe',
-  customerPhone: '9876543210',
-  address: '123 Test Street, Test City',
-  status: 'PENDING',
-  priority: 'HIGH',
-  clientName: 'Test Bank Ltd',
-  assignedToName: 'Test Agent',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString()
-};
+// Mock case data removed - use empty object for tests
+export const mockCase = {};
 
 export const mockClient = {
   id: 1,

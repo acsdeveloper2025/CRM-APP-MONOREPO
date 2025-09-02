@@ -316,18 +316,35 @@ export class MobileFormController {
       const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
-      // Verify case access
+      console.log('Getting form submissions for case:', caseId, 'User:', userId, 'Role:', userRole);
+
+      // Validate caseId parameter
+      if (!caseId || caseId.trim() === '') {
+        return res.status(400).json({
+          success: false,
+          message: 'Case ID is required',
+          error: {
+            code: 'INVALID_CASE_ID',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Verify case access - handle both UUID and business caseId
       const vals: any[] = [caseId];
-      let caseSql = `SELECT id, "verificationData" FROM cases WHERE id = $1`;
+      let caseSql = `SELECT id, "verificationData", "verificationType", "verificationOutcome", status FROM cases WHERE (id = $1 OR "caseId"::text = $1)`;
       if (userRole === 'FIELD_AGENT') {
         caseSql += ` AND "assignedTo" = $2`;
         vals.push(userId);
       }
 
+      console.log('Executing query:', caseSql, 'with values:', vals);
       const caseRes = await query(caseSql, vals);
       const caseData = caseRes.rows[0];
+      console.log('Case data found:', caseData);
 
       if (!caseData) {
+        console.log('Case not found for ID:', caseId, 'User role:', userRole);
         return res.status(404).json({
           success: false,
           message: 'Case not found or access denied',
@@ -397,12 +414,19 @@ export class MobileFormController {
       });
     } catch (error) {
       console.error('Get case form submissions error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        caseId: req.params.caseId,
+        userId: (req as any).user?.id
+      });
       res.status(500).json({
         success: false,
         message: 'Internal server error',
         error: {
           code: 'FORM_RETRIEVAL_FAILED',
           timestamp: new Date().toISOString(),
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
         },
       });
     }

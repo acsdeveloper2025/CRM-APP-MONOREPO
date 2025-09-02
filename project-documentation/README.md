@@ -44,6 +44,29 @@ This directory contains comprehensive documentation for the CRM-APP project, org
 ### 🚀 Setup Guides (`setup-guides/`)
 - **IMMEDIATE_ACTION_PLAN.md** - Immediate actions required for project setup
 - **CLAUDE.md** - Claude AI assistant integration and usage guide
+- **CLEAN_AND_SEED_INSTRUCTIONS.md** - Database seeding and cleanup instructions
+
+### 📊 Comprehensive Reports (`comprehensive-reports/`)
+- **CRM_APPLICATION_COMPREHENSIVE_DOCUMENTATION_AND_AUDIT_REPORT.md** - Complete system overview
+- **CODEBASE_CLEANUP_AUDIT_REPORT.md** - Full codebase cleanup summary
+- **CRM_DATA_VISUALIZATION_REPORTING_PLAN.md** - Analytics and reporting roadmap
+
+### 🚀 Deployment (`deployment/`)
+- **DEPLOYMENT.md** - Production deployment instructions and configurations
+
+### 📈 Performance (`performance/`)
+- **PERFORMANCE_OPTIMIZATION_IMPLEMENTATION.md** - System performance improvements
+
+### 🧪 Testing (`testing/`)
+- **TESTING.md** - Testing strategy and quality assurance documentation
+
+### 🔧 Scripts (`scripts/`)
+#### Cleanup Scripts (`scripts/cleanup/`)
+- **cleanup-summary.md** - Complete data cleanup documentation
+- **clean-and-seed-cases.js** - Database case data cleanup script
+- **clear-queue-data.js** - Queue and Redis cache cleanup script
+- **clear-all-storage.js** - Mobile app storage cleanup script
+- **clear-browser-storage.js** - Frontend browser storage cleanup script
 
 ## 🔗 Quick Links
 
@@ -51,7 +74,49 @@ This directory contains comprehensive documentation for the CRM-APP project, org
 - [Main README](../README.md) - Project overview and getting started
 - [Local Setup Guide](../docs/LOCAL_SETUP.md) - Local development environment setup
 
-### Application-Specific Documentation
+### For Developers
+- Start with: `setup-guides/` for initial setup
+- Code quality: `audit-reports/` for best practices
+- Database work: `database-reports/` and `migration-reports/`
+- API development: `api-docs/` for endpoint specifications
+
+### For DevOps/Deployment
+- Deployment: `deployment/` for production setup
+- Performance: `performance/` for optimization
+- System config: `system-reports/` for infrastructure
+
+### For Data Management
+- Cleanup: `scripts/cleanup/` for data maintenance
+- Schema: `database-reports/` for structure understanding
+- Migration: `migration-reports/` for change tracking
+
+## 🎯 Usage Guidelines
+
+### Running Cleanup Scripts
+All scripts in `scripts/cleanup/` are production-ready:
+```bash
+# Database cleanup
+node project-documentation/scripts/cleanup/clean-and-seed-cases.js
+
+# Queue cleanup
+node project-documentation/scripts/cleanup/clear-queue-data.js
+
+# Mobile storage cleanup
+node project-documentation/scripts/cleanup/clear-all-storage.js
+
+# Browser storage cleanup
+node project-documentation/scripts/cleanup/clear-browser-storage.js
+```
+
+### Documentation Maintenance
+- Each document includes creation and update dates
+- Status indicators show implementation progress
+- Dependencies are clearly marked
+- All scripts are tested and documented
+
+---
+
+**📝 Note**: This documentation is actively maintained. Always backup data before running cleanup scripts.
 - [Backend Documentation](../acs-backend/README.md) - Backend API documentation
 - [Frontend Documentation](../acs-web/README.md) - Frontend application documentation
 - [Mobile App Documentation](../caseflow-mobile/README.md) - Mobile application documentation

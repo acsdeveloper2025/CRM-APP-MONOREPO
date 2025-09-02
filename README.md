@@ -92,3 +92,25 @@ Comprehensive project documentation is organized in the `project-documentation/`
 - PostgreSQL can be installed via Homebrew on macOS, apt on Linux, or downloaded from postgresql.org on Windows.
 - For detailed setup instructions, see individual app README files and the [project documentation](project-documentation/README.md).
 
+## 📚 Documentation
+
+### Quick Start
+- [Local Setup Guide](docs/LOCAL_SETUP.md) - Development environment setup
+- [Project Documentation](project-documentation/README.md) - Complete documentation index
+
+### Organized Documentation Structure
+All project documentation has been organized into categories:
+
+- **📊 [Comprehensive Reports](project-documentation/comprehensive-reports/)** - Major project overviews and audit reports
+- **🔧 [Cleanup Scripts](project-documentation/scripts/cleanup/)** - Data maintenance and cleanup tools
+- **🚀 [Deployment](project-documentation/deployment/)** - Production deployment guides
+- **🗄️ [Database](project-documentation/database-reports/)** - Schema documentation and migration reports
+- **🔌 [API Documentation](project-documentation/api-docs/)** - API endpoints and testing reports
+- **🔍 [Audit Reports](project-documentation/audit-reports/)** - Code quality and fix reports
+- **⚙️ [System Reports](project-documentation/system-reports/)** - Infrastructure and configuration
+- **🚀 [Setup Guides](project-documentation/setup-guides/)** - Installation and configuration guides
+
+### Quick Access
+- **[Complete Documentation Index](project-documentation/DOCUMENTATION_INDEX.md)** - Full file listing with descriptions
+- **[Cleanup Summary](project-documentation/scripts/cleanup/cleanup-summary.md)** - Recent data cleanup documentation
+

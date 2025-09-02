@@ -253,9 +253,9 @@ class CaseService {
     }
   }
 
-  // Get mock cases (fallback) - now returns empty array since mock data removed
+  // No mock cases - all mock data removed
   private async getMockCases(): Promise<Case[]> {
-    console.log('Mock data has been removed - returning empty array');
+    console.log('No mock data available - returning empty array');
     return [];
   }
 
