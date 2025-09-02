@@ -216,6 +216,9 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
+    // Check if id is numeric (caseId) or UUID (id)
+    const isNumeric = /^\d+$/.test(id);
+
     // Enhanced query with all 13 required fields for mobile app
     const caseQuery = `
       SELECT
@@ -241,10 +244,11 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
       LEFT JOIN users created_user ON c."createdByBackendUser" = created_user.id
       LEFT JOIN products p ON c."productId" = p.id
       LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
-      WHERE c."caseId" = $1
+      WHERE ${isNumeric ? 'c."caseId" = $1' : 'c.id = $1'}
     `;
 
-    const result = await pool.query(caseQuery, [parseInt(id)]);
+    const queryParam = isNumeric ? parseInt(id) : id;
+    const result = await pool.query(caseQuery, [queryParam]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -345,6 +349,149 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 // POST /api/cases/:id/assign - Assign case to user
+// PUT /api/cases/:id - Update case
+export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      customerName,
+      customerPhone,
+      customerCallingCode,
+      clientId,
+      productId,
+      verificationTypeId,
+      address,
+      pincode,
+      priority,
+      trigger,
+      applicantType,
+      backendContactNumber,
+      assignedToId
+    } = req.body;
+
+    // Build dynamic update query
+    const updateFields: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (customerName !== undefined) {
+      updateFields.push(`"customerName" = $${paramIndex}`);
+      values.push(customerName);
+      paramIndex++;
+    }
+    if (customerPhone !== undefined) {
+      updateFields.push(`"customerPhone" = $${paramIndex}`);
+      values.push(customerPhone);
+      paramIndex++;
+    }
+    if (customerCallingCode !== undefined) {
+      updateFields.push(`"customerCallingCode" = $${paramIndex}`);
+      values.push(customerCallingCode);
+      paramIndex++;
+    }
+    if (clientId !== undefined) {
+      updateFields.push(`"clientId" = $${paramIndex}`);
+      values.push(clientId);
+      paramIndex++;
+    }
+    if (productId !== undefined) {
+      updateFields.push(`"productId" = $${paramIndex}`);
+      values.push(productId);
+      paramIndex++;
+    }
+    if (verificationTypeId !== undefined) {
+      updateFields.push(`"verificationTypeId" = $${paramIndex}`);
+      values.push(verificationTypeId);
+      paramIndex++;
+    }
+    if (address !== undefined) {
+      updateFields.push(`address = $${paramIndex}`);
+      values.push(address);
+      paramIndex++;
+    }
+    if (pincode !== undefined) {
+      updateFields.push(`pincode = $${paramIndex}`);
+      values.push(pincode);
+      paramIndex++;
+    }
+    if (priority !== undefined) {
+      updateFields.push(`priority = $${paramIndex}`);
+      values.push(priority);
+      paramIndex++;
+    }
+    if (trigger !== undefined) {
+      updateFields.push(`trigger = $${paramIndex}`);
+      values.push(trigger);
+      paramIndex++;
+    }
+    if (applicantType !== undefined) {
+      updateFields.push(`"applicantType" = $${paramIndex}`);
+      values.push(applicantType);
+      paramIndex++;
+    }
+    if (backendContactNumber !== undefined) {
+      updateFields.push(`"backendContactNumber" = $${paramIndex}`);
+      values.push(backendContactNumber);
+      paramIndex++;
+    }
+    if (assignedToId !== undefined) {
+      updateFields.push(`"assignedTo" = $${paramIndex}`);
+      values.push(assignedToId);
+      paramIndex++;
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No fields to update',
+        error: { code: 'NO_UPDATE_FIELDS' },
+      });
+    }
+
+    // Always update the updatedAt timestamp
+    updateFields.push(`"updatedAt" = NOW()`);
+
+    // Add case ID as the last parameter
+    values.push(parseInt(id));
+
+    const updateQuery = `
+      UPDATE cases
+      SET ${updateFields.join(', ')}
+      WHERE "caseId" = $${paramIndex}
+      RETURNING *
+    `;
+
+    const result = await pool.query(updateQuery, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Case not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    logger.info('Case updated', {
+      userId: req.user?.id,
+      caseId: id,
+      updatedFields: updateFields.filter(field => !field.includes('updatedAt')),
+    });
+
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Case updated successfully',
+    });
+  } catch (error) {
+    logger.error('Error updating case:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update case',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
 export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;

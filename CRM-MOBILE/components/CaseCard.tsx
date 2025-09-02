@@ -9,6 +9,7 @@ import { useCaseAutoSaveStatus } from '../hooks/useCaseAutoSaveStatus';
 import CaseTimeline from './CaseTimeline';
 import AttachmentsModal from './AttachmentsModal';
 import PositiveResidenceForm from './forms/residence/PositiveResidenceForm';
+import { attachmentService } from '../services/attachmentService';
 import ShiftedResidenceForm from './forms/residence/ShiftedResidenceForm';
 import NspResidenceForm from './forms/residence/NspResidenceForm';
 import EntryRestrictedResidenceForm from './forms/residence/EntryRestrictedResidenceForm';
@@ -107,11 +108,31 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
   const [acceptMessage, setAcceptMessage] = useState<string | null>(null);
   const [showAcceptSuccess, setShowAcceptSuccess] = useState(false);
 
+  // State for real attachment count
+  const [attachmentCount, setAttachmentCount] = useState<number>(0);
+  const [attachmentCountLoaded, setAttachmentCountLoaded] = useState<boolean>(false);
+
   // Check for auto-saved data for this case
   const { hasAutoSaveData } = useCaseAutoSaveStatus(caseData.id);
 
-  // Get attachment count for display
-  const attachmentCount = caseData.attachments?.length || 0;
+  // Fetch real attachment count
+  useEffect(() => {
+    const fetchAttachmentCount = async () => {
+      if (!attachmentCountLoaded) {
+        try {
+          const attachments = await attachmentService.getCaseAttachments(caseData.id);
+          setAttachmentCount(attachments.length);
+          setAttachmentCountLoaded(true);
+        } catch (error) {
+          console.error('Failed to fetch attachment count:', error);
+          setAttachmentCount(0);
+          setAttachmentCountLoaded(true);
+        }
+      }
+    };
+
+    fetchAttachmentCount();
+  }, [caseData.id, attachmentCountLoaded]);
   const [isFormExpanding, setIsFormExpanding] = useState(false);
   const [isFormScrollable, setIsFormScrollable] = useState(false);
   const formContentRef = useRef<HTMLDivElement>(null);

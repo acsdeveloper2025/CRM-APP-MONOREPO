@@ -141,8 +141,8 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
     address: backendCase.address,
     visitAddress: backendCase.address, // Legacy compatibility
 
-    // Generate mock attachments for now (will be replaced with real attachments later)
-    attachments: generateAttachments(`CASE-${backendCase.caseId}`, Math.floor(Math.random() * 5))
+    // Attachments will be loaded separately when needed (no mock data)
+    attachments: []
   };
 };
 

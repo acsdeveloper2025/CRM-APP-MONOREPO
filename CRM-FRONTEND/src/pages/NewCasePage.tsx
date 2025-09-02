@@ -61,12 +61,23 @@ export const NewCasePage: React.FC = () => {
         const pincodes = pincodesResponse.data;
         const areas = areasResponse.data;
 
+
+
         // Find pincode ID based on pincode code
         const foundPincode = pincodes.find(p => p.code === caseItem.pincode);
         const pincodeId = foundPincode?.id?.toString() || '';
 
-        // Select the first available area
-        const areaId = areas.length > 0 ? areas[0].id.toString() : '';
+        // Find the correct area based on case data
+        let areaId = '';
+        if (caseItem.areaId) {
+          // If case has areaId, use it
+          areaId = String(caseItem.areaId);
+        } else if (areas.length > 0) {
+          // Otherwise use first available area
+          areaId = areas[0].id.toString();
+        }
+
+
 
         // Map case data to CustomerInfoData format
         const customerInfo: CustomerInfoData = {
@@ -80,20 +91,20 @@ export const NewCasePage: React.FC = () => {
         const caseFormData: FullCaseFormData = {
           clientId: String(caseItem.clientId || ''),
           productId: String(caseItem.productId || ''),
-          verificationType: String(caseItem.verificationType || ''),
+          verificationType: String(caseItem.verificationTypeName || ''), // Use the joined name
           verificationTypeId: String(caseItem.verificationTypeId || ''),
           applicantType: String(caseItem.applicantType || ''),
           createdByBackendUser: '', // Will be set to current user
           backendContactNumber: String(caseItem.backendContactNumber || ''),
           assignedToId: String(caseItem.assignedTo || ''),
-          priority: typeof caseItem.priority === 'string' ?
-            (caseItem.priority === 'LOW' ? 1 : caseItem.priority === 'MEDIUM' ? 2 : caseItem.priority === 'HIGH' ? 3 : 4) :
-            Number(caseItem.priority) || 2,
-          notes: String(caseItem.trigger || caseItem.notes || ''),
+          priority: caseItem.priority || 'MEDIUM', // Keep as string
+          trigger: String(caseItem.trigger || caseItem.notes || ''), // Use 'trigger' not 'notes'
           address: String(caseItem.address || ''),
           pincodeId: pincodeId, // Map pincode code to pincode ID
-          areaId: areaId, // Set the first available area
+          areaId: areaId, // Use the found area ID
         };
+
+
 
         setInitialData({
           customerInfo,

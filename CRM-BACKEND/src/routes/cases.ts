@@ -9,6 +9,7 @@ import {
   getCaseById,
   createCase,
   createCaseWithAttachments,
+  updateCase,
   assignCase
 } from '@/controllers/casesController';
 
@@ -250,14 +251,13 @@ router.get('/:id',
   getCaseById
 );
 
-// TODO: Implement updateCase function
-// router.put('/:id',
-//   [param('id').trim().notEmpty().withMessage('Case ID is required')],
-//   updateCaseValidation,
-//   validate,
-//   validateCaseAccess,
-//   updateCase
-// );
+router.put('/:id',
+  [param('id').trim().notEmpty().withMessage('Case ID is required')],
+  updateCaseValidation,
+  validate,
+  validateCaseAccess,
+  updateCase
+);
 
 // TODO: Implement deleteCase function
 // router.delete('/:id',

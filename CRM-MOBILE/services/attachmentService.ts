@@ -1,9 +1,10 @@
 import { Attachment } from '../types';
 import { offlineAttachmentService } from './offlineAttachmentService';
 import { secureStorageService } from './secureStorageService';
+import AuthStorageService from './authStorageService';
 
 class AttachmentService {
-  private baseUrl = 'https://api.caseflow.com/v1';
+  private baseUrl = 'http://localhost:3000/api'; // Use local backend
   private maxFileSize = 10485760; // 10MB in bytes
   private maxAttachments = 10;
   private isOfflineMode = false;
@@ -38,21 +39,62 @@ class AttachmentService {
   }
 
   /**
+   * Get authentication token for API calls
+   */
+  private async getAuthToken(): Promise<string> {
+    const token = await AuthStorageService.getCurrentAccessToken();
+    if (!token) {
+      throw new Error('No authentication token available');
+    }
+    return token;
+  }
+
+  /**
    * Fetch attachments for a specific case
    */
   async getCaseAttachments(caseId: string): Promise<Attachment[]> {
     try {
       console.log(`📎 Fetching attachments for case ${caseId}...`);
-      
-      // Simulate API call with realistic loading time
-      await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400));
-      
-      // Generate realistic attachments based on case ID for consistent demo data
-      const attachments = this.generateRealisticAttachments(caseId);
-      
-      console.log(`✅ Found ${attachments.length} attachments for case ${caseId}`);
+
+      // Use real API instead of mock data
+      const authToken = await this.getAuthToken();
+      const response = await fetch(`${this.baseUrl}/mobile/cases/${caseId}/attachments`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+          'X-App-Version': '4.0.0',
+          'X-Platform': 'WEB'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch attachments');
+      }
+
+      // Transform backend response to mobile app format
+      const attachments: Attachment[] = (result.data || []).map((att: any) => ({
+        id: att.id,
+        name: att.originalName || att.filename,
+        type: att.mimeType?.startsWith('image/') ? 'image' : 'pdf',
+        mimeType: att.mimeType,
+        size: att.size,
+        url: `${this.baseUrl}${att.url}`,
+        thumbnailUrl: att.thumbnailUrl ? `${this.baseUrl}${att.thumbnailUrl}` : undefined,
+        uploadedAt: att.uploadedAt,
+        uploadedBy: 'Field Agent', // Default for mobile uploads
+        description: att.description || ''
+      }));
+
+      console.log(`✅ Found ${attachments.length} real attachments for case ${caseId}`);
       return attachments;
-      
+
     } catch (error) {
       console.error(`❌ Failed to fetch attachments for case ${caseId}:`, error);
       throw new Error('Failed to load attachments. Please check your connection and try again.');

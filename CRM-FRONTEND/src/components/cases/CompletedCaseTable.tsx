@@ -145,7 +145,7 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
             <TableRow key={caseItem.id}>
               <TableCell className="font-medium">
                 <Link
-                  to={`/cases/${caseItem.id}`}
+                  to={`/cases/${caseItem.caseId || caseItem.id}`}
                   className="text-primary hover:underline"
                 >
                   #{caseItem.caseId || caseItem.id?.slice(-8) || 'N/A'}
@@ -228,7 +228,7 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                      <Link to={`/cases/${caseItem.id}`}>
+                      <Link to={`/cases/${caseItem.caseId || caseItem.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
                       </Link>

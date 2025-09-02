@@ -69,9 +69,9 @@ export class MobileAttachmentController {
         });
       }
 
-      // Verify case access
+      // Verify case access and get case details
       const where: any[] = [caseId];
-      let caseSql = `SELECT id FROM cases WHERE id = $1`;
+      let caseSql = `SELECT id, "caseId" FROM cases WHERE id = $1`;
       if (userRole === 'FIELD') {
         caseSql += ` AND "assignedToId" = $2`;
         where.push(userId);
@@ -94,7 +94,7 @@ export class MobileAttachmentController {
       }
 
       // Check file count limit
-      const countRes = await query(`SELECT COUNT(*)::int as count FROM attachments WHERE "caseId" = $1`, [caseId]);
+      const countRes = await query(`SELECT COUNT(*)::int as count FROM attachments WHERE case_id = $1`, [caseId]);
       const existingAttachmentCount = Number(countRes.rows[0]?.count || 0);
 
       if (existingAttachmentCount + files.length > config.mobile.maxFilesPerCase) {
@@ -141,21 +141,18 @@ export class MobileAttachmentController {
 
           // Save attachment to database
           const attRes = await query(
-            `INSERT INTO attachments (id, "caseId", name, filename, "originalName", type, "mimeType", size, url, "thumbnailUrl", "uploadedAt", "uploadedById", description, "geoLocation")
-             VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, $10, NULL, $11)
-             RETURNING id, filename, "originalName", "mimeType", size, url, "thumbnailUrl", "uploadedAt"`,
+            `INSERT INTO attachments (case_id, "caseId", filename, "originalName", "mimeType", "fileSize", "filePath", "uploadedBy", "createdAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+             RETURNING id, filename, "originalName", "mimeType", "fileSize", "filePath", "createdAt"`,
             [
-              caseId,
-              file.originalname,
+              caseId, // case_id (UUID)
+              existingCase.caseId, // caseId (integer)
               file.filename,
               file.originalname,
-              file.mimetype.startsWith('image/') ? 'IMAGE' : 'PDF',
               file.mimetype,
               file.size,
               `/uploads/mobile/${file.filename}`,
-              thumbnailUrl,
               userId,
-              geoLocation ? JSON.stringify(geoLocation) : null,
             ]
           );
           const attachment = attRes.rows[0];
@@ -226,14 +223,9 @@ export class MobileAttachmentController {
       const userId = (req as any).user?.userId;
       const userRole = (req as any).user?.role;
 
-      // Verify case access
-      const where: any = { id: caseId };
-      if (userRole === 'FIELD') {
-        where.assignedToId = userId;
-      }
-
+      // Verify case access and get case details
       const caseVals: any[] = [caseId];
-      let caseSql = `SELECT id FROM cases WHERE id = $1`;
+      let caseSql = `SELECT id, "caseId" FROM cases WHERE id = $1`;
       if (userRole === 'FIELD') { caseSql += ` AND "assignedToId" = $2`; caseVals.push(userId); }
       const caseCheck = await query(caseSql, caseVals);
       const existingCase = caseCheck.rows[0];
@@ -249,18 +241,18 @@ export class MobileAttachmentController {
         });
       }
 
-      const attRes = await query(`SELECT id, filename, "originalName", "mimeType", size, url, "thumbnailUrl", "uploadedAt", "geoLocation" FROM attachments WHERE "caseId" = $1 ORDER BY "uploadedAt" DESC`, [caseId]);
+      const attRes = await query(`SELECT id, filename, "originalName", "mimeType", "fileSize", "filePath", "createdAt" FROM attachments WHERE case_id = $1 ORDER BY "createdAt" DESC`, [caseId]);
 
       const mobileAttachments: MobileAttachmentResponse[] = attRes.rows.map((att: any) => ({
         id: att.id,
         filename: att.filename,
         originalName: att.originalName,
         mimeType: att.mimeType,
-        size: att.size,
-        url: att.url,
-        thumbnailUrl: att.thumbnailUrl,
-        uploadedAt: new Date(att.uploadedAt).toISOString(),
-        geoLocation: att.geoLocation ? JSON.parse(att.geoLocation as string) : undefined,
+        size: att.fileSize,
+        url: att.filePath,
+        thumbnailUrl: null, // Not available in current schema
+        uploadedAt: new Date(att.createdAt).toISOString(),
+        geoLocation: undefined, // Not available in current schema
       }));
 
       res.json({

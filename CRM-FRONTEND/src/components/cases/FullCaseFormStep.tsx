@@ -144,6 +144,8 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
   const { data: areasResponse } = useAreasByPincode(selectedPincodeId ? parseInt(selectedPincodeId) : undefined);
   const areas = areasResponse?.data || [];
 
+
+
   // Update form when initialData changes (for edit mode)
   useEffect(() => {
     if (editMode && initialData && Object.keys(initialData).length > 0) {
@@ -164,6 +166,21 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
       });
     }
   }, [editMode, initialData, form, user]);
+
+  // Additional useEffect to ensure form values are set when dependent data loads
+  useEffect(() => {
+    if (editMode && initialData && Object.keys(initialData).length > 0) {
+      // Re-set productId when products are loaded
+      if (products.length > 0 && initialData.productId && form.getValues('productId') !== initialData.productId) {
+        form.setValue('productId', initialData.productId);
+      }
+
+      // Re-set areaId when areas are loaded
+      if (areas.length > 0 && initialData.areaId && form.getValues('areaId') !== initialData.areaId) {
+        form.setValue('areaId', initialData.areaId);
+      }
+    }
+  }, [editMode, initialData, products, areas, form]);
 
   const handleSubmit = (data: FullCaseFormData) => {
     onSubmit(data, attachments);
