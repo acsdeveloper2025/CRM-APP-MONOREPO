@@ -38,24 +38,25 @@ const EntryRestrictedBuilderForm: React.FC<EntryRestrictedBuilderFormProps> = ({
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateEntryRestrictedBuilderReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateEntryRestrictedBuilderReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateEntryRestrictedBuilderReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateEntryRestrictedBuilderReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateEntryRestrictedBuilderReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateEntryRestrictedBuilderReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Entry Restricted Builder report data available.</p>;
@@ -100,13 +101,19 @@ const EntryRestrictedBuilderForm: React.FC<EntryRestrictedBuilderFormProps> = ({
     updateEntryRestrictedBuilderReport(caseData.id, updates);
   };
 
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateEntryRestrictedBuilderReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateEntryRestrictedBuilderReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateEntryRestrictedBuilderReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateEntryRestrictedBuilderReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
   
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),
