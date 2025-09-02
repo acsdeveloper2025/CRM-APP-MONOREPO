@@ -438,12 +438,12 @@ const PositiveOfficeForm: React.FC<PositiveOfficeFormProps> = ({ caseData }) => 
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            companyName: report.companyName,
+                            companyName: report.nameOnBoard || report.companyNatureOfBusiness,
                             designation: report.designation,
-                            employeeId: report.employeeId,
-                            workingHours: report.workingHours,
-                            hrVerification: report.hrContactName ? true : false,
-                            salaryConfirmed: report.monthlySalary ? true : false,
+                            employeeId: report.metPerson, // Using metPerson as employee identifier
+                            workingHours: report.workingPeriod,
+                            hrVerification: report.nameOfTpc1 ? true : false, // Using TPC contact as HR verification
+                            salaryConfirmed: report.workingStatus ? true : false, // Using working status as salary confirmation
                             remarks: report.otherObservation,
                             outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
                                     report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
@@ -451,17 +451,17 @@ const PositiveOfficeForm: React.FC<PositiveOfficeFormProps> = ({ caseData }) => 
                                     report.finalStatus === FinalStatus.Refer ? 'REFER' :
                                     report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
                             // Additional fields from the form
-                            department: report.department,
-                            joiningDate: report.joiningDate,
-                            monthlySalary: report.monthlySalary,
-                            hrContactName: report.hrContactName,
-                            hrContactPhone: report.hrContactPhone,
-                            officeAddress: report.officeAddress,
+                            department: report.applicantDesignation, // Using applicant designation as department
+                            joiningDate: report.establishmentPeriod, // Using establishment period as joining date
+                            monthlySalary: report.workingStatus, // Using working status for salary info
+                            hrContactName: report.nameOfTpc1, // Using TPC1 as HR contact
+                            hrContactPhone: report.nameOfTpc2, // Using TPC2 as HR phone
+                            officeAddress: report.addressStructure,
                             officeType: report.officeType,
-                            totalEmployees: report.totalEmployees,
-                            businessNature: report.businessNature,
+                            totalEmployees: report.staffStrength,
+                            businessNature: report.companyNatureOfBusiness,
                             verificationMethod: 'PHYSICAL',
-                            documentsSeen: report.documentsSeen,
+                            documentsSeen: report.documentShown,
                             verificationNotes: report.otherObservation,
                             recommendationStatus: report.finalStatus === FinalStatus.Positive ? 'POSITIVE' : 'NEGATIVE'
                         };

@@ -54,6 +54,8 @@ export const FORM_TYPES = {
   PROPERTY_INDIVIDUAL_UNTRACEABLE: 'property-individual-untraceable',
 
   // Property APF Forms
+  PROPERTY_APF_POSITIVE: 'property-apf-positive',
+  PROPERTY_APF_NSP: 'property-apf-nsp',
   PROPERTY_APF_POSITIVE_NEGATIVE: 'property-apf-positive-negative',
   PROPERTY_APF_ENTRY_RESTRICTED: 'property-apf-entry-restricted',
   PROPERTY_APF_UNTRACEABLE: 'property-apf-untraceable',

@@ -278,7 +278,7 @@ const UntraceableNocForm: React.FC<UntraceableNocFormProps> = ({ caseData }) => 
                                     report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
                                     report.finalStatus === FinalStatus.Refer ? 'REFER' :
                                     report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
-                            remarks: report.otherObservation || '',
+                            remarks: report.otherExtraRemark || '',
                             ...report // Include all report data
                         };
 

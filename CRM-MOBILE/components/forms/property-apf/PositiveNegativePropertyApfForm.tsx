@@ -81,9 +81,9 @@ const PositiveNegativePropertyApfForm: React.FC<PositiveNegativePropertyApfFormP
   const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
     if (!isReadOnly && report) {
       if (verificationStatus === VerificationStatus.Positive) {
-        updatePositivePropertyApfReport(caseData.id, { ...report, images });
+        updatePositivePropertyApfReport(caseData.id, { ...report, images } as Partial<PositivePropertyApfReportData>);
       } else {
-        updateNspPropertyApfReport(caseData.id, { ...report, images });
+        updateNspPropertyApfReport(caseData.id, { ...report, images } as Partial<NspPropertyApfReportData>);
       }
     }
   };

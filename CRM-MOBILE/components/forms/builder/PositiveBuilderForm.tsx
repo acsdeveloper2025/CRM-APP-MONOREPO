@@ -33,6 +33,8 @@ const getEnumOptions = (enumObject: object) => Object.values(enumObject).map(val
 const PositiveBuilderForm: React.FC<PositiveBuilderFormProps> = ({ caseData }) => {
   const { updatePositiveBuilderReport, updateCaseStatus, toggleSaveCase } = useCases();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const report = caseData.positiveBuilderReport;
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;

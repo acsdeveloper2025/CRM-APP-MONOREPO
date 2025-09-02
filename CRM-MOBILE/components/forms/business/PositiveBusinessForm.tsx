@@ -425,12 +425,12 @@ const PositiveBusinessForm: React.FC<PositiveBusinessFormProps> = ({ caseData })
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            businessName: report.businessName,
+                            businessName: report.nameOnBoard || report.companyNatureOfBusiness,
                             businessType: report.businessType,
-                            ownerName: report.ownerName,
-                            businessAddress: report.businessAddress,
-                            operatingHours: report.operatingHours,
-                            employeeCount: report.employeeCount,
+                            ownerName: report.nameOfCompanyOwners,
+                            businessAddress: report.addressStructure,
+                            operatingHours: report.businessPeriod,
+                            employeeCount: report.staffStrength,
                             remarks: report.otherObservation,
                             outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
                                     report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
@@ -440,7 +440,7 @@ const PositiveBusinessForm: React.FC<PositiveBusinessFormProps> = ({ caseData })
                             // Additional fields from the form
                             addressRating: report.addressRating,
                             locality: report.locality,
-                            businessStatus: report.businessStatus,
+                            businessStatus: report.officeStatus,
                             ownershipType: report.ownershipType,
                             politicalConnection: report.politicalConnection,
                             dominatedArea: report.dominatedArea,
