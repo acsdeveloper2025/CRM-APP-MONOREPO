@@ -39,24 +39,25 @@ const EntryRestrictedPropertyIndividualForm: React.FC<EntryRestrictedPropertyInd
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateEntryRestrictedPropertyIndividualReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateEntryRestrictedPropertyIndividualReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateEntryRestrictedPropertyIndividualReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateEntryRestrictedPropertyIndividualReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateEntryRestrictedPropertyIndividualReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateEntryRestrictedPropertyIndividualReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Entry Restricted Property (Individual) report data available.</p>;
@@ -105,13 +106,19 @@ const EntryRestrictedPropertyIndividualForm: React.FC<EntryRestrictedPropertyInd
     updateEntryRestrictedPropertyIndividualReport(caseData.id, updates);
   };
   
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateEntryRestrictedPropertyIndividualReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateEntryRestrictedPropertyIndividualReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateEntryRestrictedPropertyIndividualReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateEntryRestrictedPropertyIndividualReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
   
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),

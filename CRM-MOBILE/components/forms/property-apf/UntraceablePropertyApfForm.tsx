@@ -37,24 +37,25 @@ const UntraceablePropertyApfForm: React.FC<UntraceablePropertyApfFormProps> = ({
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateUntraceablePropertyApfReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateUntraceablePropertyApfReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateUntraceablePropertyApfReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateUntraceablePropertyApfReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateUntraceablePropertyApfReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateUntraceablePropertyApfReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Untraceable Property (APF) report data available.</p>;
@@ -98,13 +99,19 @@ const UntraceablePropertyApfForm: React.FC<UntraceablePropertyApfFormProps> = ({
     updateUntraceablePropertyApfReport(caseData.id, updates);
   };
   
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateUntraceablePropertyApfReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateUntraceablePropertyApfReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateUntraceablePropertyApfReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateUntraceablePropertyApfReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
   
   const options = useMemo(() => ({
     callRemark: getEnumOptions(CallRemarkUntraceable),

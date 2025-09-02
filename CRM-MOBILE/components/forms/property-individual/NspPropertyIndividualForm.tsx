@@ -39,24 +39,25 @@ const NspPropertyIndividualForm: React.FC<NspPropertyIndividualFormProps> = ({ c
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateNspPropertyIndividualReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateNspPropertyIndividualReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateNspPropertyIndividualReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateNspPropertyIndividualReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateNspPropertyIndividualReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateNspPropertyIndividualReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No NSP Property (Individual) report data available.</p>;
@@ -118,13 +119,19 @@ const NspPropertyIndividualForm: React.FC<NspPropertyIndividualFormProps> = ({ c
     updateNspPropertyIndividualReport(caseData.id, updates);
   };
   
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateNspPropertyIndividualReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateNspPropertyIndividualReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateNspPropertyIndividualReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateNspPropertyIndividualReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
   
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),

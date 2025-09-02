@@ -39,24 +39,25 @@ const PositivePropertyIndividualForm: React.FC<PositivePropertyIndividualFormPro
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updatePositivePropertyIndividualReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updatePositivePropertyIndividualReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updatePositivePropertyIndividualReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updatePositivePropertyIndividualReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updatePositivePropertyIndividualReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updatePositivePropertyIndividualReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Positive Property (Individual) report data available.</p>;
@@ -118,13 +119,19 @@ const PositivePropertyIndividualForm: React.FC<PositivePropertyIndividualFormPro
     updatePositivePropertyIndividualReport(caseData.id, updates);
   };
   
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updatePositivePropertyIndividualReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updatePositivePropertyIndividualReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updatePositivePropertyIndividualReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updatePositivePropertyIndividualReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
   
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),

@@ -39,24 +39,25 @@ const EntryRestrictedPropertyApfForm: React.FC<EntryRestrictedPropertyApfFormPro
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateEntryRestrictedPropertyApfReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateEntryRestrictedPropertyApfReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateEntryRestrictedPropertyApfReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateEntryRestrictedPropertyApfReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateEntryRestrictedPropertyApfReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateEntryRestrictedPropertyApfReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Entry Restricted Property (APF) report data available.</p>;
@@ -106,13 +107,19 @@ const EntryRestrictedPropertyApfForm: React.FC<EntryRestrictedPropertyApfFormPro
     updateEntryRestrictedPropertyApfReport(caseData.id, updates);
   };
   
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateEntryRestrictedPropertyApfReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateEntryRestrictedPropertyApfReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateEntryRestrictedPropertyApfReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateEntryRestrictedPropertyApfReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
   
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),

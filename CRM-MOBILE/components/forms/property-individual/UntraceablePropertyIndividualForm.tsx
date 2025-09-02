@@ -37,24 +37,25 @@ const UntraceablePropertyIndividualForm: React.FC<UntraceablePropertyIndividualF
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateUntraceablePropertyIndividualReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateUntraceablePropertyIndividualReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateUntraceablePropertyIndividualReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateUntraceablePropertyIndividualReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateUntraceablePropertyIndividualReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateUntraceablePropertyIndividualReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Untraceable Property (Individual) report data available.</p>;
@@ -98,13 +99,19 @@ const UntraceablePropertyIndividualForm: React.FC<UntraceablePropertyIndividualF
     updateUntraceablePropertyIndividualReport(caseData.id, updates);
   };
   
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateUntraceablePropertyIndividualReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateUntraceablePropertyIndividualReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateUntraceablePropertyIndividualReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateUntraceablePropertyIndividualReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
   
   const options = useMemo(() => ({
     callRemark: getEnumOptions(CallRemarkUntraceable),
