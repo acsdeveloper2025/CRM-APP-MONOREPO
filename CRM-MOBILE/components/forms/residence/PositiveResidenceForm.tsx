@@ -500,11 +500,11 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            applicantName: report.applicantName,
-                            addressConfirmed: report.addressLocatable === AddressLocatable.Yes,
+                            applicantName: report.metPersonName,
+                            addressConfirmed: report.addressLocatable === AddressLocatable.Easy,
                             residenceType: report.houseStatus,
-                            familyMembers: report.familyMembers,
-                            neighborVerification: report.feedbackFromNeighbour === FeedbackFromNeighbour.Positive,
+                            familyMembers: report.totalFamilyMembers,
+                            neighborVerification: report.feedbackFromNeighbour === FeedbackFromNeighbour.NoAdverse,
                             remarks: report.otherObservation,
                             outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
                                     report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' : 'PARTIAL',

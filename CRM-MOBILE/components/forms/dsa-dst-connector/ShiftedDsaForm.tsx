@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   Case, ShiftedDsaReportData, AddressLocatable, AddressRating, OfficeStatusOffice, DesignationShiftedOffice,
   PremisesStatusBusiness, SightStatus, TPCMetPerson, TPCConfirmation, LocalityTypeResiCumOffice, PoliticalConnection,
-  DominatedArea, FeedbackFromNeighbour, FinalStatusShiftedBusiness, CaseStatus, CapturedImage
+  DominatedArea, FeedbackFromNeighbour, FinalStatus, CaseStatus, CapturedImage
 } from '../../../types';
 import { useCases } from '../../../context/CaseContext';
 import { FormField, SelectField, TextAreaField } from '../../FormControls';
@@ -115,7 +115,7 @@ const ShiftedDsaForm: React.FC<ShiftedDsaFormProps> = ({ caseData }) => {
         if (!checkFields(closedFields)) return false;
     }
 
-    if (report.finalStatus === FinalStatusShiftedBusiness.Hold) {
+    if (report.finalStatus === FinalStatus.Hold) {
         if (!report.holdReason || report.holdReason.trim() === '') return false;
     }
 
@@ -159,7 +159,7 @@ const ShiftedDsaForm: React.FC<ShiftedDsaFormProps> = ({ caseData }) => {
     politicalConnection: getEnumOptions(PoliticalConnection),
     dominatedArea: getEnumOptions(DominatedArea),
     feedbackFromNeighbour: getEnumOptions(FeedbackFromNeighbour),
-    finalStatus: getEnumOptions(FinalStatusShiftedBusiness),
+    finalStatus: getEnumOptions(FinalStatus),
   }), []);
 
   return (
@@ -394,7 +394,7 @@ const ShiftedDsaForm: React.FC<ShiftedDsaFormProps> = ({ caseData }) => {
           <option value="">Select...</option>
           {options.finalStatus}
         </SelectField>
-        {report.finalStatus === FinalStatusShiftedBusiness.Hold && (
+        {report.finalStatus === FinalStatus.Hold && (
           <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />
         )}
       </div>

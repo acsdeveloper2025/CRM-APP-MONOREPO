@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   Case, NspBusinessReportData, AddressLocatable, AddressRating, OfficeStatusOffice, BusinessExistence,
   ApplicantExistence, DesignationShiftedOffice, PremisesStatusBusiness, SightStatus, TPCMetPerson,
-  TPCConfirmation, LocalityTypeResiCumOffice, DominatedArea, FeedbackFromNeighbour, FinalStatusShiftedBusiness, CaseStatus, CapturedImage
+  TPCConfirmation, LocalityTypeResiCumOffice, DominatedArea, FeedbackFromNeighbour, FinalStatus, CaseStatus, CapturedImage
 } from '../../../types';
 import { useCases } from '../../../context/CaseContext';
 import { FormField, SelectField, TextAreaField, NumberDropdownField } from '../../FormControls';
@@ -14,12 +14,7 @@ import AutoSaveFormWrapper from '../../AutoSaveFormWrapper';
 import { FORM_TYPES } from '../../../constants/formTypes';
 import VerificationFormService from '../../../services/verificationFormService';
 import {
-  createImageChangeHandler,
-  createSelfieImageChangeHandler,
-  createAutoSaveImagesChangeHandler,
-  combineImagesForAutoSave,
-  createFormDataChangeHandler,
-  createDataRestoredHandler
+  combineImagesForAutoSave
 } from '../../../utils/imageAutoSaveHelpers';
 
 interface NspBusinessFormProps {
@@ -108,7 +103,7 @@ const NspBusinessForm: React.FC<NspBusinessFormProps> = ({ caseData }) => {
         }
     }
     
-    if (report.finalStatus === FinalStatusShiftedBusiness.Hold) {
+    if (report.finalStatus === FinalStatus.Hold) {
         if (!report.holdReason || report.holdReason.trim() === '') return false;
     }
 
@@ -149,7 +144,7 @@ const NspBusinessForm: React.FC<NspBusinessFormProps> = ({ caseData }) => {
     localityType: getEnumOptions(LocalityTypeResiCumOffice),
     dominatedArea: getEnumOptions(DominatedArea),
     feedbackFromNeighbour: getEnumOptions(FeedbackFromNeighbour),
-    finalStatus: getEnumOptions(FinalStatusShiftedBusiness),
+    finalStatus: getEnumOptions(FinalStatus),
   }), []);
 
   return (
@@ -321,7 +316,7 @@ const NspBusinessForm: React.FC<NspBusinessFormProps> = ({ caseData }) => {
       <TextAreaField label="Other Observation" id="otherObservation" name="otherObservation" value={report.otherObservation} onChange={handleChange} disabled={isReadOnly} />
       
       <SelectField label="Final Status" id="finalStatus" name="finalStatus" value={report.finalStatus || ''} onChange={handleChange} disabled={isReadOnly}><option value="">Select...</option>{options.finalStatus}</SelectField>
-      {report.finalStatus === FinalStatusShiftedBusiness.Hold && <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />}
+      {report.finalStatus === FinalStatus.Hold && <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />}
 
       {/* Permission Status Section */}
       <PermissionStatus showOnlyDenied={true} />

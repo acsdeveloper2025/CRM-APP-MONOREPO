@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   Case, NspBuilderReportData, AddressLocatable, AddressRating, OfficeStatusOffice, BusinessExistence,
   ApplicantExistence, DesignationShiftedOffice, PremisesStatusBusiness, SightStatus, TPCMetPerson,
-  TPCConfirmation, LocalityTypeResiCumOffice, DominatedArea, FeedbackFromNeighbour, FinalStatusShiftedBusiness, CaseStatus, CapturedImage
+  TPCConfirmation, LocalityTypeResiCumOffice, DominatedArea, FeedbackFromNeighbour, FinalStatus, CaseStatus, CapturedImage
 } from '../../../types';
 import { useCases } from '../../../context/CaseContext';
 import { FormField, SelectField, TextAreaField, NumberDropdownField } from '../../FormControls';
@@ -108,7 +108,7 @@ const NspBuilderForm: React.FC<NspBuilderFormProps> = ({ caseData }) => {
         }
     }
     
-    if (report.finalStatus === FinalStatusShiftedBusiness.Hold) {
+    if (report.finalStatus === FinalStatus.Hold) {
         if (!report.holdReason || report.holdReason.trim() === '') return false;
     }
 
@@ -149,7 +149,7 @@ const NspBuilderForm: React.FC<NspBuilderFormProps> = ({ caseData }) => {
     localityType: getEnumOptions(LocalityTypeResiCumOffice),
     dominatedArea: getEnumOptions(DominatedArea),
     feedbackFromNeighbour: getEnumOptions(FeedbackFromNeighbour),
-    finalStatus: getEnumOptions(FinalStatusShiftedBusiness),
+    finalStatus: getEnumOptions(FinalStatus),
   }), []);
 
   return (
@@ -348,7 +348,7 @@ const NspBuilderForm: React.FC<NspBuilderFormProps> = ({ caseData }) => {
           <option value="">Select...</option>
           {options.finalStatus}
         </SelectField>
-        {report.finalStatus === FinalStatusShiftedBusiness.Hold && (
+        {report.finalStatus === FinalStatus.Hold && (
           <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />
         )}
       </div>

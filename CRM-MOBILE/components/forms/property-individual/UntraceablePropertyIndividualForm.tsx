@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Case, UntraceablePropertyIndividualReportData, CallRemarkUntraceable, LocalityTypeResiCumOffice, DominatedArea, FinalStatusUntraceable, CaseStatus, CapturedImage
+  Case, UntraceablePropertyIndividualReportData, CallRemarkUntraceable, LocalityTypeResiCumOffice, DominatedArea, FinalStatus, CaseStatus, CapturedImage
 } from '../../../types';
 import { useCases } from '../../../context/CaseContext';
 import { FormField, SelectField, TextAreaField } from '../../FormControls';
@@ -79,7 +79,7 @@ const UntraceablePropertyIndividualForm: React.FC<UntraceablePropertyIndividualF
     ];
     if (!checkFields(baseFields)) return false;
 
-    if (report.finalStatus === FinalStatusUntraceable.Hold) {
+    if (report.finalStatus === FinalStatus.Hold) {
         if (!report.holdReason || report.holdReason.trim() === '') return false;
     }
 
@@ -110,7 +110,7 @@ const UntraceablePropertyIndividualForm: React.FC<UntraceablePropertyIndividualF
     callRemark: getEnumOptions(CallRemarkUntraceable),
     localityType: getEnumOptions(LocalityTypeResiCumOffice),
     dominatedArea: getEnumOptions(DominatedArea),
-    finalStatus: getEnumOptions(FinalStatusUntraceable),
+    finalStatus: getEnumOptions(FinalStatus),
   }), []);
 
   return (
@@ -159,7 +159,7 @@ const UntraceablePropertyIndividualForm: React.FC<UntraceablePropertyIndividualF
       <TextAreaField label="Other Observation" id="otherObservation" name="otherObservation" value={report.otherObservation} onChange={handleChange} disabled={isReadOnly} />
       
       <SelectField label="Final Status" id="finalStatus" name="finalStatus" value={report.finalStatus || ''} onChange={handleChange} disabled={isReadOnly}><option value="">Select...</option>{options.finalStatus}</SelectField>
-      {report.finalStatus === FinalStatusUntraceable.Hold && <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />}
+      {report.finalStatus === FinalStatus.Hold && <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />}
 
       {/* Permission Status Section */}
       <PermissionStatus showOnlyDenied={true} />

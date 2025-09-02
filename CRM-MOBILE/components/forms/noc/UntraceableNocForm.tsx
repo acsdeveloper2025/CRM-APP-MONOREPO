@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Case, UntraceableNocReportData, CallRemarkUntraceable, LocalityTypeResiCumOffice, DominatedArea, FinalStatusUntraceable, CaseStatus, CapturedImage
+  Case, UntraceableNocReportData, CallRemarkUntraceable, LocalityTypeResiCumOffice, DominatedArea, FinalStatus, CaseStatus, CapturedImage
 } from '../../../types';
 import { useCases } from '../../../context/CaseContext';
 import { FormField, SelectField, TextAreaField } from '../../FormControls';
@@ -79,7 +79,7 @@ const UntraceableNocForm: React.FC<UntraceableNocFormProps> = ({ caseData }) => 
     ];
     if (!checkFields(baseFields)) return false;
 
-    if (report.finalStatus === FinalStatusUntraceable.Hold) {
+    if (report.finalStatus === FinalStatus.Hold) {
         if (!report.holdReason || report.holdReason.trim() === '') return false;
     }
 
@@ -110,7 +110,7 @@ const UntraceableNocForm: React.FC<UntraceableNocFormProps> = ({ caseData }) => 
     callRemark: getEnumOptions(CallRemarkUntraceable),
     localityType: getEnumOptions(LocalityTypeResiCumOffice),
     dominatedArea: getEnumOptions(DominatedArea),
-    finalStatus: getEnumOptions(FinalStatusUntraceable),
+    finalStatus: getEnumOptions(FinalStatus),
   }), []);
 
   return (
@@ -214,7 +214,7 @@ const UntraceableNocForm: React.FC<UntraceableNocFormProps> = ({ caseData }) => 
           <option value="">Select...</option>
           {options.finalStatus}
         </SelectField>
-        {report.finalStatus === FinalStatusUntraceable.Hold && (
+        {report.finalStatus === FinalStatus.Hold && (
           <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />
         )}
       </div>

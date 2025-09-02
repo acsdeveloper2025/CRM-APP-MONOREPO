@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   Case, ShiftedResidenceReportData, AddressLocatable, AddressRating, RoomStatusShifted, MetPersonStatusShifted,
   TPCMetPerson, PremisesStatus, LocalityType, SightStatus, PoliticalConnection, DominatedArea,
-  FeedbackFromNeighbour, FinalStatusShifted, CaseStatus, CapturedImage
+  FeedbackFromNeighbour, FinalStatus, CaseStatus, CapturedImage
 } from '../../../types';
 import { useCases } from '../../../context/CaseContext';
 import { FormField, SelectField, TextAreaField } from '../../FormControls';
@@ -115,7 +115,7 @@ const ShiftedResidenceForm: React.FC<ShiftedResidenceFormProps> = ({ caseData })
         if (!report.nameOnSocietyBoard || report.nameOnSocietyBoard.trim() === '') return false;
     }
 
-    if (report.finalStatus === FinalStatusShifted.Hold) {
+    if (report.finalStatus === FinalStatus.Hold) {
         if (!report.holdReason || report.holdReason.trim() === '') return false;
     }
 
@@ -160,7 +160,7 @@ const ShiftedResidenceForm: React.FC<ShiftedResidenceFormProps> = ({ caseData })
     politicalConnection: getEnumOptions(PoliticalConnection),
     dominatedArea: getEnumOptions(DominatedArea),
     feedbackFromNeighbour: getEnumOptions(FeedbackFromNeighbour),
-    finalStatus: getEnumOptions(FinalStatusShifted),
+    finalStatus: getEnumOptions(FinalStatus),
   }), []);
 
   return (
@@ -370,7 +370,7 @@ const ShiftedResidenceForm: React.FC<ShiftedResidenceFormProps> = ({ caseData })
           <option value="">Select...</option>
           {options.finalStatus}
         </SelectField>
-        {report.finalStatus === FinalStatusShifted.Hold && (
+        {report.finalStatus === FinalStatus.Hold && (
           <FormField label="Reason for Hold" id="holdReason" name="holdReason" value={report.holdReason} onChange={handleChange} disabled={isReadOnly} />
         )}
       </div>
