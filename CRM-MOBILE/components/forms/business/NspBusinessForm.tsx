@@ -14,7 +14,12 @@ import AutoSaveFormWrapper from '../../AutoSaveFormWrapper';
 import { FORM_TYPES } from '../../../constants/formTypes';
 import VerificationFormService from '../../../services/verificationFormService';
 import {
-  combineImagesForAutoSave
+  createImageChangeHandler,
+  createSelfieImageChangeHandler,
+  createAutoSaveImagesChangeHandler,
+  combineImagesForAutoSave,
+  createFormDataChangeHandler,
+  createDataRestoredHandler
 } from '../../../utils/imageAutoSaveHelpers';
 
 interface NspBusinessFormProps {
@@ -34,24 +39,25 @@ const NspBusinessForm: React.FC<NspBusinessFormProps> = ({ caseData }) => {
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateNspBusinessReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateNspBusinessReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateNspBusinessReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateNspBusinessReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateNspBusinessReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateNspBusinessReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No NSP Business report data available.</p>;
@@ -122,13 +128,19 @@ const NspBusinessForm: React.FC<NspBusinessFormProps> = ({ caseData }) => {
     updateNspBusinessReport(caseData.id, updates);
   };
   
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateNspBusinessReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateNspBusinessReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateNspBusinessReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateNspBusinessReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),
