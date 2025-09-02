@@ -502,8 +502,9 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
       >
         <div className="flex-1">
           <div className="flex justify-between items-start">
-              <div>
-                  <div className="flex items-center gap-2 mb-1">
+              <div className="flex-1">
+                  {/* 1. Verification Type */}
+                  <div className="flex items-center gap-2 mb-2">
                     <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">{caseData.verificationType}</p>
                     {hasAutoSaveData && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-400/20 text-yellow-300 border border-yellow-400/30">
@@ -511,12 +512,27 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                       </span>
                     )}
                   </div>
-                  <h3 className="font-bold text-lg text-light-text">{caseData.title}</h3>
+
+                  {/* 2. Case ID */}
+                  <div className="mb-2">
+                    <p className="text-sm font-semibold text-light-text">Case ID: #{caseData.caseId || caseData.id?.slice(-8)}</p>
+                  </div>
+
+                  {/* 3. Customer Name */}
+                  <div className="mb-2">
+                    <h3 className="font-bold text-lg text-light-text">{caseData.customerName || caseData.customer.name}</h3>
+                  </div>
+
+                  {/* 4. Address */}
+                  <div className="mb-2">
+                    <p className="text-sm text-medium-text">
+                      📍 {caseData.visitAddress || caseData.address || 'Address not available'}
+                    </p>
+                  </div>
               </div>
               {timestamp.value && <p className="text-xs text-gray-400 text-right shrink-0 ml-2">{`${timestamp.label}`}<br/>{`${timestamp.value}`}</p>}
           </div>
-          <div className="flex justify-between items-center mt-1">
-            <p className="text-sm text-medium-text">{caseData.customer.name} - #{caseData.caseId || caseData.id?.slice(-8)}</p>
+          <div className="flex justify-end items-center mt-2">
             <div className="flex items-center gap-3">
               {/* Show attachment button for In Progress cases */}
               {caseData.status === CaseStatus.InProgress && (
