@@ -39,24 +39,25 @@ const ShiftedNocForm: React.FC<ShiftedNocFormProps> = ({ caseData }) => {
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateShiftedNocReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateShiftedNocReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateShiftedNocReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateShiftedNocReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateShiftedNocReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateShiftedNocReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Shifted NOC report data available.</p>;
@@ -120,13 +121,19 @@ const ShiftedNocForm: React.FC<ShiftedNocFormProps> = ({ caseData }) => {
     updateShiftedNocReport(caseData.id, updates);
   };
 
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateShiftedNocReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateShiftedNocReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateShiftedNocReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateShiftedNocReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
   const options = useMemo(() => ({
     addressLocatable: getEnumOptions(AddressLocatable),

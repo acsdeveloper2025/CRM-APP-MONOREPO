@@ -37,24 +37,25 @@ const UntraceableNocForm: React.FC<UntraceableNocFormProps> = ({ caseData }) => 
   const isReadOnly = caseData.status === CaseStatus.Completed || caseData.isSaved;
   const MIN_IMAGES = 5;
 
-  // Auto-save handlers
-  const handleFormDataChange = (formData: any) => {
-    if (!isReadOnly) {
-      updateUntraceableNocReport(caseData.id, formData);
-    }
-  };
+  // Auto-save handlers using helper functions for complete auto-save functionality
+  const handleFormDataChange = createFormDataChangeHandler(
+    updateUntraceableNocReport,
+    caseData.id,
+    isReadOnly
+  );
 
-  const handleAutoSaveImagesChange = (images: CapturedImage[]) => {
-    if (!isReadOnly && report) {
-      updateUntraceableNocReport(caseData.id, { ...report, images });
-    }
-  };
+  const handleAutoSaveImagesChange = createAutoSaveImagesChangeHandler(
+    updateUntraceableNocReport,
+    caseData.id,
+    report,
+    isReadOnly
+  );
 
-  const handleDataRestored = (data: any) => {
-    if (!isReadOnly && data.formData) {
-      updateUntraceableNocReport(caseData.id, data.formData);
-    }
-  };
+  const handleDataRestored = createDataRestoredHandler(
+    updateUntraceableNocReport,
+    caseData.id,
+    isReadOnly
+  );
 
   if (!report) {
     return <p className="text-medium-text">No Untraceable NOC report data available.</p>;
@@ -98,13 +99,19 @@ const UntraceableNocForm: React.FC<UntraceableNocFormProps> = ({ caseData }) => 
     updateUntraceableNocReport(caseData.id, updates);
   };
 
-  const handleImagesChange = (images: CapturedImage[]) => {
-    updateUntraceableNocReport(caseData.id, { images });
-  };
+  const handleImagesChange = createImageChangeHandler(
+    updateUntraceableNocReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
 
-  const handleSelfieImagesChange = (selfieImages: CapturedImage[]) => {
-    updateUntraceableNocReport(caseData.id, { selfieImages });
-  };
+  const handleSelfieImagesChange = createSelfieImageChangeHandler(
+    updateUntraceableNocReport,
+    caseData.id,
+    report,
+    handleAutoSaveImagesChange
+  );
   
   const options = useMemo(() => ({
     callRemark: getEnumOptions(CallRemarkUntraceable),
