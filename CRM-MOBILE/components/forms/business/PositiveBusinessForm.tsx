@@ -433,7 +433,10 @@ const PositiveBusinessForm: React.FC<PositiveBusinessFormProps> = ({ caseData })
                             employeeCount: report.employeeCount,
                             remarks: report.otherObservation,
                             outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
-                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' : 'PARTIAL',
+                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
+                                    report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
+                                    report.finalStatus === FinalStatus.Refer ? 'REFER' :
+                                    report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
                             // Additional fields from the form
                             addressRating: report.addressRating,
                             locality: report.locality,

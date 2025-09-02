@@ -317,8 +317,11 @@ const EntryRestrictedDsaForm: React.FC<EntryRestrictedDsaFormProps> = ({ caseDat
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' : 
-                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' : 'PARTIAL',
+                            outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
+                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
+                                    report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
+                                    report.finalStatus === FinalStatus.Refer ? 'REFER' :
+                                    report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };

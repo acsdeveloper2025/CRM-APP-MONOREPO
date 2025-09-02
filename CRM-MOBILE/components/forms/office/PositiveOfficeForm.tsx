@@ -446,7 +446,10 @@ const PositiveOfficeForm: React.FC<PositiveOfficeFormProps> = ({ caseData }) => 
                             salaryConfirmed: report.monthlySalary ? true : false,
                             remarks: report.otherObservation,
                             outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
-                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' : 'PARTIAL',
+                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
+                                    report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
+                                    report.finalStatus === FinalStatus.Refer ? 'REFER' :
+                                    report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
                             // Additional fields from the form
                             department: report.department,
                             joiningDate: report.joiningDate,
