@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, MapPin, FileText, Camera, User } from 'lucide-react';
+import { Activity, MapPin, FileText, Camera, User, Upload, RotateCcw, Zap, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,13 +17,24 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface RealTimeUpdate {
   id: string;
-  type: 'status' | 'location' | 'form' | 'photo' | 'typing' | 'general';
+  type: 'status' | 'location' | 'form' | 'photo' | 'typing' | 'general' | 'submission_progress' | 'retry_status' | 'compression';
   caseId: string;
   userId: string;
   username: string;
   message: string;
   timestamp: string;
   data?: any;
+  progress?: number;
+  compressionStats?: {
+    originalSize: number;
+    compressedSize: number;
+    compressionRatio: number;
+  };
+  retryInfo?: {
+    attempts: number;
+    maxAttempts: number;
+    nextRetryIn?: number;
+  };
 }
 
 interface RealTimeCaseUpdatesProps {
@@ -166,9 +177,30 @@ export function RealTimeCaseUpdates({ caseId, maxUpdates = 20 }: RealTimeCaseUpd
         return <Camera className="h-4 w-4 text-orange-600" />;
       case 'typing':
         return <User className="h-4 w-4 text-gray-600" />;
+      case 'submission_progress':
+        return <Upload className="h-4 w-4 text-blue-600" />;
+      case 'retry_status':
+        return <RotateCcw className="h-4 w-4 text-orange-600" />;
+      case 'compression':
+        return <Zap className="h-4 w-4 text-green-600" />;
       default:
         return <Activity className="h-4 w-4 text-gray-600" />;
     }
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatTime = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
   };
 
   const getUpdateBadge = (type: RealTimeUpdate['type']) => {
@@ -238,18 +270,71 @@ export function RealTimeCaseUpdates({ caseId, maxUpdates = 20 }: RealTimeCaseUpd
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground">{update.message}</p>
+                    {/* Enhanced display for submission progress */}
+                    {update.type === 'submission_progress' && update.progress !== undefined && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span>Progress</span>
+                          <span>{update.progress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1">
+                          <div
+                            className="bg-blue-600 h-1 rounded-full transition-all duration-300"
+                            style={{ width: `${update.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Enhanced display for compression stats */}
+                    {update.type === 'compression' && update.compressionStats && (
+                      <div className="mt-2 text-xs space-y-1">
+                        <div className="flex justify-between">
+                          <span>Original:</span>
+                          <span>{formatBytes(update.compressionStats.originalSize)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Compressed:</span>
+                          <span>{formatBytes(update.compressionStats.compressedSize)}</span>
+                        </div>
+                        <div className="flex justify-between font-medium">
+                          <span>Saved:</span>
+                          <span className="text-green-600">
+                            {Math.round((1 - update.compressionStats.compressionRatio) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Enhanced display for retry status */}
+                    {update.type === 'retry_status' && update.retryInfo && (
+                      <div className="mt-2 text-xs text-orange-600">
+                        <div className="flex justify-between">
+                          <span>Attempt:</span>
+                          <span>{update.retryInfo.attempts} of {update.retryInfo.maxAttempts}</span>
+                        </div>
+                        {update.retryInfo.nextRetryIn && (
+                          <div className="flex justify-between">
+                            <span>Next retry:</span>
+                            <span>{formatTime(update.retryInfo.nextRetryIn)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Existing data display */}
                     {update.data && (
                       <div className="mt-2 text-xs text-muted-foreground">
                         {update.type === 'location' && (
                           <span>
-                            Lat: {update.data.latitude.toFixed(6)}, 
+                            Lat: {update.data.latitude.toFixed(6)},
                             Lng: {update.data.longitude.toFixed(6)}
                           </span>
                         )}
                         {update.type === 'form' && (
                           <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                            <div 
-                              className="bg-blue-600 h-1.5 rounded-full" 
+                            <div
+                              className="bg-blue-600 h-1.5 rounded-full"
                               style={{ width: `${update.data.progress}%` }}
                             />
                           </div>

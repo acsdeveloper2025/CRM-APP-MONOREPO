@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCase, useAssignCase } from '@/hooks/useCases';
 import { useCaseFormSubmissions } from '@/hooks/useForms';
 import { ReassignCaseModal } from '@/components/cases/ReassignCaseModal';
+import { EnhancedCaseStatus } from '@/components/cases/EnhancedCaseStatus';
 import { FormViewer } from '@/components/forms/FormViewer';
 import { ArrowLeft, MapPin, Phone, Mail, Calendar, User, Building2, FileText, Edit, UserCheck, FormInput, Camera, Clock } from 'lucide-react';
 import { CaseAttachmentsSection } from '@/components/attachments/CaseAttachmentsSection';
@@ -177,10 +178,14 @@ export const CaseDetailPage: React.FC = () => {
         {/* Main Content */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="details" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="details" className="flex items-center space-x-2">
                 <FileText className="h-4 w-4" />
                 <span>Case Details</span>
+              </TabsTrigger>
+              <TabsTrigger value="status" className="flex items-center space-x-2">
+                <Clock className="h-4 w-4" />
+                <span>Status & Progress</span>
               </TabsTrigger>
               <TabsTrigger value="forms" className="flex items-center space-x-2">
                 <FormInput className="h-4 w-4" />
@@ -284,6 +289,23 @@ export const CaseDetailPage: React.FC = () => {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="status">
+              <EnhancedCaseStatus
+                caseId={caseItem.caseId?.toString() || id!}
+                currentStatus={caseItem.status}
+                submissionProgress={undefined} // TODO: Connect to real submission progress
+                retryQueueStatus={undefined} // TODO: Connect to real retry queue status
+                onRetrySubmission={() => {
+                  console.log('Retry submission for case:', id);
+                  // TODO: Implement retry logic
+                }}
+                onClearRetryQueue={() => {
+                  console.log('Clear retry queue for case:', id);
+                  // TODO: Implement clear retry queue logic
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="forms">

@@ -2,6 +2,9 @@ import { Case, CapturedImage } from '../types';
 import AuthStorageService from './authStorageService';
 import NetworkService from './networkService';
 import { getEnvironmentConfig } from '../config/environment';
+import retryService from './retryService';
+import progressTrackingService from './progressTrackingService';
+import compressionService from './compressionService';
 
 export interface VerificationFormData {
   [key: string]: any;
@@ -33,6 +36,17 @@ export interface VerificationSubmissionResult {
   caseId?: string;
   status?: string;
   completedAt?: string;
+  submissionId?: string;
+  compressionStats?: {
+    originalSize: number;
+    compressedSize: number;
+    compressionRatio: number;
+  };
+  retryInfo?: {
+    requestId: string;
+    willRetry: boolean;
+    nextRetryIn?: number;
+  };
 }
 
 /**
@@ -42,73 +56,131 @@ class VerificationFormService {
   private static readonly API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
   /**
-   * Submit residence verification form
+   * Submit residence verification form with enhanced error recovery, progress tracking, and compression
    */
   static async submitResidenceVerification(
     caseId: string,
     formData: VerificationFormData,
     images: CapturedImage[],
-    geoLocation?: { latitude: number; longitude: number; accuracy?: number }
+    geoLocation?: { latitude: number; longitude: number; accuracy?: number },
+    onProgress?: (progress: any) => void
   ): Promise<VerificationSubmissionResult> {
+    // Start progress tracking
+    const submissionId = progressTrackingService.startSubmission(caseId, 'residence');
+
+    // Subscribe to progress updates
+    const unsubscribe = onProgress ?
+      progressTrackingService.subscribeToProgress(submissionId, onProgress) :
+      () => {};
+
     try {
       console.log(`🏠 Submitting residence verification for case ${caseId}...`);
 
+      // Step 1: Validation
+      progressTrackingService.updateStepProgress(submissionId, 'validation', 0, 'IN_PROGRESS');
+
       // Validate minimum requirements
       if (images.length < 5) {
+        progressTrackingService.markSubmissionFailed(submissionId, 'Minimum 5 geo-tagged photos required', 'validation');
         return {
           success: false,
-          error: 'Minimum 5 geo-tagged photos required for residence verification'
+          error: 'Minimum 5 geo-tagged photos required for residence verification',
+          submissionId
         };
       }
 
       // Check if all images have geo-location
-      const photosWithoutGeo = images.filter(img => 
-        !img.geoLocation || 
-        !img.geoLocation.latitude || 
+      const photosWithoutGeo = images.filter(img =>
+        !img.geoLocation ||
+        !img.geoLocation.latitude ||
         !img.geoLocation.longitude
       );
 
       if (photosWithoutGeo.length > 0) {
+        progressTrackingService.markSubmissionFailed(submissionId, 'All photos must have geo-location data', 'validation');
         return {
           success: false,
-          error: 'All photos must have geo-location data'
+          error: 'All photos must have geo-location data',
+          submissionId
         };
       }
 
-      // Prepare submission data
-      const submissionData: VerificationSubmissionRequest = {
+      progressTrackingService.updateStepProgress(submissionId, 'validation', 100, 'COMPLETED');
+
+      // Step 2: Compression
+      progressTrackingService.updateStepProgress(submissionId, 'compression', 0, 'IN_PROGRESS');
+
+      // Get network-appropriate compression settings
+      const networkType = NetworkService.isOnline() ?
+        (NetworkService.getConnectionType() === 'wifi' ? 'wifi' : 'cellular') : 'slow';
+      const compressionOptions = compressionService.getCompressionRecommendations(networkType);
+
+      // Compress data
+      const compressedData = await compressionService.compressSubmissionData(
+        images,
         formData,
-        attachmentIds: images.map(img => img.id),
+        compressionOptions,
+        (progress) => progressTrackingService.updateStepProgress(submissionId, 'compression', progress, 'IN_PROGRESS')
+      );
+
+      progressTrackingService.updateStepProgress(submissionId, 'compression', 100, 'COMPLETED');
+
+      // Step 3: Prepare submission data
+      const submissionData: VerificationSubmissionRequest = {
+        formData: compressionService.decompressFormData(compressedData.formData.compressed),
+        attachmentIds: compressedData.images.map(img => img.id),
         geoLocation,
-        photos: images.map(img => ({
+        photos: compressedData.images.map(img => ({
           attachmentId: img.id,
-          geoLocation: {
-            latitude: img.geoLocation!.latitude,
-            longitude: img.geoLocation!.longitude,
-            accuracy: img.geoLocation!.accuracy,
-            timestamp: img.geoLocation!.timestamp || new Date().toISOString()
-          }
+          geoLocation: img.geoLocation
         }))
       };
 
-      // Submit to backend
-      const result = await this.submitToBackend(
+      // Step 4: Submit to backend with retry mechanism
+      progressTrackingService.updateStepProgress(submissionId, 'submit_form', 0, 'IN_PROGRESS');
+
+      const result = await this.submitToBackendWithRetry(
         `${this.API_BASE_URL}/mobile/cases/${caseId}/verification/residence`,
-        submissionData
+        submissionData,
+        'VERIFICATION_SUBMISSION',
+        'HIGH',
+        submissionId
       );
 
       if (result.success) {
+        progressTrackingService.markSubmissionCompleted(submissionId);
         console.log(`✅ Residence verification submitted successfully for case ${caseId}`);
-      } else {
-        console.error(`❌ Residence verification submission failed for case ${caseId}:`, result.error);
-      }
 
-      return result;
+        unsubscribe();
+        return {
+          ...result,
+          submissionId,
+          compressionStats: {
+            originalSize: compressedData.totalOriginalSize,
+            compressedSize: compressedData.totalCompressedSize,
+            compressionRatio: compressedData.overallCompressionRatio
+          }
+        };
+      } else {
+        progressTrackingService.markSubmissionFailed(submissionId, result.error || 'Submission failed', 'submit_form');
+        console.error(`❌ Residence verification submission failed for case ${caseId}:`, result.error);
+
+        unsubscribe();
+        return {
+          ...result,
+          submissionId
+        };
+      }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      progressTrackingService.markSubmissionFailed(submissionId, errorMessage);
+      unsubscribe();
+
       console.error(`❌ Residence verification submission error for case ${caseId}:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: errorMessage,
+        submissionId
       };
     }
   }
@@ -283,7 +355,106 @@ class VerificationFormService {
   }
 
   /**
-   * Generic method to submit verification data to backend
+   * Enhanced method to submit verification data to backend with retry mechanism
+   */
+  private static async submitToBackendWithRetry(
+    url: string,
+    data: VerificationSubmissionRequest,
+    type: 'VERIFICATION_SUBMISSION' | 'ATTACHMENT_UPLOAD' | 'CASE_UPDATE',
+    priority: 'HIGH' | 'MEDIUM' | 'LOW',
+    submissionId: string
+  ): Promise<VerificationSubmissionResult> {
+    try {
+      // Check network connectivity
+      if (!NetworkService.isOnline()) {
+        // Add to retry queue for later
+        const requestId = await retryService.addToRetryQueue(
+          url,
+          'POST',
+          await this.getHeaders(),
+          data,
+          type,
+          priority
+        );
+
+        return {
+          success: false,
+          error: 'No internet connection. Request queued for retry when connection is restored.',
+          retryInfo: {
+            requestId,
+            willRetry: true
+          }
+        };
+      }
+
+      // Execute with retry mechanism
+      const result = await retryService.executeWithRetry(
+        url,
+        'POST',
+        await this.getHeaders(),
+        data,
+        type,
+        priority,
+        (progress) => {
+          // Update submission progress based on retry progress
+          if (progress.status === 'RETRYING') {
+            progressTrackingService.updateStepProgress(
+              submissionId,
+              'submit_form',
+              Math.round((progress.currentAttempt / progress.maxAttempts) * 100),
+              'IN_PROGRESS',
+              { retryAttempt: progress.currentAttempt, maxAttempts: progress.maxAttempts }
+            );
+          }
+        }
+      );
+
+      if (result.success) {
+        progressTrackingService.updateStepProgress(submissionId, 'submit_form', 100, 'COMPLETED');
+        progressTrackingService.updateStepProgress(submissionId, 'confirmation', 100, 'COMPLETED');
+
+        return {
+          success: true,
+          caseId: result.data?.caseId,
+          status: result.data?.status,
+          completedAt: result.data?.completedAt
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Submission failed',
+          retryInfo: {
+            requestId: result.requestId,
+            willRetry: true
+          }
+        };
+      }
+
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error occurred'
+      };
+    }
+  }
+
+  /**
+   * Get headers for API requests
+   */
+  private static async getHeaders(): Promise<Record<string, string>> {
+    const authToken = await AuthStorageService.getCurrentAccessToken();
+    const envConfig = getEnvironmentConfig();
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`,
+      'X-App-Version': envConfig.app.version,
+      'X-Client-Type': 'mobile',
+    };
+  }
+
+  /**
+   * Legacy method to submit verification data to backend (kept for compatibility)
    */
   private static async submitToBackend(
     url: string,
