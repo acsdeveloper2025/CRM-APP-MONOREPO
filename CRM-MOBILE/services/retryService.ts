@@ -350,4 +350,11 @@ class RetryService {
   }
 }
 
-export default new RetryService();
+const retryServiceInstance = new RetryService();
+
+// Expose to global scope for debugging
+if (typeof window !== 'undefined') {
+  (window as any).clearRetryQueue = () => retryServiceInstance.clearQueue();
+}
+
+export default retryServiceInstance;

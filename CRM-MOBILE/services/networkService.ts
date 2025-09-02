@@ -146,6 +146,13 @@ class NetworkService {
   }
 
   /**
+   * Get current connection type
+   */
+  getConnectionType(): 'wifi' | 'cellular' | 'ethernet' | 'unknown' {
+    return this.networkState.connectionType;
+  }
+
+  /**
    * Add network state change listener
    */
   addNetworkListener(listener: (state: NetworkState) => void): void {

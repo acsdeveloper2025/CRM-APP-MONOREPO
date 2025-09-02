@@ -88,8 +88,7 @@ export class SearchController {
           options,
           resultCount: searchResults.totalCount,
           searchTerm: filters.searchTerm
-        },
-        timestamp: new Date().toISOString(),
+        }
       });
 
       res.json({
@@ -105,8 +104,7 @@ export class SearchController {
         message: 'Search failed',
         error: {
           code: 'SEARCH_ERROR',
-          details: error instanceof Error ? error.message : 'Unknown search error',
-          timestamp: new Date().toISOString(),
+          details: error instanceof Error ? error.message : 'Unknown search error'
         },
       });
     }
@@ -125,8 +123,7 @@ export class SearchController {
           success: false,
           message: 'Field and term parameters are required',
           error: {
-            code: 'MISSING_PARAMETERS',
-            timestamp: new Date().toISOString(),
+            code: 'MISSING_PARAMETERS'
           },
         });
       }
@@ -137,8 +134,7 @@ export class SearchController {
           success: false,
           message: `Invalid field. Must be one of: ${validFields.join(', ')}`,
           error: {
-            code: 'INVALID_FIELD',
-            timestamp: new Date().toISOString(),
+            code: 'INVALID_FIELD'
           },
         });
       }
@@ -162,8 +158,7 @@ export class SearchController {
         message: 'Failed to get suggestions',
         error: {
           code: 'SUGGESTIONS_ERROR',
-          details: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString(),
+          details: error instanceof Error ? error.message : 'Unknown error'
         },
       });
     }
@@ -193,8 +188,7 @@ export class SearchController {
         message: 'Failed to find similar cases',
         error: {
           code: 'SIMILAR_CASES_ERROR',
-          details: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString(),
+          details: error instanceof Error ? error.message : 'Unknown error'
         },
       });
     }
@@ -220,8 +214,7 @@ export class SearchController {
         message: 'Failed to get business rules',
         error: {
           code: 'BUSINESS_RULES_ERROR',
-          details: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString(),
+          details: error instanceof Error ? error.message : 'Unknown error'
         },
       });
     }
@@ -246,8 +239,7 @@ export class SearchController {
         details: {
           updates,
           ruleId
-        },
-        timestamp: new Date().toISOString(),
+        }
       });
 
       res.json({
@@ -262,8 +254,7 @@ export class SearchController {
         message: 'Failed to update business rule',
         error: {
           code: 'UPDATE_RULE_ERROR',
-          details: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString(),
+          details: error instanceof Error ? error.message : 'Unknown error'
         },
       });
     }
@@ -299,8 +290,7 @@ export class SearchController {
         message: 'Failed to search addresses',
         error: {
           code: 'ADDRESS_SEARCH_ERROR',
-          details: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString(),
+          details: error instanceof Error ? error.message : 'Unknown error'
         },
       });
     }
@@ -320,8 +310,7 @@ export class SearchController {
           success: false,
           message: 'Standardized address not found for this case',
           error: {
-            code: 'ADDRESS_NOT_FOUND',
-            timestamp: new Date().toISOString(),
+            code: 'ADDRESS_NOT_FOUND'
           },
         });
       }
@@ -339,8 +328,7 @@ export class SearchController {
         message: 'Failed to get standardized address',
         error: {
           code: 'GET_ADDRESS_ERROR',
-          details: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString(),
+          details: error instanceof Error ? error.message : 'Unknown error'
         },
       });
     }

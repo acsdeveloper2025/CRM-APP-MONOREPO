@@ -90,26 +90,32 @@ class CompressionService {
             }
           }
         });
-        
+
         totalOriginalSize += compressed.originalSize;
         totalCompressedSize += compressed.compressedSize;
-        
+
       } catch (error) {
         console.error(`Failed to compress image ${image.id}:`, error);
         // Fallback to original image data
         const originalSize = this.estimateBase64Size(image.uri);
+        const fallbackSize = originalSize || 1024; // Default size if estimation fails
+
         compressedImages.push({
           id: image.id,
-          compressedData: image.uri,
-          originalSize,
-          compressedSize: originalSize,
+          compressedData: image.uri || '', // Fallback to empty string if uri is undefined
+          originalSize: fallbackSize,
+          compressedSize: fallbackSize,
           compressionRatio: 1,
           geoLocation: image.geoLocation,
-          metadata: image.metadata
+          metadata: {
+            ...image.metadata,
+            compressionError: error instanceof Error ? error.message : 'Compression failed',
+            fallbackUsed: true
+          }
         });
-        
-        totalOriginalSize += originalSize;
-        totalCompressedSize += originalSize;
+
+        totalOriginalSize += fallbackSize;
+        totalCompressedSize += fallbackSize;
       }
     }
 
@@ -144,10 +150,22 @@ class CompressionService {
     options: CompressionOptions
   ): Promise<CompressionResult & { compressedData: string; compressionTime: number }> {
     const startTime = Date.now();
-    
+
+    // Check if we have a valid image URI
+    if (!image.uri || typeof image.uri !== 'string') {
+      throw new Error('Invalid image URI');
+    }
+
+    // For browser environment, we need to handle different image sources
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        reject(new Error('Canvas context not available'));
+        return;
+      }
+
       const img = new Image();
 
       img.onload = () => {
@@ -164,8 +182,8 @@ class CompressionService {
           canvas.height = newHeight;
 
           // Draw and compress
-          ctx!.drawImage(img, 0, 0, newWidth, newHeight);
-          
+          ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
           const compressedData = canvas.toDataURL(
             `image/${options.format}`,
             options.quality
@@ -173,7 +191,7 @@ class CompressionService {
 
           const originalSize = this.estimateBase64Size(image.uri);
           const compressedSize = this.estimateBase64Size(compressedData);
-          const compressionRatio = compressedSize / originalSize;
+          const compressionRatio = originalSize > 0 ? compressedSize / originalSize : 1;
           const compressionTime = Date.now() - startTime;
 
           resolve({
@@ -192,8 +210,33 @@ class CompressionService {
         }
       };
 
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = image.uri;
+      img.onerror = (error) => {
+        console.error('Image load error:', error);
+        reject(new Error(`Failed to load image: ${image.uri.substring(0, 100)}...`));
+      };
+
+      // Set CORS if needed for external images
+      img.crossOrigin = 'anonymous';
+
+      // Handle different image sources
+      if (image.uri.startsWith('data:')) {
+        // Base64 data URI
+        img.src = image.uri;
+      } else if (image.uri.startsWith('blob:')) {
+        // Blob URL
+        img.src = image.uri;
+      } else if (image.uri.startsWith('http')) {
+        // External URL
+        img.src = image.uri;
+      } else {
+        // Assume it's a file path or other format
+        img.src = image.uri;
+      }
+
+      // Add timeout to prevent hanging
+      setTimeout(() => {
+        reject(new Error('Image load timeout'));
+      }, 10000); // 10 second timeout
     });
   }
 
@@ -305,14 +348,18 @@ class CompressionService {
   /**
    * Estimate size of base64 encoded data
    */
-  private estimateBase64Size(base64String: string): number {
+  private estimateBase64Size(base64String: string | undefined): number {
+    if (!base64String || typeof base64String !== 'string') {
+      return 0;
+    }
+
     // Remove data URL prefix if present
     const base64Data = base64String.replace(/^data:image\/[a-z]+;base64,/, '');
-    
+
     // Base64 encoding increases size by ~33%, but we need to account for padding
     const padding = (base64Data.match(/=/g) || []).length;
     const dataLength = base64Data.length;
-    
+
     return Math.round((dataLength * 3) / 4 - padding);
   }
 

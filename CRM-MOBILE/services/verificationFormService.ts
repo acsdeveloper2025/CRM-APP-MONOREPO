@@ -125,18 +125,38 @@ class VerificationFormService {
 
       progressTrackingService.updateStepProgress(submissionId, 'compression', 100, 'COMPLETED');
 
-      // Step 3: Prepare submission data
+      // Step 3: Upload images to get database attachment IDs
+      progressTrackingService.updateStepProgress(submissionId, 'upload_images', 0, 'IN_PROGRESS');
+
+      const uploadedAttachmentIds: string[] = [];
+      for (let i = 0; i < compressedData.images.length; i++) {
+        const img = compressedData.images[i];
+        try {
+          const attachmentId = await this.uploadImageToBackend(caseId, img);
+          uploadedAttachmentIds.push(attachmentId);
+
+          const progress = ((i + 1) / compressedData.images.length) * 100;
+          progressTrackingService.updateStepProgress(submissionId, 'upload_images', progress, 'IN_PROGRESS');
+        } catch (error) {
+          console.error(`Failed to upload image ${img.id}:`, error);
+          throw new Error(`Failed to upload image: ${error.message}`);
+        }
+      }
+
+      progressTrackingService.updateStepProgress(submissionId, 'upload_images', 100, 'COMPLETED');
+
+      // Step 4: Prepare submission data with actual database attachment IDs
       const submissionData: VerificationSubmissionRequest = {
         formData: compressionService.decompressFormData(compressedData.formData.compressed),
-        attachmentIds: compressedData.images.map(img => img.id),
+        attachmentIds: uploadedAttachmentIds,
         geoLocation,
-        photos: compressedData.images.map(img => ({
-          attachmentId: img.id,
-          geoLocation: img.geoLocation
+        photos: uploadedAttachmentIds.map((attachmentId, index) => ({
+          attachmentId,
+          geoLocation: compressedData.images[index].geoLocation
         }))
       };
 
-      // Step 4: Submit to backend with retry mechanism
+      // Step 5: Submit to backend with retry mechanism
       progressTrackingService.updateStepProgress(submissionId, 'submit_form', 0, 'IN_PROGRESS');
 
       const result = await this.submitToBackendWithRetry(
@@ -316,18 +336,30 @@ class VerificationFormService {
         };
       }
 
-      // Prepare submission data
+      // Upload images to get database attachment IDs
+      const uploadedAttachmentIds: string[] = [];
+      for (const img of images) {
+        try {
+          const attachmentId = await this.uploadImageToBackend(caseId, img);
+          uploadedAttachmentIds.push(attachmentId);
+        } catch (error) {
+          console.error(`Failed to upload image ${img.id}:`, error);
+          throw new Error(`Failed to upload image: ${error.message}`);
+        }
+      }
+
+      // Prepare submission data with actual database attachment IDs
       const submissionData: VerificationSubmissionRequest = {
         formData,
-        attachmentIds: images.map(img => img.id),
+        attachmentIds: uploadedAttachmentIds,
         geoLocation,
-        photos: images.map(img => ({
-          attachmentId: img.id,
+        photos: uploadedAttachmentIds.map((attachmentId, index) => ({
+          attachmentId,
           geoLocation: {
-            latitude: img.geoLocation!.latitude,
-            longitude: img.geoLocation!.longitude,
-            accuracy: img.geoLocation!.accuracy,
-            timestamp: img.geoLocation!.timestamp || new Date().toISOString()
+            latitude: images[index].geoLocation!.latitude,
+            longitude: images[index].geoLocation!.longitude,
+            accuracy: images[index].geoLocation!.accuracy,
+            timestamp: images[index].geoLocation!.timestamp || new Date().toISOString()
           }
         }))
       };
@@ -435,6 +467,58 @@ class VerificationFormService {
         success: false,
         error: error instanceof Error ? error.message : 'Network error occurred'
       };
+    }
+  }
+
+  /**
+   * Upload image to backend and return database attachment ID
+   */
+  private static async uploadImageToBackend(caseId: string, image: any): Promise<string> {
+    try {
+      const authToken = await AuthStorageService.getCurrentAccessToken();
+      const envConfig = getEnvironmentConfig();
+
+      // Convert base64 data URL to blob
+      const response = await fetch(image.dataUrl);
+      const blob = await response.blob();
+
+      // Create form data
+      const formData = new FormData();
+      formData.append('files', blob, `image_${Date.now()}.jpg`);
+
+      // Add geo location if available
+      if (image.geoLocation) {
+        formData.append('geoLocation', JSON.stringify(image.geoLocation));
+      }
+
+      // Upload to backend
+      const uploadResponse = await fetch(`${this.API_BASE_URL}/mobile/cases/${caseId}/attachments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'X-App-Version': envConfig.app.version,
+          'X-Client-Type': 'mobile',
+        },
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || `Upload failed with status ${uploadResponse.status}`);
+      }
+
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResult.success || !uploadResult.data || uploadResult.data.length === 0) {
+        throw new Error('Upload response missing attachment data');
+      }
+
+      // Return the database attachment ID
+      return uploadResult.data[0].id.toString();
+
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      throw error;
     }
   }
 
