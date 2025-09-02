@@ -1,4 +1,4 @@
-import { Case, CapturedImage } from '../types';
+import { CapturedImage } from '../types';
 import AuthStorageService from './authStorageService';
 import NetworkService from './networkService';
 import { getEnvironmentConfig } from '../config/environment';
@@ -12,7 +12,7 @@ export interface VerificationFormData {
 
 export interface VerificationSubmissionRequest {
   formData: VerificationFormData;
-  attachmentIds: string[];
+  attachmentIds: string[]; // Keep for backward compatibility
   geoLocation?: {
     latitude: number;
     longitude: number;
@@ -22,6 +22,17 @@ export interface VerificationSubmissionRequest {
   photos: Array<{
     attachmentId: string;
     geoLocation: {
+      latitude: number;
+      longitude: number;
+      accuracy?: number;
+      timestamp?: string;
+    };
+  }>;
+  // New field for direct image submission
+  images?: Array<{
+    dataUrl: string;
+    type: 'verification' | 'selfie';
+    geoLocation?: {
       latitude: number;
       longitude: number;
       accuracy?: number;
@@ -53,7 +64,7 @@ export interface VerificationSubmissionResult {
  * Service for submitting verification forms to the backend
  */
 class VerificationFormService {
-  private static readonly API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+  private static readonly API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.36:3000/api';
 
   /**
    * Submit residence verification form with enhanced error recovery, progress tracking, and compression
@@ -125,35 +136,24 @@ class VerificationFormService {
 
       progressTrackingService.updateStepProgress(submissionId, 'compression', 100, 'COMPLETED');
 
-      // Step 3: Upload images to get database attachment IDs
-      progressTrackingService.updateStepProgress(submissionId, 'upload_images', 0, 'IN_PROGRESS');
+      // Step 3: Prepare images for direct submission (no separate upload needed)
+      progressTrackingService.updateStepProgress(submissionId, 'prepare_images', 0, 'IN_PROGRESS');
 
-      const uploadedAttachmentIds: string[] = [];
-      for (let i = 0; i < compressedData.images.length; i++) {
-        const img = compressedData.images[i];
-        try {
-          const attachmentId = await this.uploadImageToBackend(caseId, img);
-          uploadedAttachmentIds.push(attachmentId);
+      const submissionImages = compressedData.images.map((img) => ({
+        dataUrl: img.compressedData,
+        type: (img.metadata?.type || 'verification') as 'verification' | 'selfie',
+        geoLocation: img.geoLocation
+      }));
 
-          const progress = ((i + 1) / compressedData.images.length) * 100;
-          progressTrackingService.updateStepProgress(submissionId, 'upload_images', progress, 'IN_PROGRESS');
-        } catch (error) {
-          console.error(`Failed to upload image ${img.id}:`, error);
-          throw new Error(`Failed to upload image: ${error.message}`);
-        }
-      }
+      progressTrackingService.updateStepProgress(submissionId, 'prepare_images', 100, 'COMPLETED');
 
-      progressTrackingService.updateStepProgress(submissionId, 'upload_images', 100, 'COMPLETED');
-
-      // Step 4: Prepare submission data with actual database attachment IDs
+      // Step 4: Prepare submission data with embedded images (new approach)
       const submissionData: VerificationSubmissionRequest = {
         formData: compressionService.decompressFormData(compressedData.formData.compressed),
-        attachmentIds: uploadedAttachmentIds,
+        attachmentIds: [], // Empty for new approach
         geoLocation,
-        photos: uploadedAttachmentIds.map((attachmentId, index) => ({
-          attachmentId,
-          geoLocation: compressedData.images[index].geoLocation
-        }))
+        photos: [], // Empty for new approach
+        images: submissionImages // New field with embedded images
       };
 
       // Step 5: Submit to backend with retry mechanism
@@ -214,7 +214,67 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    return this.submitGenericVerification(caseId, 'office', formData, images, geoLocation);
+    try {
+      console.log(`📋 Submitting office verification for case ${caseId}...`);
+
+      // Validate minimum requirements
+      if (images.length < 5) {
+        return {
+          success: false,
+          error: 'Minimum 5 geo-tagged photos required for office verification'
+        };
+      }
+
+      // Check if all images have geo-location
+      const photosWithoutGeo = images.filter(img =>
+        !img.geoLocation ||
+        !img.geoLocation.latitude ||
+        !img.geoLocation.longitude
+      );
+
+      if (photosWithoutGeo.length > 0) {
+        return {
+          success: false,
+          error: 'All photos must have geo-location data'
+        };
+      }
+
+      // Prepare submission data with embedded images
+      const submissionData: VerificationSubmissionRequest = {
+        formData,
+        attachmentIds: [], // Empty for new approach
+        geoLocation,
+        photos: [], // Empty for new approach
+        images: images.map(img => ({
+          dataUrl: img.dataUrl,
+          type: 'verification' as 'verification' | 'selfie',
+          geoLocation: img.geoLocation
+        }))
+      };
+
+      // Submit to backend
+      const result = await this.submitToBackendWithRetry(
+        `${this.API_BASE_URL}/mobile/cases/${caseId}/verification/office`,
+        submissionData,
+        'VERIFICATION_SUBMISSION',
+        'HIGH'
+      );
+
+      if (result.success) {
+        console.log(`✅ Office verification submitted successfully for case ${caseId}`);
+      } else {
+        console.error(`❌ Office verification submission failed for case ${caseId}:`, result.error);
+      }
+
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error(`❌ Office verification submission error for case ${caseId}:`, error);
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
   }
 
   /**
@@ -226,7 +286,67 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    return this.submitGenericVerification(caseId, 'business', formData, images, geoLocation);
+    try {
+      console.log(`📋 Submitting business verification for case ${caseId}...`);
+
+      // Validate minimum requirements
+      if (images.length < 5) {
+        return {
+          success: false,
+          error: 'Minimum 5 geo-tagged photos required for business verification'
+        };
+      }
+
+      // Check if all images have geo-location
+      const photosWithoutGeo = images.filter(img =>
+        !img.geoLocation ||
+        !img.geoLocation.latitude ||
+        !img.geoLocation.longitude
+      );
+
+      if (photosWithoutGeo.length > 0) {
+        return {
+          success: false,
+          error: 'All photos must have geo-location data'
+        };
+      }
+
+      // Prepare submission data with embedded images
+      const submissionData: VerificationSubmissionRequest = {
+        formData,
+        attachmentIds: [], // Empty for new approach
+        geoLocation,
+        photos: [], // Empty for new approach
+        images: images.map(img => ({
+          dataUrl: img.dataUrl,
+          type: 'verification' as 'verification' | 'selfie',
+          geoLocation: img.geoLocation
+        }))
+      };
+
+      // Submit to backend
+      const result = await this.submitToBackendWithRetry(
+        `${this.API_BASE_URL}/mobile/cases/${caseId}/verification/business`,
+        submissionData,
+        'VERIFICATION_SUBMISSION',
+        'HIGH'
+      );
+
+      if (result.success) {
+        console.log(`✅ Business verification submitted successfully for case ${caseId}`);
+      } else {
+        console.error(`❌ Business verification submission failed for case ${caseId}:`, result.error);
+      }
+
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error(`❌ Business verification submission error for case ${caseId}:`, error);
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
   }
 
   /**
@@ -238,7 +358,7 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    return this.submitGenericVerification(caseId, 'builder', formData, images, geoLocation);
+    return this.submitVerificationForm(caseId, 'builder', formData, images, geoLocation);
   }
 
   /**
@@ -250,7 +370,7 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    return this.submitGenericVerification(caseId, 'residence-cum-office', formData, images, geoLocation);
+    return this.submitVerificationForm(caseId, 'residence-cum-office', formData, images, geoLocation);
   }
 
   /**
@@ -262,7 +382,7 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    return this.submitGenericVerification(caseId, 'dsa-connector', formData, images, geoLocation);
+    return this.submitVerificationForm(caseId, 'dsa-connector', formData, images, geoLocation);
   }
 
   /**
@@ -274,7 +394,7 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    return this.submitGenericVerification(caseId, 'property-individual', formData, images, geoLocation);
+    return this.submitVerificationForm(caseId, 'property-individual', formData, images, geoLocation);
   }
 
   /**
@@ -286,7 +406,7 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    return this.submitGenericVerification(caseId, 'property-apf', formData, images, geoLocation);
+    return this.submitVerificationForm(caseId, 'property-apf', formData, images, geoLocation);
   }
 
   /**
@@ -298,13 +418,13 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    return this.submitGenericVerification(caseId, 'noc', formData, images, geoLocation);
+    return this.submitVerificationForm(caseId, 'noc', formData, images, geoLocation);
   }
 
   /**
-   * Generic verification submission method
+   * Helper method for verification form submission
    */
-  private static async submitGenericVerification(
+  private static async submitVerificationForm(
     caseId: string,
     verificationType: string,
     formData: VerificationFormData,
@@ -336,31 +456,23 @@ class VerificationFormService {
         };
       }
 
-      // Upload images to get database attachment IDs
-      const uploadedAttachmentIds: string[] = [];
-      for (const img of images) {
-        try {
-          const attachmentId = await this.uploadImageToBackend(caseId, img);
-          uploadedAttachmentIds.push(attachmentId);
-        } catch (error) {
-          console.error(`Failed to upload image ${img.id}:`, error);
-          throw new Error(`Failed to upload image: ${error.message}`);
-        }
-      }
+      // Prepare images for direct submission (no separate upload needed)
+      const submissionImages = images.map(img => ({
+        dataUrl: img.dataUrl,
+        type: (img.type || 'verification') as 'verification' | 'selfie',
+        geoLocation: img.geoLocation
+      }));
 
-      // Prepare submission data with actual database attachment IDs
+      // Prepare submission data with embedded images
       const submissionData: VerificationSubmissionRequest = {
         formData,
-        attachmentIds: uploadedAttachmentIds,
+        attachmentIds: [], // Empty for new approach
         geoLocation,
-        photos: uploadedAttachmentIds.map((attachmentId, index) => ({
-          attachmentId,
-          geoLocation: {
-            latitude: images[index].geoLocation!.latitude,
-            longitude: images[index].geoLocation!.longitude,
-            accuracy: images[index].geoLocation!.accuracy,
-            timestamp: images[index].geoLocation!.timestamp || new Date().toISOString()
-          }
+        photos: [], // Empty for new approach
+        images: images.map(img => ({
+          dataUrl: img.dataUrl,
+          type: 'verification' as 'verification' | 'selfie',
+          geoLocation: img.geoLocation
         }))
       };
 
@@ -420,7 +532,11 @@ class VerificationFormService {
       }
 
       // Execute with retry mechanism
-      const result = await retryService.executeWithRetry(
+      const result = await retryService.executeWithRetry<{
+        caseId?: string;
+        status?: string;
+        completedAt?: string;
+      }>(
         url,
         'POST',
         await this.getHeaders(),
@@ -472,15 +588,26 @@ class VerificationFormService {
 
   /**
    * Upload image to backend and return database attachment ID
+   * @deprecated - No longer used with new direct submission approach
    */
-  private static async uploadImageToBackend(caseId: string, image: any): Promise<string> {
+  private static async uploadImageToBackend(caseId: string, image: CapturedImage): Promise<string> {
     try {
       const authToken = await AuthStorageService.getCurrentAccessToken();
       const envConfig = getEnvironmentConfig();
 
-      // Convert base64 data URL to blob
-      const response = await fetch(image.dataUrl);
-      const blob = await response.blob();
+      // Handle both compressed and uncompressed image data
+      const imageDataUrl = image.compressedData || image.dataUrl;
+
+      if (!imageDataUrl) {
+        throw new Error('No image data found (missing both compressedData and dataUrl)');
+      }
+
+      // Convert base64 data URL to blob using proper method
+      const blob = this.dataURLToBlob(imageDataUrl);
+
+      if (!blob) {
+        throw new Error('Failed to convert image data to blob');
+      }
 
       // Create form data
       const formData = new FormData();
@@ -509,7 +636,18 @@ class VerificationFormService {
 
       const uploadResult = await uploadResponse.json();
 
-      if (!uploadResult.success || !uploadResult.data || uploadResult.data.length === 0) {
+      console.log('📤 Upload response:', {
+        success: uploadResult.success,
+        hasData: !!uploadResult.data,
+        dataLength: uploadResult.data?.length,
+        firstItem: uploadResult.data?.[0]
+      });
+
+      if (!uploadResult.success) {
+        throw new Error(`Upload failed: ${uploadResult.message || 'Unknown error'}`);
+      }
+
+      if (!uploadResult.data || !Array.isArray(uploadResult.data) || uploadResult.data.length === 0) {
         throw new Error('Upload response missing attachment data');
       }
 
@@ -519,6 +657,56 @@ class VerificationFormService {
     } catch (error) {
       console.error('Image upload failed:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Convert data URL to Blob for proper file upload
+   */
+  private static dataURLToBlob(dataURL: string): Blob | null {
+    try {
+      // Check if it's a valid data URL
+      if (!dataURL || !dataURL.startsWith('data:')) {
+        console.error('Invalid data URL provided');
+        return null;
+      }
+
+      // Split the data URL
+      const parts = dataURL.split(',');
+      if (parts.length !== 2) {
+        console.error('Malformed data URL');
+        return null;
+      }
+
+      const header = parts[0];
+      const data = parts[1];
+
+      // Extract MIME type
+      const mimeMatch = header.match(/data:([^;]+)/);
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
+      // Check if it's base64 encoded
+      const isBase64 = header.includes('base64');
+
+      if (isBase64) {
+        // Decode base64 data
+        const byteCharacters = atob(data);
+        const byteNumbers = new Array(byteCharacters.length);
+
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+
+        const byteArray = new Uint8Array(byteNumbers);
+        return new Blob([byteArray], { type: mimeType });
+      } else {
+        // Handle non-base64 data (URL encoded)
+        const decodedData = decodeURIComponent(data);
+        return new Blob([decodedData], { type: mimeType });
+      }
+    } catch (error) {
+      console.error('Error converting data URL to blob:', error);
+      return null;
     }
   }
 

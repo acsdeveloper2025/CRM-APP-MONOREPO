@@ -55,7 +55,7 @@ const uploadForCaseCreation = multer({
   fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit per file
-    files: 10, // Maximum 10 files per case creation
+    files: 15, // Maximum 15 files per case creation
   }
 });
 

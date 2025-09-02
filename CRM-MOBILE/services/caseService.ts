@@ -5,7 +5,7 @@ import { migrateCasesVerificationOutcomes, isDeprecatedOutcome } from '../utils/
 const LOCAL_STORAGE_KEY = 'caseflow_cases';
 
 // Backend API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.36:3000/api';
 
 // Backend case interface for API responses
 interface BackendCase {
@@ -314,70 +314,26 @@ class CaseService {
     }
   }
 
+  /**
+   * @deprecated This method is deprecated. Use VerificationFormService for form submission.
+   * Case submission should be handled through the individual verification form components
+   * using VerificationFormService.submitResidenceVerification(), submitOfficeVerification(), etc.
+   */
   async submitCase(id: string): Promise<{ success: boolean; error?: string }> {
-    console.log(`Attempting to submit case ${id} to server...`);
+    console.warn('submitCase is deprecated. Use VerificationFormService for form submission.');
+    console.warn('Cases should be submitted through verification forms using VerificationFormService');
 
-    try {
-      // Update case status to submitting
-      await this.updateCase(id, {
-        submissionStatus: 'submitting',
-        lastSubmissionAttempt: new Date().toISOString()
-      });
-
-      // Get the case data to determine verification type and form data
-      const caseData = await this.getCase(id);
-      if (!caseData) {
-        throw new Error('Case not found');
-      }
-
-      // Check if this is a real API submission or mock mode
-      if (!this.useRealAPI) {
-        // Mock mode - simulate network request with potential failure
-        await new Promise((resolve, reject) => {
-          setTimeout(() => {
-            // Simulate 20% failure rate for testing
-            if (Math.random() < 0.2) {
-              reject(new Error('Network timeout - please check your connection and try again'));
-            } else {
-              resolve(true);
-            }
-          }, 2000); // Simulate network latency
-        });
-      } else {
-        // Real API mode - this method is now deprecated in favor of VerificationFormService
-        // The actual submission should be handled by the form components using VerificationFormService
-        console.warn('submitCase is deprecated. Use VerificationFormService for form submission.');
-
-        // For backward compatibility, we'll just update the status
-        // The actual verification submission should be done through the form components
-      }
-
-      // Mark as successfully submitted
-      await this.updateCase(id, {
-        submissionStatus: 'success',
-        submissionError: undefined,
-        isSaved: false // Clear saved status since it's now submitted
-      });
-
-      console.log(`Case ${id} submitted successfully`);
-      return { success: true };
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-
-      // Mark as failed submission
-      await this.updateCase(id, {
-        submissionStatus: 'failed',
-        submissionError: errorMessage
-      });
-
-      console.error(`Case ${id} submission failed:`, errorMessage);
-      return { success: false, error: errorMessage };
-    }
+    return {
+      success: false,
+      error: 'This method is deprecated. Please use the Submit button in the verification form to complete this case.'
+    };
   }
 
+  /**
+   * @deprecated This method is deprecated. Use VerificationFormService for form submission.
+   */
   async resubmitCase(id: string): Promise<{ success: boolean; error?: string }> {
-    console.log(`Re-attempting to submit case ${id}...`);
+    console.warn('resubmitCase is deprecated. Use VerificationFormService for form submission.');
     return this.submitCase(id);
   }
 

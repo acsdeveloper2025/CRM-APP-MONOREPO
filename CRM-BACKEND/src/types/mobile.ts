@@ -179,6 +179,16 @@ export interface MobileFormSubmissionRequest {
     submissionAttempts: number;
     isOfflineSubmission: boolean;
   };
+  images?: {
+    dataUrl: string;
+    type: 'verification' | 'selfie';
+    geoLocation?: {
+      latitude: number;
+      longitude: number;
+      accuracy?: number;
+      timestamp?: string;
+    };
+  }[];
 }
 
 // Enhanced form submission data structure for comprehensive display

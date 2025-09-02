@@ -64,8 +64,6 @@ interface CaseContextType {
   revokeCase: (caseId: string, reason: RevokeReason) => Promise<void>;
   reorderInProgressCase: (caseId: string, direction: 'up' | 'down') => Promise<void>;
   syncCases: () => Promise<void>;
-  submitCase: (caseId: string) => Promise<{ success: boolean; error?: string }>;
-  resubmitCase: (caseId: string) => Promise<{ success: boolean; error?: string }>;
   // Priority management functions
   setCasePriority: (caseId: string, priority: number | null) => void;
   getCasePriority: (caseId: string) => number | null;
@@ -1070,31 +1068,9 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const submitCase = async (caseId: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const result = await caseService.submitCase(caseId);
-      fetchCases(); // Refresh to update UI with new submission status
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to submit case';
-      setError(errorMessage);
-      console.error('Submit case error:', err);
-      return { success: false, error: errorMessage };
-    }
-  };
-
-  const resubmitCase = async (caseId: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const result = await caseService.resubmitCase(caseId);
-      fetchCases(); // Refresh to update UI with new submission status
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to resubmit case';
-      setError(errorMessage);
-      console.error('Resubmit case error:', err);
-      return { success: false, error: errorMessage };
-    }
-  };
+  // Note: submitCase and resubmitCase methods have been removed
+  // Case submission should now be handled through VerificationFormService
+  // in the individual form components
 
   // Priority management functions
   const setCasePriority = (caseId: string, priority: number | null) => {
@@ -1181,8 +1157,6 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       revokeCase,
       reorderInProgressCase,
       syncCases,
-      submitCase,
-      resubmitCase,
       setCasePriority,
       getCasePriority,
       getCasesWithPriorities,

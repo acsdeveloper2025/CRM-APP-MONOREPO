@@ -36,9 +36,10 @@ const startServer = async (): Promise<void> => {
     // Initialize job queues
     await initializeQueues();
     
-    // Start the server with strict port enforcement
-    server.listen(config.port, () => {
+    // Start the server with strict port enforcement - bind to all interfaces for mobile access
+    server.listen(config.port, '0.0.0.0', () => {
       logger.info(`Server running on port ${config.port}`);
+      logger.info(`Server accessible on all network interfaces (0.0.0.0:${config.port})`);
       logger.info(`Environment: ${config.nodeEnv}`);
       logger.info(`WebSocket server running on port ${config.port}`);
     });

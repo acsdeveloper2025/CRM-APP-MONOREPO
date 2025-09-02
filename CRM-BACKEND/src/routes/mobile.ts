@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { MobileAuthController } from '../controllers/mobileAuthController';
 import { MobileCaseController } from '../controllers/mobileCaseController';
 import { MobileAttachmentController, mobileUpload } from '../controllers/mobileAttachmentController';
+import { VerificationAttachmentController } from '../controllers/verificationAttachmentController';
 import { MobileFormController } from '../controllers/mobileFormController';
 import { MobileLocationController } from '../controllers/mobileLocationController';
 import { MobileSyncController } from '../controllers/mobileSyncController';
@@ -37,15 +38,18 @@ router.post('/cases/:caseId/auto-save', authenticateToken, validateMobileVersion
 router.get('/cases/:caseId/auto-save/:formType', authenticateToken, validateMobileVersion, MobileCaseController.getAutoSavedForm);
 
 // Mobile Attachment Routes
-router.post('/cases/:caseId/attachments', 
-  authenticateToken, 
-  validateMobileVersion, 
-  mobileUpload.array('files', 10), 
+router.post('/cases/:caseId/attachments',
+  authenticateToken,
+  validateMobileVersion,
+  mobileUpload.array('files', 15),
   MobileAttachmentController.uploadFiles
 );
 router.get('/cases/:caseId/attachments', authenticateToken, validateMobileVersion, MobileAttachmentController.getCaseAttachments);
 router.get('/attachments/:attachmentId/content', authenticateToken, validateMobileVersion, MobileAttachmentController.getAttachmentContent);
 router.delete('/attachments/:attachmentId', authenticateToken, validateMobileVersion, MobileAttachmentController.deleteAttachment);
+
+// Verification Attachment Routes (separate from regular case attachments)
+router.get('/cases/:caseId/verification-images', authenticateToken, validateMobileVersion, VerificationAttachmentController.getVerificationImages);
 
 // Mobile Form Submission Routes
 router.post('/cases/:caseId/verification/residence', authenticateToken, validateMobileVersion, MobileFormController.submitResidenceVerification);

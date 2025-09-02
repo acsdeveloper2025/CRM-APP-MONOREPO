@@ -4,9 +4,9 @@ import { secureStorageService } from './secureStorageService';
 import AuthStorageService from './authStorageService';
 
 class AttachmentService {
-  private baseUrl = 'http://localhost:3000/api'; // Use local backend
+  private baseUrl = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.36:3000/api';
   private maxFileSize = 10485760; // 10MB in bytes
-  private maxAttachments = 10;
+  private maxAttachments = 15;
   private isOfflineMode = false;
   private initialized = false;
 

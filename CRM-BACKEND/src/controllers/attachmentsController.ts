@@ -89,7 +89,7 @@ const upload = multer({
   fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 10, // Maximum 10 files per upload
+    files: 15, // Maximum 15 files per upload
   }
 });
 
@@ -467,7 +467,7 @@ export const getSupportedFileTypes = async (req: AuthenticatedRequest, res: Resp
       data: {
         supportedTypes: fileTypes,
         maxFileSize: '10MB',
-        maxFilesPerUpload: 10,
+        maxFilesPerUpload: 15,
         allSupportedExtensions: ALL_SUPPORTED_EXTENSIONS,
       },
     });

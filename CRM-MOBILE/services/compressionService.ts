@@ -97,12 +97,12 @@ class CompressionService {
       } catch (error) {
         console.error(`Failed to compress image ${image.id}:`, error);
         // Fallback to original image data
-        const originalSize = this.estimateBase64Size(image.uri);
+        const originalSize = this.estimateBase64Size(image.dataUrl);
         const fallbackSize = originalSize || 1024; // Default size if estimation fails
 
         compressedImages.push({
           id: image.id,
-          compressedData: image.uri || '', // Fallback to empty string if uri is undefined
+          compressedData: image.dataUrl || '', // Fallback to empty string if dataUrl is undefined
           originalSize: fallbackSize,
           compressedSize: fallbackSize,
           compressionRatio: 1,
@@ -151,9 +151,9 @@ class CompressionService {
   ): Promise<CompressionResult & { compressedData: string; compressionTime: number }> {
     const startTime = Date.now();
 
-    // Check if we have a valid image URI
-    if (!image.uri || typeof image.uri !== 'string') {
-      throw new Error('Invalid image URI');
+    // Check if we have a valid image data URL
+    if (!image.dataUrl || typeof image.dataUrl !== 'string') {
+      throw new Error('Invalid image data URL');
     }
 
     // For browser environment, we need to handle different image sources
@@ -189,7 +189,7 @@ class CompressionService {
             options.quality
           );
 
-          const originalSize = this.estimateBase64Size(image.uri);
+          const originalSize = this.estimateBase64Size(image.dataUrl);
           const compressedSize = this.estimateBase64Size(compressedData);
           const compressionRatio = originalSize > 0 ? compressedSize / originalSize : 1;
           const compressionTime = Date.now() - startTime;
@@ -212,25 +212,25 @@ class CompressionService {
 
       img.onerror = (error) => {
         console.error('Image load error:', error);
-        reject(new Error(`Failed to load image: ${image.uri.substring(0, 100)}...`));
+        reject(new Error(`Failed to load image: ${image.dataUrl.substring(0, 100)}...`));
       };
 
       // Set CORS if needed for external images
       img.crossOrigin = 'anonymous';
 
       // Handle different image sources
-      if (image.uri.startsWith('data:')) {
+      if (image.dataUrl.startsWith('data:')) {
         // Base64 data URI
-        img.src = image.uri;
-      } else if (image.uri.startsWith('blob:')) {
+        img.src = image.dataUrl;
+      } else if (image.dataUrl.startsWith('blob:')) {
         // Blob URL
-        img.src = image.uri;
-      } else if (image.uri.startsWith('http')) {
+        img.src = image.dataUrl;
+      } else if (image.dataUrl.startsWith('http')) {
         // External URL
-        img.src = image.uri;
+        img.src = image.dataUrl;
       } else {
         // Assume it's a file path or other format
-        img.src = image.uri;
+        img.src = image.dataUrl;
       }
 
       // Add timeout to prevent hanging

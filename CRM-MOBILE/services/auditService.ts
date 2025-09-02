@@ -266,7 +266,7 @@ class AuditService {
    */
   private static async syncLogBatch(logs: AuditLogEntry[]): Promise<{ success: boolean; error?: string }> {
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.36:3000/api';
       const authToken = await AuthStorageService.getCurrentAccessToken();
 
       if (!authToken) {

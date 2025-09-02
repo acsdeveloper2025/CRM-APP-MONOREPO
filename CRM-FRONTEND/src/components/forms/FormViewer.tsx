@@ -11,6 +11,7 @@ import { FormAttachmentsViewer } from './FormAttachmentsViewer';
 import { FormLocationViewer } from './FormLocationViewer';
 import { FormMetadataViewer } from './FormMetadataViewer';
 import { FormPhotosGallery } from './FormPhotosGallery';
+import VerificationImages from '@/components/VerificationImages';
 import { formatDistanceToNow } from 'date-fns';
 
 interface EnhancedFormViewerProps {
@@ -281,6 +282,16 @@ export function FormViewer({
           </Card>
         ))}
       </div>
+
+      {/* Verification Images - Captured during form submission */}
+      {submission.caseId && (
+        <VerificationImages
+          caseId={submission.caseId}
+          submissionId={submission.id}
+          title="Captured Verification Images"
+          showStats={true}
+        />
+      )}
 
       {/* Form Attachments */}
       {showAttachments && submission.attachments.length > 0 && (

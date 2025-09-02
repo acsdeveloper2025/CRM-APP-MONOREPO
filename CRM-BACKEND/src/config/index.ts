@@ -103,7 +103,7 @@ export const config = {
 
     // Mobile File Upload
     maxFileSize: parseInt(process.env.MOBILE_MAX_FILE_SIZE || '10485760', 10),
-    maxFilesPerCase: parseInt(process.env.MOBILE_MAX_FILES_PER_CASE || '10', 10),
+    maxFilesPerCase: parseInt(process.env.MOBILE_MAX_FILES_PER_CASE || '15', 10),
     allowedImageTypes: process.env.MOBILE_ALLOWED_IMAGE_TYPES?.split(',') || [
       'image/jpeg',
       'image/png',

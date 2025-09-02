@@ -53,7 +53,7 @@ export class MobileAttachmentController {
   static async uploadFiles(req: Request, res: Response) {
     try {
       const { caseId } = req.params;
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
       const files = req.files as Express.Multer.File[];
       const geoLocation = req.body.geoLocation ? JSON.parse(req.body.geoLocation) : null;
@@ -162,10 +162,10 @@ export class MobileAttachmentController {
             filename: attachment.filename,
             originalName: attachment.originalName,
             mimeType: attachment.mimeType,
-            size: attachment.size,
-            url: attachment.url,
-            thumbnailUrl: attachment.thumbnailUrl,
-            uploadedAt: new Date(attachment.uploadedAt).toISOString(),
+            size: attachment.fileSize,
+            url: attachment.filePath,
+            thumbnailUrl: null, // No thumbnail generation for mobile uploads
+            uploadedAt: new Date(attachment.createdAt).toISOString(),
             geoLocation,
           });
 
@@ -220,7 +220,7 @@ export class MobileAttachmentController {
   static async getCaseAttachments(req: Request, res: Response) {
     try {
       const { caseId } = req.params;
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
       // Verify case access and get case details
