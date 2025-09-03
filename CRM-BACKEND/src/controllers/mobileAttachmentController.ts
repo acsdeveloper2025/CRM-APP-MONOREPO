@@ -69,32 +69,50 @@ export class MobileAttachmentController {
         });
       }
 
+      // Check if caseId is a UUID (mobile sends UUID) or case number (web sends case number)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(caseId);
+
       // Verify case access and get case details
       const where: any[] = [caseId];
-      let caseSql = `SELECT id, "caseId" FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') {
-        caseSql += ` AND "assignedToId" = $2`;
+      let caseSql: string;
+
+      if (isUUID) {
+        // Mobile app sends UUID
+        caseSql = `SELECT id, "caseId" FROM cases WHERE id = $1`;
+      } else {
+        // Web app sends case number
+        caseSql = `SELECT id, "caseId" FROM cases WHERE "caseId" = $1`;
+      }
+
+      if (userRole === 'FIELD_AGENT') {
+        caseSql += ` AND "assignedTo" = $2`;
         where.push(userId);
       }
+
       const caseRes = await query(caseSql, where);
       const existingCase = caseRes.rows[0];
 
       if (!existingCase) {
         // Clean up uploaded files
         await Promise.all(files.map(file => fs.unlink(file.path).catch(() => {})));
-        
+
+        console.log(`❌ Attachment upload: Case not found: ${caseId} (isUUID: ${isUUID})`);
         return res.status(404).json({
           success: false,
           message: 'Case not found or access denied',
           error: {
             code: 'CASE_NOT_FOUND',
             timestamp: new Date().toISOString(),
+            caseId,
+            isUUID,
           },
         });
       }
 
+      const actualCaseId = existingCase.id; // Use the actual UUID from the database
+
       // Check file count limit
-      const countRes = await query(`SELECT COUNT(*)::int as count FROM attachments WHERE case_id = $1`, [caseId]);
+      const countRes = await query(`SELECT COUNT(*)::int as count FROM attachments WHERE case_id = $1`, [actualCaseId]);
       const existingAttachmentCount = Number(countRes.rows[0]?.count || 0);
 
       if (existingAttachmentCount + files.length > config.mobile.maxFilesPerCase) {
@@ -145,7 +163,7 @@ export class MobileAttachmentController {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
              RETURNING id, filename, "originalName", "mimeType", "fileSize", "filePath", "createdAt"`,
             [
-              caseId, // case_id (UUID)
+              actualCaseId, // case_id (UUID)
               existingCase.caseId, // caseId (integer)
               file.filename,
               file.originalname,
@@ -175,7 +193,8 @@ export class MobileAttachmentController {
             entityId: attachment.id,
             userId,
             details: {
-              caseId,
+              caseId: actualCaseId,
+              caseNumber: existingCase.caseId,
               filename: file.originalname,
               size: file.size,
               mimeType: file.mimetype,
@@ -223,25 +242,45 @@ export class MobileAttachmentController {
       const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
+      // Check if caseId is a UUID (mobile sends UUID) or case number (web sends case number)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(caseId);
+
       // Verify case access and get case details
       const caseVals: any[] = [caseId];
-      let caseSql = `SELECT id, "caseId" FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD') { caseSql += ` AND "assignedToId" = $2`; caseVals.push(userId); }
+      let caseSql: string;
+
+      if (isUUID) {
+        // Mobile app sends UUID
+        caseSql = `SELECT id, "caseId" FROM cases WHERE id = $1`;
+      } else {
+        // Web app sends case number
+        caseSql = `SELECT id, "caseId" FROM cases WHERE "caseId" = $1`;
+      }
+
+      if (userRole === 'FIELD_AGENT') {
+        caseSql += ` AND "assignedTo" = $2`;
+        caseVals.push(userId);
+      }
+
       const caseCheck = await query(caseSql, caseVals);
       const existingCase = caseCheck.rows[0];
 
       if (!existingCase) {
+        console.log(`❌ Get attachments: Case not found: ${caseId} (isUUID: ${isUUID})`);
         return res.status(404).json({
           success: false,
           message: 'Case not found or access denied',
           error: {
             code: 'CASE_NOT_FOUND',
             timestamp: new Date().toISOString(),
+            caseId,
+            isUUID,
           },
         });
       }
 
-      const attRes = await query(`SELECT id, filename, "originalName", "mimeType", "fileSize", "filePath", "createdAt" FROM attachments WHERE case_id = $1 ORDER BY "createdAt" DESC`, [caseId]);
+      const actualCaseId = existingCase.id; // Use the actual UUID from the database
+      const attRes = await query(`SELECT id, filename, "originalName", "mimeType", "fileSize", "filePath", "createdAt" FROM attachments WHERE case_id = $1 ORDER BY "createdAt" DESC`, [actualCaseId]);
 
       const mobileAttachments: MobileAttachmentResponse[] = attRes.rows.map((att: any) => ({
         id: att.id,

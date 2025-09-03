@@ -35,7 +35,7 @@ export interface RetryProgress {
 class RetryService {
   private static readonly STORAGE_KEY = 'retry_queue';
   private static readonly DEFAULT_CONFIG: RetryConfig = {
-    maxAttempts: 5,
+    maxAttempts: 2, // REDUCED from 5 to 2 to prevent spam
     baseDelay: 1000, // 1 second
     maxDelay: 30000, // 30 seconds
     backoffMultiplier: 2,

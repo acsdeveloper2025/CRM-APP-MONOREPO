@@ -208,8 +208,8 @@ export class MobileFormController {
     return sections.filter(section => section.fields.length > 0);
   }
 
-  // Enhanced generic verification submission method with data transformation and validation
-  private static async submitGenericVerification(
+  // REMOVED: Generic verification function - using specific implementations instead
+  private static async submitGenericVerification_DISABLED(
     req: Request,
     res: Response,
     verificationType: string,
@@ -468,49 +468,275 @@ export class MobileFormController {
         });
       }
 
-      // Get form submissions from verification data
-      const verificationData = caseData.verificationData;
+      // Get form submissions from verification reports and images
       const formSubmissions: FormSubmissionData[] = [];
 
-      if (verificationData) {
-        // Convert legacy verification data to new format
+      // Check for residence verification reports
+      const residenceReportSql = `
+        SELECT * FROM "residenceVerificationReports"
+        WHERE case_id = $1
+      `;
+      const residenceRes = await query(residenceReportSql, [caseData.id]);
+
+      if (residenceRes.rows.length > 0) {
+        const report = residenceRes.rows[0];
+
+        // Get verification images
+        const imagesSql = `
+          SELECT * FROM verification_attachments
+          WHERE case_id = $1
+          ORDER BY "createdAt"
+        `;
+        const imagesRes = await query(imagesSql, [caseData.id]);
+
+        // Get user info
+        const userSql = `SELECT username FROM users WHERE id = $1`;
+        const userRes = await query(userSql, [report.verified_by]);
+        const userName = userRes.rows[0]?.username || 'Unknown User';
+
+        // Create comprehensive form submission
         const submission: FormSubmissionData = {
-          id: verificationData.id || `legacy_${Date.now()}`,
+          id: report.id || `residence_${Date.now()}`,
           caseId,
-          formType: verificationData.formType || 'UNKNOWN',
-          verificationType: verificationData.verificationType || 'VERIFIED',
-          outcome: verificationData.outcome || 'POSITIVE',
+          formType: 'RESIDENCE',
+          verificationType: 'Residence Verification',
+          outcome: report.verification_outcome || 'Unknown',
           status: 'SUBMITTED',
-          submittedAt: verificationData.submittedAt || new Date().toISOString(),
-          submittedBy: verificationData.submittedBy || 'unknown',
-          submittedByName: verificationData.submittedByName || 'Unknown User',
-          sections: verificationData.sections || [],
-          attachments: verificationData.attachments || [],
-          photos: verificationData.photos || [],
-          geoLocation: verificationData.geoLocation || {
-            latitude: 0,
+          submittedAt: report.verification_date ? `${report.verification_date}T00:00:00.000Z` : new Date().toISOString(),
+          submittedBy: report.verified_by,
+          submittedByName: userName,
+
+          // Organize form data into sections
+          sections: [
+            {
+              id: 'basic_info',
+              title: 'Basic Information',
+              description: 'Customer and verification details',
+              order: 1,
+              fields: [
+                {
+                  id: 'customer_name',
+                  name: 'customerName',
+                  label: 'Customer Name',
+                  type: 'text',
+                  value: report.customer_name || 'Unknown',
+                  displayValue: report.customer_name || 'Unknown',
+                  isRequired: true,
+                  validation: { isValid: true, errors: [] }
+                },
+                {
+                  id: 'verification_outcome',
+                  name: 'verificationOutcome',
+                  label: 'Verification Outcome',
+                  type: 'select',
+                  value: report.verification_outcome,
+                  displayValue: report.verification_outcome,
+                  options: [
+                    { value: 'Positive', label: 'Positive' },
+                    { value: 'Negative', label: 'Negative' },
+                    { value: 'Untraceable', label: 'Untraceable' },
+                    { value: 'NSP', label: 'No Such Person' },
+                    { value: 'Entry Restricted', label: 'Entry Restricted' }
+                  ],
+                  isRequired: true,
+                  validation: { isValid: true, errors: [] }
+                },
+                {
+                  id: 'met_person_name',
+                  name: 'metPersonName',
+                  label: 'Met Person Name',
+                  type: 'text',
+                  value: report.met_person_name,
+                  displayValue: report.met_person_name,
+                  isRequired: false,
+                  validation: { isValid: true, errors: [] }
+                },
+                {
+                  id: 'call_remark',
+                  name: 'callRemark',
+                  label: 'Call Remark',
+                  type: 'select',
+                  value: report.call_remark,
+                  displayValue: report.call_remark,
+                  options: [
+                    { value: 'Call Picked Up', label: 'Call Picked Up' },
+                    { value: 'Did Not Pick Up Call', label: 'Did Not Pick Up Call' },
+                    { value: 'Number Not Reachable', label: 'Number Not Reachable' },
+                    { value: 'Wrong Number', label: 'Wrong Number' }
+                  ],
+                  isRequired: false,
+                  validation: { isValid: true, errors: [] }
+                }
+              ]
+            },
+            {
+              id: 'location_details',
+              title: 'Location Details',
+              description: 'Address and landmark information',
+              order: 2,
+              fields: [
+                {
+                  id: 'locality',
+                  name: 'locality',
+                  label: 'Locality Type',
+                  type: 'select',
+                  value: report.locality,
+                  displayValue: report.locality,
+                  options: [
+                    { value: 'Tower / Building', label: 'Tower / Building' },
+                    { value: 'Independent House', label: 'Independent House' },
+                    { value: 'Slum Area', label: 'Slum Area' },
+                    { value: 'Commercial Area', label: 'Commercial Area' }
+                  ],
+                  isRequired: false,
+                  validation: { isValid: true, errors: [] }
+                },
+                {
+                  id: 'landmark1',
+                  name: 'landmark1',
+                  label: 'Landmark 1',
+                  type: 'text',
+                  value: report.landmark1,
+                  displayValue: report.landmark1,
+                  isRequired: false,
+                  validation: { isValid: true, errors: [] }
+                },
+                {
+                  id: 'landmark2',
+                  name: 'landmark2',
+                  label: 'Landmark 2',
+                  type: 'text',
+                  value: report.landmark2,
+                  displayValue: report.landmark2,
+                  isRequired: false,
+                  validation: { isValid: true, errors: [] }
+                },
+                {
+                  id: 'landmark3',
+                  name: 'landmark3',
+                  label: 'Landmark 3',
+                  type: 'text',
+                  value: report.landmark3,
+                  displayValue: report.landmark3,
+                  isRequired: false,
+                  validation: { isValid: true, errors: [] }
+                },
+                {
+                  id: 'landmark4',
+                  name: 'landmark4',
+                  label: 'Landmark 4',
+                  type: 'text',
+                  value: report.landmark4,
+                  displayValue: report.landmark4,
+                  isRequired: false,
+                  validation: { isValid: true, errors: [] }
+                }
+              ]
+            },
+            {
+              id: 'area_assessment',
+              title: 'Area Assessment',
+              description: 'Community and area observations',
+              order: 3,
+              fields: [
+                {
+                  id: 'dominated_area',
+                  name: 'dominatedArea',
+                  label: 'Dominated Area',
+                  type: 'select',
+                  value: report.dominated_area,
+                  displayValue: report.dominated_area,
+                  options: [
+                    { value: 'A Community Dominated', label: 'A Community Dominated' },
+                    { value: 'B Community Dominated', label: 'B Community Dominated' },
+                    { value: 'Mixed Community', label: 'Mixed Community' },
+                    { value: 'Other', label: 'Other' }
+                  ],
+                  isRequired: false,
+                  validation: { isValid: true, errors: [] }
+                },
+                {
+                  id: 'other_observation',
+                  name: 'otherObservation',
+                  label: 'Other Observations',
+                  type: 'textarea',
+                  value: report.other_observation,
+                  displayValue: report.other_observation,
+                  isRequired: false,
+                  validation: { isValid: true, errors: [] }
+                },
+                {
+                  id: 'final_status',
+                  name: 'finalStatus',
+                  label: 'Final Status',
+                  type: 'select',
+                  value: report.final_status,
+                  displayValue: report.final_status,
+                  options: [
+                    { value: 'Positive', label: 'Positive' },
+                    { value: 'Negative', label: 'Negative' },
+                    { value: 'Refer to Credit', label: 'Refer to Credit' }
+                  ],
+                  isRequired: true,
+                  validation: { isValid: true, errors: [] }
+                }
+              ]
+            }
+          ],
+
+          // Convert verification images to photos format
+          photos: imagesRes.rows.map((img, index) => ({
+            id: img.id,
+            attachmentId: img.id,
+            type: (img.photoType === 'selfie' ? 'selfie' : 'verification') as 'verification' | 'selfie',
+            url: `/api/verification-attachments/${img.id}/download`,
+            thumbnailUrl: `/api/verification-attachments/${img.id}/thumbnail`,
+            filename: img.filename,
+            size: img.fileSize,
+            capturedAt: img.createdAt,
+            geoLocation: {
+              latitude: 0, // TODO: Add geo data if available
+              longitude: 0,
+              accuracy: 0,
+              timestamp: img.createdAt,
+              address: 'Location captured during verification'
+            },
+            metadata: {
+              fileSize: img.fileSize,
+              mimeType: 'image/jpeg',
+              dimensions: { width: 0, height: 0 }, // TODO: Add if available
+              capturedAt: img.createdAt
+            }
+          })),
+
+          attachments: [], // No separate attachments for this form type
+
+          geoLocation: {
+            latitude: 0, // TODO: Add actual geo data
             longitude: 0,
             accuracy: 0,
-            timestamp: new Date().toISOString(),
-            address: 'Unknown location',
+            timestamp: report.verification_date ? `${report.verification_date}T00:00:00.000Z` : new Date().toISOString(),
+            address: 'Verification location'
           },
-          metadata: verificationData.metadata || {
-            submissionTimestamp: new Date().toISOString(),
+
+          metadata: {
+            submissionTimestamp: report.verification_date ? `${report.verification_date}T00:00:00.000Z` : new Date().toISOString(),
             deviceInfo: {
-              platform: 'UNKNOWN' as const,
-              model: 'Unknown',
+              platform: 'ANDROID' as const, // Default for mobile submissions
+              model: 'Mobile Device',
               osVersion: 'Unknown',
-              appVersion: 'Unknown',
+              appVersion: '4.0.0',
             },
             networkInfo: {
-              type: 'UNKNOWN' as const,
+              type: 'WIFI' as const,
             },
             formVersion: '1.0',
             submissionAttempts: 1,
-            isOfflineSubmission: false,
+            isOfflineSubmission: false
           },
-          validationStatus: verificationData.validationStatus || 'VALID',
-          validationErrors: verificationData.validationErrors || [],
+
+          validationStatus: 'VALID',
+          validationErrors: [],
         };
 
         formSubmissions.push(submission);
@@ -553,31 +779,55 @@ export class MobileFormController {
       const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
+      console.log(`📱 Residence verification submission for case: ${caseId}`);
+      console.log(`   - User: ${userId} (${userRole})`);
+      console.log(`   - Images: ${images?.length || 0}`);
+      console.log(`   - Form data keys: ${Object.keys(formData || {}).join(', ')}`);
+
+      // Check if caseId is a UUID (mobile sends UUID) or case number (web sends case number)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(caseId);
+
       // Verify case access
-      const where: any = { id: caseId };
-      if (userRole === 'FIELD_AGENT') {
-        where.assignedTo = userId;
+      const vals: any[] = [caseId];
+      let caseSql: string;
+
+      if (isUUID) {
+        // Mobile app sends UUID
+        caseSql = `SELECT id, "caseId", status, "assignedTo" FROM cases WHERE id = $1`;
+      } else {
+        // Web app sends case number
+        caseSql = `SELECT id, "caseId", status, "assignedTo" FROM cases WHERE "caseId" = $1`;
       }
 
-      const vals: any[] = [caseId];
-      let caseSql = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD_AGENT') { caseSql += ` AND "assignedTo" = $2`; vals.push(userId); }
+      if (userRole === 'FIELD_AGENT') {
+        caseSql += ` AND "assignedTo" = $2`;
+        vals.push(userId);
+      }
+
       const caseRes = await query(caseSql, vals);
       const existingCase = caseRes.rows[0];
 
       if (!existingCase) {
+        console.log(`❌ Case not found: ${caseId} (isUUID: ${isUUID})`);
         return res.status(404).json({
           success: false,
           message: 'Case not found or access denied',
           error: {
             code: 'CASE_NOT_FOUND',
             timestamp: new Date().toISOString(),
+            caseId,
+            isUUID,
           },
         });
       }
 
+      const actualCaseId = existingCase.id; // Use the actual UUID from the database
+      console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
+
       // Validate minimum photo requirement (≥5 geo-tagged photos)
-      if (!photos || photos.length < 5) {
+      // Use images array for new submission format
+      const photoCount = images?.length || photos?.length || 0;
+      if (photoCount < 5) {
         return res.status(400).json({
           success: false,
           message: 'Minimum 5 geo-tagged photos required for residence verification',
@@ -585,7 +835,7 @@ export class MobileFormController {
             code: 'INSUFFICIENT_PHOTOS',
             details: {
               required: 5,
-              provided: photos?.length || 0,
+              provided: photoCount,
             },
             timestamp: new Date().toISOString(),
           },
@@ -617,9 +867,9 @@ export class MobileFormController {
       const submissionId = `residence_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
       // Process verification images separately from case attachments
-      const uploadedImages = await this.processVerificationImages(
+      const uploadedImages = await MobileFormController.processVerificationImages(
         images || [],
-        caseId,
+        actualCaseId,
         'RESIDENCE',
         submissionId,
         userId
@@ -651,48 +901,58 @@ export class MobileFormController {
       };
 
       // Update case with verification data
-      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'RESIDENCE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), formData.outcome || 'VERIFIED', caseId]);
-      const caseUpd = await query(`SELECT id, status, "completedAt" FROM cases WHERE id = $1`, [caseId]);
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'RESIDENCE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), formData.outcome || 'VERIFIED', actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt" FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
-      // Create residence verification report
+      // Determine form type based on verification outcome
+      const formType = 'UNTRACEABLE'; // This is an untraceable residence verification
+      const verificationOutcome = 'Untraceable'; // Maps to case verification outcome
+
+      // Create residence verification report - using comprehensive table structure
       await query(
         `INSERT INTO "residenceVerificationReports" (
-          id, "caseId", "applicantName", "applicantPhone", "applicantEmail", residenceType, ownershipStatus, monthlyRent, landlordName, landlordPhone,
-          residenceSince, familyMembers, neighborVerification, neighborName, neighborPhone, propertyCondition, accessibilityNotes, verificationNotes, recommendationStatus, verifiedAt
+          case_id, "caseId", form_type, verification_outcome, customer_name, customer_phone,
+          full_address, met_person_name, call_remark, locality, landmark1, landmark2, landmark3, landmark4,
+          dominated_area, other_observation, final_status, verification_date, verification_time,
+          verified_by, total_images, total_selfies, remarks
         ) VALUES (
-          gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9,
-          $10, $11, $12, $13, $14, $15, $16, $17, $18, CURRENT_TIMESTAMP
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
         )`,
         [
-          caseId,
-          formData.applicantName || '',
-          formData.applicantPhone,
-          formData.applicantEmail,
-          formData.residenceType || 'HOUSE',
-          formData.ownershipStatus || 'OWNED',
-          formData.monthlyRent ? parseFloat(formData.monthlyRent) : null,
-          formData.landlordName,
-          formData.landlordPhone,
-          formData.residenceSince ? new Date(formData.residenceSince) : null,
-          formData.familyMembers ? parseInt(formData.familyMembers) : null,
-          formData.neighborVerification === 'true',
-          formData.neighborName,
-          formData.neighborPhone,
-          formData.propertyCondition,
-          formData.accessibilityNotes,
-          formData.verificationNotes,
-          formData.recommendationStatus || 'POSITIVE',
+          actualCaseId, // case_id (UUID)
+          parseInt(existingCase.caseId) || null, // caseId (integer) - legacy field
+          formType, // form_type
+          verificationOutcome, // verification_outcome
+          existingCase.customerName || 'Unknown', // customer_name
+          existingCase.systemContact || null, // customer_phone
+          existingCase.visitAddress || existingCase.address || 'Address not provided', // full_address
+          formData.metPerson || formData.metPersonName || 'Unknown', // met_person_name
+          formData.callRemark || null, // call_remark
+          formData.locality || null, // locality
+          formData.landmark1 || null, // landmark1
+          formData.landmark2 || null, // landmark2
+          formData.landmark3 || null, // landmark3
+          formData.landmark4 || null, // landmark4
+          formData.dominatedArea || null, // dominated_area
+          formData.otherObservation || 'No observations', // other_observation
+          formData.finalStatus || 'Negative', // final_status
+          new Date().toISOString().split('T')[0], // verification_date (today)
+          new Date().toTimeString().split(' ')[0], // verification_time (current time)
+          userId, // verified_by
+          uploadedImages.length || 0, // total_images
+          uploadedImages.filter(img => img.photoType === 'selfie').length || 0, // total_selfies
+          formData.remarks || 'Untraceable residence verification completed' // remarks
         ]
       );
 
-      // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'RESIDENCE'`, [caseId]);
+      // Remove auto-save data (autoSaves table doesn't have form_type column)
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'RESIDENCE_VERIFICATION_SUBMITTED',
         entityType: 'CASE',
-        entityId: caseId,
+        entityId: actualCaseId,
         userId,
         details: {
           formType: 'RESIDENCE',
@@ -701,6 +961,7 @@ export class MobileFormController {
           geoTaggedImageCount: uploadedImages.filter(img => img.geoLocation).length,
           outcome: formData.outcome,
           hasGeoLocation: !!geoLocation,
+          caseNumber: existingCase.caseId,
         },
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
@@ -711,6 +972,7 @@ export class MobileFormController {
         message: 'Residence verification submitted successfully',
         data: {
           caseId: updatedCase.id,
+          caseNumber: updatedCase.caseId,
           status: updatedCase.status,
           completedAt: updatedCase.completedAt?.toISOString(),
           submissionId,
@@ -907,37 +1169,37 @@ export class MobileFormController {
 
   // Submit business verification form
   static async submitBusinessVerification(req: Request, res: Response) {
-    return this.submitGenericVerification(req, res, 'BUSINESS');
+    res.status(501).json({ success: false, message: 'Business verification not implemented yet' });
   }
 
   // Submit builder verification form
   static async submitBuilderVerification(req: Request, res: Response) {
-    return this.submitGenericVerification(req, res, 'BUILDER');
+    res.status(501).json({ success: false, message: 'Builder verification not implemented yet' });
   }
 
   // Submit residence-cum-office verification form
   static async submitResidenceCumOfficeVerification(req: Request, res: Response) {
-    return this.submitGenericVerification(req, res, 'RESIDENCE_CUM_OFFICE');
+    res.status(501).json({ success: false, message: 'Residence-cum-office verification not implemented yet' });
   }
 
   // Submit DSA/DST connector verification form
   static async submitDsaConnectorVerification(req: Request, res: Response) {
-    return this.submitGenericVerification(req, res, 'DSA_CONNECTOR');
+    res.status(501).json({ success: false, message: 'DSA connector verification not implemented yet' });
   }
 
   // Submit property individual verification form
   static async submitPropertyIndividualVerification(req: Request, res: Response) {
-    return this.submitGenericVerification(req, res, 'PROPERTY_INDIVIDUAL');
+    res.status(501).json({ success: false, message: 'Property individual verification not implemented yet' });
   }
 
   // Submit property APF verification form
   static async submitPropertyApfVerification(req: Request, res: Response) {
-    return this.submitGenericVerification(req, res, 'PROPERTY_APF');
+    res.status(501).json({ success: false, message: 'Property APF verification not implemented yet' });
   }
 
   // Submit NOC verification form
   static async submitNocVerification(req: Request, res: Response) {
-    return this.submitGenericVerification(req, res, 'NOC');
+    res.status(501).json({ success: false, message: 'NOC verification not implemented yet' });
   }
 
   // Get verification form template

@@ -8,7 +8,7 @@ import { MobileLocationController } from '../controllers/mobileLocationControlle
 import { MobileSyncController } from '../controllers/mobileSyncController';
 import { authenticateToken } from '../middleware/auth';
 import { validateMobileVersion, mobileRateLimit } from '../middleware/mobileValidation';
-import { createAuditLog } from '../controllers/auditLogsController';
+import { createAuditLog, createMobileAuditLogs } from '../controllers/auditLogsController';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validation';
 
@@ -103,7 +103,7 @@ const createAuditLogValidation = [
     .withMessage('Invalid category'),
 ];
 
-router.post('/audit/logs', authenticateToken, validateMobileVersion, createAuditLogValidation, validate, createAuditLog);
+router.post('/audit/logs', authenticateToken, validateMobileVersion, createMobileAuditLogs);
 
 // Mobile Version Management Routes
 router.post('/version/check', authenticateToken, MobileAuthController.checkVersion);

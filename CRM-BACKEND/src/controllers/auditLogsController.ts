@@ -218,16 +218,74 @@ export const getAuditLogById = async (req: AuthenticatedRequest, res: Response) 
   }
 };
 
+// POST /api/mobile/audit/logs - Create mobile audit log batch
+export const createMobileAuditLogs = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { logs, batchId, deviceId } = req.body;
+
+    if (!logs || !Array.isArray(logs)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid logs format. Expected array of logs.'
+      });
+    }
+
+    console.log(`📝 Processing ${logs.length} mobile audit logs (batch: ${batchId})`);
+
+    // Process each log in the batch
+    const processedLogs = logs.map(log => ({
+      id: log.id || `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: req.user?.id || log.userId,
+      userName: req.user?.username || log.username || 'Mobile User',
+      action: log.action || 'MOBILE_ACTION',
+      resource: log.entityType || 'mobile',
+      resourceId: log.entityId || 'unknown',
+      details: {
+        ...log.details,
+        deviceInfo: log.deviceInfo,
+        location: log.location,
+        timestamp: log.timestamp,
+        batchId,
+        deviceId
+      },
+      ipAddress: req.ip || req.connection.remoteAddress || 'Unknown',
+      userAgent: req.get('User-Agent') || 'Mobile App',
+      timestamp: log.timestamp || new Date().toISOString(),
+      severity: 'INFO',
+      category: 'CASE_MANAGEMENT'
+    }));
+
+    // Add to mock storage (replace with actual database operations)
+    auditLogs.push(...processedLogs);
+
+    console.log(`✅ Successfully processed ${processedLogs.length} mobile audit logs`);
+
+    res.status(201).json({
+      success: true,
+      message: `Successfully processed ${processedLogs.length} audit logs`,
+      batchId,
+      processed: processedLogs.length
+    });
+  } catch (error) {
+    console.error('Error creating mobile audit logs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create mobile audit logs',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
 // POST /api/audit-logs - Create audit log entry
 export const createAuditLog = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { 
-      action, 
-      resource, 
-      resourceId, 
-      details, 
-      severity = 'INFO', 
-      category 
+    const {
+      action,
+      resource,
+      resourceId,
+      details,
+      severity = 'INFO',
+      category
     } = req.body;
 
     const newAuditLog = {

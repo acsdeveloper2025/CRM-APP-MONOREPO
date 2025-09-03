@@ -74,9 +74,10 @@ export interface FormField {
 export interface FormSection {
   id: string;
   title: string;
+  description?: string;
   fields: FormField[];
   order: number;
-  isRequired: boolean;
+  isRequired?: boolean;
   defaultExpanded?: boolean;
 }
 

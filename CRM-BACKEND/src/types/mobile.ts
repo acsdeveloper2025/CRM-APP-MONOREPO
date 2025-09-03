@@ -225,9 +225,10 @@ export interface FormSubmissionData {
 export interface FormSection {
   id: string;
   title: string;
+  description?: string;
   fields: FormField[];
   order: number;
-  isRequired: boolean;
+  isRequired?: boolean;
   defaultExpanded?: boolean;
 }
 
@@ -260,14 +261,18 @@ export interface FormAttachment {
 
 export interface FormPhoto {
   id: string;
-  attachmentId: string;
+  attachmentId?: string;
   type: 'verification' | 'selfie';
   url: string;
   thumbnailUrl: string;
+  filename?: string;
+  size?: number;
+  capturedAt?: string;
   geoLocation: FormGeoLocation;
   metadata: {
     fileSize: number;
-    dimensions: { width: number; height: number };
+    mimeType?: string;
+    dimensions?: { width: number; height: number };
     capturedAt: string;
     deviceInfo?: string;
   };
@@ -301,6 +306,10 @@ export interface FormMetadata {
   submissionAttempts: number;
   isOfflineSubmission: boolean;
   syncedAt?: string;
+  totalImages?: number;
+  totalSelfies?: number;
+  verificationDate?: string;
+  formType?: string;
 }
 
 export interface MobileLocationCaptureRequest {

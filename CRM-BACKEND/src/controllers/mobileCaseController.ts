@@ -346,39 +346,75 @@ export class MobileCaseController {
     try {
       const { caseId } = req.params;
       const { status, notes = null } = req.body;
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.id;  // Fixed: auth middleware sets 'id', not 'userId'
       const userRole = (req as any).user?.role;
 
-      const where: any = { id: caseId };
-      
-      // Role-based access control
-      if (userRole === 'FIELD_AGENT') {
-        where.assignedTo = userId;
-      }
+      console.log(`📱 Mobile case status update request:`, {
+        caseId,
+        status,
+        notes,
+        userId,
+        userRole
+      });
+
+      // Check if caseId is a UUID (mobile sends UUID) or case number (web sends case number)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(caseId);
 
       const vals3: any[] = [caseId];
-      let exSql = `SELECT id, status, trigger, "completedAt" FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD_AGENT') { exSql += ` AND "assignedTo" = $2`; vals3.push(userId); }
+      let exSql: string;
+
+      if (isUUID) {
+        // Mobile app sends UUID
+        exSql = `SELECT id, "caseId", status, trigger, "completedAt" FROM cases WHERE id = $1`;
+      } else {
+        // Web app sends case number
+        exSql = `SELECT id, "caseId", status, trigger, "completedAt" FROM cases WHERE "caseId" = $1`;
+      }
+
+      if (userRole === 'FIELD_AGENT') {
+        exSql += ` AND "assignedTo" = $2`;
+        vals3.push(userId);
+      }
+
+      console.log(`🔍 Executing query: ${exSql} with values:`, vals3);
       const exRes = await query(exSql, vals3);
       const existingCase = exRes.rows[0];
+
       if (!existingCase) {
-        return res.status(404).json({ success: false, message: 'Case not found or access denied', error: { code: 'CASE_NOT_FOUND', timestamp: new Date().toISOString() } });
+        console.log(`❌ Case not found: ${caseId} (isUUID: ${isUUID})`);
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found or access denied',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+            caseId,
+            isUUID
+          }
+        });
       }
+
+      console.log(`✅ Case found:`, existingCase);
       const compAt = status === 'COMPLETED' ? new Date() : existingCase.completedat;
-      await query(`UPDATE cases SET status = $1, trigger = COALESCE($2, trigger), "completedAt" = $3, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $4`, [status, notes, compAt, caseId]);
-      const updRes = await query(`SELECT id, status, "updatedAt", "completedAt" FROM cases WHERE id = $1`, [caseId]);
+      const actualCaseId = existingCase.id; // Use the actual UUID from the database
+
+      await query(`UPDATE cases SET status = $1, trigger = COALESCE($2, trigger), "completedAt" = $3, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $4`, [status, notes, compAt, actualCaseId]);
+      const updRes = await query(`SELECT id, "caseId", status, "updatedAt", "completedAt" FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = updRes.rows[0];
+
+      console.log(`✅ Case status updated successfully:`, updatedCase);
 
       await createAuditLog({
         action: 'CASE_STATUS_UPDATED',
         entityType: 'CASE',
-        entityId: caseId,
+        entityId: actualCaseId,
         userId,
         details: {
           oldStatus: existingCase.status,
           newStatus: status,
           notes,
           source: 'MOBILE_APP',
+          caseNumber: existingCase.caseId,
         },
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
@@ -389,6 +425,7 @@ export class MobileCaseController {
         message: 'Case status updated successfully',
         data: {
           id: updatedCase.id,
+          caseId: updatedCase.caseId,
           status: updatedCase.status,
           updatedAt: updatedCase.updatedAt.toISOString(),
           completedAt: updatedCase.completedAt?.toISOString(),
@@ -490,30 +527,53 @@ export class MobileCaseController {
       const userId = (req as any).user?.userId;
       const userRole = (req as any).user?.role;
 
-      const where: any = { id: caseId };
-      
-      // Role-based access control
-      if (userRole === 'FIELD_AGENT') {
-        where.assignedTo = userId;
-      }
+      console.log(`📱 Auto-save request for case ${caseId}, formType: ${formType}`);
+
+      // Check if caseId is a UUID (mobile sends UUID) or case number (web sends case number)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(caseId);
 
       const vals5: any[] = [caseId];
-      let exSql3 = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD_AGENT') { exSql3 += ` AND "assignedTo" = $2`; vals5.push(userId); }
+      let exSql3: string;
+
+      if (isUUID) {
+        // Mobile app sends UUID
+        exSql3 = `SELECT id FROM cases WHERE id = $1`;
+      } else {
+        // Web app sends case number
+        exSql3 = `SELECT id FROM cases WHERE "caseId" = $1`;
+      }
+
+      if (userRole === 'FIELD_AGENT') {
+        exSql3 += ` AND "assignedTo" = $2`;
+        vals5.push(userId);
+      }
+
       const exRes3 = await query(exSql3, vals5);
       const existingCase = exRes3.rows[0];
       if (!existingCase) {
-        return res.status(404).json({ success: false, message: 'Case not found or access denied', error: { code: 'CASE_NOT_FOUND', timestamp: new Date().toISOString() } });
+        console.log(`❌ Auto-save: Case not found: ${caseId} (isUUID: ${isUUID})`);
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found or access denied',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+            caseId,
+            isUUID
+          }
+        });
       }
 
+      const actualCaseId = existingCase.id; // Use the actual UUID from the database
+
       // Save or update auto-save data
-      const exAuto = await query(`SELECT id FROM "autoSaves" WHERE "caseId" = $1 AND "formType" = $2`, [caseId, formType]);
+      const exAuto = await query(`SELECT id FROM "autoSaves" WHERE "caseId" = $1 AND "formType" = $2`, [actualCaseId, formType]);
       let autoSaveData: any;
       if (exAuto.rowCount && exAuto.rowCount > 0) {
         const upd = await query(`UPDATE "autoSaves" SET "formData" = $1, timestamp = $2 WHERE id = $3 RETURNING *`, [JSON.stringify(formData), new Date(timestamp), exAuto.rows[0].id]);
         autoSaveData = upd.rows[0];
       } else {
-        const ins = await query(`INSERT INTO "autoSaves" (id, "caseId", "formType", "formData", timestamp) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *`, [caseId, formType, JSON.stringify(formData), new Date(timestamp)]);
+        const ins = await query(`INSERT INTO "autoSaves" (id, "caseId", "formType", "formData", timestamp) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *`, [actualCaseId, formType, JSON.stringify(formData), new Date(timestamp)]);
         autoSaveData = ins.rows[0];
       }
 
@@ -547,31 +607,46 @@ export class MobileCaseController {
       const userId = (req as any).user?.userId;
       const userRole = (req as any).user?.role;
 
-      const where: any = { id: caseId };
-      
-      // Role-based access control
-      if (userRole === 'FIELD_AGENT') {
-        where.assignedTo = userId;
-      }
+      console.log(`📱 Get auto-saved form for case ${caseId}, formType: ${formType}`);
+
+      // Check if caseId is a UUID (mobile sends UUID) or case number (web sends case number)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(caseId);
 
       const vals7: any[] = [caseId];
-      let exSql5 = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD_AGENT') { exSql5 += ` AND "assignedTo" = $2`; vals7.push(userId); }
+      let exSql5: string;
+
+      if (isUUID) {
+        // Mobile app sends UUID
+        exSql5 = `SELECT id FROM cases WHERE id = $1`;
+      } else {
+        // Web app sends case number
+        exSql5 = `SELECT id FROM cases WHERE "caseId" = $1`;
+      }
+
+      if (userRole === 'FIELD_AGENT') {
+        exSql5 += ` AND "assignedTo" = $2`;
+        vals7.push(userId);
+      }
+
       const exRes5 = await query(exSql5, vals7);
       const existingCase = exRes5.rows[0];
 
       if (!existingCase) {
+        console.log(`❌ Get auto-saved: Case not found: ${caseId} (isUUID: ${isUUID})`);
         return res.status(404).json({
           success: false,
           message: 'Case not found or access denied',
           error: {
             code: 'CASE_NOT_FOUND',
             timestamp: new Date().toISOString(),
+            caseId,
+            isUUID,
           },
         });
       }
 
-      const autoRes = await query(`SELECT * FROM "autoSaves" WHERE "caseId" = $1 AND "formType" = $2 LIMIT 1`, [caseId, formType.toUpperCase()]);
+      const actualCaseId = existingCase.id; // Use the actual UUID from the database
+      const autoRes = await query(`SELECT * FROM "autoSaves" WHERE "caseId" = $1 AND "formType" = $2 LIMIT 1`, [actualCaseId, formType.toUpperCase()]);
       const autoSaveData = autoRes.rows[0];
       if (!autoSaveData) {
         return res.status(404).json({ success: false, message: 'No auto-saved data found', error: { code: 'AUTO_SAVE_NOT_FOUND', timestamp: new Date().toISOString() } });
