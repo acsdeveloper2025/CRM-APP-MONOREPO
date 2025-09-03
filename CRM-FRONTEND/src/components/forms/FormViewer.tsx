@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, FileText, MapPin, Clock, User, Eye, Download, Camera, Smartphone, Wifi, WifiOff } from 'lucide-react';
+import { FileText, MapPin, Clock, User, Eye, Download, Camera, Smartphone, Wifi, WifiOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Label } from '@/components/ui/label';
 import { FormSubmission, FormSection, FormField } from '@/types/form';
 import { FormFieldViewer } from './FormFieldViewer';
 import { FormAttachmentsViewer } from './FormAttachmentsViewer';
@@ -48,6 +48,35 @@ export function FormViewer({
     }
     setExpandedSections(newExpanded);
     onSectionToggle?.(sectionId, newExpanded.has(sectionId));
+  };
+
+  // Helper functions for styling
+  const getOutcomeColor = (outcome: string) => {
+    switch (outcome.toLowerCase()) {
+      case 'positive':
+        return 'text-green-600';
+      case 'negative':
+        return 'text-red-600';
+      case 'nsp':
+        return 'text-yellow-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'submitted':
+        return 'bg-blue-100 text-blue-800';
+      case 'reviewed':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -234,54 +263,91 @@ export function FormViewer({
         </Card>
       )}
 
-      {/* Form Sections */}
-      <div className="space-y-4">
-        {submission.sections.map((section) => (
-          <Card key={section.id}>
-            <Collapsible
-              open={expandedSections.has(section.id)}
-              onOpenChange={() => handleSectionToggle(section.id)}
-            >
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{section.title}</CardTitle>
-                      {section.description && (
-                        <CardDescription>{section.description}</CardDescription>
-                      )}
+      {/* Exact Form as Filled by Field Agent */}
+      <Card className="border-2 border-primary/20">
+        <CardHeader className="bg-primary/5">
+          <CardTitle className="text-xl flex items-center space-x-2">
+            <FileText className="h-6 w-6 text-primary" />
+            <span>Form as Submitted by Field Agent</span>
+          </CardTitle>
+          <CardDescription>
+            Exact replica of the form filled by {submission.submittedByName} on {new Date(submission.submittedAt).toLocaleDateString()}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          {/* Form Header */}
+          <div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">
+            <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
+              {getFormTypeLabel(submission.formType)} Verification Form
+            </h2>
+            <div className="text-center text-gray-600 space-y-1">
+              <p className="font-medium">Case ID: {submission.caseId}</p>
+              <p>Verification Type: {submission.verificationType}</p>
+              <p>Outcome: <span className={`font-semibold ${getOutcomeColor(submission.outcome)}`}>{submission.outcome}</span></p>
+            </div>
+          </div>
+
+          {/* Form Sections - Exact Layout */}
+          <div className="space-y-6">
+            {submission.sections.map((section, sectionIndex) => (
+              <div key={section.id} className="border rounded-lg overflow-hidden">
+                {/* Section Header */}
+                <div className="bg-gray-50 px-4 py-3 border-b">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
+                    <span className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                      {sectionIndex + 1}
+                    </span>
+                    <span>{section.title}</span>
+                  </h3>
+
+                </div>
+
+                {/* Section Fields */}
+                <div className="p-4 space-y-4">
+                  {section.fields.map((field) => (
+                    <div key={field.id} className="space-y-2">
+                      {/* Field Label */}
+                      <Label className="text-sm font-medium text-gray-700 flex items-center space-x-1">
+                        <span>{field.label}</span>
+                        {field.isRequired && <span className="text-red-500">*</span>}
+                      </Label>
+
+                      {/* Field Value Display */}
+                      <div className="min-h-[40px] p-3 bg-white border rounded-md">
+                        <FormFieldViewer
+                          field={field}
+                          readonly={true}
+                          onChange={(value) => onFieldChange?.(field.id, value)}
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="text-xs">
-                        {section.fields.length} fields
-                      </Badge>
-                      {expandedSections.has(section.id) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {section.fields.map((field) => (
-                      <FormFieldViewer
-                        key={field.id}
-                        field={field}
-                        readonly={readonly}
-                        onChange={(value) => onFieldChange?.(field.id, value)}
-                      />
-                    ))}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-        ))}
-      </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Form Footer */}
+          <div className="mt-8 p-4 bg-gray-50 rounded-lg border">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="font-medium text-gray-700">Submitted by:</span>
+                <p className="text-gray-600">{submission.submittedByName}</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Submission Date:</span>
+                <p className="text-gray-600">{new Date(submission.submittedAt).toLocaleString()}</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Status:</span>
+                <Badge className={getStatusColor(submission.status)}>
+                  {submission.status.replace('_', ' ')}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Verification Images - Captured during form submission */}
       {submission.caseId && (
@@ -302,15 +368,15 @@ export function FormViewer({
       )}
 
       {/* Form Location */}
-      {showLocation && submission.location && (
+      {showLocation && submission.geoLocation && (
         <FormLocationViewer
-          location={submission.location}
+          location={submission.geoLocation}
           readonly={readonly}
         />
       )}
 
       {/* Review Comments */}
-      {submission.reviewComments && (
+      {submission.reviewNotes && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center space-x-2">
@@ -320,7 +386,7 @@ export function FormViewer({
           </CardHeader>
           <CardContent>
             <div className="bg-muted/50 rounded-lg p-4">
-              <p className="text-sm whitespace-pre-wrap">{submission.reviewComments}</p>
+              <p className="text-sm whitespace-pre-wrap">{submission.reviewNotes}</p>
               {submission.reviewedBy && submission.reviewedAt && (
                 <div className="flex items-center justify-between mt-3 pt-3 border-t">
                   <div className="flex items-center space-x-2 text-xs text-muted-foreground">
