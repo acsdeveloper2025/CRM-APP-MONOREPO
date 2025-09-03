@@ -106,14 +106,25 @@ class CaseStatusService {
       const backendStatus = this.mapMobileStatusToBackend(status);
 
       const envConfig = getEnvironmentConfig();
-      const response = await fetch(`${API_BASE_URL}/mobile/cases/${caseId}/status`, {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+        'X-App-Version': envConfig.app.version,
+        'X-Platform': 'WEB',
+        'X-Client-Type': 'mobile',
+      };
+
+      console.log('🔍 Case Status Update - Headers being sent:', headers);
+      console.log('🔍 Case Status Update - URL:', `${API_BASE_URL}/mobile/cases/${caseId}/status`);
+      console.log('🔍 Case Status Update - Environment config:', envConfig);
+
+      // Add cache-busting parameter
+      const url = `${API_BASE_URL}/mobile/cases/${caseId}/status?t=${Date.now()}`;
+      console.log('🔍 Case Status Update - Final URL with cache-buster:', url);
+
+      const response = await fetch(url, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-          'X-App-Version': envConfig.app.version,
-          'X-Client-Type': 'mobile',
-        },
+        headers,
         body: JSON.stringify({
           status: backendStatus,
           metadata: {
@@ -124,11 +135,15 @@ class CaseStatusService {
         }),
       });
 
+      console.log('🔍 Case Status Update - Response status:', response.status);
+      console.log('🔍 Case Status Update - Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        return { 
-          success: false, 
-          error: errorData.message || `HTTP ${response.status}: ${response.statusText}` 
+        console.error('❌ Case Status Update - Error response:', errorData);
+        return {
+          success: false,
+          error: errorData.message || `HTTP ${response.status}: ${response.statusText}`
         };
       }
 

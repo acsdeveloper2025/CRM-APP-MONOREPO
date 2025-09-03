@@ -624,6 +624,7 @@ class VerificationFormService {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'X-App-Version': envConfig.app.version,
+          'X-Platform': 'WEB',
           'X-Client-Type': 'mobile',
         },
         body: formData,
@@ -721,6 +722,7 @@ class VerificationFormService {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${authToken}`,
       'X-App-Version': envConfig.app.version,
+      'X-Platform': 'WEB',
       'X-Client-Type': 'mobile',
     };
   }
@@ -758,6 +760,7 @@ class VerificationFormService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
           'X-App-Version': envConfig.app.version,
+          'X-Platform': 'WEB',
           'X-Client-Type': 'mobile',
         },
         body: JSON.stringify(data),

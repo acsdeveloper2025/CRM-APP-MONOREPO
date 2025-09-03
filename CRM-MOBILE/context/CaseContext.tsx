@@ -1058,8 +1058,44 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSyncing(true);
     setError(null);
     try {
-      const data = await caseService.syncWithServer();
-      setCases(data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+      const serverData = await caseService.syncWithServer();
+
+      // Preserve local status changes that haven't been synced to server
+      const mergedCases = serverData.map(serverCase => {
+        const localCase = cases.find(c => c.id === serverCase.id);
+
+        // If we have a local case with a different status, preserve the local status
+        // unless the server case has been updated more recently
+        if (localCase && localCase.status !== serverCase.status) {
+          const localUpdatedAt = new Date(localCase.updatedAt || localCase.createdAt);
+          const serverUpdatedAt = new Date(serverCase.updatedAt || serverCase.createdAt);
+
+          // If local case was updated more recently, preserve local status
+          if (localUpdatedAt > serverUpdatedAt) {
+            console.log(`🔄 Preserving local status for case ${serverCase.id}: ${localCase.status} (local) vs ${serverCase.status} (server)`);
+            return {
+              ...serverCase,
+              status: localCase.status,
+              updatedAt: localCase.updatedAt,
+              inProgressAt: localCase.inProgressAt,
+              completedAt: localCase.completedAt,
+              submissionStatus: localCase.submissionStatus,
+              isSaved: localCase.isSaved
+            };
+          }
+        }
+
+        return serverCase;
+      });
+
+      // Add any local cases that don't exist on server (shouldn't happen, but safety check)
+      const serverCaseIds = new Set(serverData.map(c => c.id));
+      const localOnlyCases = cases.filter(c => !serverCaseIds.has(c.id));
+
+      const finalCases = [...mergedCases, ...localOnlyCases];
+      setCases(finalCases.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+
+      console.log(`✅ Sync complete: ${serverData.length} server cases, ${localOnlyCases.length} local-only cases`);
     } catch (err) {
       setError('Failed to sync cases.');
       console.error(err);
