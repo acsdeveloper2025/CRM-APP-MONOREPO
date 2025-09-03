@@ -139,7 +139,7 @@ export class MobileCaseController {
         assignedAt: new Date(caseItem.createdAt).toISOString(),
         updatedAt: new Date(caseItem.updatedAt).toISOString(),
         completedAt: caseItem.completedAt ? new Date(caseItem.completedAt).toISOString() : undefined,
-        notes: caseItem.notes, // TRIGGER field
+        notes: caseItem.trigger, // TRIGGER field
         verificationType: caseItem.verificationType,
         verificationOutcome: caseItem.verificationOutcome,
         applicantType: caseItem.applicantType, // Applicant Type
@@ -283,7 +283,7 @@ export class MobileCaseController {
         assignedAt: new Date(caseItem.createdAt).toISOString(),
         updatedAt: new Date(caseItem.updatedAt).toISOString(),
         completedAt: caseItem.completedAt ? new Date(caseItem.completedAt).toISOString() : undefined,
-        notes: caseItem.notes, // TRIGGER field
+        notes: caseItem.trigger, // TRIGGER field
         verificationType: caseItem.verificationType,
         verificationOutcome: caseItem.verificationOutcome,
         applicantType: caseItem.applicantType, // Applicant Type
@@ -345,7 +345,7 @@ export class MobileCaseController {
   static async updateCaseStatus(req: Request, res: Response) {
     try {
       const { caseId } = req.params;
-      const { status, notes } = req.body;
+      const { status, notes = null } = req.body;
       const userId = (req as any).user?.userId;
       const userRole = (req as any).user?.role;
 
@@ -357,7 +357,7 @@ export class MobileCaseController {
       }
 
       const vals3: any[] = [caseId];
-      let exSql = `SELECT id, status, notes, "completedAt" FROM cases WHERE id = $1`;
+      let exSql = `SELECT id, status, trigger, "completedAt" FROM cases WHERE id = $1`;
       if (userRole === 'FIELD_AGENT') { exSql += ` AND "assignedTo" = $2`; vals3.push(userId); }
       const exRes = await query(exSql, vals3);
       const existingCase = exRes.rows[0];
@@ -365,7 +365,7 @@ export class MobileCaseController {
         return res.status(404).json({ success: false, message: 'Case not found or access denied', error: { code: 'CASE_NOT_FOUND', timestamp: new Date().toISOString() } });
       }
       const compAt = status === 'COMPLETED' ? new Date() : existingCase.completedat;
-      await query(`UPDATE cases SET status = $1, notes = COALESCE($2, notes), "completedAt" = $3, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $4`, [status, notes, compAt, caseId]);
+      await query(`UPDATE cases SET status = $1, trigger = COALESCE($2, trigger), "completedAt" = $3, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $4`, [status, notes, compAt, caseId]);
       const updRes = await query(`SELECT id, status, "updatedAt", "completedAt" FROM cases WHERE id = $1`, [caseId]);
       const updatedCase = updRes.rows[0];
 

@@ -191,7 +191,7 @@ export class MobileSyncController {
         assignedAt: new Date(caseItem.createdAt).toISOString(),
         updatedAt: new Date(caseItem.updatedAt).toISOString(),
         completedAt: caseItem.completedAt ? new Date(caseItem.completedAt).toISOString() : undefined,
-        notes: caseItem.notes, // TRIGGER field
+        notes: caseItem.trigger, // TRIGGER field
         verificationType: caseItem.verificationType,
         verificationOutcome: caseItem.verificationOutcome,
         applicantType: caseItem.applicantType, // Applicant Type

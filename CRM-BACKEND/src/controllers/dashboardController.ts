@@ -341,6 +341,11 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
   try {
     const { period = 'month', clientId, userId } = req.query;
 
+    // Role-based filtering - FIELD_AGENT users can only see their own stats
+    const userRole = req.user?.role;
+    const currentUserId = req.user?.id;
+    const effectiveUserId = userRole === 'FIELD_AGENT' ? currentUserId : userId;
+
     // Calculate date range based on period
     const now = new Date();
     let startDate: Date;
@@ -360,19 +365,22 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         break;
     }
 
+    // Build role-based filtering condition
+    const roleFilter = effectiveUserId ? ` AND "assignedTo" = '${effectiveUserId}'` : '';
+
     // Get comprehensive statistics from database
     const statsQuery = `
       SELECT
-        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1) as "totalCases",
-        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'PENDING') as "pendingCases",
-        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'IN_PROGRESS') as "inProgressCases",
-        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND (status = 'COMPLETED' OR status = 'APPROVED')) as "completedCases",
-        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'REJECTED') as "rejectedCases",
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1${roleFilter}) as "totalCases",
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'PENDING'${roleFilter}) as "pendingCases",
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'IN_PROGRESS'${roleFilter}) as "inProgressCases",
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND (status = 'COMPLETED' OR status = 'APPROVED')${roleFilter}) as "completedCases",
+        (SELECT COUNT(*) FROM cases WHERE "createdAt" >= $1 AND status = 'REJECTED'${roleFilter}) as "rejectedCases",
         (SELECT COUNT(*) FROM clients WHERE "isActive" = true) as "totalClients",
         (SELECT COUNT(*) FROM users WHERE "isActive" = true) as "activeUsers",
         (SELECT AVG(EXTRACT(EPOCH FROM ("updatedAt" - "createdAt")) / 86400)
          FROM cases
-         WHERE status IN ('COMPLETED', 'APPROVED') AND "createdAt" >= $1) as "avgTurnaroundDays"
+         WHERE status IN ('COMPLETED', 'APPROVED') AND "createdAt" >= $1${roleFilter}) as "avgTurnaroundDays"
     `;
 
     const result = await pool.query(statsQuery, [startDate]);
@@ -426,6 +434,11 @@ export const getCaseStatusDistribution = async (req: AuthenticatedRequest, res: 
   try {
     const { period = 'month', clientId, userId } = req.query;
 
+    // Role-based filtering - FIELD_AGENT users can only see their own stats
+    const userRole = req.user?.role;
+    const currentUserId = req.user?.id;
+    const effectiveUserId = userRole === 'FIELD_AGENT' ? currentUserId : userId;
+
     // Calculate date range based on period
     const now = new Date();
     let startDate: Date;
@@ -463,9 +476,9 @@ export const getCaseStatusDistribution = async (req: AuthenticatedRequest, res: 
       paramIndex++;
     }
 
-    if (userId) {
+    if (effectiveUserId) {
       statusQuery += ` AND "assignedTo" = $${paramIndex}`;
-      queryParams.push(parseInt(userId as string));
+      queryParams.push(effectiveUserId);
       paramIndex++;
     }
 
@@ -516,6 +529,11 @@ export const getCaseStatusDistribution = async (req: AuthenticatedRequest, res: 
 export const getMonthlyTrends = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { months = 6, clientId, userId } = req.query;
+
+    // Role-based filtering - FIELD_AGENT users can only see their own stats
+    const userRole = req.user?.role;
+    const currentUserId = req.user?.id;
+    const effectiveUserId = userRole === 'FIELD_AGENT' ? currentUserId : userId;
     const monthsCount = parseInt(months as string);
 
     // Calculate start date based on months parameter
@@ -547,9 +565,9 @@ export const getMonthlyTrends = async (req: AuthenticatedRequest, res: Response)
       paramIndex++;
     }
 
-    if (userId) {
+    if (effectiveUserId) {
       trendsQuery += ` AND "assignedTo" = $${paramIndex}`;
-      queryParams.push(parseInt(userId as string));
+      queryParams.push(effectiveUserId);
       paramIndex++;
     }
 

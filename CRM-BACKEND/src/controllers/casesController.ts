@@ -81,6 +81,21 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
     const params: any[] = [];
     let paramIndex = 1;
 
+    // Role-based filtering - FIELD_AGENT users can only see their assigned cases
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
+
+    if (userRole === 'FIELD_AGENT') {
+      conditions.push(`c."assignedTo" = $${paramIndex}`);
+      params.push(userId);
+      paramIndex++;
+    } else if (assignedTo) {
+      // For other roles, apply assignedTo filter only if explicitly provided
+      conditions.push(`c."assignedTo" = $${paramIndex}`);
+      params.push(assignedTo);
+      paramIndex++;
+    }
+
     // Status filter
     if (status) {
       conditions.push(`c.status = $${paramIndex}`);
@@ -96,13 +111,6 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
         c.address ILIKE $${paramIndex}
       )`);
       params.push(`%${search}%`);
-      paramIndex++;
-    }
-
-    // Assigned to filter
-    if (assignedTo) {
-      conditions.push(`c."assignedTo" = $${paramIndex}`);
-      params.push(assignedTo);
       paramIndex++;
     }
 
@@ -219,8 +227,12 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
     // Check if id is numeric (caseId) or UUID (id)
     const isNumeric = /^\d+$/.test(id);
 
-    // Enhanced query with all 13 required fields for mobile app
-    const caseQuery = `
+    // Role-based access control
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
+
+    // Build query with role-based filtering
+    let caseQuery = `
       SELECT
         c.*,
         -- Client information (Field 3: Client)
@@ -247,13 +259,24 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
       WHERE ${isNumeric ? 'c."caseId" = $1' : 'c.id = $1'}
     `;
 
-    const queryParam = isNumeric ? parseInt(id) : id;
-    const result = await pool.query(caseQuery, [queryParam]);
+    const queryParams = [isNumeric ? parseInt(id) : id];
+
+    // Add role-based filtering for FIELD_AGENT
+    if (userRole === 'FIELD_AGENT') {
+      caseQuery += ` AND c."assignedTo" = $2`;
+      queryParams.push(userId);
+    }
+
+    const result = await pool.query(caseQuery, queryParams);
 
     if (result.rows.length === 0) {
+      const message = userRole === 'FIELD_AGENT'
+        ? 'Case not found or access denied. You can only view cases assigned to you.'
+        : 'Case not found';
+
       return res.status(404).json({
         success: false,
-        message: 'Case not found',
+        message,
         error: { code: 'NOT_FOUND' },
       });
     }

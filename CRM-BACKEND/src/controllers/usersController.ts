@@ -253,6 +253,48 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Determine the role string from roleId (prioritize roleId over role field)
+    let finalRole = null;
+
+    if (cleanRoleId) {
+      // Get role name from roleId
+      const roleQuery = `SELECT name FROM roles WHERE id = $1`;
+      const roleResult = await query(roleQuery, [cleanRoleId]);
+      if (roleResult.rows.length > 0) {
+        finalRole = roleResult.rows[0].name;
+      }
+    } else if (role) {
+      // Fallback to role field if roleId is not provided
+      finalRole = role;
+    }
+
+    // Ensure we have a valid role
+    if (!finalRole) {
+      return res.status(400).json({
+        success: false,
+        message: 'Role is required and must be valid. Please provide either roleId or role.',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    // Debug logging
+    logger.info(`User creation debug: roleId=${cleanRoleId}, role=${role}, finalRole=${finalRole}`, {
+      userId: req.user?.id,
+      roleId: cleanRoleId,
+      role: role,
+      finalRole: finalRole
+    });
+
+    // Validate role against allowed values
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER'];
+    if (!allowedRoles.includes(finalRole)) {
+      return res.status(400).json({
+        success: false,
+        message: `Role must be one of: ${allowedRoles.join(', ')}`,
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
     // Create new user in database
     const createUserQuery = `
       INSERT INTO users (
@@ -269,7 +311,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
       email,
       hashedPassword, // password column
       hashedPassword, // passwordHash column
-      role || 'USER', // Default role for backward compatibility
+      finalRole, // Use the validated role
       cleanRoleId,
       cleanDepartmentId,
       cleanDesignationId,

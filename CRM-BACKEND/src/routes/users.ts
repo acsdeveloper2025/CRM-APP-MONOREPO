@@ -63,8 +63,8 @@ const createUserValidation = [
     }),
   body('role')
     .optional()
-    .isIn(['ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER', 'SUPER_ADMIN'])
-    .withMessage('Role must be one of: ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER, SUPER_ADMIN'),
+    .isIn(['SUPER_ADMIN', 'ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER'])
+    .withMessage('Role must be one of: SUPER_ADMIN, ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER'),
   body('departmentId')
     .optional()
     .custom((value) => {
@@ -146,8 +146,8 @@ const updateUserValidation = [
     .normalizeEmail(),
   body('role')
     .optional()
-    .isIn(['ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER', 'SUPER_ADMIN'])
-    .withMessage('Role must be one of: ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER, SUPER_ADMIN'),
+    .isIn(['SUPER_ADMIN', 'ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER'])
+    .withMessage('Role must be one of: SUPER_ADMIN, ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER'),
   body('department')
     .optional()
     .trim()
@@ -180,8 +180,8 @@ const listUsersValidation = [
     .withMessage('Limit must be between 1 and 100'),
   query('role')
     .optional()
-    .isIn(['ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER', 'SUPER_ADMIN'])
-    .withMessage('Role must be one of: ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER, SUPER_ADMIN'),
+    .isIn(['SUPER_ADMIN', 'ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER'])
+    .withMessage('Role must be one of: SUPER_ADMIN, ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER'),
   query('department')
     .optional()
     .trim()
