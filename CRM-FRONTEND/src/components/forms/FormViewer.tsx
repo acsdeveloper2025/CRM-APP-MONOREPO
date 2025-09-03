@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
-import { FileText, MapPin, Clock, User, Eye, Download, Camera, Smartphone, Wifi, WifiOff } from 'lucide-react';
+/* eslint-disable id-match */
+import { FileText, Clock, User, Eye, Camera, Smartphone, Wifi, WifiOff, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { FormSubmission, FormSection, FormField } from '@/types/form';
+import { FormSubmission } from '@/types/form';
 import { FormFieldViewer } from './FormFieldViewer';
 import { FormAttachmentsViewer } from './FormAttachmentsViewer';
 import { FormLocationViewer } from './FormLocationViewer';
-import { FormMetadataViewer } from './FormMetadataViewer';
 import { FormPhotosGallery } from './FormPhotosGallery';
 import VerificationImages from '@/components/VerificationImages';
 import { formatDistanceToNow } from 'date-fns';
@@ -21,8 +19,7 @@ interface EnhancedFormViewerProps {
   showPhotos?: boolean;
   showLocation?: boolean;
   showMetadata?: boolean;
-  onFieldChange?: (fieldId: string, value: any) => void;
-  onSectionToggle?: (sectionId: string, expanded: boolean) => void;
+  onFieldChange?: (fieldId: string, value: unknown) => void;
 }
 
 export function FormViewer({
@@ -33,22 +30,8 @@ export function FormViewer({
   showLocation = true,
   showMetadata = true,
   onFieldChange,
-  onSectionToggle,
 }: EnhancedFormViewerProps) {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(submission.sections.filter(s => s.defaultExpanded !== false).map(s => s.id))
-  );
 
-  const handleSectionToggle = (sectionId: string) => {
-    const newExpanded = new Set(expandedSections);
-    if (newExpanded.has(sectionId)) {
-      newExpanded.delete(sectionId);
-    } else {
-      newExpanded.add(sectionId);
-    }
-    setExpandedSections(newExpanded);
-    onSectionToggle?.(sectionId, newExpanded.has(sectionId));
-  };
 
   // Helper functions for styling
   const getOutcomeColor = (outcome: string) => {
