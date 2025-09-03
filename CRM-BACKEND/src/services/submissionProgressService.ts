@@ -69,7 +69,16 @@ class SubmissionProgressService {
     const id = `submission_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     const now = new Date().toISOString();
 
-    const defaultSteps = [
+    const defaultSteps: Array<{
+      id: string;
+      name: string;
+      status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+      progress: number;
+      startTime?: string;
+      endTime?: string;
+      error?: string;
+      metadata?: Record<string, any>;
+    }> = [
       { id: 'validation', name: 'Validating Form Data', status: 'PENDING', progress: 0 },
       { id: 'compression', name: 'Optimizing Data', status: 'PENDING', progress: 0 },
       { id: 'upload_photos', name: 'Uploading Photos', status: 'PENDING', progress: 0 },
@@ -222,7 +231,7 @@ class SubmissionProgressService {
       [caseId]
     );
 
-    return result.rows.map(row => this.mapRowToSubmissionProgress(row));
+    return result.rows.map((row: any) => this.mapRowToSubmissionProgress(row));
   }
 
   /**
@@ -233,7 +242,7 @@ class SubmissionProgressService {
       "SELECT * FROM submission_progress WHERE status NOT IN ('COMPLETED', 'FAILED') ORDER BY created_at DESC"
     );
 
-    return result.rows.map(row => this.mapRowToSubmissionProgress(row));
+    return result.rows.map((row: any) => this.mapRowToSubmissionProgress(row));
   }
 
   /**
@@ -282,7 +291,7 @@ class SubmissionProgressService {
       GROUP BY status
     `);
 
-    const statusCounts = result.rows.reduce((acc, row) => {
+    const statusCounts = result.rows.reduce((acc: Record<string, number>, row: any) => {
       acc[row.status.toLowerCase()] = parseInt(row.count);
       return acc;
     }, {} as Record<string, number>);
@@ -291,7 +300,7 @@ class SubmissionProgressService {
       pending: statusCounts.pending || 0,
       retrying: statusCounts.retrying || 0,
       failed: statusCounts.failed || 0,
-      totalRequests: Object.values(statusCounts).reduce((sum, count) => sum + count, 0)
+      totalRequests: Object.values(statusCounts).reduce((sum: number, count: number) => sum + count, 0) as number
     };
   }
 

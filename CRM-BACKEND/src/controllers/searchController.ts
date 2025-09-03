@@ -1,8 +1,14 @@
 import { Request, Response } from 'express';
-import searchService, { SearchFilters, SearchOptions } from '../services/searchService';
-import businessRulesService from '../services/businessRulesService';
-import addressStandardizationService from '../services/addressStandardizationService';
+import SearchService, { SearchFilters, SearchOptions } from '../services/searchService';
+import BusinessRulesService from '../services/businessRulesService';
+import AddressStandardizationService from '../services/addressStandardizationService';
 import { createAuditLog } from '../utils/auditLogger';
+import { pool } from '../config/database';
+
+// Create service instances
+const searchService = new SearchService(pool);
+const businessRulesService = new BusinessRulesService(pool);
+const addressStandardizationService = new AddressStandardizationService();
 
 export class SearchController {
   /**

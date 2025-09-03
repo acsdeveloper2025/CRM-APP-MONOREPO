@@ -51,8 +51,26 @@ export const TEST_CLIENTS = {
   }
 };
 
-// Test case data removed - use empty object for tests
-export const TEST_CASES = {};
+// Test case data
+export const TEST_CASES = {
+  case1: {
+    caseId: 1001,
+    customerName: 'Test Customer',
+    customerPhone: '1234567890',
+    customerCallingCode: '+91',
+    clientId: 1,
+    productId: 1,
+    verificationTypeId: 1,
+    address: 'Test Address',
+    pincode: '123456',
+    priority: 'MEDIUM',
+    trigger: 'Test trigger',
+    applicantType: 'PRIMARY',
+    backendContactNumber: '9876543210',
+    assignedTo: null,
+    status: 'PENDING'
+  }
+};
 
 // Global setup - runs once before all tests
 beforeAll(async () => {
