@@ -55,13 +55,8 @@ const ALL_SUPPORTED_EXTENSIONS = [
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Get caseId from request body to create case-specific folder
-    const caseId = req.body.caseId;
-    if (!caseId) {
-      return cb(new Error('Case ID is required for file upload'), '');
-    }
-
-    const uploadDir = path.join(process.cwd(), 'uploads', 'attachments', `case_${caseId}`);
+    // Create a general uploads directory first, we'll organize by case later
+    const uploadDir = path.join(process.cwd(), 'uploads', 'attachments', 'temp');
     // Ensure directory exists
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
@@ -77,10 +72,16 @@ const storage = multer.diskStorage({
 
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const extension = path.extname(file.originalname).toLowerCase();
+
+  // Handle files without extensions
+  if (!extension) {
+    return cb(new Error(`File must have a valid extension. Supported types: ${ALL_SUPPORTED_EXTENSIONS.join(', ')}`));
+  }
+
   if (ALL_SUPPORTED_EXTENSIONS.includes(extension)) {
     cb(null, true);
   } else {
-    cb(new Error(`File type ${extension} is not supported`));
+    cb(new Error(`File type ${extension} is not supported. Supported types: ${ALL_SUPPORTED_EXTENSIONS.join(', ')}`));
   }
 };
 
@@ -131,7 +132,26 @@ export const uploadAttachment = async (req: AuthenticatedRequest, res: Response)
       // Import query function
       const { query } = await import('@/config/database');
 
+      // Create case-specific directory
+      const caseUploadDir = path.join(process.cwd(), 'uploads', 'attachments', `case_${caseId}`);
+      if (!fs.existsSync(caseUploadDir)) {
+        fs.mkdirSync(caseUploadDir, { recursive: true });
+      }
+
       for (const file of files) {
+        // Move file from temp directory to case-specific directory
+        const tempPath = file.path;
+        const finalPath = path.join(caseUploadDir, file.filename);
+
+        try {
+          fs.renameSync(tempPath, finalPath);
+        } catch (error) {
+          logger.error('Error moving file to case directory:', error);
+          // If rename fails, try copy and delete
+          fs.copyFileSync(tempPath, finalPath);
+          fs.unlinkSync(tempPath);
+        }
+
         // Insert attachment into database
         const insertResult = await query(
           `INSERT INTO attachments (
