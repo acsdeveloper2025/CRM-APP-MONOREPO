@@ -494,9 +494,12 @@ export class MobileFormController {
         const userRes = await query(userSql, [report.verified_by]);
         const userName = userRes.rows[0]?.username || 'Unknown User';
 
+        // Get the actual submission ID from verification images
+        const actualSubmissionId = imagesRes.rows.length > 0 ? imagesRes.rows[0].submissionId : `residence_${Date.now()}`;
+
         // Create comprehensive form submission
         const submission: FormSubmissionData = {
-          id: report.id || `residence_${Date.now()}`,
+          id: actualSubmissionId,
           caseId,
           formType: 'RESIDENCE',
           verificationType: 'Residence Verification',

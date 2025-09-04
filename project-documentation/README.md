@@ -86,27 +86,10 @@ This directory contains comprehensive documentation for the CRM-APP project, org
 - System config: `system-reports/` for infrastructure
 
 ### For Data Management
-- Cleanup: `scripts/cleanup/` for data maintenance
 - Schema: `database-reports/` for structure understanding
 - Migration: `migration-reports/` for change tracking
 
 ## 🎯 Usage Guidelines
-
-### Running Cleanup Scripts
-All scripts in `scripts/cleanup/` are production-ready:
-```bash
-# Database cleanup
-node project-documentation/scripts/cleanup/clean-and-seed-cases.js
-
-# Queue cleanup
-node project-documentation/scripts/cleanup/clear-queue-data.js
-
-# Mobile storage cleanup
-node project-documentation/scripts/cleanup/clear-all-storage.js
-
-# Browser storage cleanup
-node project-documentation/scripts/cleanup/clear-browser-storage.js
-```
 
 ### Documentation Maintenance
 - Each document includes creation and update dates

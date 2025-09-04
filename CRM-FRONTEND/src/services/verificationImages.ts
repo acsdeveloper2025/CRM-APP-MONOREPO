@@ -93,16 +93,18 @@ class VerificationImagesService {
    * Download verification image
    */
   async downloadVerificationImage(imageUrl: string): Promise<Blob> {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${imageUrl}`, {
+    // Static files are served from the base URL without /api suffix
+    const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+    const response = await fetch(`${baseUrl}${imageUrl}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to download image: ${response.statusText}`);
     }
-    
+
     return response.blob();
   }
 
@@ -110,14 +112,18 @@ class VerificationImagesService {
    * Get verification image URL for display
    */
   getImageDisplayUrl(imageUrl: string): string {
-    return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    // Static files are served from the base URL without /api suffix
+    const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${imageUrl}`;
   }
 
   /**
    * Get thumbnail URL for display
    */
   getThumbnailDisplayUrl(thumbnailUrl: string): string {
-    return `${import.meta.env.VITE_API_BASE_URL}${thumbnailUrl}`;
+    // Static files are served from the base URL without /api suffix
+    const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+    return `${baseUrl}${thumbnailUrl}`;
   }
 
   /**

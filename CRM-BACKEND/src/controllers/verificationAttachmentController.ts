@@ -216,11 +216,32 @@ export class VerificationAttachmentController {
    */
   static async getVerificationImages(req: Request, res: Response) {
     try {
-      const { caseId } = req.params;
+      // Handle both route patterns: /:id/verification-images and /cases/:caseId/verification-images
+      const caseId = req.params.caseId || req.params.id;
       const { verificationType, submissionId } = req.query;
 
+      console.log('🔍 Getting verification images for case:', caseId, 'submissionId:', submissionId);
+
+      // First get the case UUID from the case number
+      const caseResult = await query(
+        `SELECT id FROM cases WHERE "caseId" = $1`,
+        [caseId]
+      );
+
+      if (caseResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: { code: 'CASE_NOT_FOUND' }
+        });
+      }
+
+      const caseUuid = caseResult.rows[0].id;
+      console.log('📋 Case UUID:', caseUuid);
+
+      // First try to get images from verification_attachments table
       let whereClause = 'WHERE case_id = $1';
-      const queryParams: any[] = [caseId];
+      const queryParams: any[] = [caseUuid];
 
       if (verificationType) {
         whereClause += ' AND verification_type = $2';
@@ -234,17 +255,17 @@ export class VerificationAttachmentController {
       }
 
       const result = await query(
-        `SELECT 
-          id, filename, "originalName", "mimeType", "fileSize", "filePath", 
-          "thumbnailPath", "uploadedBy", "geoLocation", "photoType", 
+        `SELECT
+          id, filename, "originalName", "mimeType", "fileSize", "filePath",
+          "thumbnailPath", "uploadedBy", "geoLocation", "photoType",
           "submissionId", verification_type, "createdAt"
-        FROM verification_attachments 
+        FROM verification_attachments
         ${whereClause}
         ORDER BY "createdAt" ASC`,
         queryParams
       );
 
-      const attachments = result.rows.map(row => ({
+      let attachments = result.rows.map(row => ({
         id: row.id,
         filename: row.filename,
         originalName: row.originalName,
@@ -258,6 +279,51 @@ export class VerificationAttachmentController {
         submissionId: row.submissionId,
         geoLocation: row.geoLocation
       }));
+
+      console.log('📊 Found', attachments.length, 'images in verification_attachments table');
+
+      // If no images found in verification_attachments table, try to get from case verificationData
+      if (attachments.length === 0) {
+        console.log('🔄 No images in verification_attachments, checking case verificationData...');
+
+        const caseDataResult = await query(
+          `SELECT "verificationData" FROM cases WHERE "caseId" = $1`,
+          [caseId]
+        );
+
+        if (caseDataResult.rows.length > 0) {
+          const verificationData = caseDataResult.rows[0].verificationData;
+          const verificationImages = verificationData?.verificationImages || [];
+
+          console.log('📋 Case verificationData found:', {
+            submissionId: verificationData?.submissionId,
+            imageCount: verificationImages.length,
+            requestedSubmissionId: submissionId
+          });
+
+          // Filter by submissionId if provided
+          const filteredImages = submissionId
+            ? verificationImages.filter((img: any) => verificationData?.submissionId === submissionId)
+            : verificationImages;
+
+          console.log('🎯 Filtered images count:', filteredImages.length);
+
+          attachments = filteredImages.map((img: any, index: number) => ({
+            id: `case_${caseId}_img_${index}`,
+            filename: img.filename || `image_${index}.jpg`,
+            originalName: img.originalName || img.filename || `image_${index}.jpg`,
+            mimeType: img.mimeType || 'image/jpeg',
+            size: img.size || 0,
+            url: img.url || img.filePath || '',
+            thumbnailUrl: img.thumbnailUrl || img.thumbnailPath || img.url || img.filePath || '',
+            uploadedAt: img.uploadedAt || verificationData?.submittedAt || new Date().toISOString(),
+            photoType: img.photoType || 'verification',
+            verificationType: verificationData?.formType || 'RESIDENCE',
+            submissionId: verificationData?.submissionId || submissionId,
+            geoLocation: img.geoLocation || verificationData?.geoLocation
+          }));
+        }
+      }
 
       res.json({
         success: true,

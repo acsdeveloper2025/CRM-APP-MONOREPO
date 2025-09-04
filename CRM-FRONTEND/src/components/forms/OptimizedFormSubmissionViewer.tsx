@@ -4,17 +4,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormSubmission } from '@/types/form';
 import VerificationImages from '@/components/VerificationImages';
-import { FormLocationViewer } from '@/components/forms/FormLocationViewer';
+
 import {
   FileText,
   User,
   Clock,
   Camera,
-  MapPin,
+
   CheckCircle,
   AlertCircle,
   Smartphone,
-  Wifi,
+
   Calendar,
   ChevronDown,
   ChevronUp
@@ -37,13 +37,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
     return formType.replace('_', ' ').toUpperCase();
   };
 
-  const formatMetadataValue = (value: any): string => {
-    if (typeof value === 'string') return value;
-    if (typeof value === 'object' && value !== null) {
-      return JSON.stringify(value);
-    }
-    return String(value || 'Unknown');
-  };
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -193,19 +187,11 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
               <Smartphone className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="text-xs text-gray-500">Platform</p>
-                <p className="text-sm font-medium">{submission.metadata?.deviceInfo?.platform || submission.metadata?.platform || 'Unknown'}</p>
+                <p className="text-sm font-medium">{submission.metadata?.deviceInfo?.platform || 'Unknown'}</p>
               </div>
             </div>
 
-            {submission.metadata?.networkType && (
-              <div className="flex items-center space-x-2">
-                <Wifi className="h-4 w-4 text-gray-500" />
-                <div>
-                  <p className="text-xs text-gray-500">Network</p>
-                  <p className="text-sm font-medium">{submission.metadata.networkType}</p>
-                </div>
-              </div>
-            )}
+
           </div>
         </CardContent>
       </Card>
@@ -240,7 +226,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
                           <div className="flex items-center justify-between mb-2">
                             <label className="text-sm font-medium text-gray-700">
                               {field.label}
-                              {field.required && <span className="text-red-500 ml-1">*</span>}
+                              {field.isRequired && <span className="text-red-500 ml-1">*</span>}
                             </label>
                             <Badge variant="outline" className="text-xs">
                               {field.type}
@@ -286,77 +272,9 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
             </Card>
           </div>
 
-          {/* Location Information */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <MapPin className="h-5 w-5 text-orange-600" />
-              <h3 className="text-lg font-semibold">Location Information</h3>
-            </div>
 
-            <Card className="border-l-4 border-l-orange-500">
-              <CardContent className="p-4">
-                {submission.geoLocation ? (
-                  <FormLocationViewer
-                    location={submission.geoLocation}
-                    readonly={true}
-                  />
-                ) : (
-                  <div className="text-center py-8">
-                    <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">No Location Data</h4>
-                    <p className="text-gray-600">
-                      No GPS location information was captured for this form submission.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Submission Metadata */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Smartphone className="h-5 w-5 text-gray-600" />
-              <h3 className="text-lg font-semibold">Submission Details</h3>
-            </div>
 
-            <Card className="border-l-4 border-l-gray-500">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 mb-1">Submission ID</p>
-                    <p className="text-sm font-medium">{submission.id}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 mb-1">Form Type</p>
-                    <p className="text-sm font-medium">{getFormTypeLabel(submission.formType)}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 mb-1">Platform</p>
-                    <p className="text-sm font-medium">{formatMetadataValue(submission.metadata?.deviceInfo?.platform || submission.metadata?.platform)}</p>
-                  </div>
-                  {submission.metadata?.appVersion && (
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500 mb-1">App Version</p>
-                      <p className="text-sm font-medium">{formatMetadataValue(submission.metadata.appVersion)}</p>
-                    </div>
-                  )}
-                  {submission.metadata?.networkType && (
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500 mb-1">Network Type</p>
-                      <p className="text-sm font-medium">{formatMetadataValue(submission.metadata.networkType)}</p>
-                    </div>
-                  )}
-                  {submission.metadata?.deviceInfo && (
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500 mb-1">Device Info</p>
-                      <p className="text-sm font-medium">{formatMetadataValue(submission.metadata.deviceInfo)}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       )}
     </div>

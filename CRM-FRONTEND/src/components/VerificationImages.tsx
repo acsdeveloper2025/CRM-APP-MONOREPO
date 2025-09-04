@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVerificationImages, useVerificationImagesBySubmission } from '@/hooks/useVerificationImages';
 import { verificationImagesService } from '@/services/verificationImages';
-import { Camera, MapPin, Calendar, Download, Eye, Image as ImageIcon } from 'lucide-react';
+import { Camera, MapPin, Calendar, Download, Eye, Image as ImageIcon, ExternalLink, Navigation, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface VerificationImagesProps {
@@ -83,6 +83,31 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
   const formatGeoLocation = (geoLocation: any) => {
     if (!geoLocation) return null;
     return `${geoLocation.latitude.toFixed(6)}, ${geoLocation.longitude.toFixed(6)}`;
+  };
+
+  const getAccuracyBadge = (accuracy: number) => {
+    if (accuracy <= 5) {
+      return { text: 'High Accuracy', className: 'bg-green-100 text-green-800' };
+    } else if (accuracy <= 20) {
+      return { text: 'Medium Accuracy', className: 'bg-yellow-100 text-yellow-800' };
+    } else {
+      return { text: 'Low Accuracy', className: 'bg-red-100 text-red-800' };
+    }
+  };
+
+  const openInGoogleMaps = (lat: number, lng: number) => {
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+    window.open(url, '_blank');
+  };
+
+  const openInAppleMaps = (lat: number, lng: number) => {
+    const url = `https://maps.apple.com/?q=${lat},${lng}`;
+    window.open(url, '_blank');
+  };
+
+  const copyCoordinates = (lat: number, lng: number) => {
+    const coordinates = `${lat}, ${lng}`;
+    navigator.clipboard.writeText(coordinates);
   };
 
   const getPhotoTypeColor = (photoType: string) => {
@@ -204,33 +229,14 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                     <div key={image.id} className="group relative">
                       <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                         <img
-                          src={image.thumbnailUrl 
+                          src={image.thumbnailUrl
                             ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)
                             : verificationImagesService.getImageDisplayUrl(image.url)
                           }
                           alt={image.originalName}
-                          className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => handleImageClick(image.url, image.originalName)}
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleImageClick(image.url, image.originalName)}
-                              className="mr-2"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleDownload(image.url, image.originalName)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
                       </div>
                       <div className="mt-2 space-y-1">
                         <div className="flex items-center justify-between">
@@ -243,10 +249,114 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                           <Calendar className="h-3 w-3" />
                           {format(new Date(image.uploadedAt), 'MMM dd, yyyy HH:mm')}
                         </div>
+
+                        {/* Action buttons for images without location */}
+                        {!image.geoLocation && (
+                          <div className="flex gap-1 mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleImageClick(image.url, image.originalName)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleDownload(image.url, image.originalName)}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                          </div>
+                        )}
+
                         {image.geoLocation && (
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <MapPin className="h-3 w-3" />
-                            {formatGeoLocation(image.geoLocation)}
+                          <div className="space-y-2 mt-2 p-2 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-xs text-gray-600">
+                                <MapPin className="h-3 w-3" />
+                                <span className="font-medium">Location</span>
+                              </div>
+                              <Badge className={getAccuracyBadge(image.geoLocation.accuracy || 0).className}>
+                                {getAccuracyBadge(image.geoLocation.accuracy || 0).text}
+                              </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <span className="text-gray-500">Lat:</span>
+                                <span className="ml-1 font-mono">{image.geoLocation.latitude.toFixed(6)}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Lng:</span>
+                                <span className="ml-1 font-mono">{image.geoLocation.longitude.toFixed(6)}</span>
+                              </div>
+                            </div>
+
+                            {image.geoLocation.accuracy && (
+                              <div className="text-xs text-gray-500">
+                                <span>Accuracy: ±{image.geoLocation.accuracy}m</span>
+                              </div>
+                            )}
+
+                            {image.geoLocation.timestamp && (
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <Clock className="h-3 w-3" />
+                                <span>Captured: {format(new Date(image.geoLocation.timestamp), 'MMM dd, HH:mm')}</span>
+                              </div>
+                            )}
+
+                            <div className="flex gap-1 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => handleImageClick(image.url, image.originalName)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => handleDownload(image.url, image.originalName)}
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Download
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => openInGoogleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                Google
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => openInAppleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                Apple
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => copyCoordinates(image.geoLocation.latitude, image.geoLocation.longitude)}
+                              >
+                                <Navigation className="h-3 w-3 mr-1" />
+                                Copy
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -268,33 +378,14 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                     <div key={image.id} className="group relative">
                       <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                         <img
-                          src={image.thumbnailUrl 
+                          src={image.thumbnailUrl
                             ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)
                             : verificationImagesService.getImageDisplayUrl(image.url)
                           }
                           alt={image.originalName}
-                          className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => handleImageClick(image.url, image.originalName)}
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleImageClick(image.url, image.originalName)}
-                              className="mr-2"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleDownload(image.url, image.originalName)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
                       </div>
                       <div className="mt-2 space-y-1">
                         <div className="flex items-center justify-between">
@@ -307,10 +398,114 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                           <Calendar className="h-3 w-3" />
                           {format(new Date(image.uploadedAt), 'MMM dd, yyyy HH:mm')}
                         </div>
+
+                        {/* Action buttons for images without location */}
+                        {!image.geoLocation && (
+                          <div className="flex gap-1 mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleImageClick(image.url, image.originalName)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleDownload(image.url, image.originalName)}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                          </div>
+                        )}
+
                         {image.geoLocation && (
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <MapPin className="h-3 w-3" />
-                            {formatGeoLocation(image.geoLocation)}
+                          <div className="space-y-2 mt-2 p-2 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-xs text-gray-600">
+                                <MapPin className="h-3 w-3" />
+                                <span className="font-medium">Location</span>
+                              </div>
+                              <Badge className={getAccuracyBadge(image.geoLocation.accuracy || 0).className}>
+                                {getAccuracyBadge(image.geoLocation.accuracy || 0).text}
+                              </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <span className="text-gray-500">Lat:</span>
+                                <span className="ml-1 font-mono">{image.geoLocation.latitude.toFixed(6)}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Lng:</span>
+                                <span className="ml-1 font-mono">{image.geoLocation.longitude.toFixed(6)}</span>
+                              </div>
+                            </div>
+
+                            {image.geoLocation.accuracy && (
+                              <div className="text-xs text-gray-500">
+                                <span>Accuracy: ±{image.geoLocation.accuracy}m</span>
+                              </div>
+                            )}
+
+                            {image.geoLocation.timestamp && (
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <Clock className="h-3 w-3" />
+                                <span>Captured: {format(new Date(image.geoLocation.timestamp), 'MMM dd, HH:mm')}</span>
+                              </div>
+                            )}
+
+                            <div className="flex gap-1 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => handleImageClick(image.url, image.originalName)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => handleDownload(image.url, image.originalName)}
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Download
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => openInGoogleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                Google
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => openInAppleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                Apple
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => copyCoordinates(image.geoLocation.latitude, image.geoLocation.longitude)}
+                              >
+                                <Navigation className="h-3 w-3 mr-1" />
+                                Copy
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
