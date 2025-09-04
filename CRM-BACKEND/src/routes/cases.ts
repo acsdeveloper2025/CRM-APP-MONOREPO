@@ -12,6 +12,7 @@ import {
   updateCase,
   assignCase
 } from '@/controllers/casesController';
+import { VerificationAttachmentController } from '@/controllers/verificationAttachmentController';
 
 const router = express.Router();
 
@@ -290,6 +291,14 @@ router.put('/:id/assign',
   validate,
   validateCaseAccess,
   assignCase
+);
+
+// Verification Images route
+router.get('/:id/verification-images',
+  [param('id').trim().notEmpty().withMessage('Case ID is required')],
+  validate,
+  validateCaseAccess,
+  VerificationAttachmentController.getVerificationImages
 );
 
 // TODO: Implement remaining case workflow functions

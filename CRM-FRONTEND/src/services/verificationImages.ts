@@ -50,8 +50,8 @@ class VerificationImagesService {
     }
 
     const queryString = params.toString();
-    const url = `/mobile/cases/${caseId}/verification-images${queryString ? `?${queryString}` : ''}`;
-    
+    const url = `/cases/${caseId}/verification-images${queryString ? `?${queryString}` : ''}`;
+
     return apiService.get<VerificationImage[]>(url);
   }
 
