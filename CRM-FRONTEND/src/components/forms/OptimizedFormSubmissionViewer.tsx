@@ -88,9 +88,9 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
     return isNaN(date.getTime()) ? null : date;
   })() : null;
   const agentName = submission.submittedBy || 'Unknown Agent';
-  const formSections = submission.formData?.sections || [];
+  const formSections = submission.sections || [];
   const totalFields = formSections.reduce((total, section) => total + (section.fields?.length || 0), 0);
-  const verificationOutcome = submission.formData?.sections?.[0]?.fields?.find(
+  const verificationOutcome = submission.sections?.[0]?.fields?.find(
     field => field.id === 'verification_outcome' || field.label?.toLowerCase().includes('outcome')
   )?.value || 'Not specified';
 
@@ -158,7 +158,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
               <Camera className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="text-xs text-gray-500">Photos</p>
-                <p className="text-sm font-medium">{submission.attachments?.length || 0} captured</p>
+                <p className="text-sm font-medium">{submission.photos?.length || 0} captured</p>
               </div>
             </div>
 
@@ -265,7 +265,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
             <div className="flex items-center space-x-2">
               <Camera className="h-5 w-5 text-purple-600" />
               <h3 className="text-lg font-semibold">Verification Photos</h3>
-              <Badge variant="outline">{submission.attachments?.length || 0} photos</Badge>
+              <Badge variant="outline">{submission.photos?.length || 0} photos</Badge>
             </div>
 
             <Card className="border-l-4 border-l-purple-500">
@@ -289,9 +289,9 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
 
             <Card className="border-l-4 border-l-orange-500">
               <CardContent className="p-4">
-                {submission.location ? (
+                {submission.geoLocation ? (
                   <FormLocationViewer
-                    location={submission.location}
+                    location={submission.geoLocation}
                     readonly={true}
                   />
                 ) : (
