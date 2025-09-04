@@ -83,10 +83,16 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
   };
 
   // Extract key information
-  const submissionDate = submission.submittedAt ? (() => {
-    const date = new Date(submission.submittedAt);
+  const submissionDate = (() => {
+    // Try submittedAt first, then metadata.submissionTimestamp
+    const dateStr = submission.submittedAt || submission.metadata?.submissionTimestamp;
+    if (!dateStr) return null;
+
+    // Clean up the malformed date string (remove duplicate timezone info)
+    const cleanDateStr = dateStr.replace(/T00:00:00\.000Z$/, '').replace(/GMT\+0530 \(India Standard Time\)/, '');
+    const date = new Date(cleanDateStr);
     return isNaN(date.getTime()) ? null : date;
-  })() : null;
+  })();
   const agentName = submission.submittedBy || 'Unknown Agent';
   const formSections = submission.sections || [];
   const totalFields = formSections.reduce((total, section) => total + (section.fields?.length || 0), 0);
@@ -187,7 +193,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
               <Smartphone className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="text-xs text-gray-500">Platform</p>
-                <p className="text-sm font-medium">{submission.metadata?.platform || 'Unknown'}</p>
+                <p className="text-sm font-medium">{submission.metadata?.deviceInfo?.platform || submission.metadata?.platform || 'Unknown'}</p>
               </div>
             </div>
 
@@ -327,7 +333,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Platform</p>
-                    <p className="text-sm font-medium">{formatMetadataValue(submission.metadata?.platform)}</p>
+                    <p className="text-sm font-medium">{formatMetadataValue(submission.metadata?.deviceInfo?.platform || submission.metadata?.platform)}</p>
                   </div>
                   {submission.metadata?.appVersion && (
                     <div className="bg-gray-50 rounded-lg p-3">

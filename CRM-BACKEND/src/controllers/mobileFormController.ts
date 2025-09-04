@@ -434,7 +434,7 @@ export class MobileFormController {
 
       // Verify case access - handle both UUID and business caseId
       const vals: any[] = [];
-      let caseSql = `SELECT id, "verificationData", "verificationType", "verificationOutcome", status FROM cases WHERE `;
+      let caseSql = `SELECT id, "customerName", "verificationData", "verificationType", "verificationOutcome", status FROM cases WHERE `;
 
       // Check if caseId is a number (business caseId) or UUID
       const isNumeric = /^\d+$/.test(caseId);
@@ -519,8 +519,8 @@ export class MobileFormController {
                   name: 'customerName',
                   label: 'Customer Name',
                   type: 'text',
-                  value: report.customer_name || 'Unknown',
-                  displayValue: report.customer_name || 'Unknown',
+                  value: caseData.customerName || report.customer_name || 'Unknown',
+                  displayValue: caseData.customerName || report.customer_name || 'Unknown',
                   isRequired: true,
                   validation: { isValid: true, errors: [] }
                 },
