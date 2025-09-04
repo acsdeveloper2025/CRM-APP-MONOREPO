@@ -1,0 +1,276 @@
+/**
+ * Builder Form Field Mapping Utilities
+ * 
+ * This module provides comprehensive field mapping between mobile builder form data
+ * and database columns for builder verification forms.
+ */
+
+export interface DatabaseFieldMapping {
+  [mobileField: string]: string | null; // null means field should be ignored
+}
+
+/**
+ * Complete field mapping from mobile builder form fields to database columns
+ */
+export const BUILDER_FIELD_MAPPING: DatabaseFieldMapping = {
+  // Basic form information
+  'outcome': null, // Handled separately as verification_outcome
+  'remarks': 'remarks',
+  'finalStatus': 'final_status',
+  
+  // Address and location fields
+  'addressLocatable': 'address_locatable',
+  'addressRating': 'address_rating',
+  'locality': 'locality',
+  'addressStructure': 'address_structure',
+  'addressFloor': 'address_floor',
+  'addressStructureColor': 'address_structure_color',
+  'doorColor': 'door_color',
+  'companyNamePlateStatus': 'company_nameplate_status',
+  'nameOnBoard': 'name_on_company_board',
+  'nameOnCompanyBoard': 'name_on_company_board',
+  
+  // Landmarks
+  'landmark1': 'landmark1',
+  'landmark2': 'landmark2',
+  
+  // Builder/Office status and details
+  'officeStatus': 'office_status',
+  'officeExistence': 'office_existence',
+  'builderType': 'builder_type',
+  'companyNatureOfBusiness': 'company_nature_of_business',
+  'businessPeriod': 'business_period',
+  'establishmentPeriod': 'establishment_period',
+  'officeApproxArea': 'office_approx_area',
+  'staffStrength': 'staff_strength',
+  'staffSeen': 'staff_seen',
+  
+  // Builder/Person details
+  'metPerson': 'met_person_name',
+  'metPersonName': 'met_person_name',
+  'designation': 'designation',
+  'builderName': 'builder_name',
+  'builderOwnerName': 'builder_owner_name',
+  'workingPeriod': 'working_period',
+  'workingStatus': 'working_status',
+  
+  // Document verification
+  'documentShown': 'document_shown',
+  
+  // Third Party Confirmation (TPC)
+  'tpcMetPerson1': 'tpc_met_person1',
+  'nameOfTpc1': 'tpc_name1',
+  'tpcConfirmation1': 'tpc_confirmation1',
+  'tpcMetPerson2': 'tpc_met_person2',
+  'nameOfTpc2': 'tpc_name2',
+  'tpcConfirmation2': 'tpc_confirmation2',
+  
+  // Shifted builder specific fields
+  'shiftedPeriod': 'shifted_period',
+  'oldOfficeShiftedPeriod': 'old_office_shifted_period',
+  'currentCompanyName': 'current_company_name',
+  'currentCompanyPeriod': 'current_company_period',
+  'premisesStatus': 'premises_status',
+  
+  // Entry restricted specific fields
+  'nameOfMetPerson': 'name_of_met_person',
+  'metPersonType': 'met_person_type',
+  'metPersonConfirmation': 'met_person_confirmation',
+  'applicantWorkingStatus': 'applicant_working_status',
+  
+  // Untraceable specific fields
+  'contactPerson': 'contact_person',
+  'callRemark': 'call_remark',
+  
+  // Environment and area details
+  'politicalConnection': 'political_connection',
+  'dominatedArea': 'dominated_area',
+  'feedbackFromNeighbour': 'feedback_from_neighbour',
+  'otherObservation': 'other_observation',
+  'otherExtraRemark': 'other_extra_remark',
+  'holdReason': 'hold_reason',
+  'recommendationStatus': 'recommendation_status',
+  
+  // Legacy/alternative field names
+  'companyName': 'company_nature_of_business', // Maps to company nature
+  'totalEmployees': 'staff_strength', // Maps to staff strength
+  'businessNature': 'company_nature_of_business', // Maps to business nature
+  'verificationMethod': null, // Derived field, ignore
+  
+  // Fields to ignore (UI state, images, etc.)
+  'images': null,
+  'selfieImages': null,
+  'id': null,
+  'caseId': null,
+  'timestamp': null,
+  'isValid': null,
+  'errors': null,
+};
+
+/**
+ * Maps mobile builder form data to database field values
+ * 
+ * @param formData - Raw form data from mobile app
+ * @returns Object with database column names as keys
+ */
+export function mapBuilderFormDataToDatabase(formData: any): Record<string, any> {
+  const mappedData: Record<string, any> = {};
+  
+  // Process each field in the form data
+  for (const [mobileField, value] of Object.entries(formData)) {
+    const dbColumn = BUILDER_FIELD_MAPPING[mobileField];
+    
+    // Skip fields that should be ignored
+    if (dbColumn === null) {
+      continue;
+    }
+    
+    // Use the mapped column name or the original field name if no mapping exists
+    const columnName = dbColumn || mobileField;
+    
+    // Process the value based on type
+    mappedData[columnName] = processBuilderFieldValue(mobileField, value);
+  }
+  
+  return mappedData;
+}
+
+/**
+ * Processes builder field values to ensure they're in the correct format for database storage
+ * 
+ * @param fieldName - The mobile field name
+ * @param value - The field value
+ * @returns Processed value suitable for database storage
+ */
+function processBuilderFieldValue(fieldName: string, value: any): any {
+  // Handle null/undefined values
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  
+  // Handle boolean fields
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  
+  // Handle enum values - convert to string
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    // If it's an enum object, return its string representation
+    return String(value);
+  }
+  
+  // Handle numeric fields
+  const numericFields = [
+    'staffStrength', 'staffSeen', 'officeApproxArea', 'totalEmployees'
+  ];
+  
+  if (numericFields.includes(fieldName)) {
+    const num = Number(value);
+    return isNaN(num) ? null : num;
+  }
+  
+  // Default: convert to string and trim
+  return String(value).trim() || null;
+}
+
+/**
+ * Gets all database columns that can be populated from builder form data
+ * 
+ * @returns Array of database column names
+ */
+export function getBuilderAvailableDbColumns(): string[] {
+  const columns = new Set<string>();
+  
+  for (const dbColumn of Object.values(BUILDER_FIELD_MAPPING)) {
+    if (dbColumn !== null) {
+      columns.add(dbColumn);
+    }
+  }
+  
+  return Array.from(columns).sort();
+}
+
+/**
+ * Gets all mobile builder form fields that are mapped to database columns
+ * 
+ * @returns Array of mobile field names
+ */
+export function getBuilderMappedMobileFields(): string[] {
+  return Object.keys(BUILDER_FIELD_MAPPING)
+    .filter(field => BUILDER_FIELD_MAPPING[field] !== null)
+    .sort();
+}
+
+/**
+ * Validates that all required fields are present in builder form data
+ * 
+ * @param formData - Form data to validate
+ * @param formType - Type of form (POSITIVE, SHIFTED, NSP, etc.)
+ * @returns Object with validation result and missing fields
+ */
+export function validateBuilderRequiredFields(formData: any, formType: string): {
+  isValid: boolean;
+  missingFields: string[];
+  warnings: string[];
+} {
+  const missingFields: string[] = [];
+  const warnings: string[] = [];
+  
+  // Define required fields by builder form type
+  const requiredFieldsByType: Record<string, string[]> = {
+    'POSITIVE': [
+      'addressLocatable', 'addressRating', 'officeStatus', 'metPerson',
+      'designation', 'builderType', 'builderName', 'workingPeriod',
+      'workingStatus', 'companyNatureOfBusiness', 'businessPeriod', 'staffStrength',
+      'locality', 'addressStructure', 'politicalConnection', 'dominatedArea',
+      'feedbackFromNeighbour', 'otherObservation', 'finalStatus'
+    ],
+    'SHIFTED': [
+      'addressLocatable', 'addressRating', 'officeStatus', 'metPerson',
+      'designation', 'currentCompanyName', 'oldOfficeShiftedPeriod', 'locality',
+      'addressStructure', 'politicalConnection', 'dominatedArea',
+      'feedbackFromNeighbour', 'otherObservation', 'finalStatus'
+    ],
+    'NSP': [
+      'addressLocatable', 'addressRating', 'officeStatus', 'officeExistence',
+      'metPerson', 'designation', 'locality', 'addressStructure',
+      'politicalConnection', 'dominatedArea', 'feedbackFromNeighbour',
+      'otherObservation', 'finalStatus'
+    ],
+    'ENTRY_RESTRICTED': [
+      'addressLocatable', 'addressRating', 'nameOfMetPerson', 'metPersonType',
+      'metPersonConfirmation', 'applicantWorkingStatus', 'locality',
+      'addressStructure', 'politicalConnection', 'dominatedArea',
+      'feedbackFromNeighbour', 'otherObservation', 'finalStatus'
+    ],
+    'UNTRACEABLE': [
+      'contactPerson', 'callRemark', 'locality', 'landmark1', 'landmark2',
+      'dominatedArea', 'otherObservation', 'finalStatus'
+    ]
+  };
+  
+  const requiredFields = requiredFieldsByType[formType] || [];
+  
+  // Check for missing required fields
+  for (const field of requiredFields) {
+    if (!formData[field] || formData[field] === null || formData[field] === '') {
+      missingFields.push(field);
+    }
+  }
+  
+  // Check for conditional fields
+  if (formType === 'POSITIVE') {
+    if (formData.officeStatus === 'Opened' && !formData.staffSeen) {
+      warnings.push('staffSeen should be specified when office is opened');
+    }
+    if (formData.tpcMetPerson1 === 'Yes' && !formData.nameOfTpc1) {
+      warnings.push('nameOfTpc1 should be specified when tpcMetPerson1 is Yes');
+    }
+  }
+  
+  return {
+    isValid: missingFields.length === 0,
+    missingFields,
+    warnings
+  };
+}

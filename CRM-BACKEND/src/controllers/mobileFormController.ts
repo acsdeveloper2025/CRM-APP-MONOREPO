@@ -1,6 +1,16 @@
 import { Request, Response } from 'express';
 import { MobileFormSubmissionRequest, FormSubmissionData, FormSection, FormField } from '../types/mobile';
 import { createAuditLog } from '../utils/auditLogger';
+import { detectResidenceFormType, detectOfficeFormType, detectBusinessFormType } from '../utils/formTypeDetection';
+import { mapFormDataToDatabase, validateRequiredFields, getAvailableDbColumns } from '../utils/residenceFormFieldMapping';
+import { mapOfficeFormDataToDatabase, validateOfficeRequiredFields, getOfficeAvailableDbColumns } from '../utils/officeFormFieldMapping';
+import { mapBusinessFormDataToDatabase, validateBusinessRequiredFields, getBusinessAvailableDbColumns } from '../utils/businessFormFieldMapping';
+import { mapBuilderFormDataToDatabase, validateBuilderRequiredFields, getBuilderAvailableDbColumns } from '../utils/builderFormFieldMapping';
+import { mapResidenceCumOfficeFormDataToDatabase, validateResidenceCumOfficeRequiredFields, getResidenceCumOfficeAvailableDbColumns } from '../utils/residenceCumOfficeFormFieldMapping';
+import { mapNocFormDataToDatabase, validateNocRequiredFields, getNocAvailableDbColumns } from '../utils/nocFormFieldMapping';
+import { mapPropertyApfFormDataToDatabase, validatePropertyApfRequiredFields, getPropertyApfAvailableDbColumns } from '../utils/propertyApfFormFieldMapping';
+import { mapPropertyIndividualFormDataToDatabase, validatePropertyIndividualRequiredFields, getPropertyIndividualAvailableDbColumns } from '../utils/propertyIndividualFormFieldMapping';
+import { mapDsaConnectorFormDataToDatabase, validateDsaConnectorRequiredFields, getDsaConnectorAvailableDbColumns } from '../utils/dsaConnectorFormFieldMapping';
 import { config } from '../config';
 import { query } from '@/config/database';
 import multer from 'multer';
@@ -774,6 +784,11 @@ export class MobileFormController {
     }
   }
 
+  // Helper method to determine form type and verification outcome from form data
+  private static determineResidenceFormTypeAndOutcome(formData: any): { formType: string; verificationOutcome: string } {
+    return detectResidenceFormType(formData);
+  }
+
   // Submit residence verification form
   static async submitResidenceVerification(req: Request, res: Response) {
     try {
@@ -827,6 +842,25 @@ export class MobileFormController {
       const actualCaseId = existingCase.id; // Use the actual UUID from the database
       console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
 
+      // Determine form type and verification outcome based on form data
+      const { formType, verificationOutcome } = MobileFormController.determineResidenceFormTypeAndOutcome(formData);
+
+      console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
+
+      // Map form data to database fields using comprehensive field mapping
+      const mappedFormData = mapFormDataToDatabase(formData);
+
+      // Validate required fields for the detected form type
+      const validation = validateRequiredFields(formData, formType);
+      if (!validation.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} form:`, validation.missingFields);
+      }
+      if (validation.warnings.length > 0) {
+        console.warn(`⚠️ Form validation warnings:`, validation.warnings);
+      }
+
+      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} form fields to database columns`);
+
       // Validate minimum photo requirement (≥5 geo-tagged photos)
       // Use images array for new submission format
       const photoCount = images?.length || photos?.length || 0;
@@ -845,25 +879,27 @@ export class MobileFormController {
         });
       }
 
-      // Validate that all photos have geo-location
-      const photosWithoutGeo = photos.filter(photo => 
-        !photo.geoLocation || 
-        !photo.geoLocation.latitude || 
-        !photo.geoLocation.longitude
-      );
+      // Validate that all photos have geo-location (only if photos array exists)
+      if (photos && photos.length > 0) {
+        const photosWithoutGeo = photos.filter(photo =>
+          !photo.geoLocation ||
+          !photo.geoLocation.latitude ||
+          !photo.geoLocation.longitude
+        );
 
-      if (photosWithoutGeo.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'All photos must have geo-location data',
-          error: {
-            code: 'MISSING_GEO_LOCATION',
-            details: {
-              photosWithoutGeo: photosWithoutGeo.length,
+        if (photosWithoutGeo.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'All photos must have geo-location data',
+            error: {
+              code: 'MISSING_GEO_LOCATION',
+              details: {
+                photosWithoutGeo: photosWithoutGeo.length,
+              },
+              timestamp: new Date().toISOString(),
             },
-            timestamp: new Date().toISOString(),
-          },
-        });
+          });
+        }
       }
 
       // Generate unique submission ID
@@ -903,51 +939,49 @@ export class MobileFormController {
         },
       };
 
-      // Update case with verification data
-      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'RESIDENCE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), formData.outcome || 'VERIFIED', actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt" FROM cases WHERE id = $1`, [actualCaseId]);
+      // Update case with verification data using detected verification outcome
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'RESIDENCE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
-      // Determine form type based on verification outcome
-      const formType = 'UNTRACEABLE'; // This is an untraceable residence verification
-      const verificationOutcome = 'Untraceable'; // Maps to case verification outcome
+      // Create comprehensive residence verification report using all available fields
+      const dbInsertData = {
+        // Core case information
+        case_id: actualCaseId,
+        caseId: parseInt(updatedCase.caseId) || null,
+        form_type: formType,
+        verification_outcome: verificationOutcome,
+        customer_name: updatedCase.customerName || 'Unknown',
+        customer_phone: updatedCase.systemContact || null,
+        customer_email: null, // Not available from case data
+        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
 
-      // Create residence verification report - using comprehensive table structure
-      await query(
-        `INSERT INTO "residenceVerificationReports" (
-          case_id, "caseId", form_type, verification_outcome, customer_name, customer_phone,
-          full_address, met_person_name, call_remark, locality, landmark1, landmark2, landmark3, landmark4,
-          dominated_area, other_observation, final_status, verification_date, verification_time,
-          verified_by, total_images, total_selfies, remarks
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
-        )`,
-        [
-          actualCaseId, // case_id (UUID)
-          parseInt(existingCase.caseId) || null, // caseId (integer) - legacy field
-          formType, // form_type
-          verificationOutcome, // verification_outcome
-          existingCase.customerName || 'Unknown', // customer_name
-          existingCase.systemContact || null, // customer_phone
-          existingCase.visitAddress || existingCase.address || 'Address not provided', // full_address
-          formData.metPerson || formData.metPersonName || 'Unknown', // met_person_name
-          formData.callRemark || null, // call_remark
-          formData.locality || null, // locality
-          formData.landmark1 || null, // landmark1
-          formData.landmark2 || null, // landmark2
-          formData.landmark3 || null, // landmark3
-          formData.landmark4 || null, // landmark4
-          formData.dominatedArea || null, // dominated_area
-          formData.otherObservation || 'No observations', // other_observation
-          formData.finalStatus || 'Negative', // final_status
-          new Date().toISOString().split('T')[0], // verification_date (today)
-          new Date().toTimeString().split(' ')[0], // verification_time (current time)
-          userId, // verified_by
-          uploadedImages.length || 0, // total_images
-          uploadedImages.filter(img => img.photoType === 'selfie').length || 0, // total_selfies
-          formData.remarks || 'Untraceable residence verification completed' // remarks
-        ]
-      );
+        // Verification metadata
+        verification_date: new Date().toISOString().split('T')[0],
+        verification_time: new Date().toTimeString().split(' ')[0],
+        verified_by: userId,
+        total_images: uploadedImages.length || 0,
+        total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
+        remarks: formData.remarks || `${formType} residence verification completed`,
+
+        // Merge all mapped form data
+        ...mappedFormData
+      };
+
+      // Build dynamic INSERT query based on available data
+      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      const values = columns.map(key => dbInsertData[key]);
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      const insertQuery = `
+        INSERT INTO "residenceVerificationReports" (${columnNames})
+        VALUES (${placeholders})
+      `;
+
+      console.log(`📝 Inserting residence verification with ${columns.length} fields:`, columns);
+
+      await query(insertQuery, values);
 
       // Remove auto-save data (autoSaves table doesn't have form_type column)
       await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
@@ -970,15 +1004,24 @@ export class MobileFormController {
         userAgent: req.get('User-Agent'),
       });
 
+      console.log(`✅ Residence verification completed successfully:`, {
+        caseId: actualCaseId,
+        formType,
+        verificationOutcome,
+        imageCount: uploadedImages.length
+      });
+
       res.json({
         success: true,
-        message: 'Residence verification submitted successfully',
+        message: `${formType} residence verification submitted successfully`,
         data: {
           caseId: updatedCase.id,
           caseNumber: updatedCase.caseId,
           status: updatedCase.status,
           completedAt: updatedCase.completedAt?.toISOString(),
           submissionId,
+          formType,
+          verificationOutcome,
           verificationImageCount: uploadedImages.length,
           verificationData,
         },
@@ -1000,26 +1043,55 @@ export class MobileFormController {
   static async submitOfficeVerification(req: Request, res: Response) {
     try {
       const { caseId } = req.params;
-      const { formData, attachmentIds, geoLocation, photos }: MobileFormSubmissionRequest = req.body;
+      const { formData, attachmentIds, geoLocation, photos, images }: MobileFormSubmissionRequest = req.body;
       const userId = (req as any).user?.id;
       const userRole = (req as any).user?.role;
 
-      // Verify case access
-      const where: any = { id: caseId };
-      if (userRole === 'FIELD_AGENT') {
-        where.assignedTo = userId;
+      console.log(`📱 Office verification submission for case: ${caseId}`);
+      console.log(`   - User: ${userId} (${userRole})`);
+      console.log(`   - Images: ${images?.length || 0}`);
+      console.log(`   - Form data keys: ${Object.keys(formData || {}).join(', ')}`);
+      console.log(`   - Form data outcome: ${formData?.outcome || formData?.finalStatus || 'Not specified'}`);
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User authentication required',
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
       }
 
-      const vals2: any[] = [caseId];
-      let caseSql2 = `SELECT id FROM cases WHERE id = $1`;
-      if (userRole === 'FIELD_AGENT') { caseSql2 += ` AND "assignedTo" = $2`; vals2.push(userId); }
-      const caseRes2 = await query(caseSql2, vals2);
-      const existingCase = caseRes2.rows[0];
+      if (!caseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Case ID is required',
+          error: {
+            code: 'CASE_ID_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
 
-      if (!existingCase) {
+      if (!formData) {
+        return res.status(400).json({
+          success: false,
+          message: 'Form data is required',
+          error: {
+            code: 'FORM_DATA_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate case exists and user has access
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      if (caseQuery.rows.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Case not found or access denied',
+          message: 'Case not found',
           error: {
             code: 'CASE_NOT_FOUND',
             timestamp: new Date().toISOString(),
@@ -1027,8 +1099,46 @@ export class MobileFormController {
         });
       }
 
+      const existingCase = caseQuery.rows[0];
+      const actualCaseId = existingCase.id;
+
+      // Validate user assignment (allow admin users to submit for any case)
+      if (userRole !== 'ADMIN' && existingCase.assignedTo !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to this case',
+          error: {
+            code: 'CASE_NOT_ASSIGNED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
+
+      // Determine form type and verification outcome based on form data
+      const { formType, verificationOutcome } = detectOfficeFormType(formData);
+
+      console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
+
+      // Map form data to database fields using comprehensive field mapping
+      const mappedFormData = mapOfficeFormDataToDatabase(formData);
+
+      // Validate required fields for the detected form type
+      const validation = validateOfficeRequiredFields(formData, formType);
+      if (!validation.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} office form:`, validation.missingFields);
+      }
+      if (validation.warnings.length > 0) {
+        console.warn(`⚠️ Office form validation warnings:`, validation.warnings);
+      }
+
+      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} office form fields to database columns`);
+
       // Validate minimum photo requirement (≥5 geo-tagged photos)
-      if (!photos || photos.length < 5) {
+      // Use images array for new submission format
+      const photoCount = images?.length || photos?.length || 0;
+      if (photoCount < 5) {
         return res.status(400).json({
           success: false,
           message: 'Minimum 5 geo-tagged photos required for office verification',
@@ -1036,125 +1146,156 @@ export class MobileFormController {
             code: 'INSUFFICIENT_PHOTOS',
             details: {
               required: 5,
-              provided: photos?.length || 0,
+              provided: photoCount,
             },
             timestamp: new Date().toISOString(),
           },
         });
       }
 
-      // Validate that all photos have geo-location
-      const photosWithoutGeo = photos.filter(photo => 
-        !photo.geoLocation || 
-        !photo.geoLocation.latitude || 
-        !photo.geoLocation.longitude
+      // Validate that all photos have geo-location (only if photos array exists)
+      if (photos && photos.length > 0) {
+        const photosWithoutGeo = photos.filter(photo =>
+          !photo.geoLocation ||
+          !photo.geoLocation.latitude ||
+          !photo.geoLocation.longitude
+        );
+
+        if (photosWithoutGeo.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'All photos must have geo-location data',
+            error: {
+              code: 'MISSING_GEO_LOCATION',
+              details: {
+                photosWithoutGeo: photosWithoutGeo.length,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
+
+      // Generate unique submission ID
+      const submissionId = `office_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+      // Process verification images separately from case attachments
+      const uploadedImages = await MobileFormController.processVerificationImages(
+        images || [],
+        actualCaseId,
+        'OFFICE',
+        submissionId,
+        userId
       );
 
-      if (photosWithoutGeo.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'All photos must have geo-location data',
-          error: {
-            code: 'MISSING_GEO_LOCATION',
-            details: {
-              photosWithoutGeo: photosWithoutGeo.length,
-            },
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
+      console.log(`✅ Processed ${uploadedImages.length} verification images for office verification`);
 
-      // Skip attachment validation for now - attachments are handled separately
-      console.log('🔍 Debug attachment query 2:', { attachmentIds, caseId, caseIdType: typeof caseId });
-
-      // Prepare verification data
+      // Prepare verification data (excluding old attachment references)
       const verificationData = {
         formType: 'OFFICE',
+        submissionId,
         submittedAt: new Date().toISOString(),
         submittedBy: userId,
         geoLocation,
         formData,
-        attachments: attachmentIds,
-        photos: photos.map(photo => ({
-          attachmentId: photo.attachmentId,
-          geoLocation: photo.geoLocation,
+        verificationImages: uploadedImages.map(img => ({
+          id: img.id,
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl,
+          photoType: img.photoType,
+          geoLocation: img.geoLocation,
         })),
         verification: {
           ...formData,
-          photoCount: photos.length,
-          geoTaggedPhotos: photos.length,
+          imageCount: uploadedImages.length,
+          geoTaggedImages: uploadedImages.filter(img => img.geoLocation).length,
           submissionLocation: geoLocation,
         },
       };
 
-      // Update case with verification data
-      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'OFFICE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), formData.outcome || 'VERIFIED', caseId]);
-      const caseUpd2 = await query(`SELECT id, status, "completedAt" FROM cases WHERE id = $1`, [caseId]);
-      const updatedCase = caseUpd2.rows[0];
+      // Update case with verification data using detected verification outcome
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'OFFICE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const updatedCase = caseUpd.rows[0];
 
-      // Update attachment geo-locations
-      for (const photo of photos) {
-        await query(`UPDATE attachments SET "geoLocation" = $1 WHERE id = $2`, [JSON.stringify(photo.geoLocation), photo.attachmentId]);
-      }
+      // Create comprehensive office verification report using all available fields
+      const dbInsertData = {
+        // Core case information
+        case_id: actualCaseId,
+        caseId: parseInt(updatedCase.caseId) || null,
+        form_type: formType,
+        verification_outcome: verificationOutcome,
+        customer_name: updatedCase.customerName || 'Unknown',
+        customer_phone: updatedCase.systemContact || null,
+        customer_email: null, // Not available from case data
+        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
 
-      // Create office verification report
-      await query(
-        `INSERT INTO "officeVerificationReports" (
-          id, "caseId", "companyName", designation, department, "employeeId", "joiningDate", "monthlySalary", "workingHours", "hrContactName",
-          "hrContactPhone", "officeAddress", "officeType", "totalEmployees", "businessNature", "verificationMethod", "documentsSeen", "verificationNotes", "recommendationStatus", "verifiedAt"
-        ) VALUES (
-          gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9,
-          $10, $11, $12, $13, $14, $15, $16, $17, $18, CURRENT_TIMESTAMP
-        )`,
-        [
-          caseId,
-          formData.companyName || '',
-          formData.designation || '',
-          formData.department,
-          formData.employeeId,
-          formData.joiningDate ? new Date(formData.joiningDate) : null,
-          formData.monthlySalary ? parseFloat(formData.monthlySalary) : null,
-          formData.workingHours,
-          formData.hrContactName,
-          formData.hrContactPhone,
-          formData.officeAddress || '',
-          formData.officeType || 'CORPORATE',
-          formData.totalEmployees ? parseInt(formData.totalEmployees) : null,
-          formData.businessNature,
-          formData.verificationMethod || 'PHYSICAL',
-          formData.documentsSeen,
-          formData.verificationNotes,
-          formData.recommendationStatus || 'POSITIVE',
-        ]
-      );
+        // Verification metadata
+        verification_date: new Date().toISOString().split('T')[0],
+        verification_time: new Date().toTimeString().split(' ')[0],
+        verified_by: userId,
+        total_images: uploadedImages.length || 0,
+        total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
+        remarks: formData.remarks || `${formType} office verification completed`,
+
+        // Merge all mapped form data
+        ...mappedFormData
+      };
+
+      // Build dynamic INSERT query based on available data
+      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      const values = columns.map(key => dbInsertData[key]);
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      const insertQuery = `
+        INSERT INTO "officeVerificationReports" (${columnNames})
+        VALUES (${placeholders})
+      `;
+
+      console.log(`📝 Inserting office verification with ${columns.length} fields:`, columns);
+
+      await query(insertQuery, values);
 
       // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'OFFICE'`, [caseId]);
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'OFFICE'`, [actualCaseId]);
 
       await createAuditLog({
         action: 'OFFICE_VERIFICATION_SUBMITTED',
         entityType: 'CASE',
-        entityId: caseId,
+        entityId: actualCaseId,
         userId,
         details: {
-          formType: 'OFFICE',
-          photoCount: photos.length,
-          attachmentCount: attachmentIds.length,
-          outcome: formData.outcome,
+          formType,
+          verificationOutcome,
+          imageCount: uploadedImages.length,
+          submissionId,
           hasGeoLocation: !!geoLocation,
         },
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
       });
 
+      console.log(`✅ Office verification completed successfully:`, {
+        caseId: actualCaseId,
+        formType,
+        verificationOutcome,
+        imageCount: uploadedImages.length
+      });
+
       res.json({
         success: true,
-        message: 'Office verification submitted successfully',
+        message: `${formType} office verification submitted successfully`,
         data: {
           caseId: updatedCase.id,
+          caseNumber: updatedCase.caseId,
           status: updatedCase.status,
           completedAt: updatedCase.completedAt?.toISOString(),
-          verificationId: verificationData,
+          submissionId,
+          formType,
+          verificationOutcome,
+          verificationImageCount: uploadedImages.length,
+          verificationData,
         },
       });
     } catch (error) {
@@ -1172,37 +1313,1906 @@ export class MobileFormController {
 
   // Submit business verification form
   static async submitBusinessVerification(req: Request, res: Response) {
-    res.status(501).json({ success: false, message: 'Business verification not implemented yet' });
+    try {
+      const { caseId } = req.params;
+      const { formData, attachmentIds, geoLocation, photos, images }: MobileFormSubmissionRequest = req.body;
+      const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+
+      console.log(`📱 Business verification submission for case: ${caseId}`);
+      console.log(`   - User: ${userId} (${userRole})`);
+      console.log(`   - Images: ${images?.length || 0}`);
+      console.log(`   - Form data keys: ${Object.keys(formData || {}).join(', ')}`);
+      console.log(`   - Form data outcome: ${formData?.outcome || formData?.finalStatus || 'Not specified'}`);
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User authentication required',
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!caseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Case ID is required',
+          error: {
+            code: 'CASE_ID_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!formData) {
+        return res.status(400).json({
+          success: false,
+          message: 'Form data is required',
+          error: {
+            code: 'FORM_DATA_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate case exists and user has access
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      if (caseQuery.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      const existingCase = caseQuery.rows[0];
+      const actualCaseId = existingCase.id;
+
+      // Validate user assignment (allow admin users to submit for any case)
+      if (userRole !== 'ADMIN' && existingCase.assignedTo !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to this case',
+          error: {
+            code: 'CASE_NOT_ASSIGNED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
+
+      // Determine form type and verification outcome based on form data
+      const { formType, verificationOutcome } = detectBusinessFormType(formData);
+
+      console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
+
+      // Map form data to database fields using comprehensive field mapping
+      const mappedFormData = mapBusinessFormDataToDatabase(formData);
+
+      // Validate required fields for the detected form type
+      const validation = validateBusinessRequiredFields(formData, formType);
+      if (!validation.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} business form:`, validation.missingFields);
+      }
+      if (validation.warnings.length > 0) {
+        console.warn(`⚠️ Business form validation warnings:`, validation.warnings);
+      }
+
+      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} business form fields to database columns`);
+
+      // Validate minimum photo requirement (≥5 geo-tagged photos)
+      // Use images array for new submission format
+      const photoCount = images?.length || photos?.length || 0;
+      if (photoCount < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum 5 geo-tagged photos required for business verification',
+          error: {
+            code: 'INSUFFICIENT_PHOTOS',
+            details: {
+              required: 5,
+              provided: photoCount,
+            },
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate that all photos have geo-location (only if photos array exists)
+      if (photos && photos.length > 0) {
+        const photosWithoutGeo = photos.filter(photo =>
+          !photo.geoLocation ||
+          !photo.geoLocation.latitude ||
+          !photo.geoLocation.longitude
+        );
+
+        if (photosWithoutGeo.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'All photos must have geo-location data',
+            error: {
+              code: 'MISSING_GEO_LOCATION',
+              details: {
+                photosWithoutGeo: photosWithoutGeo.length,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
+
+      // Generate unique submission ID
+      const submissionId = `business_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+      // Process verification images separately from case attachments
+      const uploadedImages = await MobileFormController.processVerificationImages(
+        images || [],
+        actualCaseId,
+        'BUSINESS',
+        submissionId,
+        userId
+      );
+
+      console.log(`✅ Processed ${uploadedImages.length} verification images for business verification`);
+
+      // Prepare verification data (excluding old attachment references)
+      const verificationData = {
+        formType: 'BUSINESS',
+        submissionId,
+        submittedAt: new Date().toISOString(),
+        submittedBy: userId,
+        geoLocation,
+        formData,
+        verificationImages: uploadedImages.map(img => ({
+          id: img.id,
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl,
+          photoType: img.photoType,
+          geoLocation: img.geoLocation,
+        })),
+        verification: {
+          ...formData,
+          imageCount: uploadedImages.length,
+          geoTaggedImages: uploadedImages.filter(img => img.geoLocation).length,
+          submissionLocation: geoLocation,
+        },
+      };
+
+      // Update case with verification data using detected verification outcome
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'BUSINESS', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const updatedCase = caseUpd.rows[0];
+
+      // Create comprehensive business verification report using all available fields
+      const dbInsertData = {
+        // Core case information
+        case_id: actualCaseId,
+        caseId: parseInt(updatedCase.caseId) || null,
+        form_type: formType,
+        verification_outcome: verificationOutcome,
+        customer_name: updatedCase.customerName || 'Unknown',
+        customer_phone: updatedCase.systemContact || null,
+        customer_email: null, // Not available from case data
+        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+
+        // Verification metadata
+        verification_date: new Date().toISOString().split('T')[0],
+        verification_time: new Date().toTimeString().split(' ')[0],
+        verified_by: userId,
+        total_images: uploadedImages.length || 0,
+        total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
+        remarks: formData.remarks || `${formType} business verification completed`,
+
+        // Merge all mapped form data
+        ...mappedFormData
+      };
+
+      // Build dynamic INSERT query based on available data
+      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      const values = columns.map(key => dbInsertData[key]);
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      const insertQuery = `
+        INSERT INTO "businessVerificationReports" (${columnNames})
+        VALUES (${placeholders})
+      `;
+
+      console.log(`📝 Inserting business verification with ${columns.length} fields:`, columns);
+
+      await query(insertQuery, values);
+
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'BUSINESS'`, [actualCaseId]);
+
+      await createAuditLog({
+        action: 'BUSINESS_VERIFICATION_SUBMITTED',
+        entityType: 'CASE',
+        entityId: actualCaseId,
+        userId,
+        details: {
+          formType,
+          verificationOutcome,
+          imageCount: uploadedImages.length,
+          submissionId,
+          hasGeoLocation: !!geoLocation,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      console.log(`✅ Business verification completed successfully:`, {
+        caseId: actualCaseId,
+        formType,
+        verificationOutcome,
+        imageCount: uploadedImages.length
+      });
+
+      res.json({
+        success: true,
+        message: `${formType} business verification submitted successfully`,
+        data: {
+          caseId: updatedCase.id,
+          caseNumber: updatedCase.caseId,
+          status: updatedCase.status,
+          completedAt: updatedCase.completedAt?.toISOString(),
+          submissionId,
+          formType,
+          verificationOutcome,
+          verificationImageCount: uploadedImages.length,
+          verificationData,
+        },
+      });
+    } catch (error) {
+      console.error('Submit business verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'VERIFICATION_SUBMISSION_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   // Submit builder verification form
   static async submitBuilderVerification(req: Request, res: Response) {
-    res.status(501).json({ success: false, message: 'Builder verification not implemented yet' });
+    try {
+      const { caseId } = req.params;
+      const { formData, attachmentIds, geoLocation, photos, images }: MobileFormSubmissionRequest = req.body;
+      const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+
+      console.log(`📱 Builder verification submission for case: ${caseId}`);
+      console.log(`   - User: ${userId} (${userRole})`);
+      console.log(`   - Images: ${images?.length || 0}`);
+      console.log(`   - Form data keys: ${Object.keys(formData || {}).join(', ')}`);
+      console.log(`   - Form data outcome: ${formData?.outcome || formData?.finalStatus || 'Not specified'}`);
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User authentication required',
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!caseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Case ID is required',
+          error: {
+            code: 'CASE_ID_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!formData) {
+        return res.status(400).json({
+          success: false,
+          message: 'Form data is required',
+          error: {
+            code: 'FORM_DATA_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate case exists and user has access
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      if (caseQuery.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      const existingCase = caseQuery.rows[0];
+      const actualCaseId = existingCase.id;
+
+      // Validate user assignment (allow admin users to submit for any case)
+      if (userRole !== 'ADMIN' && existingCase.assignedTo !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to this case',
+          error: {
+            code: 'CASE_NOT_ASSIGNED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
+
+      // Determine form type and verification outcome based on form data
+      const { formType, verificationOutcome } = detectBusinessFormType(formData); // Use business detection for builder (similar structure)
+
+      console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
+
+      // Map form data to database fields using comprehensive field mapping
+      const mappedFormData = mapBuilderFormDataToDatabase(formData);
+
+      // Validate required fields for the detected form type
+      const validation = validateBuilderRequiredFields(formData, formType);
+      if (!validation.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} builder form:`, validation.missingFields);
+      }
+      if (validation.warnings.length > 0) {
+        console.warn(`⚠️ Builder form validation warnings:`, validation.warnings);
+      }
+
+      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} builder form fields to database columns`);
+
+      // Validate minimum photo requirement (≥5 geo-tagged photos)
+      // Use images array for new submission format
+      const photoCount = images?.length || photos?.length || 0;
+      if (photoCount < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum 5 geo-tagged photos required for builder verification',
+          error: {
+            code: 'INSUFFICIENT_PHOTOS',
+            details: {
+              required: 5,
+              provided: photoCount,
+            },
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate that all photos have geo-location (only if photos array exists)
+      if (photos && photos.length > 0) {
+        const photosWithoutGeo = photos.filter(photo =>
+          !photo.geoLocation ||
+          !photo.geoLocation.latitude ||
+          !photo.geoLocation.longitude
+        );
+
+        if (photosWithoutGeo.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'All photos must have geo-location data',
+            error: {
+              code: 'MISSING_GEO_LOCATION',
+              details: {
+                photosWithoutGeo: photosWithoutGeo.length,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
+
+      // Generate unique submission ID
+      const submissionId = `builder_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+      // Process verification images separately from case attachments
+      const uploadedImages = await MobileFormController.processVerificationImages(
+        images || [],
+        actualCaseId,
+        'BUILDER',
+        submissionId,
+        userId
+      );
+
+      console.log(`✅ Processed ${uploadedImages.length} verification images for builder verification`);
+
+      // Prepare verification data (excluding old attachment references)
+      const verificationData = {
+        formType: 'BUILDER',
+        submissionId,
+        submittedAt: new Date().toISOString(),
+        submittedBy: userId,
+        geoLocation,
+        formData,
+        verificationImages: uploadedImages.map(img => ({
+          id: img.id,
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl,
+          photoType: img.photoType,
+          geoLocation: img.geoLocation,
+        })),
+        verification: {
+          ...formData,
+          imageCount: uploadedImages.length,
+          geoTaggedImages: uploadedImages.filter(img => img.geoLocation).length,
+          submissionLocation: geoLocation,
+        },
+      };
+
+      // Update case with verification data using detected verification outcome
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'BUILDER', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const updatedCase = caseUpd.rows[0];
+
+      // Create comprehensive builder verification report using all available fields
+      const dbInsertData = {
+        // Core case information
+        case_id: actualCaseId,
+        caseId: parseInt(updatedCase.caseId) || null,
+        form_type: formType,
+        verification_outcome: verificationOutcome,
+        customer_name: updatedCase.customerName || 'Unknown',
+        customer_phone: updatedCase.systemContact || null,
+        customer_email: null, // Not available from case data
+        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+
+        // Verification metadata
+        verification_date: new Date().toISOString().split('T')[0],
+        verification_time: new Date().toTimeString().split(' ')[0],
+        verified_by: userId,
+        total_images: uploadedImages.length || 0,
+        total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
+        remarks: formData.remarks || `${formType} builder verification completed`,
+
+        // Merge all mapped form data
+        ...mappedFormData
+      };
+
+      // Build dynamic INSERT query based on available data
+      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      const values = columns.map(key => dbInsertData[key]);
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      const insertQuery = `
+        INSERT INTO "builderVerificationReports" (${columnNames})
+        VALUES (${placeholders})
+      `;
+
+      console.log(`📝 Inserting builder verification with ${columns.length} fields:`, columns);
+
+      await query(insertQuery, values);
+
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'BUILDER'`, [actualCaseId]);
+
+      await createAuditLog({
+        action: 'BUILDER_VERIFICATION_SUBMITTED',
+        entityType: 'CASE',
+        entityId: actualCaseId,
+        userId,
+        details: {
+          formType,
+          verificationOutcome,
+          imageCount: uploadedImages.length,
+          submissionId,
+          hasGeoLocation: !!geoLocation,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      console.log(`✅ Builder verification completed successfully:`, {
+        caseId: actualCaseId,
+        formType,
+        verificationOutcome,
+        imageCount: uploadedImages.length
+      });
+
+      res.json({
+        success: true,
+        message: `${formType} builder verification submitted successfully`,
+        data: {
+          caseId: updatedCase.id,
+          caseNumber: updatedCase.caseId,
+          status: updatedCase.status,
+          completedAt: updatedCase.completedAt?.toISOString(),
+          submissionId,
+          formType,
+          verificationOutcome,
+          verificationImageCount: uploadedImages.length,
+          verificationData,
+        },
+      });
+    } catch (error) {
+      console.error('Submit builder verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'VERIFICATION_SUBMISSION_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   // Submit residence-cum-office verification form
   static async submitResidenceCumOfficeVerification(req: Request, res: Response) {
-    res.status(501).json({ success: false, message: 'Residence-cum-office verification not implemented yet' });
+    try {
+      const { caseId } = req.params;
+      const { formData, attachmentIds, geoLocation, photos, images }: MobileFormSubmissionRequest = req.body;
+      const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+
+      console.log(`📱 Residence-cum-office verification submission for case: ${caseId}`);
+      console.log(`   - User: ${userId} (${userRole})`);
+      console.log(`   - Images: ${images?.length || 0}`);
+      console.log(`   - Form data keys: ${Object.keys(formData || {}).join(', ')}`);
+      console.log(`   - Form data outcome: ${formData?.outcome || formData?.finalStatus || 'Not specified'}`);
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User authentication required',
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!caseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Case ID is required',
+          error: {
+            code: 'CASE_ID_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!formData) {
+        return res.status(400).json({
+          success: false,
+          message: 'Form data is required',
+          error: {
+            code: 'FORM_DATA_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate case exists and user has access
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      if (caseQuery.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      const existingCase = caseQuery.rows[0];
+      const actualCaseId = existingCase.id;
+
+      // Validate user assignment (allow admin users to submit for any case)
+      if (userRole !== 'ADMIN' && existingCase.assignedTo !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to this case',
+          error: {
+            code: 'CASE_NOT_ASSIGNED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
+
+      // Determine form type and verification outcome based on form data
+      const { formType, verificationOutcome } = detectResidenceFormType(formData); // Use residence detection for hybrid form
+
+      console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
+
+      // Map form data to database fields using comprehensive field mapping
+      const mappedFormData = mapResidenceCumOfficeFormDataToDatabase(formData);
+
+      // Validate required fields for the detected form type
+      const validation = validateResidenceCumOfficeRequiredFields(formData, formType);
+      if (!validation.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} residence-cum-office form:`, validation.missingFields);
+      }
+      if (validation.warnings.length > 0) {
+        console.warn(`⚠️ Residence-cum-office form validation warnings:`, validation.warnings);
+      }
+
+      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} residence-cum-office form fields to database columns`);
+
+      // Validate minimum photo requirement (≥5 geo-tagged photos)
+      // Use images array for new submission format
+      const photoCount = images?.length || photos?.length || 0;
+      if (photoCount < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum 5 geo-tagged photos required for residence-cum-office verification',
+          error: {
+            code: 'INSUFFICIENT_PHOTOS',
+            details: {
+              required: 5,
+              provided: photoCount,
+            },
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate that all photos have geo-location (only if photos array exists)
+      if (photos && photos.length > 0) {
+        const photosWithoutGeo = photos.filter(photo =>
+          !photo.geoLocation ||
+          !photo.geoLocation.latitude ||
+          !photo.geoLocation.longitude
+        );
+
+        if (photosWithoutGeo.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'All photos must have geo-location data',
+            error: {
+              code: 'MISSING_GEO_LOCATION',
+              details: {
+                photosWithoutGeo: photosWithoutGeo.length,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
+
+      // Generate unique submission ID
+      const submissionId = `residence_cum_office_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+      // Process verification images separately from case attachments
+      const uploadedImages = await MobileFormController.processVerificationImages(
+        images || [],
+        actualCaseId,
+        'RESIDENCE_CUM_OFFICE',
+        submissionId,
+        userId
+      );
+
+      console.log(`✅ Processed ${uploadedImages.length} verification images for residence-cum-office verification`);
+
+      // Prepare verification data (excluding old attachment references)
+      const verificationData = {
+        formType: 'RESIDENCE_CUM_OFFICE',
+        submissionId,
+        submittedAt: new Date().toISOString(),
+        submittedBy: userId,
+        geoLocation,
+        formData,
+        verificationImages: uploadedImages.map(img => ({
+          id: img.id,
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl,
+          photoType: img.photoType,
+          geoLocation: img.geoLocation,
+        })),
+        verification: {
+          ...formData,
+          imageCount: uploadedImages.length,
+          geoTaggedImages: uploadedImages.filter(img => img.geoLocation).length,
+          submissionLocation: geoLocation,
+        },
+      };
+
+      // Update case with verification data using detected verification outcome
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'RESIDENCE_CUM_OFFICE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const updatedCase = caseUpd.rows[0];
+
+      // Create comprehensive residence-cum-office verification report using all available fields
+      const dbInsertData = {
+        // Core case information
+        case_id: actualCaseId,
+        caseId: parseInt(updatedCase.caseId) || null,
+        form_type: formType,
+        verification_outcome: verificationOutcome,
+        customer_name: updatedCase.customerName || 'Unknown',
+        customer_phone: updatedCase.systemContact || null,
+        customer_email: null, // Not available from case data
+        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+
+        // Verification metadata
+        verification_date: new Date().toISOString().split('T')[0],
+        verification_time: new Date().toTimeString().split(' ')[0],
+        verified_by: userId,
+        total_images: uploadedImages.length || 0,
+        total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
+        remarks: formData.remarks || `${formType} residence-cum-office verification completed`,
+
+        // Merge all mapped form data
+        ...mappedFormData
+      };
+
+      // Build dynamic INSERT query based on available data
+      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      const values = columns.map(key => dbInsertData[key]);
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      const insertQuery = `
+        INSERT INTO "residenceCumOfficeVerificationReports" (${columnNames})
+        VALUES (${placeholders})
+      `;
+
+      console.log(`📝 Inserting residence-cum-office verification with ${columns.length} fields:`, columns);
+
+      await query(insertQuery, values);
+
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'RESIDENCE_CUM_OFFICE'`, [actualCaseId]);
+
+      await createAuditLog({
+        action: 'RESIDENCE_CUM_OFFICE_VERIFICATION_SUBMITTED',
+        entityType: 'CASE',
+        entityId: actualCaseId,
+        userId,
+        details: {
+          formType,
+          verificationOutcome,
+          imageCount: uploadedImages.length,
+          submissionId,
+          hasGeoLocation: !!geoLocation,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      console.log(`✅ Residence-cum-office verification completed successfully:`, {
+        caseId: actualCaseId,
+        formType,
+        verificationOutcome,
+        imageCount: uploadedImages.length
+      });
+
+      res.json({
+        success: true,
+        message: `${formType} residence-cum-office verification submitted successfully`,
+        data: {
+          caseId: updatedCase.id,
+          caseNumber: updatedCase.caseId,
+          status: updatedCase.status,
+          completedAt: updatedCase.completedAt?.toISOString(),
+          submissionId,
+          formType,
+          verificationOutcome,
+          verificationImageCount: uploadedImages.length,
+          verificationData,
+        },
+      });
+    } catch (error) {
+      console.error('Submit residence-cum-office verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'VERIFICATION_SUBMISSION_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   // Submit DSA/DST connector verification form
   static async submitDsaConnectorVerification(req: Request, res: Response) {
-    res.status(501).json({ success: false, message: 'DSA connector verification not implemented yet' });
+    try {
+      const { caseId } = req.params;
+      const { formData, attachmentIds, geoLocation, photos, images }: MobileFormSubmissionRequest = req.body;
+      const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+
+      console.log(`📱 DSA/DST Connector verification submission for case: ${caseId}`);
+      console.log(`   - User: ${userId} (${userRole})`);
+      console.log(`   - Images: ${images?.length || 0}`);
+      console.log(`   - Form data keys: ${Object.keys(formData || {}).join(', ')}`);
+      console.log(`   - Form data outcome: ${formData?.outcome || formData?.finalStatus || 'Not specified'}`);
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User authentication required',
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!caseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Case ID is required',
+          error: {
+            code: 'CASE_ID_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!formData) {
+        return res.status(400).json({
+          success: false,
+          message: 'Form data is required',
+          error: {
+            code: 'FORM_DATA_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate case exists and user has access
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      if (caseQuery.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      const existingCase = caseQuery.rows[0];
+      const actualCaseId = existingCase.id;
+
+      // Validate user assignment (allow admin users to submit for any case)
+      if (userRole !== 'ADMIN' && existingCase.assignedTo !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to this case',
+          error: {
+            code: 'CASE_NOT_ASSIGNED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
+
+      // Determine form type and verification outcome based on form data
+      const { formType, verificationOutcome } = detectBusinessFormType(formData); // Use business detection for DSA/DST Connector (similar structure)
+
+      console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
+
+      // Map form data to database fields using comprehensive field mapping
+      const mappedFormData = mapDsaConnectorFormDataToDatabase(formData);
+
+      // Validate required fields for the detected form type
+      const validation = validateDsaConnectorRequiredFields(formData, formType);
+      if (!validation.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} DSA/DST Connector form:`, validation.missingFields);
+      }
+      if (validation.warnings.length > 0) {
+        console.warn(`⚠️ DSA/DST Connector form validation warnings:`, validation.warnings);
+      }
+
+      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} DSA/DST Connector form fields to database columns`);
+
+      // Validate minimum photo requirement (≥5 geo-tagged photos)
+      // Use images array for new submission format
+      const photoCount = images?.length || photos?.length || 0;
+      if (photoCount < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum 5 geo-tagged photos required for DSA/DST Connector verification',
+          error: {
+            code: 'INSUFFICIENT_PHOTOS',
+            details: {
+              required: 5,
+              provided: photoCount,
+            },
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate that all photos have geo-location (only if photos array exists)
+      if (photos && photos.length > 0) {
+        const photosWithoutGeo = photos.filter(photo =>
+          !photo.geoLocation ||
+          !photo.geoLocation.latitude ||
+          !photo.geoLocation.longitude
+        );
+
+        if (photosWithoutGeo.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'All photos must have geo-location data',
+            error: {
+              code: 'MISSING_GEO_LOCATION',
+              details: {
+                photosWithoutGeo: photosWithoutGeo.length,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
+
+      // Generate unique submission ID
+      const submissionId = `dsa_connector_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+      // Process verification images separately from case attachments
+      const uploadedImages = await MobileFormController.processVerificationImages(
+        images || [],
+        actualCaseId,
+        'DSA_CONNECTOR',
+        submissionId,
+        userId
+      );
+
+      console.log(`✅ Processed ${uploadedImages.length} verification images for DSA/DST Connector verification`);
+
+      // Prepare verification data (excluding old attachment references)
+      const verificationData = {
+        formType: 'DSA_CONNECTOR',
+        submissionId,
+        submittedAt: new Date().toISOString(),
+        submittedBy: userId,
+        geoLocation,
+        formData,
+        verificationImages: uploadedImages.map(img => ({
+          id: img.id,
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl,
+          photoType: img.photoType,
+          geoLocation: img.geoLocation,
+        })),
+        verification: {
+          ...formData,
+          imageCount: uploadedImages.length,
+          geoTaggedImages: uploadedImages.filter(img => img.geoLocation).length,
+          submissionLocation: geoLocation,
+        },
+      };
+
+      // Update case with verification data using detected verification outcome
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'DSA_CONNECTOR', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const updatedCase = caseUpd.rows[0];
+
+      // Create comprehensive DSA/DST Connector verification report using all available fields
+      const dbInsertData = {
+        // Core case information
+        case_id: actualCaseId,
+        caseId: parseInt(updatedCase.caseId) || null,
+        form_type: formType,
+        verification_outcome: verificationOutcome,
+        customer_name: updatedCase.customerName || 'Unknown',
+        customer_phone: updatedCase.systemContact || null,
+        customer_email: null, // Not available from case data
+        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+
+        // Verification metadata
+        verification_date: new Date().toISOString().split('T')[0],
+        verification_time: new Date().toTimeString().split(' ')[0],
+        verified_by: userId,
+        total_images: uploadedImages.length || 0,
+        total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
+        remarks: formData.remarks || `${formType} DSA/DST Connector verification completed`,
+
+        // Merge all mapped form data
+        ...mappedFormData
+      };
+
+      // Build dynamic INSERT query based on available data
+      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      const values = columns.map(key => dbInsertData[key]);
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      const insertQuery = `
+        INSERT INTO "dsaConnectorVerificationReports" (${columnNames})
+        VALUES (${placeholders})
+      `;
+
+      console.log(`📝 Inserting DSA/DST Connector verification with ${columns.length} fields:`, columns);
+
+      await query(insertQuery, values);
+
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'DSA_CONNECTOR'`, [actualCaseId]);
+
+      await createAuditLog({
+        action: 'DSA_CONNECTOR_VERIFICATION_SUBMITTED',
+        entityType: 'CASE',
+        entityId: actualCaseId,
+        userId,
+        details: {
+          formType,
+          verificationOutcome,
+          imageCount: uploadedImages.length,
+          submissionId,
+          hasGeoLocation: !!geoLocation,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      console.log(`✅ DSA/DST Connector verification completed successfully:`, {
+        caseId: actualCaseId,
+        formType,
+        verificationOutcome,
+        imageCount: uploadedImages.length
+      });
+
+      res.json({
+        success: true,
+        message: `${formType} DSA/DST Connector verification submitted successfully`,
+        data: {
+          caseId: updatedCase.id,
+          caseNumber: updatedCase.caseId,
+          status: updatedCase.status,
+          completedAt: updatedCase.completedAt?.toISOString(),
+          submissionId,
+          formType,
+          verificationOutcome,
+          verificationImageCount: uploadedImages.length,
+          verificationData,
+        },
+      });
+    } catch (error) {
+      console.error('Submit DSA/DST Connector verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'VERIFICATION_SUBMISSION_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   // Submit property individual verification form
   static async submitPropertyIndividualVerification(req: Request, res: Response) {
-    res.status(501).json({ success: false, message: 'Property individual verification not implemented yet' });
+    try {
+      const { caseId } = req.params;
+      const { formData, attachmentIds, geoLocation, photos, images }: MobileFormSubmissionRequest = req.body;
+      const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+
+      console.log(`📱 Property Individual verification submission for case: ${caseId}`);
+      console.log(`   - User: ${userId} (${userRole})`);
+      console.log(`   - Images: ${images?.length || 0}`);
+      console.log(`   - Form data keys: ${Object.keys(formData || {}).join(', ')}`);
+      console.log(`   - Form data outcome: ${formData?.outcome || formData?.finalStatus || 'Not specified'}`);
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User authentication required',
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!caseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Case ID is required',
+          error: {
+            code: 'CASE_ID_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!formData) {
+        return res.status(400).json({
+          success: false,
+          message: 'Form data is required',
+          error: {
+            code: 'FORM_DATA_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate case exists and user has access
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      if (caseQuery.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      const existingCase = caseQuery.rows[0];
+      const actualCaseId = existingCase.id;
+
+      // Validate user assignment (allow admin users to submit for any case)
+      if (userRole !== 'ADMIN' && existingCase.assignedTo !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to this case',
+          error: {
+            code: 'CASE_NOT_ASSIGNED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
+
+      // Determine form type and verification outcome based on form data
+      const { formType, verificationOutcome } = detectResidenceFormType(formData); // Use residence detection for Property Individual (similar structure)
+
+      console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
+
+      // Map form data to database fields using comprehensive field mapping
+      const mappedFormData = mapPropertyIndividualFormDataToDatabase(formData);
+
+      // Validate required fields for the detected form type
+      const validation = validatePropertyIndividualRequiredFields(formData, formType);
+      if (!validation.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} Property Individual form:`, validation.missingFields);
+      }
+      if (validation.warnings.length > 0) {
+        console.warn(`⚠️ Property Individual form validation warnings:`, validation.warnings);
+      }
+
+      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} Property Individual form fields to database columns`);
+
+      // Validate minimum photo requirement (≥5 geo-tagged photos)
+      // Use images array for new submission format
+      const photoCount = images?.length || photos?.length || 0;
+      if (photoCount < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum 5 geo-tagged photos required for Property Individual verification',
+          error: {
+            code: 'INSUFFICIENT_PHOTOS',
+            details: {
+              required: 5,
+              provided: photoCount,
+            },
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate that all photos have geo-location (only if photos array exists)
+      if (photos && photos.length > 0) {
+        const photosWithoutGeo = photos.filter(photo =>
+          !photo.geoLocation ||
+          !photo.geoLocation.latitude ||
+          !photo.geoLocation.longitude
+        );
+
+        if (photosWithoutGeo.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'All photos must have geo-location data',
+            error: {
+              code: 'MISSING_GEO_LOCATION',
+              details: {
+                photosWithoutGeo: photosWithoutGeo.length,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
+
+      // Generate unique submission ID
+      const submissionId = `property_individual_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+      // Process verification images separately from case attachments
+      const uploadedImages = await MobileFormController.processVerificationImages(
+        images || [],
+        actualCaseId,
+        'PROPERTY_INDIVIDUAL',
+        submissionId,
+        userId
+      );
+
+      console.log(`✅ Processed ${uploadedImages.length} verification images for Property Individual verification`);
+
+      // Prepare verification data (excluding old attachment references)
+      const verificationData = {
+        formType: 'PROPERTY_INDIVIDUAL',
+        submissionId,
+        submittedAt: new Date().toISOString(),
+        submittedBy: userId,
+        geoLocation,
+        formData,
+        verificationImages: uploadedImages.map(img => ({
+          id: img.id,
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl,
+          photoType: img.photoType,
+          geoLocation: img.geoLocation,
+        })),
+        verification: {
+          ...formData,
+          imageCount: uploadedImages.length,
+          geoTaggedImages: uploadedImages.filter(img => img.geoLocation).length,
+          submissionLocation: geoLocation,
+        },
+      };
+
+      // Update case with verification data using detected verification outcome
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'PROPERTY_INDIVIDUAL', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const updatedCase = caseUpd.rows[0];
+
+      // Create comprehensive Property Individual verification report using all available fields
+      const dbInsertData = {
+        // Core case information
+        case_id: actualCaseId,
+        caseId: parseInt(updatedCase.caseId) || null,
+        form_type: formType,
+        verification_outcome: verificationOutcome,
+        customer_name: updatedCase.customerName || 'Unknown',
+        customer_phone: updatedCase.systemContact || null,
+        customer_email: null, // Not available from case data
+        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+
+        // Verification metadata
+        verification_date: new Date().toISOString().split('T')[0],
+        verification_time: new Date().toTimeString().split(' ')[0],
+        verified_by: userId,
+        total_images: uploadedImages.length || 0,
+        total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
+        remarks: formData.remarks || `${formType} Property Individual verification completed`,
+
+        // Merge all mapped form data
+        ...mappedFormData
+      };
+
+      // Build dynamic INSERT query based on available data
+      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      const values = columns.map(key => dbInsertData[key]);
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      const insertQuery = `
+        INSERT INTO "propertyIndividualVerificationReports" (${columnNames})
+        VALUES (${placeholders})
+      `;
+
+      console.log(`📝 Inserting Property Individual verification with ${columns.length} fields:`, columns);
+
+      await query(insertQuery, values);
+
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'PROPERTY_INDIVIDUAL'`, [actualCaseId]);
+
+      await createAuditLog({
+        action: 'PROPERTY_INDIVIDUAL_VERIFICATION_SUBMITTED',
+        entityType: 'CASE',
+        entityId: actualCaseId,
+        userId,
+        details: {
+          formType,
+          verificationOutcome,
+          imageCount: uploadedImages.length,
+          submissionId,
+          hasGeoLocation: !!geoLocation,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      console.log(`✅ Property Individual verification completed successfully:`, {
+        caseId: actualCaseId,
+        formType,
+        verificationOutcome,
+        imageCount: uploadedImages.length
+      });
+
+      res.json({
+        success: true,
+        message: `${formType} Property Individual verification submitted successfully`,
+        data: {
+          caseId: updatedCase.id,
+          caseNumber: updatedCase.caseId,
+          status: updatedCase.status,
+          completedAt: updatedCase.completedAt?.toISOString(),
+          submissionId,
+          formType,
+          verificationOutcome,
+          verificationImageCount: uploadedImages.length,
+          verificationData,
+        },
+      });
+    } catch (error) {
+      console.error('Submit Property Individual verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'VERIFICATION_SUBMISSION_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   // Submit property APF verification form
   static async submitPropertyApfVerification(req: Request, res: Response) {
-    res.status(501).json({ success: false, message: 'Property APF verification not implemented yet' });
+    try {
+      const { caseId } = req.params;
+      const { formData, attachmentIds, geoLocation, photos, images }: MobileFormSubmissionRequest = req.body;
+      const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+
+      console.log(`📱 Property APF verification submission for case: ${caseId}`);
+      console.log(`   - User: ${userId} (${userRole})`);
+      console.log(`   - Images: ${images?.length || 0}`);
+      console.log(`   - Form data keys: ${Object.keys(formData || {}).join(', ')}`);
+      console.log(`   - Form data outcome: ${formData?.outcome || formData?.finalStatus || 'Not specified'}`);
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User authentication required',
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!caseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Case ID is required',
+          error: {
+            code: 'CASE_ID_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!formData) {
+        return res.status(400).json({
+          success: false,
+          message: 'Form data is required',
+          error: {
+            code: 'FORM_DATA_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate case exists and user has access
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      if (caseQuery.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      const existingCase = caseQuery.rows[0];
+      const actualCaseId = existingCase.id;
+
+      // Validate user assignment (allow admin users to submit for any case)
+      if (userRole !== 'ADMIN' && existingCase.assignedTo !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to this case',
+          error: {
+            code: 'CASE_NOT_ASSIGNED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
+
+      // Determine form type and verification outcome based on form data
+      const { formType, verificationOutcome } = detectBusinessFormType(formData); // Use business detection for Property APF (similar structure)
+
+      console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
+
+      // Map form data to database fields using comprehensive field mapping
+      const mappedFormData = mapPropertyApfFormDataToDatabase(formData);
+
+      // Validate required fields for the detected form type
+      const validation = validatePropertyApfRequiredFields(formData, formType);
+      if (!validation.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} Property APF form:`, validation.missingFields);
+      }
+      if (validation.warnings.length > 0) {
+        console.warn(`⚠️ Property APF form validation warnings:`, validation.warnings);
+      }
+
+      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} Property APF form fields to database columns`);
+
+      // Validate minimum photo requirement (≥5 geo-tagged photos)
+      // Use images array for new submission format
+      const photoCount = images?.length || photos?.length || 0;
+      if (photoCount < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum 5 geo-tagged photos required for Property APF verification',
+          error: {
+            code: 'INSUFFICIENT_PHOTOS',
+            details: {
+              required: 5,
+              provided: photoCount,
+            },
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate that all photos have geo-location (only if photos array exists)
+      if (photos && photos.length > 0) {
+        const photosWithoutGeo = photos.filter(photo =>
+          !photo.geoLocation ||
+          !photo.geoLocation.latitude ||
+          !photo.geoLocation.longitude
+        );
+
+        if (photosWithoutGeo.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'All photos must have geo-location data',
+            error: {
+              code: 'MISSING_GEO_LOCATION',
+              details: {
+                photosWithoutGeo: photosWithoutGeo.length,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
+
+      // Generate unique submission ID
+      const submissionId = `property_apf_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+      // Process verification images separately from case attachments
+      const uploadedImages = await MobileFormController.processVerificationImages(
+        images || [],
+        actualCaseId,
+        'PROPERTY_APF',
+        submissionId,
+        userId
+      );
+
+      console.log(`✅ Processed ${uploadedImages.length} verification images for Property APF verification`);
+
+      // Prepare verification data (excluding old attachment references)
+      const verificationData = {
+        formType: 'PROPERTY_APF',
+        submissionId,
+        submittedAt: new Date().toISOString(),
+        submittedBy: userId,
+        geoLocation,
+        formData,
+        verificationImages: uploadedImages.map(img => ({
+          id: img.id,
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl,
+          photoType: img.photoType,
+          geoLocation: img.geoLocation,
+        })),
+        verification: {
+          ...formData,
+          imageCount: uploadedImages.length,
+          geoTaggedImages: uploadedImages.filter(img => img.geoLocation).length,
+          submissionLocation: geoLocation,
+        },
+      };
+
+      // Update case with verification data using detected verification outcome
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'PROPERTY_APF', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const updatedCase = caseUpd.rows[0];
+
+      // Create comprehensive Property APF verification report using all available fields
+      const dbInsertData = {
+        // Core case information
+        case_id: actualCaseId,
+        caseId: parseInt(updatedCase.caseId) || null,
+        form_type: formType,
+        verification_outcome: verificationOutcome,
+        customer_name: updatedCase.customerName || 'Unknown',
+        customer_phone: updatedCase.systemContact || null,
+        customer_email: null, // Not available from case data
+        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+
+        // Verification metadata
+        verification_date: new Date().toISOString().split('T')[0],
+        verification_time: new Date().toTimeString().split(' ')[0],
+        verified_by: userId,
+        total_images: uploadedImages.length || 0,
+        total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
+        remarks: formData.remarks || `${formType} Property APF verification completed`,
+
+        // Merge all mapped form data
+        ...mappedFormData
+      };
+
+      // Build dynamic INSERT query based on available data
+      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      const values = columns.map(key => dbInsertData[key]);
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      const insertQuery = `
+        INSERT INTO "propertyApfVerificationReports" (${columnNames})
+        VALUES (${placeholders})
+      `;
+
+      console.log(`📝 Inserting Property APF verification with ${columns.length} fields:`, columns);
+
+      await query(insertQuery, values);
+
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'PROPERTY_APF'`, [actualCaseId]);
+
+      await createAuditLog({
+        action: 'PROPERTY_APF_VERIFICATION_SUBMITTED',
+        entityType: 'CASE',
+        entityId: actualCaseId,
+        userId,
+        details: {
+          formType,
+          verificationOutcome,
+          imageCount: uploadedImages.length,
+          submissionId,
+          hasGeoLocation: !!geoLocation,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      console.log(`✅ Property APF verification completed successfully:`, {
+        caseId: actualCaseId,
+        formType,
+        verificationOutcome,
+        imageCount: uploadedImages.length
+      });
+
+      res.json({
+        success: true,
+        message: `${formType} Property APF verification submitted successfully`,
+        data: {
+          caseId: updatedCase.id,
+          caseNumber: updatedCase.caseId,
+          status: updatedCase.status,
+          completedAt: updatedCase.completedAt?.toISOString(),
+          submissionId,
+          formType,
+          verificationOutcome,
+          verificationImageCount: uploadedImages.length,
+          verificationData,
+        },
+      });
+    } catch (error) {
+      console.error('Submit Property APF verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'VERIFICATION_SUBMISSION_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   // Submit NOC verification form
   static async submitNocVerification(req: Request, res: Response) {
-    res.status(501).json({ success: false, message: 'NOC verification not implemented yet' });
+    try {
+      const { caseId } = req.params;
+      const { formData, attachmentIds, geoLocation, photos, images }: MobileFormSubmissionRequest = req.body;
+      const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+
+      console.log(`📱 NOC verification submission for case: ${caseId}`);
+      console.log(`   - User: ${userId} (${userRole})`);
+      console.log(`   - Images: ${images?.length || 0}`);
+      console.log(`   - Form data keys: ${Object.keys(formData || {}).join(', ')}`);
+      console.log(`   - Form data outcome: ${formData?.outcome || formData?.finalStatus || 'Not specified'}`);
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User authentication required',
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!caseId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Case ID is required',
+          error: {
+            code: 'CASE_ID_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!formData) {
+        return res.status(400).json({
+          success: false,
+          message: 'Form data is required',
+          error: {
+            code: 'FORM_DATA_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate case exists and user has access
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      if (caseQuery.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      const existingCase = caseQuery.rows[0];
+      const actualCaseId = existingCase.id;
+
+      // Validate user assignment (allow admin users to submit for any case)
+      if (userRole !== 'ADMIN' && existingCase.assignedTo !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to this case',
+          error: {
+            code: 'CASE_NOT_ASSIGNED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
+
+      // Determine form type and verification outcome based on form data
+      const { formType, verificationOutcome } = detectBusinessFormType(formData); // Use business detection for NOC (similar structure)
+
+      console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
+
+      // Map form data to database fields using comprehensive field mapping
+      const mappedFormData = mapNocFormDataToDatabase(formData);
+
+      // Validate required fields for the detected form type
+      const validation = validateNocRequiredFields(formData, formType);
+      if (!validation.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} NOC form:`, validation.missingFields);
+      }
+      if (validation.warnings.length > 0) {
+        console.warn(`⚠️ NOC form validation warnings:`, validation.warnings);
+      }
+
+      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} NOC form fields to database columns`);
+
+      // Validate minimum photo requirement (≥5 geo-tagged photos)
+      // Use images array for new submission format
+      const photoCount = images?.length || photos?.length || 0;
+      if (photoCount < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Minimum 5 geo-tagged photos required for NOC verification',
+          error: {
+            code: 'INSUFFICIENT_PHOTOS',
+            details: {
+              required: 5,
+              provided: photoCount,
+            },
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate that all photos have geo-location (only if photos array exists)
+      if (photos && photos.length > 0) {
+        const photosWithoutGeo = photos.filter(photo =>
+          !photo.geoLocation ||
+          !photo.geoLocation.latitude ||
+          !photo.geoLocation.longitude
+        );
+
+        if (photosWithoutGeo.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'All photos must have geo-location data',
+            error: {
+              code: 'MISSING_GEO_LOCATION',
+              details: {
+                photosWithoutGeo: photosWithoutGeo.length,
+              },
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
+
+      // Generate unique submission ID
+      const submissionId = `noc_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+      // Process verification images separately from case attachments
+      const uploadedImages = await MobileFormController.processVerificationImages(
+        images || [],
+        actualCaseId,
+        'NOC',
+        submissionId,
+        userId
+      );
+
+      console.log(`✅ Processed ${uploadedImages.length} verification images for NOC verification`);
+
+      // Prepare verification data (excluding old attachment references)
+      const verificationData = {
+        formType: 'NOC',
+        submissionId,
+        submittedAt: new Date().toISOString(),
+        submittedBy: userId,
+        geoLocation,
+        formData,
+        verificationImages: uploadedImages.map(img => ({
+          id: img.id,
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl,
+          photoType: img.photoType,
+          geoLocation: img.geoLocation,
+        })),
+        verification: {
+          ...formData,
+          imageCount: uploadedImages.length,
+          geoTaggedImages: uploadedImages.filter(img => img.geoLocation).length,
+          submissionLocation: geoLocation,
+        },
+      };
+
+      // Update case with verification data using detected verification outcome
+      await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'NOC', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const updatedCase = caseUpd.rows[0];
+
+      // Create comprehensive NOC verification report using all available fields
+      const dbInsertData = {
+        // Core case information
+        case_id: actualCaseId,
+        caseId: parseInt(updatedCase.caseId) || null,
+        form_type: formType,
+        verification_outcome: verificationOutcome,
+        customer_name: updatedCase.customerName || 'Unknown',
+        customer_phone: updatedCase.systemContact || null,
+        customer_email: null, // Not available from case data
+        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+
+        // Verification metadata
+        verification_date: new Date().toISOString().split('T')[0],
+        verification_time: new Date().toTimeString().split(' ')[0],
+        verified_by: userId,
+        total_images: uploadedImages.length || 0,
+        total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
+        remarks: formData.remarks || `${formType} NOC verification completed`,
+
+        // Merge all mapped form data
+        ...mappedFormData
+      };
+
+      // Build dynamic INSERT query based on available data
+      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      const values = columns.map(key => dbInsertData[key]);
+      const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      const insertQuery = `
+        INSERT INTO "nocVerificationReports" (${columnNames})
+        VALUES (${placeholders})
+      `;
+
+      console.log(`📝 Inserting NOC verification with ${columns.length} fields:`, columns);
+
+      await query(insertQuery, values);
+
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'NOC'`, [actualCaseId]);
+
+      await createAuditLog({
+        action: 'NOC_VERIFICATION_SUBMITTED',
+        entityType: 'CASE',
+        entityId: actualCaseId,
+        userId,
+        details: {
+          formType,
+          verificationOutcome,
+          imageCount: uploadedImages.length,
+          submissionId,
+          hasGeoLocation: !!geoLocation,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      console.log(`✅ NOC verification completed successfully:`, {
+        caseId: actualCaseId,
+        formType,
+        verificationOutcome,
+        imageCount: uploadedImages.length
+      });
+
+      res.json({
+        success: true,
+        message: `${formType} NOC verification submitted successfully`,
+        data: {
+          caseId: updatedCase.id,
+          caseNumber: updatedCase.caseId,
+          status: updatedCase.status,
+          completedAt: updatedCase.completedAt?.toISOString(),
+          submissionId,
+          formType,
+          verificationOutcome,
+          verificationImageCount: uploadedImages.length,
+          verificationData,
+        },
+      });
+    } catch (error) {
+      console.error('Submit NOC verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'VERIFICATION_SUBMISSION_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   // Get verification form template
