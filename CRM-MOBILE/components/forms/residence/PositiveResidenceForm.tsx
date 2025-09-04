@@ -498,27 +498,15 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
                     setSubmissionError(null);
 
                     try {
-                        // Prepare form data for submission
+                        // Prepare form data for submission - include ALL form data
                         const formData = {
-                            applicantName: report.metPersonName,
-                            addressConfirmed: report.addressLocatable === AddressLocatable.Easy,
-                            residenceType: report.houseStatus,
-                            familyMembers: report.totalFamilyMembers,
-                            neighborVerification: report.feedbackFromNeighbour === FeedbackFromNeighbour.NoAdverse,
-                            remarks: report.otherObservation,
                             outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
                                     report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
                                     report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
                                     report.finalStatus === FinalStatus.Refer ? 'REFER' :
                                     report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
-                            // Additional fields from the form
-                            addressRating: report.addressRating,
-                            locality: report.locality,
-                            stayingPeriod: report.stayingPeriod,
-                            stayingStatus: report.stayingStatus,
-                            politicalConnection: report.politicalConnection,
-                            dominatedArea: report.dominatedArea,
-                            recommendationStatus: report.finalStatus === FinalStatus.Positive ? 'POSITIVE' : 'NEGATIVE'
+                            remarks: report.otherObservation || '',
+                            ...report // Include all report data to ensure complete field coverage
                         };
 
                         // Combine all images (regular + selfie) and ensure they have geoLocation property

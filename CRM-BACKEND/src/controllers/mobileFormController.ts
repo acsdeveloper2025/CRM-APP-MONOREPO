@@ -5,6 +5,11 @@ import { detectResidenceFormType, detectOfficeFormType, detectBusinessFormType }
 import { mapFormDataToDatabase, validateRequiredFields, getAvailableDbColumns } from '../utils/residenceFormFieldMapping';
 import { mapOfficeFormDataToDatabase, validateOfficeRequiredFields, getOfficeAvailableDbColumns } from '../utils/officeFormFieldMapping';
 import { mapBusinessFormDataToDatabase, validateBusinessRequiredFields, getBusinessAvailableDbColumns } from '../utils/businessFormFieldMapping';
+import {
+  createComprehensiveFormSections,
+  getFormTypeLabel,
+  getVerificationTableName
+} from '../utils/comprehensiveFormFieldMapping';
 import { mapBuilderFormDataToDatabase, validateBuilderRequiredFields, getBuilderAvailableDbColumns } from '../utils/builderFormFieldMapping';
 import { mapResidenceCumOfficeFormDataToDatabase, validateResidenceCumOfficeRequiredFields, getResidenceCumOfficeAvailableDbColumns } from '../utils/residenceCumOfficeFormFieldMapping';
 import { mapNocFormDataToDatabase, validateNocRequiredFields, getNocAvailableDbColumns } from '../utils/nocFormFieldMapping';
@@ -127,7 +132,28 @@ export class MobileFormController {
   }
 
   // Helper method to organize form data into sections for display
-  private static organizeFormDataIntoSections(formData: any, verificationType: string): FormSection[] {
+  private static organizeFormDataIntoSections(formData: any, verificationType: string, formType?: string): FormSection[] {
+    console.log(`Creating comprehensive form sections for ${verificationType} - ${formType || 'UNKNOWN'}`);
+    console.log('Form data keys:', Object.keys(formData));
+
+    // If we have form type, use comprehensive mapping
+    if (formType) {
+      try {
+        const sections = createComprehensiveFormSections(formData, verificationType, formType);
+        console.log(`Generated ${sections.length} comprehensive sections:`, sections.map(s => `${s.title} (${s.fields.length} fields)`));
+        return sections;
+      } catch (error) {
+        console.error('Error creating comprehensive form sections:', error);
+        // Fall through to basic sections
+      }
+    }
+
+    // Fallback to basic form sections
+    return this.createBasicFormSections(formData, verificationType);
+  }
+
+  // Fallback method for basic form sections
+  private static createBasicFormSections(formData: any, verificationType: string): FormSection[] {
     const sections: FormSection[] = [];
 
     // Customer Information Section
@@ -216,6 +242,268 @@ export class MobileFormController {
     }
 
     return sections.filter(section => section.fields.length > 0);
+  }
+
+  // Create comprehensive form sections from database report data
+  private static createComprehensiveFormSectionsFromReport(
+    report: any,
+    verificationType: string,
+    formType: string
+  ): FormSection[] {
+    console.log(`Creating comprehensive sections from report for ${verificationType} - ${formType}`);
+
+    try {
+      // Convert database report to form data format
+      const formData = MobileFormController.convertReportToFormData(report, verificationType);
+
+      // Use comprehensive form field mapping
+      const sections = createComprehensiveFormSections(formData, verificationType, formType);
+      console.log(`Generated ${sections.length} comprehensive sections from report`);
+      return sections;
+    } catch (error) {
+      console.error('Error creating comprehensive sections from report:', error);
+
+      // Fallback to basic sections
+      return MobileFormController.createBasicFormSectionsFromReport(report, verificationType);
+    }
+  }
+
+  // Convert database report to form data format
+  private static convertReportToFormData(report: any, verificationType: string): any {
+    const formData: any = {};
+
+    // Map common fields
+    formData.customerName = report.customer_name;
+    formData.outcome = report.verification_outcome;
+    formData.finalStatus = report.final_status;
+    formData.metPersonName = report.met_person_name;
+    formData.callRemark = report.call_remark;
+
+    // Map location fields
+    formData.addressLocatable = report.address_locatable;
+    formData.addressRating = report.address_rating;
+    formData.locality = report.locality;
+    formData.addressStructure = report.address_structure;
+    formData.landmark1 = report.landmark1;
+    formData.landmark2 = report.landmark2;
+    formData.landmark3 = report.landmark3;
+    formData.landmark4 = report.landmark4;
+
+    // Map area assessment fields
+    formData.politicalConnection = report.political_connection;
+    formData.dominatedArea = report.dominated_area;
+    formData.feedbackFromNeighbour = report.feedback_from_neighbour;
+    formData.otherObservation = report.other_observation;
+
+    // Map verification type specific fields
+    if (verificationType === 'RESIDENCE') {
+      formData.houseStatus = report.house_status;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonStatus = report.met_person_status;
+      formData.totalFamilyMembers = report.total_family_members;
+      formData.workingStatus = report.working_status;
+      formData.stayingPeriod = report.staying_period;
+      formData.stayingStatus = report.staying_status;
+      formData.documentShownStatus = report.document_shown_status;
+      formData.documentType = report.document_type;
+      formData.doorColor = report.door_color;
+      formData.doorNamePlateStatus = report.door_nameplate_status;
+      formData.nameOnDoorPlate = report.name_on_door_plate;
+
+      // Form type specific fields
+      formData.shiftedPeriod = report.shifted_period;
+      formData.currentLocation = report.current_location;
+      formData.premisesStatus = report.premises_status;
+      formData.roomStatus = report.room_status;
+      formData.stayingPersonName = report.staying_person_name;
+      formData.temporaryStay = report.temporary_stay;
+      formData.entryRestrictionReason = report.entry_restriction_reason;
+      formData.securityPersonName = report.security_person_name;
+      formData.accessDenied = report.access_denied;
+      formData.nameOfMetPerson = report.name_of_met_person;
+      formData.metPersonType = report.met_person_type;
+      formData.applicantStayingStatus = report.applicant_staying_status;
+      formData.contactPerson = report.contact_person;
+      formData.alternateContact = report.alternate_contact;
+    } else if (verificationType === 'OFFICE') {
+      formData.designation = report.designation;
+      formData.officeStatus = report.office_status;
+      formData.officeType = report.office_type;
+      formData.companyNatureOfBusiness = report.company_nature_of_business;
+      formData.businessPeriod = report.business_period;
+      formData.staffStrength = report.staff_strength;
+      formData.workingPeriod = report.working_period;
+      formData.companyNamePlateStatus = report.company_nameplate_status;
+      formData.nameOnCompanyBoard = report.name_on_company_board;
+    } else if (verificationType === 'BUSINESS') {
+      formData.businessName = report.business_name;
+      formData.businessStatus = report.business_status;
+      formData.businessType = report.business_type;
+      formData.businessNatureOfBusiness = report.business_nature_of_business;
+      formData.businessPeriod = report.business_period;
+      formData.staffStrength = report.staff_strength;
+      formData.businessExistence = report.business_existence;
+      formData.applicantExistence = report.applicant_existence;
+      formData.premisesStatus = report.premises_status;
+    }
+
+    return formData;
+  }
+
+  // Fallback method for basic form sections from report
+  private static createBasicFormSectionsFromReport(report: any, verificationType: string): FormSection[] {
+    return [
+      {
+        id: 'basic_information',
+        title: 'Basic Information',
+        description: 'Customer and verification details',
+        order: 1,
+        fields: [
+          {
+            id: 'customer_name',
+            name: 'customerName',
+            label: 'Customer Name',
+            type: 'text',
+            value: report.customer_name,
+            displayValue: report.customer_name || 'Not provided',
+            isRequired: true,
+            validation: { isValid: true, errors: [] }
+          },
+          {
+            id: 'verification_outcome',
+            name: 'verificationOutcome',
+            label: 'Verification Outcome',
+            type: 'select',
+            value: report.verification_outcome,
+            displayValue: report.verification_outcome || 'Not provided',
+            isRequired: true,
+            validation: { isValid: true, errors: [] }
+          },
+          {
+            id: 'met_person_name',
+            name: 'metPersonName',
+            label: 'Met Person Name',
+            type: 'text',
+            value: report.met_person_name,
+            displayValue: report.met_person_name || 'Not provided',
+            isRequired: false,
+            validation: { isValid: true, errors: [] }
+          },
+          {
+            id: 'call_remark',
+            name: 'callRemark',
+            label: 'Call Remark',
+            type: 'select',
+            value: report.call_remark,
+            displayValue: report.call_remark || 'Not provided',
+            isRequired: false,
+            validation: { isValid: true, errors: [] }
+          }
+        ],
+        isRequired: true,
+        defaultExpanded: true
+      },
+      {
+        id: 'location_details',
+        title: 'Location Details',
+        description: 'Address and location information',
+        order: 2,
+        fields: [
+          {
+            id: 'locality',
+            name: 'locality',
+            label: 'Locality Type',
+            type: 'select',
+            value: report.locality,
+            displayValue: report.locality || 'Not provided',
+            isRequired: false,
+            validation: { isValid: true, errors: [] }
+          },
+          {
+            id: 'landmark1',
+            name: 'landmark1',
+            label: 'Landmark 1',
+            type: 'text',
+            value: report.landmark1,
+            displayValue: report.landmark1 || 'Not provided',
+            isRequired: false,
+            validation: { isValid: true, errors: [] }
+          },
+          {
+            id: 'landmark2',
+            name: 'landmark2',
+            label: 'Landmark 2',
+            type: 'text',
+            value: report.landmark2,
+            displayValue: report.landmark2 || 'Not provided',
+            isRequired: false,
+            validation: { isValid: true, errors: [] }
+          },
+          {
+            id: 'landmark3',
+            name: 'landmark3',
+            label: 'Landmark 3',
+            type: 'text',
+            value: report.landmark3,
+            displayValue: report.landmark3 || 'Not provided',
+            isRequired: false,
+            validation: { isValid: true, errors: [] }
+          },
+          {
+            id: 'landmark4',
+            name: 'landmark4',
+            label: 'Landmark 4',
+            type: 'text',
+            value: report.landmark4,
+            displayValue: report.landmark4 || 'Not provided',
+            isRequired: false,
+            validation: { isValid: true, errors: [] }
+          }
+        ],
+        isRequired: false,
+        defaultExpanded: true
+      },
+      {
+        id: 'area_assessment',
+        title: 'Area Assessment',
+        description: 'Area and final assessment details',
+        order: 3,
+        fields: [
+          {
+            id: 'dominated_area',
+            name: 'dominatedArea',
+            label: 'Dominated Area',
+            type: 'select',
+            value: report.dominated_area,
+            displayValue: report.dominated_area || 'Not provided',
+            isRequired: false,
+            validation: { isValid: true, errors: [] }
+          },
+          {
+            id: 'other_observation',
+            name: 'otherObservation',
+            label: 'Other Observations',
+            type: 'textarea',
+            value: report.other_observation,
+            displayValue: report.other_observation || 'Not provided',
+            isRequired: false,
+            validation: { isValid: true, errors: [] }
+          },
+          {
+            id: 'final_status',
+            name: 'finalStatus',
+            label: 'Final Status',
+            type: 'select',
+            value: report.final_status,
+            displayValue: report.final_status || 'Not provided',
+            isRequired: true,
+            validation: { isValid: true, errors: [] }
+          }
+        ],
+        isRequired: false,
+        defaultExpanded: true
+      }
+    ];
   }
 
   // REMOVED: Generic verification function - using specific implementations instead
@@ -481,15 +769,41 @@ export class MobileFormController {
       // Get form submissions from verification reports and images
       const formSubmissions: FormSubmissionData[] = [];
 
-      // Check for residence verification reports
-      const residenceReportSql = `
-        SELECT * FROM "residenceVerificationReports"
-        WHERE case_id = $1
-      `;
-      const residenceRes = await query(residenceReportSql, [caseData.id]);
+      // Determine verification type and get appropriate reports
+      const verificationType = caseData.verificationType || 'RESIDENCE';
+      console.log('Processing verification type:', verificationType);
 
-      if (residenceRes.rows.length > 0) {
-        const report = residenceRes.rows[0];
+      // Get verification reports based on type
+      let reportData = null;
+      let reportTableName = '';
+
+      if (verificationType === 'RESIDENCE') {
+        reportTableName = 'residenceVerificationReports';
+        const residenceReportSql = `SELECT * FROM "residenceVerificationReports" WHERE case_id = $1`;
+        const residenceRes = await query(residenceReportSql, [caseData.id]);
+        reportData = residenceRes.rows[0];
+      } else if (verificationType === 'OFFICE') {
+        reportTableName = 'officeVerificationReports';
+        const officeReportSql = `SELECT * FROM "officeVerificationReports" WHERE case_id = $1`;
+        const officeRes = await query(officeReportSql, [caseData.id]);
+        reportData = officeRes.rows[0];
+      } else if (verificationType === 'BUSINESS') {
+        reportTableName = 'businessVerificationReports';
+        const businessReportSql = `SELECT * FROM "businessVerificationReports" WHERE case_id = $1`;
+        const businessRes = await query(businessReportSql, [caseData.id]);
+        reportData = businessRes.rows[0];
+      } else {
+        // Fallback to residence for unknown types
+        reportTableName = 'residenceVerificationReports';
+        const residenceReportSql = `SELECT * FROM "residenceVerificationReports" WHERE case_id = $1`;
+        const residenceRes = await query(residenceReportSql, [caseData.id]);
+        reportData = residenceRes.rows[0];
+      }
+
+      console.log(`Found report data in ${reportTableName}:`, !!reportData);
+
+      if (reportData) {
+        const report = reportData;
 
         // Get verification images
         const imagesSql = `
@@ -505,197 +819,22 @@ export class MobileFormController {
         const userName = userRes.rows[0]?.name || userRes.rows[0]?.username || 'Unknown User';
 
         // Get the actual submission ID from verification images
-        const actualSubmissionId = imagesRes.rows.length > 0 ? imagesRes.rows[0].submissionId : `residence_${Date.now()}`;
+        const actualSubmissionId = imagesRes.rows.length > 0 ? imagesRes.rows[0].submissionId : `${verificationType.toLowerCase()}_${Date.now()}`;
 
         // Create comprehensive form submission
         const submission: FormSubmissionData = {
           id: actualSubmissionId,
           caseId,
-          formType: 'RESIDENCE',
-          verificationType: 'Residence Verification',
+          formType: report.form_type || 'POSITIVE', // Use the actual form type from database
+          verificationType: verificationType,
           outcome: report.verification_outcome || 'Unknown',
           status: 'SUBMITTED',
           submittedAt: report.verification_date ? `${report.verification_date}T00:00:00.000Z` : new Date().toISOString(),
           submittedBy: report.verified_by,
           submittedByName: userName,
 
-          // Organize form data into sections
-          sections: [
-            {
-              id: 'basic_info',
-              title: 'Basic Information',
-              description: 'Customer and verification details',
-              order: 1,
-              fields: [
-                {
-                  id: 'customer_name',
-                  name: 'customerName',
-                  label: 'Customer Name',
-                  type: 'text',
-                  value: caseData.customerName || report.customer_name || 'Unknown',
-                  displayValue: caseData.customerName || report.customer_name || 'Unknown',
-                  isRequired: true,
-                  validation: { isValid: true, errors: [] }
-                },
-                {
-                  id: 'verification_outcome',
-                  name: 'verificationOutcome',
-                  label: 'Verification Outcome',
-                  type: 'select',
-                  value: report.verification_outcome,
-                  displayValue: report.verification_outcome,
-                  options: [
-                    { value: 'Positive', label: 'Positive' },
-                    { value: 'Negative', label: 'Negative' },
-                    { value: 'Untraceable', label: 'Untraceable' },
-                    { value: 'NSP', label: 'No Such Person' },
-                    { value: 'Entry Restricted', label: 'Entry Restricted' }
-                  ],
-                  isRequired: true,
-                  validation: { isValid: true, errors: [] }
-                },
-                {
-                  id: 'met_person_name',
-                  name: 'metPersonName',
-                  label: 'Met Person Name',
-                  type: 'text',
-                  value: report.met_person_name,
-                  displayValue: report.met_person_name,
-                  isRequired: false,
-                  validation: { isValid: true, errors: [] }
-                },
-                {
-                  id: 'call_remark',
-                  name: 'callRemark',
-                  label: 'Call Remark',
-                  type: 'select',
-                  value: report.call_remark,
-                  displayValue: report.call_remark,
-                  options: [
-                    { value: 'Call Picked Up', label: 'Call Picked Up' },
-                    { value: 'Did Not Pick Up Call', label: 'Did Not Pick Up Call' },
-                    { value: 'Number Not Reachable', label: 'Number Not Reachable' },
-                    { value: 'Wrong Number', label: 'Wrong Number' }
-                  ],
-                  isRequired: false,
-                  validation: { isValid: true, errors: [] }
-                }
-              ]
-            },
-            {
-              id: 'location_details',
-              title: 'Location Details',
-              description: 'Address and landmark information',
-              order: 2,
-              fields: [
-                {
-                  id: 'locality',
-                  name: 'locality',
-                  label: 'Locality Type',
-                  type: 'select',
-                  value: report.locality,
-                  displayValue: report.locality,
-                  options: [
-                    { value: 'Tower / Building', label: 'Tower / Building' },
-                    { value: 'Independent House', label: 'Independent House' },
-                    { value: 'Slum Area', label: 'Slum Area' },
-                    { value: 'Commercial Area', label: 'Commercial Area' }
-                  ],
-                  isRequired: false,
-                  validation: { isValid: true, errors: [] }
-                },
-                {
-                  id: 'landmark1',
-                  name: 'landmark1',
-                  label: 'Landmark 1',
-                  type: 'text',
-                  value: report.landmark1,
-                  displayValue: report.landmark1,
-                  isRequired: false,
-                  validation: { isValid: true, errors: [] }
-                },
-                {
-                  id: 'landmark2',
-                  name: 'landmark2',
-                  label: 'Landmark 2',
-                  type: 'text',
-                  value: report.landmark2,
-                  displayValue: report.landmark2,
-                  isRequired: false,
-                  validation: { isValid: true, errors: [] }
-                },
-                {
-                  id: 'landmark3',
-                  name: 'landmark3',
-                  label: 'Landmark 3',
-                  type: 'text',
-                  value: report.landmark3,
-                  displayValue: report.landmark3,
-                  isRequired: false,
-                  validation: { isValid: true, errors: [] }
-                },
-                {
-                  id: 'landmark4',
-                  name: 'landmark4',
-                  label: 'Landmark 4',
-                  type: 'text',
-                  value: report.landmark4,
-                  displayValue: report.landmark4,
-                  isRequired: false,
-                  validation: { isValid: true, errors: [] }
-                }
-              ]
-            },
-            {
-              id: 'area_assessment',
-              title: 'Area Assessment',
-              description: 'Community and area observations',
-              order: 3,
-              fields: [
-                {
-                  id: 'dominated_area',
-                  name: 'dominatedArea',
-                  label: 'Dominated Area',
-                  type: 'select',
-                  value: report.dominated_area,
-                  displayValue: report.dominated_area,
-                  options: [
-                    { value: 'A Community Dominated', label: 'A Community Dominated' },
-                    { value: 'B Community Dominated', label: 'B Community Dominated' },
-                    { value: 'Mixed Community', label: 'Mixed Community' },
-                    { value: 'Other', label: 'Other' }
-                  ],
-                  isRequired: false,
-                  validation: { isValid: true, errors: [] }
-                },
-                {
-                  id: 'other_observation',
-                  name: 'otherObservation',
-                  label: 'Other Observations',
-                  type: 'textarea',
-                  value: report.other_observation,
-                  displayValue: report.other_observation,
-                  isRequired: false,
-                  validation: { isValid: true, errors: [] }
-                },
-                {
-                  id: 'final_status',
-                  name: 'finalStatus',
-                  label: 'Final Status',
-                  type: 'select',
-                  value: report.final_status,
-                  displayValue: report.final_status,
-                  options: [
-                    { value: 'Positive', label: 'Positive' },
-                    { value: 'Negative', label: 'Negative' },
-                    { value: 'Refer to Credit', label: 'Refer to Credit' }
-                  ],
-                  isRequired: true,
-                  validation: { isValid: true, errors: [] }
-                }
-              ]
-            }
-          ],
+          // Create comprehensive form sections using all available data
+          sections: MobileFormController.createComprehensiveFormSectionsFromReport(report, verificationType, report.form_type || 'POSITIVE'),
 
           // Convert verification images to photos format
           photos: imagesRes.rows.map((img, index) => ({
