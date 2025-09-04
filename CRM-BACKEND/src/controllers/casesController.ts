@@ -524,11 +524,11 @@ export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
     const updateQuery = `
       UPDATE cases
       SET "assignedTo" = $1, status = 'ASSIGNED', "updatedAt" = NOW()
-      WHERE "caseId" = $2
+      WHERE id = $2
       RETURNING *
     `;
 
-    const result = await pool.query(updateQuery, [assignedToId, parseInt(id)]);
+    const result = await pool.query(updateQuery, [assignedToId, id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({

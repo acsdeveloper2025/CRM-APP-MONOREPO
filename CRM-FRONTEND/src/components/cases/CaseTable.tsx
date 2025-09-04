@@ -22,6 +22,7 @@ import { MoreHorizontal, Eye, Edit, UserCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Case } from '@/types/case';
 import { cn } from '@/utils/cn';
+import { UserSelectionModal } from './UserSelectionModal';
 
 interface CaseTableProps {
   cases: Case[];
@@ -87,6 +88,30 @@ export const CaseTable: React.FC<CaseTableProps> = ({
   onUpdateStatus,
   onAssignCase,
 }) => {
+  // State for user selection modal
+  const [isUserModalOpen, setIsUserModalOpen] = React.useState(false);
+  const [selectedCaseForAssignment, setSelectedCaseForAssignment] = React.useState<Case | null>(null);
+
+  // Handle opening user selection modal
+  const handleOpenUserModal = (caseItem: Case) => {
+    setSelectedCaseForAssignment(caseItem);
+    setIsUserModalOpen(true);
+  };
+
+  // Handle user selection from modal
+  const handleUserSelection = (userId: string, userName: string) => {
+    if (selectedCaseForAssignment && onAssignCase) {
+      onAssignCase(selectedCaseForAssignment.id, userId);
+    }
+    setIsUserModalOpen(false);
+    setSelectedCaseForAssignment(null);
+  };
+
+  // Handle modal close
+  const handleCloseUserModal = () => {
+    setIsUserModalOpen(false);
+    setSelectedCaseForAssignment(null);
+  };
   if (isLoading) {
     return (
       <div className="border rounded-lg">
@@ -227,9 +252,9 @@ export const CaseTable: React.FC<CaseTableProps> = ({
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     {onAssignCase && (
-                      <DropdownMenuItem onClick={() => onAssignCase(caseItem.id, 'user-id')}>
+                      <DropdownMenuItem onClick={() => handleOpenUserModal(caseItem)}>
                         <UserCheck className="mr-2 h-4 w-4" />
-                        Reassign
+                        Assign to Field Agent
                       </DropdownMenuItem>
                     )}
                     {onUpdateStatus && caseItem.status !== 'COMPLETED' && (
@@ -244,6 +269,15 @@ export const CaseTable: React.FC<CaseTableProps> = ({
           ))}
         </TableBody>
       </Table>
+
+      {/* User Selection Modal */}
+      <UserSelectionModal
+        isOpen={isUserModalOpen}
+        onClose={handleCloseUserModal}
+        onSelectUser={handleUserSelection}
+        currentAssignedUserId={selectedCaseForAssignment?.assignedTo}
+        title="Assign Case to Field Agent"
+      />
     </div>
   );
 };
