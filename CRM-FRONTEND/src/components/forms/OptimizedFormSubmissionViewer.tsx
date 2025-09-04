@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FormSubmission } from '@/types/form';
 import VerificationImages from '@/components/VerificationImages';
 import { FormLocationViewer } from '@/components/forms/FormLocationViewer';
@@ -15,11 +13,11 @@ import {
   MapPin,
   CheckCircle,
   AlertCircle,
-  Eye,
-  Expand,
   Smartphone,
   Wifi,
-  Calendar
+  Calendar,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 
@@ -32,12 +30,19 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
   submission,
   caseId
 }) => {
-  const [showFullDetails, setShowFullDetails] = useState(false);
-  const [activeTab, setActiveTab] = useState('summary');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Helper functions
   const getFormTypeLabel = (formType: string) => {
     return formType.replace('_', ' ').toUpperCase();
+  };
+
+  const formatMetadataValue = (value: any): string => {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value !== null) {
+      return JSON.stringify(value);
+    }
+    return String(value || 'Unknown');
   };
 
   const getStatusColor = (status: string) => {
@@ -90,9 +95,9 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
   )?.value || 'Not specified';
 
   return (
-    <>
-      {/* Compact Summary Card */}
-      <Card className="hover:shadow-md transition-shadow">
+    <div className="space-y-6">
+      {/* Header Card with Summary */}
+      <Card className="border-l-4 border-l-blue-500">
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
@@ -100,10 +105,10 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
                 <FileText className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <CardTitle className="text-lg">
+                <CardTitle className="text-xl">
                   {getFormTypeLabel(submission.formType)} Verification
                 </CardTitle>
-                <div className="flex items-center space-x-2 mt-1">
+                <div className="flex items-center space-x-2 mt-2">
                   <Badge className={getStatusColor(submission.status)}>
                     {submission.status}
                   </Badge>
@@ -111,7 +116,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
                     {submission.validationStatus}
                   </Badge>
                   <span className={`text-sm font-medium ${getOutcomeColor(verificationOutcome)}`}>
-                    {verificationOutcome}
+                    Outcome: {verificationOutcome}
                   </span>
                 </div>
               </div>
@@ -119,11 +124,11 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowFullDetails(true)}
+              onClick={() => setIsExpanded(!isExpanded)}
               className="flex items-center space-x-2"
             >
-              <Eye className="h-4 w-4" />
-              <span>View Details</span>
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              <span>{isExpanded ? 'Collapse' : 'Expand'} Details</span>
             </Button>
           </div>
         </CardHeader>
@@ -138,7 +143,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
                 <p className="text-sm font-medium">{agentName}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-gray-500" />
               <div>
@@ -166,237 +171,188 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="flex items-center space-x-4 text-sm text-gray-600">
-              <div className="flex items-center space-x-1">
-                <Smartphone className="h-3 w-3" />
-                <span>{submission.metadata?.platform || 'Unknown'}</span>
-              </div>
-              {submission.metadata?.networkType && (
-                <div className="flex items-center space-x-1">
-                  <Wifi className="h-3 w-3" />
-                  <span>{submission.metadata.networkType}</span>
-                </div>
-              )}
-            </div>
-            
+          {/* Submission Details */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
             <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setActiveTab('photos');
-                  setShowFullDetails(true);
-                }}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <Camera className="h-4 w-4 mr-1" />
-                View Photos
-              </Button>
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <div>
+                <p className="text-xs text-gray-500">Full Date & Time</p>
+                <p className="text-sm font-medium">
+                  {submissionDate ? format(submissionDate, 'MMM dd, yyyy HH:mm') : 'Unknown date'}
+                </p>
+              </div>
             </div>
+
+            <div className="flex items-center space-x-2">
+              <Smartphone className="h-4 w-4 text-gray-500" />
+              <div>
+                <p className="text-xs text-gray-500">Platform</p>
+                <p className="text-sm font-medium">{submission.metadata?.platform || 'Unknown'}</p>
+              </div>
+            </div>
+
+            {submission.metadata?.networkType && (
+              <div className="flex items-center space-x-2">
+                <Wifi className="h-4 w-4 text-gray-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Network</p>
+                  <p className="text-sm font-medium">{submission.metadata.networkType}</p>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Detailed View Dialog */}
-      <Dialog open={showFullDetails} onOpenChange={setShowFullDetails}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>{getFormTypeLabel(submission.formType)} Verification Details</span>
-              <Badge className={getStatusColor(submission.status)}>
-                {submission.status}
-              </Badge>
-            </DialogTitle>
-          </DialogHeader>
+      {/* Expanded Content - All Data in Single Page */}
+      {isExpanded && (
+        <div className="space-y-6">
+          {/* Form Data Sections */}
+          {formSections.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <FileText className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-semibold">Form Data</h3>
+                <Badge variant="outline">{formSections.length} sections, {totalFields} fields</Badge>
+              </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="summary">Summary</TabsTrigger>
-              <TabsTrigger value="form-data">Form Data</TabsTrigger>
-              <TabsTrigger value="photos">Photos ({submission.attachments?.length || 0})</TabsTrigger>
-              <TabsTrigger value="location">Location</TabsTrigger>
-            </TabsList>
-
-            <div className="mt-4 overflow-auto max-h-[calc(90vh-200px)]">
-              <TabsContent value="summary" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Submission Overview */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center space-x-2">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                        <span>Submission Overview</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Status:</span>
-                        <Badge className={getStatusColor(submission.status)}>
-                          {submission.status}
-                        </Badge>
+              {formSections.map((section, sectionIndex) => (
+                <Card key={sectionIndex} className="border-l-4 border-l-green-500">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-sm font-medium text-green-600">
+                        {sectionIndex + 1}
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Validation:</span>
-                        <Badge className={getValidationColor(submission.validationStatus)}>
-                          {submission.validationStatus}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Outcome:</span>
-                        <span className={`font-medium ${getOutcomeColor(verificationOutcome)}`}>
-                          {verificationOutcome}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Submitted by:</span>
-                        <span className="font-medium">{agentName}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Date & Time:</span>
-                        <span className="font-medium">
-                          {submissionDate ? format(submissionDate, 'MMM dd, yyyy HH:mm') : 'Unknown date'}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Form Statistics */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center space-x-2">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                        <span>Form Statistics</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Form Type:</span>
-                        <span className="font-medium">{getFormTypeLabel(submission.formType)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Sections:</span>
-                        <span className="font-medium">{formSections.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total Fields:</span>
-                        <span className="font-medium">{totalFields}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Photos Captured:</span>
-                        <span className="font-medium">{submission.attachments?.length || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Platform:</span>
-                        <span className="font-medium">{submission.metadata?.platform || 'Unknown'}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Key Form Fields */}
-                {formSections.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Key Information</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {formSections.slice(0, 2).map((section, sectionIndex) => (
-                          <div key={sectionIndex} className="space-y-2">
-                            <h4 className="font-medium text-gray-900">{section.title}</h4>
-                            <div className="space-y-1">
-                              {section.fields?.slice(0, 3).map((field, fieldIndex) => (
-                                <div key={fieldIndex} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">{field.label}:</span>
-                                  <span className="font-medium text-right max-w-[200px] truncate">
-                                    {field.value || 'Not provided'}
-                                  </span>
-                                </div>
-                              ))}
-                              {(section.fields?.length || 0) > 3 && (
-                                <p className="text-xs text-gray-500">
-                                  +{(section.fields?.length || 0) - 3} more fields
-                                </p>
-                              )}
-                            </div>
+                      <span>{section.title}</span>
+                      <Badge variant="outline">{section.fields?.length || 0} fields</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {section.fields?.map((field, fieldIndex) => (
+                        <div key={fieldIndex} className="border rounded-lg p-3 bg-gray-50">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium text-gray-700">
+                              {field.label}
+                              {field.required && <span className="text-red-500 ml-1">*</span>}
+                            </label>
+                            <Badge variant="outline" className="text-xs">
+                              {field.type}
+                            </Badge>
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-
-              <TabsContent value="form-data" className="space-y-4">
-                {formSections.map((section, sectionIndex) => (
-                  <Card key={sectionIndex}>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-600">
-                          {sectionIndex + 1}
+                          <div className="text-sm text-gray-900 bg-white rounded p-2 min-h-[2.5rem] flex items-center border">
+                            {field.value || <span className="text-gray-500 italic">Not provided</span>}
+                          </div>
                         </div>
-                        <span>{section.title}</span>
-                        <Badge variant="outline">{section.fields?.length || 0} fields</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {section.fields?.map((field, fieldIndex) => (
-                          <div key={fieldIndex} className="border rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <label className="text-sm font-medium text-gray-700">
-                                {field.label}
-                                {field.required && <span className="text-red-500 ml-1">*</span>}
-                              </label>
-                              <Badge variant="outline" className="text-xs">
-                                {field.type}
-                              </Badge>
-                            </div>
-                            <div className="text-sm text-gray-900 bg-gray-50 rounded p-2 min-h-[2rem] flex items-center">
-                              {field.value || <span className="text-gray-500 italic">Not provided</span>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </TabsContent>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Form Data</h3>
+                <p className="text-gray-600">No form fields were captured in this submission.</p>
+              </CardContent>
+            </Card>
+          )}
 
-              <TabsContent value="photos">
+          {/* Verification Images */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Camera className="h-5 w-5 text-purple-600" />
+              <h3 className="text-lg font-semibold">Verification Photos</h3>
+              <Badge variant="outline">{submission.attachments?.length || 0} photos</Badge>
+            </div>
+
+            <Card className="border-l-4 border-l-purple-500">
+              <CardContent className="p-4">
                 <VerificationImages
                   caseId={caseId}
                   submissionId={submission.id}
-                  title="Verification Photos"
+                  title=""
                   showStats={false}
                 />
-              </TabsContent>
+              </CardContent>
+            </Card>
+          </div>
 
-              <TabsContent value="location">
+          {/* Location Information */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-5 w-5 text-orange-600" />
+              <h3 className="text-lg font-semibold">Location Information</h3>
+            </div>
+
+            <Card className="border-l-4 border-l-orange-500">
+              <CardContent className="p-4">
                 {submission.location ? (
                   <FormLocationViewer
                     location={submission.location}
                     readonly={true}
                   />
                 ) : (
-                  <Card>
-                    <CardContent className="p-6 text-center">
-                      <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Location Data</h3>
-                      <p className="text-gray-600">
-                        No GPS location information was captured for this form submission.
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="text-center py-8">
+                    <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No Location Data</h4>
+                    <p className="text-gray-600">
+                      No GPS location information was captured for this form submission.
+                    </p>
+                  </div>
                 )}
-              </TabsContent>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Submission Metadata */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Smartphone className="h-5 w-5 text-gray-600" />
+              <h3 className="text-lg font-semibold">Submission Details</h3>
             </div>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-    </>
+
+            <Card className="border-l-4 border-l-gray-500">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Submission ID</p>
+                    <p className="text-sm font-medium">{submission.id}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Form Type</p>
+                    <p className="text-sm font-medium">{getFormTypeLabel(submission.formType)}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Platform</p>
+                    <p className="text-sm font-medium">{formatMetadataValue(submission.metadata?.platform)}</p>
+                  </div>
+                  {submission.metadata?.appVersion && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">App Version</p>
+                      <p className="text-sm font-medium">{formatMetadataValue(submission.metadata.appVersion)}</p>
+                    </div>
+                  )}
+                  {submission.metadata?.networkType && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Network Type</p>
+                      <p className="text-sm font-medium">{formatMetadataValue(submission.metadata.networkType)}</p>
+                    </div>
+                  )}
+                  {submission.metadata?.deviceInfo && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Device Info</p>
+                      <p className="text-sm font-medium">{formatMetadataValue(submission.metadata.deviceInfo)}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
