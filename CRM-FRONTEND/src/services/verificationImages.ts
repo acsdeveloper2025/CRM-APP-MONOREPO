@@ -18,6 +18,7 @@ export interface VerificationImage {
     longitude: number;
     accuracy?: number;
     timestamp?: string;
+    address?: string;
   };
 }
 

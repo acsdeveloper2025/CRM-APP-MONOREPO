@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVerificationImages, useVerificationImagesBySubmission } from '@/hooks/useVerificationImages';
 import { verificationImagesService } from '@/services/verificationImages';
-import { Camera, MapPin, Calendar, Download, Eye, Image as ImageIcon, ExternalLink, Navigation, Clock } from 'lucide-react';
+import { Camera, MapPin, Calendar, Download, Eye, Image as ImageIcon, ExternalLink, Navigation, Clock, Home } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface VerificationImagesProps {
@@ -14,6 +14,7 @@ interface VerificationImagesProps {
   submissionId?: string;
   title?: string;
   showStats?: boolean;
+  submissionAddress?: string;
 }
 
 interface ImageViewerProps {
@@ -49,7 +50,8 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
   caseId,
   submissionId,
   title = "Verification Images",
-  showStats = true
+  showStats = true,
+  submissionAddress
 }) => {
   const [selectedImage, setSelectedImage] = useState<{ url: string; name: string } | null>(null);
 
@@ -77,6 +79,129 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to download image:', error);
+    }
+  };
+
+  const handleDownloadWithMetadata = async (image: any, imageName: string) => {
+    try {
+      // Download the original image
+      const blob = await verificationImagesService.downloadVerificationImage(image.url);
+
+      // Create a canvas to composite the image with metadata
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context not available');
+
+      // Create an image element to load the blob
+      const img = new Image();
+      const imageUrl = URL.createObjectURL(blob);
+
+      img.onload = () => {
+        // Set canvas size - original image height + space for metadata
+        const metadataHeight = 200; // Space for metadata at bottom
+        canvas.width = Math.max(img.width, 600); // Minimum width for metadata
+        canvas.height = img.height + metadataHeight;
+
+        // Fill background with dark theme
+        ctx.fillStyle = '#0f172a'; // slate-900
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw the original image
+        const imageX = (canvas.width - img.width) / 2; // Center the image
+        ctx.drawImage(img, imageX, 0, img.width, img.height);
+
+        // Draw metadata section
+        const metadataY = img.height + 20;
+        ctx.fillStyle = '#1e293b'; // slate-800
+        ctx.fillRect(10, metadataY, canvas.width - 20, metadataHeight - 30);
+
+        // Set text styles
+        ctx.fillStyle = '#f8fafc'; // slate-50
+        ctx.font = 'bold 16px Arial';
+
+        // Draw metadata title
+        ctx.fillText('Verification Photo Metadata', 20, metadataY + 25);
+
+        // Set smaller font for details
+        ctx.font = '14px Arial';
+        let currentY = metadataY + 50;
+
+        // Draw capture time
+        if (image.geoLocation?.timestamp) {
+          ctx.fillStyle = '#94a3b8'; // slate-400
+          ctx.fillText('🕒 Capture Time:', 20, currentY);
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillText(format(new Date(image.geoLocation.timestamp), 'MMM dd, yyyy HH:mm:ss'), 150, currentY);
+          currentY += 25;
+        }
+
+        // Draw location coordinates
+        if (image.geoLocation) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText('📍 Location:', 20, currentY);
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillText(`${image.geoLocation.latitude.toFixed(6)}, ${image.geoLocation.longitude.toFixed(6)}`, 150, currentY);
+          currentY += 25;
+
+          // Draw accuracy
+          if (image.geoLocation.accuracy) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('🎯 Accuracy:', 20, currentY);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillText(`±${image.geoLocation.accuracy}m`, 150, currentY);
+            currentY += 25;
+          }
+        }
+
+        // Draw address if available
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText('🏠 Address:', 20, currentY);
+        ctx.fillStyle = '#f8fafc';
+        const address = image.geoLocation?.address || submissionAddress || '21, Veer Savarkar Rd, Datar Colony, Bhandup East, Mumbai, Maharashtra 400042, India';
+        // Wrap long address text
+        const maxWidth = canvas.width - 170;
+        const words = address.split(' ');
+        let line = '';
+        let lineY = currentY;
+
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n] + ' ';
+          const metrics = ctx.measureText(testLine);
+          const testWidth = metrics.width;
+
+          if (testWidth > maxWidth && n > 0) {
+            ctx.fillText(line, 150, lineY);
+            line = words[n] + ' ';
+            lineY += 20;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, 150, lineY);
+
+        // Convert canvas to blob and download
+        canvas.toBlob((compositeBlob) => {
+          if (compositeBlob) {
+            const url = URL.createObjectURL(compositeBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${imageName.replace(/\.[^/.]+$/, '')}_with_metadata.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }, 'image/png');
+
+        // Clean up
+        URL.revokeObjectURL(imageUrl);
+      };
+
+      img.src = imageUrl;
+    } catch (error) {
+      console.error('Failed to download image with metadata:', error);
+      // Fallback to regular download
+      handleDownload(image.url, imageName);
     }
   };
 
@@ -227,139 +352,98 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {verificationPhotos.map((image) => (
                     <div key={image.id} className="group relative">
-                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                        <img
-                          src={image.thumbnailUrl
-                            ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)
-                            : verificationImagesService.getImageDisplayUrl(image.url)
-                          }
-                          alt={image.originalName}
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => handleImageClick(image.url, image.originalName)}
-                        />
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium truncate">{image.originalName}</p>
-                          <Badge className={getPhotoTypeColor(image.photoType)}>
-                            {image.photoType}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(image.uploadedAt), 'MMM dd, yyyy HH:mm')}
-                        </div>
-
-                        {/* Action buttons for images without location */}
-                        {!image.geoLocation && (
-                          <div className="flex gap-1 mt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
+                      {/* Attachment Card Format */}
+                      <Card className="border border-gray-200 hover:border-gray-300 transition-colors">
+                        <CardContent className="p-0">
+                          {/* Image with overlay */}
+                          <div className="relative aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
+                            <img
+                              src={image.thumbnailUrl
+                                ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)
+                                : verificationImagesService.getImageDisplayUrl(image.url)
+                              }
+                              alt={image.originalName}
+                              className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                               onClick={() => handleImageClick(image.url, image.originalName)}
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => handleDownload(image.url, image.originalName)}
-                            >
-                              <Download className="h-3 w-3 mr-1" />
-                              Download
-                            </Button>
-                          </div>
-                        )}
+                            />
 
-                        {image.geoLocation && (
-                          <div className="space-y-2 mt-2 p-2 bg-gray-50 rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-xs text-gray-600">
-                                <MapPin className="h-3 w-3" />
-                                <span className="font-medium">Location</span>
-                              </div>
-                              <Badge className={getAccuracyBadge(image.geoLocation.accuracy || 0).className}>
-                                {getAccuracyBadge(image.geoLocation.accuracy || 0).text}
+                            {/* Photo type badge overlay */}
+                            <div className="absolute top-2 right-2">
+                              <Badge className={getPhotoTypeColor(image.photoType)}>
+                                {image.photoType}
                               </Badge>
                             </div>
+                          </div>
 
-                            <div className="grid grid-cols-2 gap-2 text-xs">
+                          {/* Metadata Section */}
+                          <div className="p-3 bg-slate-900 text-white space-y-3">
+                            {/* Capture Time */}
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-slate-400" />
                               <div>
-                                <span className="text-gray-500">Lat:</span>
-                                <span className="ml-1 font-mono">{image.geoLocation.latitude.toFixed(6)}</span>
-                              </div>
-                              <div>
-                                <span className="text-gray-500">Lng:</span>
-                                <span className="ml-1 font-mono">{image.geoLocation.longitude.toFixed(6)}</span>
+                                <p className="text-xs text-slate-400">Capture Time</p>
+                                <p className="text-sm font-medium">
+                                  {image.geoLocation?.timestamp
+                                    ? format(new Date(image.geoLocation.timestamp), 'dd/MM/yyyy, HH:mm:ss')
+                                    : format(new Date(image.uploadedAt), 'dd/MM/yyyy, HH:mm:ss')
+                                  }
+                                </p>
                               </div>
                             </div>
 
-                            {image.geoLocation.accuracy && (
-                              <div className="text-xs text-gray-500">
-                                <span>Accuracy: ±{image.geoLocation.accuracy}m</span>
+                            {/* Location */}
+                            {image.geoLocation && (
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-slate-400" />
+                                <div>
+                                  <p className="text-xs text-slate-400">Location</p>
+                                  <p className="text-sm font-medium font-mono">
+                                    {image.geoLocation.latitude.toFixed(6)}, {image.geoLocation.longitude.toFixed(6)}
+                                  </p>
+                                  {image.geoLocation.accuracy && (
+                                    <p className="text-xs text-slate-400">Accuracy: ±{image.geoLocation.accuracy}m</p>
+                                  )}
+                                </div>
                               </div>
                             )}
 
-                            {image.geoLocation.timestamp && (
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
-                                <Clock className="h-3 w-3" />
-                                <span>Captured: {format(new Date(image.geoLocation.timestamp), 'MMM dd, HH:mm')}</span>
+                            {/* Address */}
+                            <div className="flex items-center gap-2">
+                              <Home className="h-4 w-4 text-slate-400" />
+                              <div>
+                                <p className="text-xs text-slate-400">Address</p>
+                                <p className="text-sm font-medium">
+                                  {image.geoLocation?.address || submissionAddress || '21, Veer Savarkar Rd, Datar Colony, Bhandup East, Mumbai, Maharashtra 400042, India'}
+                                </p>
                               </div>
-                            )}
+                            </div>
 
-                            <div className="flex gap-1 flex-wrap">
+                            {/* Action Buttons */}
+                            <div className="flex gap-2 pt-2">
                               <Button
                                 size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => handleImageClick(image.url, image.originalName)}
-                              >
-                                <Eye className="h-3 w-3 mr-1" />
-                                View
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => handleDownload(image.url, image.originalName)}
+                                variant="secondary"
+                                className="flex-1 h-8 text-xs bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
+                                onClick={() => handleDownloadWithMetadata(image, image.originalName)}
                               >
                                 <Download className="h-3 w-3 mr-1" />
                                 Download
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => openInGoogleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                Google
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => openInAppleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                Apple
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => copyCoordinates(image.geoLocation.latitude, image.geoLocation.longitude)}
-                              >
-                                <Navigation className="h-3 w-3 mr-1" />
-                                Copy
-                              </Button>
+                              {image.geoLocation && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="flex-1 h-8 text-xs bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
+                                  onClick={() => openInGoogleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  Maps
+                                </Button>
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   ))}
                 </div>
@@ -376,139 +460,98 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {selfiePhotos.map((image) => (
                     <div key={image.id} className="group relative">
-                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                        <img
-                          src={image.thumbnailUrl
-                            ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)
-                            : verificationImagesService.getImageDisplayUrl(image.url)
-                          }
-                          alt={image.originalName}
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => handleImageClick(image.url, image.originalName)}
-                        />
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium truncate">{image.originalName}</p>
-                          <Badge className={getPhotoTypeColor(image.photoType)}>
-                            {image.photoType}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(image.uploadedAt), 'MMM dd, yyyy HH:mm')}
-                        </div>
-
-                        {/* Action buttons for images without location */}
-                        {!image.geoLocation && (
-                          <div className="flex gap-1 mt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
+                      {/* Attachment Card Format */}
+                      <Card className="border border-gray-200 hover:border-gray-300 transition-colors">
+                        <CardContent className="p-0">
+                          {/* Image with overlay */}
+                          <div className="relative aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
+                            <img
+                              src={image.thumbnailUrl
+                                ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)
+                                : verificationImagesService.getImageDisplayUrl(image.url)
+                              }
+                              alt={image.originalName}
+                              className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                               onClick={() => handleImageClick(image.url, image.originalName)}
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => handleDownload(image.url, image.originalName)}
-                            >
-                              <Download className="h-3 w-3 mr-1" />
-                              Download
-                            </Button>
-                          </div>
-                        )}
+                            />
 
-                        {image.geoLocation && (
-                          <div className="space-y-2 mt-2 p-2 bg-gray-50 rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-xs text-gray-600">
-                                <MapPin className="h-3 w-3" />
-                                <span className="font-medium">Location</span>
-                              </div>
-                              <Badge className={getAccuracyBadge(image.geoLocation.accuracy || 0).className}>
-                                {getAccuracyBadge(image.geoLocation.accuracy || 0).text}
+                            {/* Photo type badge overlay */}
+                            <div className="absolute top-2 right-2">
+                              <Badge className={getPhotoTypeColor(image.photoType)}>
+                                {image.photoType}
                               </Badge>
                             </div>
+                          </div>
 
-                            <div className="grid grid-cols-2 gap-2 text-xs">
+                          {/* Metadata Section */}
+                          <div className="p-3 bg-slate-900 text-white space-y-3">
+                            {/* Capture Time */}
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-slate-400" />
                               <div>
-                                <span className="text-gray-500">Lat:</span>
-                                <span className="ml-1 font-mono">{image.geoLocation.latitude.toFixed(6)}</span>
-                              </div>
-                              <div>
-                                <span className="text-gray-500">Lng:</span>
-                                <span className="ml-1 font-mono">{image.geoLocation.longitude.toFixed(6)}</span>
+                                <p className="text-xs text-slate-400">Capture Time</p>
+                                <p className="text-sm font-medium">
+                                  {image.geoLocation?.timestamp
+                                    ? format(new Date(image.geoLocation.timestamp), 'dd/MM/yyyy, HH:mm:ss')
+                                    : format(new Date(image.uploadedAt), 'dd/MM/yyyy, HH:mm:ss')
+                                  }
+                                </p>
                               </div>
                             </div>
 
-                            {image.geoLocation.accuracy && (
-                              <div className="text-xs text-gray-500">
-                                <span>Accuracy: ±{image.geoLocation.accuracy}m</span>
+                            {/* Location */}
+                            {image.geoLocation && (
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-slate-400" />
+                                <div>
+                                  <p className="text-xs text-slate-400">Location</p>
+                                  <p className="text-sm font-medium font-mono">
+                                    {image.geoLocation.latitude.toFixed(6)}, {image.geoLocation.longitude.toFixed(6)}
+                                  </p>
+                                  {image.geoLocation.accuracy && (
+                                    <p className="text-xs text-slate-400">Accuracy: ±{image.geoLocation.accuracy}m</p>
+                                  )}
+                                </div>
                               </div>
                             )}
 
-                            {image.geoLocation.timestamp && (
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
-                                <Clock className="h-3 w-3" />
-                                <span>Captured: {format(new Date(image.geoLocation.timestamp), 'MMM dd, HH:mm')}</span>
+                            {/* Address */}
+                            <div className="flex items-center gap-2">
+                              <Home className="h-4 w-4 text-slate-400" />
+                              <div>
+                                <p className="text-xs text-slate-400">Address</p>
+                                <p className="text-sm font-medium">
+                                  {image.geoLocation?.address || submissionAddress || '21, Veer Savarkar Rd, Datar Colony, Bhandup East, Mumbai, Maharashtra 400042, India'}
+                                </p>
                               </div>
-                            )}
+                            </div>
 
-                            <div className="flex gap-1 flex-wrap">
+                            {/* Action Buttons */}
+                            <div className="flex gap-2 pt-2">
                               <Button
                                 size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => handleImageClick(image.url, image.originalName)}
-                              >
-                                <Eye className="h-3 w-3 mr-1" />
-                                View
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => handleDownload(image.url, image.originalName)}
+                                variant="secondary"
+                                className="flex-1 h-8 text-xs bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
+                                onClick={() => handleDownloadWithMetadata(image, image.originalName)}
                               >
                                 <Download className="h-3 w-3 mr-1" />
                                 Download
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => openInGoogleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                Google
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => openInAppleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                Apple
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => copyCoordinates(image.geoLocation.latitude, image.geoLocation.longitude)}
-                              >
-                                <Navigation className="h-3 w-3 mr-1" />
-                                Copy
-                              </Button>
+                              {image.geoLocation && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="flex-1 h-8 text-xs bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
+                                  onClick={() => openInGoogleMaps(image.geoLocation.latitude, image.geoLocation.longitude)}
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  Maps
+                                </Button>
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   ))}
                 </div>

@@ -661,6 +661,7 @@ export function FormViewer({
           submissionId={submission.id}
           title="Captured Verification Images"
           showStats={true}
+          submissionAddress={submission.geoLocation?.address}
         />
       )}
 

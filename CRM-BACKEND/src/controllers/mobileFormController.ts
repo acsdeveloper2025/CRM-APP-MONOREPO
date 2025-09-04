@@ -490,9 +490,9 @@ export class MobileFormController {
         const imagesRes = await query(imagesSql, [caseData.id]);
 
         // Get user info
-        const userSql = `SELECT username FROM users WHERE id = $1`;
+        const userSql = `SELECT name, username FROM users WHERE id = $1`;
         const userRes = await query(userSql, [report.verified_by]);
-        const userName = userRes.rows[0]?.username || 'Unknown User';
+        const userName = userRes.rows[0]?.name || userRes.rows[0]?.username || 'Unknown User';
 
         // Get the actual submission ID from verification images
         const actualSubmissionId = imagesRes.rows.length > 0 ? imagesRes.rows[0].submissionId : `residence_${Date.now()}`;

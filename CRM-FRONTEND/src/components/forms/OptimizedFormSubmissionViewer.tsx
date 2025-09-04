@@ -87,7 +87,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
     const date = new Date(cleanDateStr);
     return isNaN(date.getTime()) ? null : date;
   })();
-  const agentName = submission.submittedBy || 'Unknown Agent';
+  const agentName = submission.submittedByName || submission.submittedBy || 'Unknown Agent';
   const formSections = submission.sections || [];
   const totalFields = formSections.reduce((total, section) => total + (section.fields?.length || 0), 0);
   const verificationOutcome = submission.sections?.[0]?.fields?.find(
@@ -267,6 +267,7 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
                   submissionId={submission.id}
                   title=""
                   showStats={false}
+                  submissionAddress={submission.geoLocation?.address}
                 />
               </CardContent>
             </Card>

@@ -124,7 +124,7 @@ export function FormMetadataViewer({ submission }: FormMetadataViewerProps) {
                 <div className="flex items-center space-x-2">
                   <User className="h-3 w-3 text-muted-foreground" />
                   <span className="text-muted-foreground">Submitted by:</span>
-                  <span className="font-medium">{submission.submittedBy}</span>
+                  <span className="font-medium">{submission.submittedByName || submission.submittedBy || 'Unknown Agent'}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-3 w-3 text-muted-foreground" />
