@@ -14,7 +14,9 @@ export default defineConfig(({ mode }) => {
       ],
       server: {
         port: 5180,
-        strictPort: true
+        strictPort: true,
+        host: '0.0.0.0', // Bind to all network interfaces for both localhost and network access
+        cors: true // Enable CORS for cross-origin requests
       },
       define: {
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),

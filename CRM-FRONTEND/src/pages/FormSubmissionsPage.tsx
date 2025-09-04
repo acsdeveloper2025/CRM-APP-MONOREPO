@@ -3,23 +3,17 @@ import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCaseFormSubmissions } from '@/hooks/useForms';
-import { FormSubmissionsList } from '@/components/forms/FormSubmissionsList';
 import { FormViewer } from '@/components/forms/FormViewer';
 import { FormSubmission } from '@/types/form';
-import { 
-  FileText, 
-  BarChart3, 
-  MapPin, 
-  Camera, 
-  Clock, 
-  User, 
-  CheckCircle, 
-  AlertCircle, 
-  XCircle,
-  TrendingUp
+import {
+  Camera,
+  Clock,
+  User,
+  AlertCircle,
+  Eye,
+  FileText
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -31,36 +25,6 @@ export const FormSubmissionsPage: React.FC = () => {
   const { data: formSubmissionsData, isLoading, error } = useCaseFormSubmissions(caseId!);
   const submissions = formSubmissionsData?.data?.submissions || [];
 
-  // Calculate statistics
-  const stats = React.useMemo(() => {
-    const total = submissions.length;
-    const byStatus = submissions.reduce((acc, sub) => {
-      acc[sub.status] = (acc[sub.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const byValidation = submissions.reduce((acc, sub) => {
-      acc[sub.validationStatus] = (acc[sub.validationStatus] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const totalPhotos = submissions.reduce((acc, sub) => acc + (sub.photos?.length || 0), 0);
-    
-    const recentSubmissions = submissions.filter(sub => {
-      const submittedDate = new Date(sub.submittedAt);
-      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      return submittedDate > dayAgo;
-    }).length;
-
-    return {
-      total,
-      byStatus,
-      byValidation,
-      totalPhotos,
-      recentSubmissions,
-    };
-  }, [submissions]);
-
   const handleSubmissionSelect = (submission: FormSubmission) => {
     setSelectedSubmission(submission);
     setIsViewerOpen(true);
@@ -71,6 +35,37 @@ export const FormSubmissionsPage: React.FC = () => {
     setIsViewerOpen(false);
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+      case 'under_review':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'failed':
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getValidationColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'valid':
+        return 'bg-green-100 text-green-800';
+      case 'invalid':
+      case 'flagged':
+        return 'bg-red-100 text-red-800';
+      case 'warning':
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -78,12 +73,11 @@ export const FormSubmissionsPage: React.FC = () => {
           <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
           <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-64 bg-gray-200 rounded animate-pulse"></div>
           ))}
         </div>
-        <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
       </div>
     );
   }
@@ -107,123 +101,114 @@ export const FormSubmissionsPage: React.FC = () => {
           <p className="mt-2 text-gray-600">Case #{caseId}</p>
         </div>
         <Badge variant="outline" className="text-lg px-3 py-1">
-          {stats.total} Submissions
+          {submissions.length} Submissions
         </Badge>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Submissions</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-              </div>
-              <FileText className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Recent (24h)</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.recentSubmissions}</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Photos</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalPhotos}</p>
-              </div>
-              <Camera className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Valid Submissions</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.byValidation.VALID || 0}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Form Submissions by Agent Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {submissions.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Form Submissions</h3>
+            <p className="text-gray-600">No form submissions found for this case.</p>
+          </div>
+        ) : (
+          submissions.map((submission) => (
+            <Card
+              key={submission.id}
+              className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-blue-500"
+              onClick={() => handleSubmissionSelect(submission)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <User className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">{submission.submittedByName}</CardTitle>
+                      <p className="text-sm text-gray-600">Field Agent</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end space-y-1">
+                    <Badge className={getStatusColor(submission.status)}>
+                      {submission.status.replace('_', ' ')}
+                    </Badge>
+                    <Badge className={getValidationColor(submission.validationStatus)}>
+                      {submission.validationStatus}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {formatDistanceToNow(new Date(submission.submittedAt), { addSuffix: true })}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <FileText className="h-4 w-4" />
+                    <span>{submission.formType} Form</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <Camera className="h-4 w-4" />
+                    <span>{submission.photos?.length || 0} photos captured</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
-      {/* Status Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Image Cards Section */}
+      {submissions.some(s => s.photos && s.photos.length > 0) && (
         <Card>
           <CardHeader>
-            <CardTitle>Submission Status</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <Camera className="h-5 w-5" />
+              <span>Captured Images</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {Object.entries(stats.byStatus).map(([status, count]) => (
-                <div key={status} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    {status === 'APPROVED' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                    {status === 'REJECTED' && <XCircle className="h-4 w-4 text-red-600" />}
-                    {status === 'UNDER_REVIEW' && <Clock className="h-4 w-4 text-yellow-600" />}
-                    {status === 'SUBMITTED' && <FileText className="h-4 w-4 text-blue-600" />}
-                    <span className="font-medium">{status.replace('_', ' ')}</span>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {submissions.flatMap(submission =>
+                (submission.photos || []).map(photo => (
+                  <div
+                    key={`${submission.id}-${photo.id}`}
+                    className="group relative cursor-pointer"
+                    onClick={() => handleSubmissionSelect(submission)}
+                  >
+                    <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                      <img
+                        src={photo.thumbnailUrl || photo.url}
+                        alt={`Photo by ${submission.submittedByName}`}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg flex items-center justify-center">
+                      <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <div className="absolute top-2 left-2">
+                      <Badge className="text-xs bg-black bg-opacity-70 text-white">
+                        {photo.type}
+                      </Badge>
+                    </div>
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <div className="bg-black bg-opacity-70 text-white text-xs p-1 rounded truncate">
+                        {submission.submittedByName}
+                      </div>
+                    </div>
                   </div>
-                  <Badge variant="outline">{count}</Badge>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Validation Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Object.entries(stats.byValidation).map(([status, count]) => (
-                <div key={status} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    {status === 'VALID' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                    {status === 'INVALID' && <XCircle className="h-4 w-4 text-red-600" />}
-                    {status === 'WARNING' && <AlertCircle className="h-4 w-4 text-yellow-600" />}
-                    <span className="font-medium">{status}</span>
-                  </div>
-                  <Badge variant="outline">{count}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Submissions List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Form Submissions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FormSubmissionsList
-            submissions={submissions}
-            isLoading={isLoading}
-            onSubmissionSelect={handleSubmissionSelect}
-            showSearch={true}
-            showFilters={true}
-            showSorting={true}
-          />
-        </CardContent>
-      </Card>
+      )}
 
       {/* Form Viewer Modal */}
       {selectedSubmission && (

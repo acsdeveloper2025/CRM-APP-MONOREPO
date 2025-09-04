@@ -34,18 +34,25 @@ class ApiService {
   }
 
   /**
-   * Get API base URL based on environment
+   * Get API base URL based on environment and network context
    */
   private getApiBaseUrl(): string {
     // Check if running on physical device vs simulator/web
-    const isPhysicalDevice = typeof window !== 'undefined' &&
-      (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
-    if (isPhysicalDevice) {
-      // Use device-specific URL for physical device
-      return import.meta.env.VITE_API_BASE_URL_DEVICE || 'http://192.168.1.36:3000/api';
+    // Priority order for API URL selection:
+    // 1. Production URL if in production mode
+    if (import.meta.env.MODE === 'production' && import.meta.env.VITE_API_BASE_URL_PRODUCTION) {
+      return import.meta.env.VITE_API_BASE_URL_PRODUCTION;
     }
-    // Use localhost for simulator/web
+
+    // 2. Use network URL if not on localhost (physical device or network access)
+    if (!isLocalhost && import.meta.env.VITE_API_BASE_URL_DEVICE) {
+      return import.meta.env.VITE_API_BASE_URL_DEVICE;
+    }
+
+    // 3. Use localhost URL for local development
     return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
   }
 

@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:network": "vite --host 0.0.0.0",
     "build": "vite build",
     "lint": "eslint . --max-warnings=0",
     "preview": "vite preview",
+    "preview:network": "vite preview --host 0.0.0.0",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:e2e": "./tests/run-tests.sh full",
