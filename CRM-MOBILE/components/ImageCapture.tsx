@@ -314,8 +314,14 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
         }
       };
 
-      // Store enhanced location data in metadata
+      // Store enhanced location data in metadata and update image geoLocation
       if (enhancedLocation) {
+        // Update the image's geoLocation to include address
+        newImage.geoLocation = {
+          ...newImage.geoLocation,
+          address: enhancedLocation.address?.formattedAddress
+        };
+
         setImageMetadata(prev => ({
           ...prev,
           [newImage.id]: {
@@ -386,10 +392,28 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
 
     try {
       const address = await reverseGeocode(latitude, longitude);
+
+      // Update metadata
       setImageMetadata(prev => ({
         ...prev,
         [imageId]: { ...prev[imageId], address, isLoadingAddress: false }
       }));
+
+      // Update the actual image object with address
+      const updatedImages = images.map(img => {
+        if (img.id === imageId) {
+          return {
+            ...img,
+            geoLocation: {
+              ...img.geoLocation,
+              address
+            }
+          };
+        }
+        return img;
+      });
+      onImagesChange(updatedImages);
+
     } catch (error) {
       setImageMetadata(prev => ({
         ...prev,

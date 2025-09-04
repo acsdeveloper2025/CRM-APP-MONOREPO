@@ -450,6 +450,7 @@ export interface CapturedImage {
     longitude: number;
     accuracy?: number;
     timestamp?: string;
+    address?: string;
   };
 }
 
