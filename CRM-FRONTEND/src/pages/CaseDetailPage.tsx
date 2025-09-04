@@ -9,6 +9,7 @@ import { useCaseFormSubmissions } from '@/hooks/useForms';
 import { ReassignCaseModal } from '@/components/cases/ReassignCaseModal';
 import { EnhancedCaseStatus } from '@/components/cases/EnhancedCaseStatus';
 import { FormViewer } from '@/components/forms/FormViewer';
+import { OptimizedFormSubmissionViewer } from '@/components/forms/OptimizedFormSubmissionViewer';
 import { ArrowLeft, MapPin, Phone, Mail, Calendar, User, Building2, FileText, Edit, UserCheck, FormInput, Camera, Clock } from 'lucide-react';
 import { CaseAttachmentsSection } from '@/components/attachments/CaseAttachmentsSection';
 import { formatDistanceToNow } from 'date-fns';
@@ -321,14 +322,10 @@ export const CaseDetailPage: React.FC = () => {
                   </Card>
                 ) : formSubmissions.length > 0 ? (
                   formSubmissions.map((submission, index) => (
-                    <FormViewer
+                    <OptimizedFormSubmissionViewer
                       key={submission.id}
                       submission={submission}
-                      readonly={true}
-                      showAttachments={true}
-                      showPhotos={true}
-                      showLocation={true}
-                      showMetadata={true}
+                      caseId={id!}
                     />
                   ))
                 ) : (
