@@ -164,7 +164,7 @@ const PositiveNocForm: React.FC<PositiveNocFormProps> = ({ caseData }) => {
           </div>
           <div>
             <span className="text-sm text-medium-text">Product</span>
-            <span className="block text-light-text">{caseData.product || 'N/A'}</span>
+            <span className="block text-light-text">{caseData.product?.name || caseData.productName || 'N/A'}</span>
           </div>
           <div>
             <span className="text-sm text-medium-text">Trigger</span>

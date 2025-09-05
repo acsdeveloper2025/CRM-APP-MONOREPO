@@ -210,7 +210,7 @@ const PositiveResiCumOfficeForm: React.FC<PositiveResiCumOfficeFormProps> = ({ c
           </div>
           <div className="text-sm">
             <span className="text-medium-text">Product: </span>
-            <span className="text-light-text">{caseData.product || 'N/A'}</span>
+            <span className="text-light-text">{caseData.product?.name || caseData.productName || 'N/A'}</span>
           </div>
           <div className="text-sm">
             <span className="text-medium-text">Trigger: </span>

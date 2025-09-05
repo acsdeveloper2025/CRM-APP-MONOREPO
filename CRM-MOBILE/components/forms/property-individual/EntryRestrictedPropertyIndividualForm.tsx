@@ -155,7 +155,7 @@ const EntryRestrictedPropertyIndividualForm: React.FC<EntryRestrictedPropertyInd
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Customer Name" id="case-customerName" name="case-customerName" value={caseData.customer.name} onChange={() => {}} disabled />
             <FormField label="Bank Name" id="case-bankName" name="case-bankName" value={caseData.bankName || ''} onChange={() => {}} disabled />
-            <FormField label="Product" id="case-product" name="case-product" value={caseData.product || ''} onChange={() => {}} disabled />
+            <FormField label="Product" id="case-product" name="case-product" value={caseData.product?.name || caseData.productName || ''} onChange={() => {}} disabled />
             <FormField label="Trigger" id="case-trigger" name="case-trigger" value={caseData.trigger || ''} onChange={() => {}} disabled />
             <div className="md:col-span-2">
               <FormField label="Visit Address" id="case-visitAddress" name="case-visitAddress" value={caseData.visitAddress || ''} onChange={() => {}} disabled />
