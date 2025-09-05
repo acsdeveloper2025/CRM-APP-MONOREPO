@@ -177,7 +177,7 @@ const ShiftedNocForm: React.FC<ShiftedNocFormProps> = ({ caseData }) => {
           </div>
           <div>
             <span className="text-sm text-medium-text">Bank Name</span>
-            <span className="block text-light-text">{caseData.bankName || 'N/A'}</span>
+            <span className="block text-light-text">{caseData.client?.name || caseData.clientName || 'N/A'}</span>
           </div>
           <div>
             <span className="text-sm text-medium-text">Product</span>
@@ -185,11 +185,11 @@ const ShiftedNocForm: React.FC<ShiftedNocFormProps> = ({ caseData }) => {
           </div>
           <div>
             <span className="text-sm text-medium-text">Trigger</span>
-            <span className="block text-light-text">{caseData.trigger || 'N/A'}</span>
+            <span className="block text-light-text">{caseData.notes || caseData.trigger || 'N/A'}</span>
           </div>
           <div className="md:col-span-2">
             <span className="text-sm text-medium-text">Visit Address</span>
-            <span className="block text-light-text">{caseData.visitAddress || 'N/A'}</span>
+            <span className="block text-light-text">{caseData.addressStreet || caseData.visitAddress || caseData.address || 'N/A'}</span>
           </div>
           <div>
             <span className="text-sm text-medium-text">System Contact Number</span>

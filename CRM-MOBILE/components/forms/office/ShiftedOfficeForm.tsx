@@ -186,7 +186,7 @@ const ShiftedOfficeForm: React.FC<ShiftedOfficeFormProps> = ({ caseData }) => {
           </div>
           <div className="text-sm">
             <span className="text-medium-text">Bank Name: </span>
-            <span className="text-light-text">{caseData.bankName || 'N/A'}</span>
+            <span className="text-light-text">{caseData.client?.name || caseData.clientName || 'N/A'}</span>
           </div>
           <div className="text-sm">
             <span className="text-medium-text">Product: </span>
@@ -194,12 +194,12 @@ const ShiftedOfficeForm: React.FC<ShiftedOfficeFormProps> = ({ caseData }) => {
           </div>
           <div className="text-sm">
             <span className="text-medium-text">Trigger: </span>
-            <span className="text-light-text">{caseData.trigger || 'N/A'}</span>
+            <span className="text-light-text">{caseData.notes || caseData.trigger || 'N/A'}</span>
           </div>
         </div>
         <div className="text-sm">
           <span className="text-medium-text">Visit Address: </span>
-          <span className="text-light-text">{caseData.visitAddress || 'N/A'}</span>
+          <span className="text-light-text">{caseData.addressStreet || caseData.visitAddress || caseData.address || 'N/A'}</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="text-sm">

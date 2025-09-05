@@ -172,11 +172,11 @@ const NspOfficeForm: React.FC<NspOfficeFormProps> = ({ caseData }) => {
             <h5 className="font-semibold text-brand-primary">Case Details</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField label="Customer Name" id="case-customerName" name="case-customerName" value={caseData.customer.name} onChange={() => {}} disabled />
-                <FormField label="Bank Name" id="case-bankName" name="case-bankName" value={caseData.bankName || ''} onChange={() => {}} disabled />
+                <FormField label="Bank Name" id="case-bankName" name="case-bankName" value={caseData.client?.name || caseData.clientName || ''} onChange={() => {}} disabled />
                 <FormField label="Product" id="case-product" name="case-product" value={caseData.product?.name || caseData.productName || ''} onChange={() => {}} disabled />
-                <FormField label="Trigger" id="case-trigger" name="case-trigger" value={caseData.trigger || ''} onChange={() => {}} disabled />
+                <FormField label="Trigger" id="case-trigger" name="case-trigger" value={caseData.notes || caseData.trigger || ''} onChange={() => {}} disabled />
                 <div className="md:col-span-2">
-                <FormField label="Visit Address" id="case-visitAddress" name="case-visitAddress" value={caseData.visitAddress || ''} onChange={() => {}} disabled />
+                <FormField label="Visit Address" id="case-visitAddress" name="case-visitAddress" value={caseData.addressStreet || caseData.visitAddress || caseData.address || ''} onChange={() => {}} disabled />
                 </div>
                 <FormField label="System Contact Number" id="case-systemContactNumber" name="case-systemContactNumber" value={caseData.systemContactNumber || ''} onChange={() => {}} disabled />
                 <FormField label="Customer Calling Code" id="case-customerCallingCode" name="case-customerCallingCode" value={caseData.customerCallingCode || ''} onChange={() => {}} disabled />
