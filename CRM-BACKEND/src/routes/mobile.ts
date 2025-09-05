@@ -74,6 +74,8 @@ router.get('/cases/:caseId/location-history', authenticateToken, validateMobileV
 router.get('/location/trail', authenticateToken, validateMobileVersion, MobileLocationController.getUserLocationTrail);
 
 // Mobile Sync Routes
+// Enterprise sync for 500+ field agents (optimized)
+router.post('/sync/enterprise', authenticateToken, validateMobileVersion, MobileSyncController.enterpriseSync);
 router.post('/sync/upload', authenticateToken, validateMobileVersion, MobileSyncController.uploadSync);
 router.get('/sync/download', authenticateToken, validateMobileVersion, MobileSyncController.downloadSync);
 router.get('/sync/status', authenticateToken, validateMobileVersion, MobileSyncController.getSyncStatus);

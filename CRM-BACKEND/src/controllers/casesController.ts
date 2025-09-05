@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { pool } from '../config/database';
+import { EnterpriseCacheService, CacheKeys } from '../services/enterpriseCacheService';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -59,12 +60,14 @@ const uploadForCaseCreation = multer({
   }
 });
 
-// GET /api/cases - List cases with filtering, sorting, and pagination
+// GET /api/cases - List cases with filtering, sorting, and pagination (Enterprise Enhanced)
 export const getCases = async (req: AuthenticatedRequest, res: Response) => {
+  const startTime = Date.now();
+
   try {
     const {
       page = 1,
-      limit = 10,
+      limit = 50, // Increased default limit for enterprise
       sortBy = 'updatedAt',
       sortOrder = 'desc',
       status,
@@ -73,8 +76,31 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
       clientId,
       priority,
       dateFrom,
-      dateTo
+      dateTo,
+      useCache = 'true' // Allow cache bypass for real-time needs
     } = req.query;
+
+    // Enterprise cache key generation
+    const cacheKey = CacheKeys.userCases(
+      req.user?.id || 'anonymous',
+      Number(page)
+    ) + `:${JSON.stringify(req.query)}`;
+
+    // Try cache first (unless bypassed)
+    if (useCache === 'true') {
+      const cached = await EnterpriseCacheService.get(cacheKey);
+      if (cached) {
+        logger.debug('Cases cache hit', {
+          userId: req.user?.id,
+          page,
+          cacheKey,
+          responseTime: Date.now() - startTime
+        });
+
+        res.set('X-Cache', 'HIT');
+        return res.json(cached);
+      }
+    }
 
     // Build WHERE conditions
     const conditions: string[] = [];
@@ -193,12 +219,16 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
     `;
 
     params.push(parseInt(limit as string), offset);
+
+    // Execute query with performance monitoring
+    const queryStartTime = Date.now();
     const casesResult = await pool.query(casesQuery, params);
+    const queryTime = Date.now() - queryStartTime;
 
     // Calculate pagination info
     const totalPages = Math.ceil(total / parseInt(limit as string));
 
-    res.json({
+    const response = {
       success: true,
       data: casesResult.rows,
       pagination: {
@@ -207,8 +237,40 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
         total,
         totalPages,
       },
+      metadata: {
+        queryTime,
+        totalResponseTime: Date.now() - startTime,
+        cached: false,
+        resultCount: casesResult.rows.length,
+      },
       message: 'Cases retrieved successfully',
+    };
+
+    // Cache the response for future requests (1 minute TTL for high-frequency data)
+    if (useCache === 'true') {
+      EnterpriseCacheService.set(cacheKey, response, 60)
+        .catch(error => logger.error('Failed to cache cases response:', error));
+    }
+
+    // Add performance headers
+    res.set({
+      'X-Cache': 'MISS',
+      'X-Query-Time': queryTime.toString(),
+      'X-Total-Time': (Date.now() - startTime).toString(),
+      'X-Result-Count': casesResult.rows.length.toString(),
     });
+
+    logger.info('Cases retrieved', {
+      userId: req.user?.id,
+      role: req.user?.role,
+      page,
+      limit,
+      total,
+      queryTime,
+      totalTime: Date.now() - startTime,
+    });
+
+    res.json(response);
   } catch (error) {
     logger.error('Error retrieving cases:', error);
     res.status(500).json({
@@ -518,42 +580,227 @@ export const updateCase = async (req: AuthenticatedRequest, res: Response) => {
 export const assignCase = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { assignedToId } = req.body;
+    const { assignedToId, reason } = req.body;
 
-    // Update case assignment
-    const updateQuery = `
-      UPDATE cases
-      SET "assignedTo" = $1, status = 'ASSIGNED', "updatedAt" = NOW()
-      WHERE id = $2
-      RETURNING *
-    `;
+    // Import the service here to avoid circular dependencies
+    const { CaseAssignmentService } = await import('../services/caseAssignmentService');
 
-    const result = await pool.query(updateQuery, [assignedToId, id]);
+    // Use the queue-based assignment service
+    const result = await CaseAssignmentService.assignCase({
+      caseId: id,
+      assignedToId,
+      assignedById: req.user?.id!,
+      reason,
+      priority: 'MEDIUM',
+    });
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Case not found',
-        error: { code: 'NOT_FOUND' },
-      });
-    }
-
-    logger.info('Case assigned', {
+    logger.info('Case assignment queued', {
       userId: req.user?.id,
       caseId: id,
       assignedTo: assignedToId,
+      jobId: result.jobId,
     });
 
     res.json({
       success: true,
-      data: result.rows[0],
-      message: 'Case assigned successfully',
+      data: { jobId: result.jobId },
+      message: 'Case assignment queued successfully',
     });
   } catch (error) {
-    logger.error('Error assigning case:', error);
+    logger.error('Error queueing case assignment:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to assign case',
+      message: 'Failed to queue case assignment',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// POST /api/cases/bulk/assign - Bulk assign cases to a field agent
+export const bulkAssignCases = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { caseIds, assignedToId, reason, priority } = req.body;
+
+    if (!Array.isArray(caseIds) || caseIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Case IDs array is required and cannot be empty',
+        error: { code: 'INVALID_CASE_IDS' },
+      });
+    }
+
+    if (!assignedToId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Assigned user ID is required',
+        error: { code: 'MISSING_ASSIGNED_TO' },
+      });
+    }
+
+    // Import the service here to avoid circular dependencies
+    const { CaseAssignmentService } = await import('../services/caseAssignmentService');
+
+    // Use the queue-based bulk assignment service
+    const result = await CaseAssignmentService.bulkAssignCases({
+      caseIds,
+      assignedToId,
+      assignedById: req.user?.id!,
+      reason,
+      priority: priority || 'MEDIUM',
+    });
+
+    logger.info('Bulk case assignment queued', {
+      userId: req.user?.id,
+      totalCases: caseIds.length,
+      assignedTo: assignedToId,
+      batchId: result.batchId,
+      jobId: result.jobId,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        batchId: result.batchId,
+        jobId: result.jobId,
+        totalCases: caseIds.length,
+      },
+      message: 'Bulk case assignment queued successfully',
+    });
+  } catch (error) {
+    logger.error('Error queueing bulk case assignment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to queue bulk case assignment',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// GET /api/cases/bulk/assign/:batchId/status - Get bulk assignment status
+export const getBulkAssignmentStatus = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { batchId } = req.params;
+
+    // Import the service here to avoid circular dependencies
+    const { CaseAssignmentService } = await import('../services/caseAssignmentService');
+
+    const status = await CaseAssignmentService.getBulkAssignmentStatus(batchId);
+
+    if (!status) {
+      return res.status(404).json({
+        success: false,
+        message: 'Bulk assignment batch not found',
+        error: { code: 'BATCH_NOT_FOUND' },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: status,
+      message: 'Bulk assignment status retrieved successfully',
+    });
+  } catch (error) {
+    logger.error('Error getting bulk assignment status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get bulk assignment status',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// POST /api/cases/:id/reassign - Reassign case to another field agent
+export const reassignCase = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { fromUserId, toUserId, reason } = req.body;
+
+    if (!fromUserId || !toUserId || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'From user ID, to user ID, and reason are required',
+        error: { code: 'MISSING_REQUIRED_FIELDS' },
+      });
+    }
+
+    // Import the service here to avoid circular dependencies
+    const { CaseAssignmentService } = await import('../services/caseAssignmentService');
+
+    // Use the queue-based reassignment service
+    const result = await CaseAssignmentService.reassignCase({
+      caseId: id,
+      fromUserId,
+      toUserId,
+      assignedById: req.user?.id!,
+      reason,
+    });
+
+    logger.info('Case reassignment queued', {
+      userId: req.user?.id,
+      caseId: id,
+      fromUserId,
+      toUserId,
+      jobId: result.jobId,
+    });
+
+    res.json({
+      success: true,
+      data: { jobId: result.jobId },
+      message: 'Case reassignment queued successfully',
+    });
+  } catch (error) {
+    logger.error('Error queueing case reassignment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to queue case reassignment',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// GET /api/cases/:id/assignment-history - Get case assignment history
+export const getCaseAssignmentHistory = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Import the service here to avoid circular dependencies
+    const { CaseAssignmentService } = await import('../services/caseAssignmentService');
+
+    const history = await CaseAssignmentService.getCaseAssignmentHistory(id);
+
+    res.json({
+      success: true,
+      data: history,
+      message: 'Case assignment history retrieved successfully',
+    });
+  } catch (error) {
+    logger.error('Error getting case assignment history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get case assignment history',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// GET /api/cases/analytics/field-agent-workload - Get field agent workload analytics
+export const getFieldAgentWorkload = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    // Import the service here to avoid circular dependencies
+    const { CaseAssignmentService } = await import('../services/caseAssignmentService');
+
+    const workload = await CaseAssignmentService.getFieldAgentWorkload();
+
+    res.json({
+      success: true,
+      data: workload,
+      message: 'Field agent workload retrieved successfully',
+    });
+  } catch (error) {
+    logger.error('Error getting field agent workload:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get field agent workload',
       error: { code: 'INTERNAL_ERROR' },
     });
   }

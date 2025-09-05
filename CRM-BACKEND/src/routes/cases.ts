@@ -3,6 +3,8 @@ import { body, query, param } from 'express-validator';
 import { authenticateToken, requireFieldOrHigher } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
 import { caseRateLimit } from '@/middleware/rateLimiter';
+import { EnterpriseRateLimit, EnterpriseRateLimits } from '../middleware/enterpriseRateLimit';
+import { EnterpriseCache, EnterpriseCacheConfigs, CacheInvalidationPatterns } from '../middleware/enterpriseCache';
 import { validateCaseAccess, validateClientAccess, validateCaseCreationAccess } from '@/middleware/clientAccess';
 import {
   getCases,
@@ -10,7 +12,12 @@ import {
   createCase,
   createCaseWithAttachments,
   updateCase,
-  assignCase
+  assignCase,
+  bulkAssignCases,
+  getBulkAssignmentStatus,
+  reassignCase,
+  getCaseAssignmentHistory,
+  getFieldAgentWorkload
 } from '@/controllers/casesController';
 import { VerificationAttachmentController } from '@/controllers/verificationAttachmentController';
 
@@ -182,6 +189,50 @@ const assignValidation = [
     .trim()
     .notEmpty()
     .withMessage('Assigned user ID is required'),
+  body('reason')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Reason must be less than 500 characters'),
+];
+
+const bulkAssignValidation = [
+  body('caseIds')
+    .isArray({ min: 1, max: 100 })
+    .withMessage('Case IDs must be an array with 1-100 items'),
+  body('caseIds.*')
+    .isUUID()
+    .withMessage('Each case ID must be a valid UUID'),
+  body('assignedToId')
+    .trim()
+    .notEmpty()
+    .withMessage('Assigned user ID is required'),
+  body('reason')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Reason must be less than 500 characters'),
+  body('priority')
+    .optional()
+    .isIn(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+    .withMessage('Priority must be one of: LOW, MEDIUM, HIGH, URGENT'),
+];
+
+const reassignValidation = [
+  body('fromUserId')
+    .trim()
+    .notEmpty()
+    .withMessage('From user ID is required'),
+  body('toUserId')
+    .trim()
+    .notEmpty()
+    .withMessage('To user ID is required'),
+  body('reason')
+    .trim()
+    .notEmpty()
+    .withMessage('Reason is required for reassignment')
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Reason must be between 10 and 500 characters'),
 ];
 
 const noteValidation = [
@@ -227,12 +278,16 @@ const reworkValidation = [
 
 // Core CRUD routes
 router.get('/',
+  EnterpriseRateLimit.roleBasedLimiter(EnterpriseRateLimits.byRole),
+  EnterpriseCache.create(EnterpriseCacheConfigs.caseList),
   listCasesValidation,
   validate,
   getCases
 );
 
 router.post('/',
+  EnterpriseRateLimit.roleBasedLimiter(EnterpriseRateLimits.byRole),
+  EnterpriseCache.invalidate(CacheInvalidationPatterns.caseUpdate),
   createCaseValidation,
   validate,
   validateCaseCreationAccess,
@@ -246,6 +301,8 @@ router.post('/with-attachments',
 );
 
 router.get('/:id',
+  EnterpriseRateLimit.roleBasedLimiter(EnterpriseRateLimits.byRole),
+  EnterpriseCache.create(EnterpriseCacheConfigs.caseDetails),
   [param('id').trim().notEmpty().withMessage('Case ID is required')],
   validate,
   validateCaseAccess,
@@ -291,6 +348,42 @@ router.put('/:id/assign',
   validate,
   validateCaseAccess,
   assignCase
+);
+
+// Bulk assignment routes
+router.post('/bulk/assign',
+  bulkAssignValidation,
+  validate,
+  bulkAssignCases
+);
+
+router.get('/bulk/assign/:batchId/status',
+  [param('batchId').trim().notEmpty().withMessage('Batch ID is required')],
+  validate,
+  getBulkAssignmentStatus
+);
+
+// Reassignment route
+router.post('/:id/reassign',
+  [param('id').trim().notEmpty().withMessage('Case ID is required')],
+  reassignValidation,
+  validate,
+  validateCaseAccess,
+  reassignCase
+);
+
+// Assignment history route
+router.get('/:id/assignment-history',
+  [param('id').trim().notEmpty().withMessage('Case ID is required')],
+  validate,
+  validateCaseAccess,
+  getCaseAssignmentHistory
+);
+
+// Analytics routes
+router.get('/analytics/field-agent-workload',
+  validate,
+  getFieldAgentWorkload
 );
 
 // Verification Images route

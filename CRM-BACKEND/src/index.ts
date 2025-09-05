@@ -7,6 +7,7 @@ import { connectDatabase, disconnectDatabase } from '@/config/database';
 import { connectRedis, disconnectRedis } from '@/config/redis';
 import { initializeQueues, closeQueues } from '@/config/queue';
 import { initializeWebSocket } from '@/websocket/server';
+import { EnterpriseCacheService } from './services/enterpriseCacheService';
 import { runMigrations } from '@/migrations/migrate';
 
 const server = createServer(app);
@@ -32,7 +33,10 @@ const startServer = async (): Promise<void> => {
 
     // Connect to Redis
     await connectRedis();
-    
+
+    // Initialize enterprise cache service
+    await EnterpriseCacheService.initialize();
+
     // Initialize job queues
     await initializeQueues();
     
@@ -77,7 +81,10 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
     
     // Close job queues
     await closeQueues();
-    
+
+    // Close enterprise cache service
+    await EnterpriseCacheService.close();
+
     // Disconnect from Redis
     await disconnectRedis();
     

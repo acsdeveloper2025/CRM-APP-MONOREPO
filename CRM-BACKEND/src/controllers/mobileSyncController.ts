@@ -7,8 +7,65 @@ import {
 import { createAuditLog } from '../utils/auditLogger';
 import { config } from '../config';
 import { query } from '@/config/database';
+import { EnterpriseMobileSyncService } from '../services/enterpriseMobileSyncService';
 
 export class MobileSyncController {
+  /**
+   * Enterprise-scale mobile synchronization for 500+ field agents
+   * Optimized for high-concurrency case assignment operations
+   */
+  static async enterpriseSync(req: Request, res: Response) {
+    try {
+      const { lastSyncTimestamp, deviceId, appVersion, platform } = req.body;
+      const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+
+      if (userRole !== 'FIELD_AGENT') {
+        return res.status(403).json({
+          success: false,
+          message: 'Enterprise sync is only available for field agents',
+          error: {
+            code: 'UNAUTHORIZED_ROLE',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      if (!deviceId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Device ID is required for enterprise sync',
+          error: {
+            code: 'MISSING_DEVICE_ID',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Use enterprise sync service
+      const syncResponse = await EnterpriseMobileSyncService.syncFieldAgentData({
+        userId,
+        lastSyncTimestamp,
+        deviceId,
+        appVersion: appVersion || '1.0.0',
+        platform: platform || 'Android',
+      });
+
+      res.json(syncResponse);
+
+    } catch (error) {
+      console.error('Enterprise sync error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Enterprise sync failed',
+        error: {
+          code: 'ENTERPRISE_SYNC_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+  }
+
   // Upload offline changes from mobile app
   static async uploadSync(req: Request, res: Response) {
     try {

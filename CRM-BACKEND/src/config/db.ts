@@ -6,7 +6,37 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not set');
 }
 
-export const pool = new Pool({ connectionString });
+// Enterprise-scale database pool configuration for 500+ concurrent users
+const getPoolConfig = () => {
+  const totalUsers = parseInt(process.env.TOTAL_CONCURRENT_USERS || '1000');
+
+  // Scale connection pool based on concurrent users
+  // Rule: 1 connection per 10 concurrent users, min 20, max 200
+  const maxConnections = Math.min(Math.max(Math.floor(totalUsers / 10), 20), 200);
+
+  return {
+    connectionString,
+    // Enterprise connection pool settings
+    max: maxConnections, // Maximum number of connections
+    min: Math.floor(maxConnections / 4), // Minimum number of connections (25% of max)
+    idleTimeoutMillis: 30000, // 30 seconds idle timeout
+    connectionTimeoutMillis: 5000, // 5 seconds connection timeout
+    acquireTimeoutMillis: 10000, // 10 seconds acquire timeout
+    // Enterprise performance settings
+    statement_timeout: 30000, // 30 seconds statement timeout
+    query_timeout: 30000, // 30 seconds query timeout
+    application_name: 'CRM-Enterprise-Backend',
+  };
+};
+
+export const pool = new Pool(getPoolConfig());
+
+// Log pool configuration for monitoring
+logger.info('Database pool configured for enterprise scale', {
+  maxConnections: pool.options.max,
+  minConnections: pool.options.min,
+  totalConcurrentUsers: process.env.TOTAL_CONCURRENT_USERS || '1000',
+});
 
 export const query = async <T = any>(text: string, params: any[] = []): Promise<QueryResult<T>> => {
   return pool.query<T>(text, params);
