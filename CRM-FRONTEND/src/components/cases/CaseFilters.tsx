@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search, Filter, X } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { CaseListQuery } from '@/services/cases';
 
 interface CaseFiltersProps {
@@ -26,6 +27,26 @@ export const CaseFilters: React.FC<CaseFiltersProps> = ({
   onClearFilters,
   isLoading,
 }) => {
+  // Local state for search input to prevent focus loss
+  const [searchValue, setSearchValue] = useState(filters.search || '');
+
+  // Debounce search value to prevent excessive API calls
+  const debouncedSearchValue = useDebounce(searchValue, 300);
+
+  // Update filters when debounced search value changes
+  useEffect(() => {
+    if (debouncedSearchValue !== filters.search) {
+      handleFilterChange('search', debouncedSearchValue);
+    }
+  }, [debouncedSearchValue]);
+
+  // Update local search value when filters are cleared
+  useEffect(() => {
+    if (!filters.search && searchValue) {
+      setSearchValue('');
+    }
+  }, [filters.search]);
+
   const handleFilterChange = (key: keyof CaseListQuery, value: string | number | undefined) => {
     // Ensure Select components receive empty string instead of undefined
     let processedValue = value;
@@ -74,8 +95,8 @@ export const CaseFilters: React.FC<CaseFiltersProps> = ({
               <Input
                 id="search"
                 placeholder="Search cases..."
-                value={filters.search || ''}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
                 className="pl-10"
                 disabled={isLoading}
               />

@@ -204,7 +204,7 @@ class CaseService {
   // Fetch cases from backend API
   private async fetchCasesFromAPI(): Promise<Case[]> {
     try {
-      const result = await apiService.request('/mobile/cases', {
+      const result = await apiService.request('/mobile/cases?limit=200', {
         method: 'GET',
         requireAuth: true,
       });
