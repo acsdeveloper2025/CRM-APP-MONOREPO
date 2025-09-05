@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dataCleanupService, CleanupResult } from '../services/dataCleanupService';
+import { useCases } from '../context/CaseContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface CleanupStats {
   lastCleanup: string;
@@ -16,6 +18,9 @@ const DataCleanupManager: React.FC = () => {
   const [lastCleanupResult, setLastCleanupResult] = useState<CleanupResult | null>(null);
   const [showLogs, setShowLogs] = useState(false);
   const [cleanupLogs, setCleanupLogs] = useState<CleanupResult[]>([]);
+  const [isCacheClearing, setIsCacheClearing] = useState(false);
+
+  const { syncCases } = useCases();
 
   useEffect(() => {
     loadCleanupData();
@@ -65,7 +70,7 @@ const DataCleanupManager: React.FC = () => {
     try {
       await dataCleanupService.setCleanupEnabled(enabled);
       setIsCleanupEnabled(enabled);
-      
+
       if (enabled) {
         alert('Automatic cleanup enabled. Old case data will be cleaned up daily.');
       } else {
@@ -74,6 +79,41 @@ const DataCleanupManager: React.FC = () => {
     } catch (error) {
       console.error('Failed to toggle cleanup:', error);
       alert('Failed to update cleanup settings.');
+    }
+  };
+
+  const handleClearCacheAndSync = async () => {
+    setIsCacheClearing(true);
+    try {
+      console.log('🧹 Starting cache clear and sync...');
+
+      // Clear case cache directly using AsyncStorage
+      const keys = await AsyncStorage.getAllKeys();
+      const caseKeys = keys.filter((key: string) =>
+        key.startsWith('case_') ||
+        key.startsWith('caseList_') ||
+        key.startsWith('caseDetails_') ||
+        key.startsWith('cases') ||
+        key === 'LOCAL_STORAGE_KEY' // The key used by caseService
+      );
+
+      if (caseKeys.length > 0) {
+        await AsyncStorage.multiRemove(caseKeys);
+        console.log(`✅ ${caseKeys.length} cached cases cleared`);
+      }
+
+      console.log('✅ Cache cleared successfully');
+
+      // Trigger fresh sync from server
+      console.log('🔄 Syncing fresh data from server...');
+      await syncCases();
+
+      alert('✅ Cache cleared and fresh data synced!\n\nThe app now shows the latest data from the server.');
+    } catch (error) {
+      console.error('❌ Cache clear and sync failed:', error);
+      alert('❌ Failed to clear cache and sync. Please try again.');
+    } finally {
+      setIsCacheClearing(false);
     }
   };
 
@@ -157,21 +197,35 @@ const DataCleanupManager: React.FC = () => {
       )}
 
       {/* Cleanup Controls */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <button
-          onClick={handleManualCleanup}
-          disabled={isLoading}
-          className="flex-1 px-4 py-2 bg-brand-primary hover:bg-brand-secondary text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? '🧹 Cleaning...' : '🧹 Run Manual Cleanup'}
-        </button>
-        
-        <button
-          onClick={() => setShowLogs(!showLogs)}
-          className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
-        >
-          {showLogs ? '📋 Hide Logs' : '📋 View Cleanup Logs'}
-        </button>
+      <div className="flex flex-col gap-4">
+        {/* Primary Actions Row */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={handleManualCleanup}
+            disabled={isLoading || isCacheClearing}
+            className="flex-1 px-4 py-2 bg-brand-primary hover:bg-brand-secondary text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? '🧹 Cleaning...' : '🧹 Run Manual Cleanup'}
+          </button>
+
+          <button
+            onClick={handleClearCacheAndSync}
+            disabled={isLoading || isCacheClearing}
+            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCacheClearing ? '🔄 Syncing...' : '🔄 Clear Cache & Sync'}
+          </button>
+        </div>
+
+        {/* Secondary Actions Row */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={() => setShowLogs(!showLogs)}
+            className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+          >
+            {showLogs ? '📋 Hide Logs' : '📋 View Cleanup Logs'}
+          </button>
+        </div>
       </div>
 
       {/* Last Cleanup Result */}
@@ -255,11 +309,12 @@ const DataCleanupManager: React.FC = () => {
       <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
         <h4 className="text-blue-400 font-semibold mb-2">ℹ️ How Data Cleanup Works</h4>
         <div className="text-blue-300 text-sm space-y-1">
-          <p>• Automatically deletes case data older than 45 days</p>
-          <p>• Runs daily at 2:00 AM to check for old data</p>
+          <p>• <strong>Manual Cleanup:</strong> Deletes case data older than 45 days</p>
+          <p>• <strong>Auto Cleanup:</strong> Runs daily at 2:00 AM to check for old data</p>
+          <p>• <strong>Clear Cache & Sync:</strong> Clears all cached data and fetches fresh data from server</p>
           <p>• Cleans up: case forms, auto-saves, cached files, and temporary data</p>
           <p>• Protects currently active cases from deletion</p>
-          <p>• You can run manual cleanup anytime or disable automatic cleanup</p>
+          <p>• Use "Clear Cache & Sync" if you see outdated case information</p>
         </div>
       </div>
     </div>

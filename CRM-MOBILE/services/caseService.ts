@@ -69,7 +69,18 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
     'NOC': VerificationType.NOC,
     'CONNECTOR': VerificationType.Connector,
     'PROPERTY_APF': VerificationType.PropertyAPF,
-    'PROPERTY_INDIVIDUAL': VerificationType.PropertyIndividual
+    'PROPERTY_INDIVIDUAL': VerificationType.PropertyIndividual,
+    // Map backend verification type names to mobile types (exact database names)
+    'Residence Verification': VerificationType.Residence,
+    'Office Verification': VerificationType.Office,
+    'Business Verification': VerificationType.Business,
+    'Residence cum office Verification': VerificationType.ResidenceCumOffice, // Exact DB name
+    'Builder Verification': VerificationType.Builder,
+    'Noc Verification': VerificationType.NOC, // Exact DB name (lowercase 'oc')
+    'NOC Verification': VerificationType.NOC, // Alternative uppercase
+    'DSA DST & connector Verification': VerificationType.Connector,
+    'Property (APF) Verification': VerificationType.PropertyAPF,
+    'Property (Individual) Verification': VerificationType.PropertyIndividual
   };
 
   return {
@@ -85,7 +96,7 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
     isSaved: false,
     createdAt: backendCase.createdAt,
     updatedAt: backendCase.updatedAt,
-    verificationType: verificationTypeMap[backendCase.verificationType || ''] || VerificationType.Residence,
+    verificationType: verificationTypeMap[backendCase.verificationTypeName || backendCase.verificationType || ''] || VerificationType.Residence,
     verificationOutcome: null,
     priority: priorityMap[backendCase.priority || 'MEDIUM'] || 2,
 
@@ -100,12 +111,21 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
     clientId: backendCase.clientId,
     clientName: backendCase.clientName,
     clientCode: backendCase.clientCode,
+    client: backendCase.client || {
+      id: backendCase.clientId,
+      name: backendCase.clientName,
+      code: backendCase.clientCode
+    },
 
     // Field 4: Product
     productId: backendCase.productId,
     productName: backendCase.productName,
     productCode: backendCase.productCode,
-    product: backendCase.productName, // Legacy compatibility
+    product: backendCase.product || {
+      id: backendCase.productId,
+      name: backendCase.productName,
+      code: backendCase.productCode
+    },
 
     // Field 5: Verification Type
     verificationTypeId: backendCase.verificationTypeId,
@@ -118,8 +138,8 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
 
     // Field 7: Created By Backend User
     createdByBackendUser: backendCase.createdByBackendUser,
-    createdByBackendUserName: backendCase.createdByBackendUserName,
-    createdByBackendUserEmail: backendCase.createdByBackendUserEmail,
+    createdByBackendUserName: backendCase.createdByUserName, // Fixed: backend returns createdByUserName
+    createdByBackendUserEmail: backendCase.createdByUserEmail,
 
     // Field 8: Backend Contact Number
     backendContactNumber: backendCase.backendContactNumber,
@@ -127,19 +147,22 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
 
     // Field 9: Assign to Field User
     assignedTo: backendCase.assignedTo,
-    assignedToName: backendCase.assignedToName,
-    assignedToEmail: backendCase.assignedToEmail,
+    assignedToName: backendCase.assignedToUserName, // Fixed: backend returns assignedToUserName
+    assignedToFieldUser: backendCase.assignedToFieldUser, // Backend sends this field
+    assignedToEmail: backendCase.assignedToUserEmail,
 
     // Field 10: Priority (already mapped above)
 
     // Field 11: Trigger
     trigger: backendCase.trigger,
+    notes: backendCase.notes, // Backend sends trigger as notes field
 
     // Field 12: Customer Calling Code
     customerCallingCode: backendCase.customerCallingCode,
 
     // Field 13: Address
     address: backendCase.address,
+    addressStreet: backendCase.addressStreet, // Backend sends address as addressStreet
     visitAddress: backendCase.address, // Legacy compatibility
 
     // Attachments will be loaded separately when needed (no mock data)
@@ -237,7 +260,17 @@ class CaseService {
     return [];
   }
 
-  async getCases(): Promise<Case[]> {
+  async getCases(forceFresh: boolean = false): Promise<Case[]> {
+    // If forcing fresh data, skip local storage
+    if (forceFresh) {
+      console.log("🔄 Forcing fresh data from API");
+      if (this.useRealAPI) {
+        return this.fetchCasesFromAPI();
+      } else {
+        return this.getMockCases();
+      }
+    }
+
     // First try to get cases from local storage
     const localCases = await this.readFromStorage();
 
@@ -282,14 +315,28 @@ class CaseService {
     console.log("Syncing with server...");
 
     if (this.useRealAPI) {
-      // Fetch fresh data from API
-      return this.fetchCasesFromAPI();
+      // Clear local cache first to force fresh data
+      await this.clearCache();
+      console.log("🗑️ Cleared local cache");
+
+      // Fetch fresh data from API and save to storage
+      const freshCases = await this.fetchCasesFromAPI();
+      await this.writeToStorage(freshCases);
+      console.log(`💾 Saved ${freshCases.length} fresh cases to storage`);
+
+      return freshCases;
     } else {
       // Simulate sync for mock data
       await new Promise(resolve => setTimeout(resolve, 1500));
       console.log("Sync complete (mock mode).");
       return this.getMockCases();
     }
+  }
+
+  // Clear local cache
+  async clearCache(): Promise<void> {
+    await AsyncStorage.removeItem(LOCAL_STORAGE_KEY);
+    console.log("🗑️ Local cache cleared");
   }
 
   /**

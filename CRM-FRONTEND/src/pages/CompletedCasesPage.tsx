@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ import { useCases } from '@/hooks/useCases';
 import { useFieldUsers } from '@/hooks/useUsers';
 import { useClients } from '@/hooks/useClients';
 import { Download, RefreshCw, Search, Filter, X, CheckCircle } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { CaseListQuery } from '@/services/cases';
 
 export const CompletedCasesPage: React.FC = () => {
@@ -26,6 +27,13 @@ export const CompletedCasesPage: React.FC = () => {
     limit: 20,
   });
 
+  // Local state for search input to prevent focus loss
+  const [searchValue, setSearchValue] = useState(filters.search || '');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Debounce search value to prevent excessive API calls
+  const debouncedSearchValue = useDebounce(searchValue, 300);
+
   const { data: casesData, isLoading, refetch } = useCases(filters);
   const { data: fieldUsers } = useFieldUsers();
   const { data: clientsData } = useClients();
@@ -34,15 +42,46 @@ export const CompletedCasesPage: React.FC = () => {
   const pagination = casesData?.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 };
   const clients = clientsData?.data || [];
 
-  const handleFiltersChange = (newFilters: Partial<CaseListQuery>) => {
+  // Update filters when debounced search value changes
+  useEffect(() => {
+    if (debouncedSearchValue !== filters.search) {
+      setFilters(prev => ({
+        ...prev,
+        search: debouncedSearchValue || undefined,
+        page: 1, // Reset to first page when filters change
+      }));
+    }
+  }, [debouncedSearchValue, filters.search]);
+
+  // Memoize the filter change handler to prevent unnecessary re-renders
+  const handleFiltersChange = useCallback((newFilters: Partial<CaseListQuery>) => {
     setFilters(prev => ({
       ...prev,
       ...newFilters,
       page: 1, // Reset to first page when filters change
     }));
-  };
+  }, []);
+
+  // Update local search value when filters are cleared
+  useEffect(() => {
+    if (!filters.search && searchValue) {
+      setSearchValue('');
+    }
+  }, [filters.search, searchValue]);
+
+  // Handle search input change with focus preservation
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(e.target.value);
+    // Ensure focus is maintained
+    setTimeout(() => {
+      if (searchInputRef.current && document.activeElement !== searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
+  }, []);
 
   const handleClearFilters = () => {
+    setSearchValue(''); // Clear local search state
     setFilters({
       status: 'COMPLETED',
       page: 1,
@@ -183,10 +222,11 @@ export const CompletedCasesPage: React.FC = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
+                  ref={searchInputRef}
                   id="search"
                   placeholder="Search cases..."
-                  value={filters.search || ''}
-                  onChange={(e) => handleFiltersChange({ search: e.target.value })}
+                  value={searchValue}
+                  onChange={handleSearchChange}
                   className="pl-10"
                   disabled={isLoading}
                 />

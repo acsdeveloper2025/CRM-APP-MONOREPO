@@ -231,42 +231,43 @@ export class MobileSyncController {
       const mobileCases: MobileCaseResponse[] = updatedCases.map(caseItem => ({
         id: caseItem.id,
         caseId: caseItem.caseId, // User-friendly auto-incrementing case ID
-        title: caseItem.title,
-        description: caseItem.description,
+        title: caseItem.customerName || 'Verification Case',
+        description: `${caseItem.verificationTypeName || 'Verification'} for ${caseItem.customerName}`,
         customerName: caseItem.customerName || caseItem.applicantName, // Customer Name
         customerCallingCode: caseItem.customerCallingCode, // Customer Calling Code
         customerPhone: caseItem.customerPhone,
         customerEmail: caseItem.customerEmail,
-        addressStreet: caseItem.addressStreet,
-        addressCity: caseItem.addressCity,
-        addressState: caseItem.addressState,
-        addressPincode: caseItem.addressPincode,
+        // Fix address mapping - use single address field from database
+        addressStreet: caseItem.address || '',
+        addressCity: '',
+        addressState: '',
+        addressPincode: caseItem.pincode || '',
         latitude: caseItem.latitude,
         longitude: caseItem.longitude,
-        status: caseItem.status,
-        priority: caseItem.priority, // Priority
+        status: caseItem.status ? caseItem.status.toUpperCase().replace(/\s+/g, '_') : 'ASSIGNED',
+        priority: caseItem.priority || 2, // Priority
         assignedAt: new Date(caseItem.createdAt).toISOString(),
         updatedAt: new Date(caseItem.updatedAt).toISOString(),
         completedAt: caseItem.completedAt ? new Date(caseItem.completedAt).toISOString() : undefined,
         notes: caseItem.trigger, // TRIGGER field
-        verificationType: caseItem.verificationType,
+        verificationType: caseItem.verificationTypeName || caseItem.verificationType,
         verificationOutcome: caseItem.verificationOutcome,
         applicantType: caseItem.applicantType, // Applicant Type
         backendContactNumber: caseItem.backendContactNumber, // Backend Contact Number
         createdByBackendUser: caseItem.createdByUserName, // Created By Backend User
         assignedToFieldUser: caseItem.assignedToUserName, // Assign to Field User
         client: {
-          id: caseItem.clientId || '',
+          id: caseItem.clientId ? String(caseItem.clientId) : '',
           name: caseItem.clientName || '', // Client
           code: caseItem.clientCode || '',
         },
         product: caseItem.productId ? {
-          id: caseItem.productId,
+          id: caseItem.productId ? String(caseItem.productId) : '',
           name: caseItem.productName || '', // Product
           code: caseItem.productCode || '',
         } : undefined,
         verificationTypeDetails: caseItem.verificationTypeId ? {
-          id: caseItem.verificationTypeId,
+          id: caseItem.verificationTypeId ? String(caseItem.verificationTypeId) : '',
           name: caseItem.verificationTypeName || '', // Verification Type
           code: caseItem.verificationTypeCode || '',
         } : undefined,

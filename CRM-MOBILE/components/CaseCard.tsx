@@ -303,6 +303,17 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
     });
   };
 
+  const getPriorityText = (priority: number | string): string => {
+    const priorityNum = typeof priority === 'string' ? parseInt(priority) : priority;
+    switch (priorityNum) {
+      case 1: return 'Low';
+      case 2: return 'Medium';
+      case 3: return 'High';
+      case 4: return 'Urgent';
+      default: return 'Medium';
+    }
+  };
+
   const getTimestampInfo = () => {
       if (caseData.isSaved) {
           return { label: 'Saved', value: formatDate(caseData.savedAt) };
@@ -530,7 +541,7 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                   {/* 4. Address */}
                   <div className="mb-2">
                     <p className="text-sm text-medium-text">
-                      📍 {caseData.visitAddress || caseData.address || 'Address not available'}
+                      📍 {caseData.addressStreet || caseData.visitAddress || caseData.address || 'Address not available'}
                     </p>
                   </div>
               </div>
@@ -848,19 +859,19 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                 {/* 3. Client */}
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Client *</h4>
-                    <p>{caseData.clientName || 'N/A'}</p>
+                    <p>{caseData.client?.name || caseData.clientName || 'N/A'}</p>
                 </div>
 
                 {/* 4. Product */}
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Product *</h4>
-                    <p>{caseData.productName || caseData.product || 'N/A'}</p>
+                    <p>{caseData.product?.name || caseData.productName || caseData.product || 'N/A'}</p>
                 </div>
 
                 {/* 5. Verification Type */}
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Verification Type *</h4>
-                    <p>{caseData.verificationType || 'N/A'}</p>
+                    <p>{caseData.verificationTypeName || caseData.verificationType || 'N/A'}</p>
                 </div>
 
                 {/* 6. Applicant Type */}
@@ -872,7 +883,7 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                 {/* 7. Created By Backend User */}
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Created By Backend User *</h4>
-                    <p>{caseData.createdByBackendUser || 'N/A'}</p>
+                    <p>{caseData.createdByBackendUserName || caseData.createdByBackendUser || 'N/A'}</p>
                 </div>
 
                 {/* 8. Backend Contact Number */}
@@ -884,19 +895,19 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                 {/* 9. Assign to Field User */}
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Assign to Field User *</h4>
-                    <p>{caseData.assignedToName || 'N/A'}</p>
+                    <p>{caseData.assignedToFieldUser || caseData.assignedToName || 'N/A'}</p>
                 </div>
 
                 {/* 10. Priority */}
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Priority *</h4>
-                    <p>{caseData.priority || 'N/A'}</p>
+                    <p>{getPriorityText(caseData.priority) || 'N/A'}</p>
                 </div>
 
                 {/* 11. TRIGGER */}
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">TRIGGER *</h4>
-                    <p>{caseData.trigger || caseData.notes || 'N/A'}</p>
+                    <p>{caseData.notes || caseData.trigger || 'N/A'}</p>
                 </div>
 
                 {/* 12. Customer Calling Code */}
@@ -908,7 +919,7 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                 {/* 13. Address */}
                 <div className="sm:col-span-2">
                     <h4 className="font-bold text-sm text-medium-text">Address *</h4>
-                    <p>{caseData.visitAddress || caseData.address || 'N/A'}</p>
+                    <p>{caseData.addressStreet || caseData.visitAddress || caseData.address || 'N/A'}</p>
                 </div>
             </div>
              <div className="flex justify-end pt-4">

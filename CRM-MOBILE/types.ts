@@ -1746,12 +1746,21 @@ export interface Case {
   clientId?: number; // Client ID from backend
   clientName?: string; // Client name from backend JOIN
   clientCode?: string; // Client code from backend JOIN
+  client?: {
+    id: string;
+    name: string;
+    code: string;
+  };
 
   // Field 4: Product
   productId?: number; // Product ID from backend
   productName?: string; // Product name from backend JOIN
   productCode?: string; // Product code from backend JOIN
-  product?: string; // Legacy field for backward compatibility
+  product?: string | {
+    id: string;
+    name: string;
+    code: string;
+  }; // Legacy field for backward compatibility
 
   // Field 5: Verification Type (already available)
   verificationType: VerificationType;
@@ -1775,6 +1784,7 @@ export interface Case {
   // Field 9: Assign to Field User
   assignedTo?: string; // Assigned user ID
   assignedToName?: string; // Assigned user name from JOIN
+  assignedToFieldUser?: string; // Assigned field user name from backend
   assignedToEmail?: string; // Assigned user email from JOIN
 
   // Field 10: Priority (already available)
@@ -1788,6 +1798,7 @@ export interface Case {
 
   // Field 13: Address (already available as visitAddress)
   address?: string; // Direct field from backend
+  addressStreet?: string; // Address street from backend
   visitAddress?: string; // Legacy field for backward compatibility
 
   // Legacy fields maintained for backward compatibility
