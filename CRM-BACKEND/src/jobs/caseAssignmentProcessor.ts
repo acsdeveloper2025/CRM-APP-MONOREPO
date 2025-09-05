@@ -71,30 +71,44 @@ async function processSingleAssignment(
   try {
     await client.query('BEGIN');
 
-    // Get current case details
+    // Get current case details (separate queries to avoid FOR UPDATE with LEFT JOIN)
     const caseQuery = `
-      SELECT 
-        c.id,
-        c."caseId",
-        c."customerName",
-        c."assignedTo",
-        c.status,
-        prev_user.name as "previousAssigneeName",
-        prev_user.email as "previousAssigneeEmail"
-      FROM cases c
-      LEFT JOIN users prev_user ON c."assignedTo" = prev_user.id
-      WHERE c.id = $1
+      SELECT
+        id,
+        "caseId",
+        "customerName",
+        "assignedTo",
+        status
+      FROM cases
+      WHERE id = $1
       FOR UPDATE
     `;
-    
+
     const caseResult = await client.query(caseQuery, [caseId]);
-    
+
     if (caseResult.rows.length === 0) {
       throw new Error(`Case ${caseId} not found`);
     }
 
     const caseData = caseResult.rows[0];
     const previousAssignee = caseData.assignedTo;
+
+    // Get previous assignee details if exists
+    let previousAssigneeName = null;
+    let previousAssigneeEmail = null;
+
+    if (previousAssignee) {
+      const prevUserQuery = `
+        SELECT name, email
+        FROM users
+        WHERE id = $1
+      `;
+      const prevUserResult = await client.query(prevUserQuery, [previousAssignee]);
+      if (prevUserResult.rows.length > 0) {
+        previousAssigneeName = prevUserResult.rows[0].name;
+        previousAssigneeEmail = prevUserResult.rows[0].email;
+      }
+    }
 
     // Get new assignee details
     const userQuery = `
@@ -136,7 +150,7 @@ async function processSingleAssignment(
       details: {
         caseId: caseData.caseId,
         customerName: caseData.customerName,
-        previousAssignee: caseData.previousAssigneeName,
+        previousAssignee: previousAssigneeName,
         newAssignee: newAssignee.name,
         reason: reason || 'No reason provided',
       },
@@ -145,16 +159,20 @@ async function processSingleAssignment(
     // Insert assignment history record
     const historyQuery = `
       INSERT INTO case_assignment_history (
-        "caseUUID", "fromUserId", "toUserId", "assignedById",
-        reason, "assignedAt", "batchId"
-      ) VALUES ($1, $2, $3, $4, $5, NOW(), $6)
+        "caseUUID", "case_id", "fromUserId", "toUserId", "assignedById", "assignedBy",
+        "previousAssignee", "newAssignee", reason, "assignedAt", "batchId"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10)
     `;
 
     await client.query(historyQuery, [
       caseId,
+      caseId,           // case_id column (NOT NULL) - same as caseUUID
       previousAssignee,
       assignedToId,
       assignedById,
+      assignedById,     // assignedBy column (NOT NULL)
+      previousAssignee, // previousAssignee column
+      assignedToId,     // newAssignee column (NOT NULL)
       reason || 'Case assignment',
       null, // No batch ID for single assignment
     ]);

@@ -24,7 +24,10 @@ import {
   getUserProductAssignments,
   assignProductsToUser,
   removeProductAssignment,
-  bulkUserOperation
+  bulkUserOperation,
+  generateTemporaryPassword,
+  changePassword,
+  resetPassword
 } from '@/controllers/usersController';
 
 const router = express.Router();
@@ -403,14 +406,43 @@ router.post('/:id/activate',
   activateUser
 );
 
-router.post('/:id/deactivate', 
-  authenticateToken, 
+router.post('/:id/deactivate',
+  authenticateToken,
   [
     param('id').trim().notEmpty().withMessage('User ID is required'),
     body('reason').optional().trim().isLength({ max: 500 }).withMessage('Reason must be less than 500 characters')
-  ], 
-  validate, 
+  ],
+  validate,
   deactivateUser
+);
+
+// Password management routes
+router.post('/:id/generate-temp-password',
+  authenticateToken,
+  [param('id').trim().notEmpty().withMessage('User ID is required')],
+  validate,
+  generateTemporaryPassword
+);
+
+router.post('/:id/change-password',
+  authenticateToken,
+  [
+    param('id').trim().notEmpty().withMessage('User ID is required'),
+    body('currentPassword').notEmpty().withMessage('Current password is required'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long')
+  ],
+  validate,
+  changePassword
+);
+
+router.post('/reset-password',
+  authenticateToken,
+  [
+    body('username').notEmpty().withMessage('Username is required'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long')
+  ],
+  validate,
+  resetPassword
 );
 
 export default router;

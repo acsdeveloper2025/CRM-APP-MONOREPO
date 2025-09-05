@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { createClient, RedisClientType, RedisClusterType, createCluster } from 'redis';
 import { config } from '../config';
 import { logger } from '../config/logger';
 
@@ -6,8 +6,8 @@ import { logger } from '../config/logger';
 const redisUrl = new URL(config.redisUrl);
 
 export class EnterpriseCacheService {
-  private static redis: Redis;
-  private static clusterRedis: Redis.Cluster | null = null;
+  private static redis: RedisClientType;
+  private static clusterRedis: RedisClusterType | null = null;
 
   /**
    * Initialize enterprise Redis cache with clustering support
@@ -22,48 +22,40 @@ export class EnterpriseCacheService {
         const clusterNodes = process.env.REDIS_CLUSTER_NODES?.split(',') || [
           `${redisUrl.hostname}:${redisUrl.port}`
         ];
-        
-        this.clusterRedis = new Redis.Cluster(
-          clusterNodes.map(node => {
+
+        this.clusterRedis = createCluster({
+          rootNodes: clusterNodes.map(node => {
             const [host, port] = node.split(':');
-            return { host, port: parseInt(port) || 6379 };
+            return {
+              url: `redis://${config.redisPassword ? `:${config.redisPassword}@` : ''}${host}:${parseInt(port) || 6379}`
+            };
           }),
-          {
-            redisOptions: {
-              password: config.redisPassword,
+          defaults: {
+            password: config.redisPassword,
+            socket: {
               connectTimeout: 10000,
-              lazyConnect: true,
-              maxRetriesPerRequest: 3,
-              retryDelayOnFailover: 100,
+              family: 4,
+              keepAlive: true,
             },
-            enableOfflineQueue: false,
-            maxRedirections: 16,
-            retryDelayOnFailover: 100,
-            scaleReads: 'slave',
-          }
-        );
-        
+          },
+        });
+
+        await this.clusterRedis.connect();
         this.redis = this.clusterRedis as any;
         logger.info('Redis Cluster initialized for enterprise scale');
       } else {
         // Single Redis instance with enterprise optimizations
-        this.redis = new Redis({
-          host: redisUrl.hostname,
-          port: parseInt(redisUrl.port) || 6379,
+        this.redis = createClient({
+          url: config.redisUrl,
           password: config.redisPassword,
-          // Enterprise connection settings
-          connectTimeout: 10000,
-          lazyConnect: true,
-          maxRetriesPerRequest: 3,
-          retryDelayOnFailover: 100,
-          enableOfflineQueue: false,
-          // Connection pool settings for high concurrency
-          family: 4,
-          keepAlive: true,
-          // Memory optimization
-          maxMemoryPolicy: 'allkeys-lru',
+          socket: {
+            connectTimeout: 10000,
+            family: 4,
+            keepAlive: true,
+          },
         });
-        
+
+        await this.redis.connect();
         logger.info('Redis single instance initialized for enterprise scale');
       }
 
@@ -83,8 +75,8 @@ export class EnterpriseCacheService {
   static async get<T>(key: string): Promise<T | null> {
     try {
       const data = await this.redis.get(key);
-      if (!data) return null;
-      
+      if (!data || typeof data !== 'string') return null;
+
       return JSON.parse(data) as T;
     } catch (error) {
       logger.error('Cache get error:', { key, error });
@@ -98,7 +90,7 @@ export class EnterpriseCacheService {
   static async set(key: string, value: any, ttlSeconds: number = 3600): Promise<boolean> {
     try {
       const serialized = JSON.stringify(value);
-      await this.redis.setex(key, ttlSeconds, serialized);
+      await this.redis.setEx(key, ttlSeconds, serialized);
       return true;
     } catch (error) {
       logger.error('Cache set error:', { key, error });
@@ -125,10 +117,10 @@ export class EnterpriseCacheService {
   static async mget<T>(keys: string[]): Promise<(T | null)[]> {
     try {
       if (keys.length === 0) return [];
-      
-      const values = await this.redis.mget(...keys);
+
+      const values = await this.redis.mGet(keys);
       return values.map(value => {
-        if (!value) return null;
+        if (!value || typeof value !== 'string') return null;
         try {
           return JSON.parse(value) as T;
         } catch {
@@ -146,14 +138,14 @@ export class EnterpriseCacheService {
    */
   static async mset(keyValuePairs: Array<{ key: string; value: any; ttl?: number }>): Promise<boolean> {
     try {
-      const pipeline = this.redis.pipeline();
-      
+      const multi = this.redis.multi();
+
       keyValuePairs.forEach(({ key, value, ttl = 3600 }) => {
         const serialized = JSON.stringify(value);
-        pipeline.setex(key, ttl, serialized);
+        multi.setEx(key, ttl, serialized);
       });
-      
-      await pipeline.exec();
+
+      await multi.exec();
       return true;
     } catch (error) {
       logger.error('Cache mset error:', { keyValuePairs, error });
@@ -166,12 +158,12 @@ export class EnterpriseCacheService {
    */
   static async increment(key: string, ttlSeconds: number = 3600): Promise<number> {
     try {
-      const pipeline = this.redis.pipeline();
-      pipeline.incr(key);
-      pipeline.expire(key, ttlSeconds);
-      
-      const results = await pipeline.exec();
-      return results?.[0]?.[1] as number || 0;
+      const multi = this.redis.multi();
+      multi.incr(key);
+      multi.expire(key, ttlSeconds);
+
+      const results = await multi.exec();
+      return (results?.[0] as unknown as number) || 0;
     } catch (error) {
       logger.error('Cache increment error:', { key, error });
       return 0;
@@ -183,20 +175,7 @@ export class EnterpriseCacheService {
    */
   static async getKeysByPattern(pattern: string, limit: number = 1000): Promise<string[]> {
     try {
-      if (this.clusterRedis) {
-        // For cluster, scan all nodes
-        const allKeys: string[] = [];
-        const nodes = this.clusterRedis.nodes('master');
-        
-        for (const node of nodes) {
-          const keys = await this.scanKeys(node, pattern, limit);
-          allKeys.push(...keys);
-        }
-        
-        return allKeys.slice(0, limit);
-      } else {
-        return await this.scanKeys(this.redis, pattern, limit);
-      }
+      return await this.scanKeys(this.redis, pattern, limit);
     } catch (error) {
       logger.error('Cache getKeysByPattern error:', { pattern, error });
       return [];
@@ -206,18 +185,21 @@ export class EnterpriseCacheService {
   /**
    * Scan keys using SCAN command (memory efficient)
    */
-  private static async scanKeys(redis: Redis, pattern: string, limit: number): Promise<string[]> {
+  private static async scanKeys(redis: RedisClientType, pattern: string, limit: number): Promise<string[]> {
     const keys: string[] = [];
-    let cursor = '0';
-    
-    do {
-      const result = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
-      cursor = result[0];
-      keys.push(...result[1]);
-      
+
+    for await (const key of redis.scanIterator({
+      MATCH: pattern,
+      COUNT: 100
+    })) {
+      if (typeof key === 'string') {
+        keys.push(key);
+      } else if (Array.isArray(key)) {
+        keys.push(...key);
+      }
       if (keys.length >= limit) break;
-    } while (cursor !== '0');
-    
+    }
+
     return keys.slice(0, limit);
   }
 
@@ -235,7 +217,7 @@ export class EnterpriseCacheService {
       
       for (let i = 0; i < keys.length; i += batchSize) {
         const batch = keys.slice(i, i + batchSize);
-        await this.redis.del(...batch);
+        await this.redis.del(batch);
         deletedCount += batch.length;
       }
       
@@ -258,7 +240,7 @@ export class EnterpriseCacheService {
       return {
         memory: this.parseRedisInfo(info),
         keyspace: this.parseRedisInfo(keyspace),
-        connected: this.redis.status === 'ready',
+        connected: this.redis.isReady,
         cluster: !!this.clusterRedis,
       };
     } catch (error) {
@@ -307,8 +289,12 @@ export class EnterpriseCacheService {
   static async close(): Promise<void> {
     try {
       if (this.redis) {
-        await this.redis.quit();
+        await this.redis.disconnect();
         logger.info('Enterprise cache service closed');
+      }
+      if (this.clusterRedis) {
+        await this.clusterRedis.disconnect();
+        logger.info('Enterprise cache cluster service closed');
       }
     } catch (error) {
       logger.error('Error closing cache service:', error);

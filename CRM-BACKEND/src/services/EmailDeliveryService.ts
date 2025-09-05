@@ -63,7 +63,7 @@ export class EmailDeliveryService {
 
   private async initializeTransporter(): Promise<void> {
     if (!this.transporter) {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: this.config.host,
         port: this.config.port,
         secure: this.config.secure,

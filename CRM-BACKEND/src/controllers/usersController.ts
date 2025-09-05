@@ -4,6 +4,7 @@ import { query } from '@/config/database';
 import { logger } from '@/config/logger';
 import { AuthenticatedRequest } from '@/middleware/auth';
 import type { Role } from '@/types/auth';
+import { EmailDeliveryService } from '@/services/EmailDeliveryService';
 
 
 // GET /api/users - List users with pagination and filters
@@ -1219,6 +1220,259 @@ export const removeProductAssignment = async (req: AuthenticatedRequest, res: Re
     res.status(500).json({
       success: false,
       message: 'Internal server error',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// POST /api/users/:id/generate-temp-password - Generate temporary password
+export const generateTemporaryPassword = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user exists
+    const userCheck = await query(
+      'SELECT id, name, username, email FROM users WHERE id = $1',
+      [id]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    const user = userCheck.rows[0];
+
+    // Generate a temporary password (8 characters: letters + numbers)
+    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-2).toUpperCase();
+
+    // Hash the temporary password
+    const hashedPassword = await bcrypt.hash(tempPassword, 12);
+
+    // Update user's password
+    await query(
+      'UPDATE users SET "passwordHash" = $1, password = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $2',
+      [hashedPassword, id]
+    );
+
+    // Send email with temporary password
+    try {
+      const emailService = EmailDeliveryService.getInstance();
+      const emailResult = await emailService.sendEmail({
+        to: user.email,
+        subject: 'Password Reset - CRM System',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Password Reset Notification</h2>
+            <p>Hello ${user.name},</p>
+            <p>Your password has been reset by an administrator. Here are your new login credentials:</p>
+            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p><strong>Username:</strong> ${user.username}</p>
+              <p><strong>Temporary Password:</strong> <code style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px;">${tempPassword}</code></p>
+            </div>
+            <p style="color: #d32f2f;"><strong>Important:</strong> Please change this password immediately after logging in for security purposes.</p>
+            <p>If you did not request this password reset, please contact your administrator immediately.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #666; font-size: 12px;">This is an automated message from the CRM System. Please do not reply to this email.</p>
+          </div>
+        `,
+        text: `
+Password Reset Notification
+
+Hello ${user.name},
+
+Your password has been reset by an administrator. Here are your new login credentials:
+
+Username: ${user.username}
+Temporary Password: ${tempPassword}
+
+Important: Please change this password immediately after logging in for security purposes.
+
+If you did not request this password reset, please contact your administrator immediately.
+        `
+      });
+
+      if (emailResult.success) {
+        logger.info(`Password reset email sent to ${user.email}`, {
+          userId: req.user?.id,
+          targetUserId: id,
+          messageId: emailResult.messageId
+        });
+      } else {
+        logger.error(`Failed to send password reset email to ${user.email}`, {
+          userId: req.user?.id,
+          targetUserId: id,
+          error: emailResult.error
+        });
+      }
+    } catch (emailError) {
+      logger.error('Error sending password reset email:', emailError);
+    }
+
+    logger.info(`Generated temporary password for user: ${user.username}`, {
+      userId: req.user?.id,
+      targetUserId: id
+    });
+
+    res.json({
+      success: true,
+      data: { temporaryPassword: tempPassword },
+      message: 'Temporary password generated and sent via email successfully',
+    });
+
+  } catch (error) {
+    logger.error('Error generating temporary password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate temporary password',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// POST /api/users/:id/change-password - Change user password
+export const changePassword = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    // Check if user exists and get current password
+    const userCheck = await query(
+      'SELECT id, name, username, "passwordHash" FROM users WHERE id = $1',
+      [id]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    const user = userCheck.rows[0];
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect',
+        error: { code: 'INVALID_PASSWORD' },
+      });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await query(
+      'UPDATE users SET "passwordHash" = $1, password = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $2',
+      [hashedNewPassword, id]
+    );
+
+    logger.info(`Password changed for user: ${user.username}`, {
+      userId: req.user?.id,
+      targetUserId: id
+    });
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+
+  } catch (error) {
+    logger.error('Error changing password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to change password',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// POST /api/users/reset-password - Reset password (admin function)
+export const resetPassword = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { username, newPassword } = req.body;
+
+    // Validate input
+    if (!username || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username and new password are required',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    // Check if user exists
+    const userCheck = await query(
+      'SELECT id, name, username, email FROM users WHERE username = $1',
+      [username]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    const user = userCheck.rows[0];
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await query(
+      'UPDATE users SET "passwordHash" = $1, password = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $2',
+      [hashedPassword, user.id]
+    );
+
+    logger.info(`Password reset for user: ${user.username}`, {
+      userId: req.user?.id,
+      targetUserId: user.id
+    });
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+    });
+
+  } catch (error) {
+    logger.error('Error resetting password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
       error: { code: 'INTERNAL_ERROR' },
     });
   }
