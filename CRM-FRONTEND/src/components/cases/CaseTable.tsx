@@ -99,7 +99,7 @@ export const CaseTable: React.FC<CaseTableProps> = ({
   };
 
   // Handle user selection from modal
-  const handleUserSelection = (userId: string, userName: string) => {
+  const handleUserSelection = (userId: string) => {
     if (selectedCaseForAssignment && onAssignCase) {
       onAssignCase(selectedCaseForAssignment.id, userId);
     }
@@ -120,10 +120,12 @@ export const CaseTable: React.FC<CaseTableProps> = ({
             <TableRow>
               <TableHead>Case ID</TableHead>
               <TableHead>Customer</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Product</TableHead>
+              <TableHead>Verification Type</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Assigned To</TableHead>
-              <TableHead>Client</TableHead>
               <TableHead>Updated</TableHead>
               <TableHead className="w-[70px]"></TableHead>
             </TableRow>
@@ -131,6 +133,12 @@ export const CaseTable: React.FC<CaseTableProps> = ({
           <TableBody>
             {[1, 2, 3, 4, 5].map((item) => (
               <TableRow key={item}>
+                <TableCell>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                </TableCell>
+                <TableCell>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                </TableCell>
                 <TableCell>
                   <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                 </TableCell>
@@ -178,10 +186,12 @@ export const CaseTable: React.FC<CaseTableProps> = ({
           <TableRow>
             <TableHead>Case ID</TableHead>
             <TableHead>Customer</TableHead>
+            <TableHead>Client</TableHead>
+            <TableHead>Product</TableHead>
+            <TableHead>Verification Type</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Assigned To</TableHead>
-            <TableHead>Client</TableHead>
             <TableHead>Updated</TableHead>
             <TableHead className="w-[70px]"></TableHead>
           </TableRow>
@@ -204,6 +214,21 @@ export const CaseTable: React.FC<CaseTableProps> = ({
                 </div>
               </TableCell>
               <TableCell>
+                <div className="text-sm">
+                  {caseItem.clientName || caseItem.client?.name}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  {caseItem.productName || 'N/A'}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  {caseItem.verificationTypeName || caseItem.verificationType || 'N/A'}
+                </div>
+              </TableCell>
+              <TableCell>
                 <Badge className={cn('text-xs', getStatusColor(caseItem.status))}>
                   {caseItem.status.replace('_', ' ')}
                 </Badge>
@@ -216,11 +241,6 @@ export const CaseTable: React.FC<CaseTableProps> = ({
               <TableCell>
                 <div className="text-sm">
                   {caseItem.assignedToName || 'Unassigned'}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  {caseItem.clientName || caseItem.client?.name}
                 </div>
               </TableCell>
               <TableCell>

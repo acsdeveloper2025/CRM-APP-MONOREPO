@@ -14,8 +14,8 @@ export const CasesPage: React.FC = () => {
   const [filters, setFilters] = useState<CaseListQuery>({
     page: 1,
     limit: 20,
-    sortBy: 'updatedAt',
-    sortOrder: 'desc',
+    sortBy: 'caseId',
+    sortOrder: 'asc',
   });
 
   // Add error handling
@@ -47,8 +47,8 @@ export const CasesPage: React.FC = () => {
     setFilters({
       page: 1,
       limit: filters.limit,
-      sortBy: 'updatedAt',
-      sortOrder: 'desc',
+      sortBy: 'caseId',
+      sortOrder: 'asc',
     });
   };
 

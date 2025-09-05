@@ -171,8 +171,8 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Validate sort column
-    const allowedSortColumns = ['createdAt', 'updatedAt', 'customerName', 'priority', 'status'];
-    const safeSortBy = allowedSortColumns.includes(sortBy as string) ? sortBy : 'updatedAt';
+    const allowedSortColumns = ['createdAt', 'updatedAt', 'customerName', 'priority', 'status', 'caseId'];
+    const safeSortBy = allowedSortColumns.includes(sortBy as string) ? sortBy : 'caseId';
     const safeSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
 
     // Calculate offset

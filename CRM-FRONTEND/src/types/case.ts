@@ -35,7 +35,11 @@ export interface Case {
   clientName?: string;
   clientCode?: string;
   productId?: string | number;
+  productName?: string;
+  productCode?: string;
   verificationTypeId?: string | number;
+  verificationTypeName?: string;
+  verificationTypeCode?: string;
   createdBy?: string;
   updatedBy?: string;
   // Applicant information
