@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     setState(prev => ({ ...prev, isLoading: true }));
-    
+
     try {
       await authService.logout();
       setState({
@@ -150,6 +150,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     }
   };
+
+
 
   const hasRole = (role: string): boolean => {
     return authService.hasRole(role);
