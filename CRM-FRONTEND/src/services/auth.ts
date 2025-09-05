@@ -114,6 +114,55 @@ export class AuthService {
       return null;
     }
   }
+
+  async resetRateLimit(): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/auth/reset-rate-limit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      return {
+        success: result.success,
+        message: result.message || (result.success ? 'Rate limit reset successfully' : 'Failed to reset rate limit'),
+      };
+    } catch (error) {
+      console.error('Failed to reset rate limit:', error);
+      return {
+        success: false,
+        message: 'Network error occurred while resetting rate limit',
+      };
+    }
+  }
+
+  async resetUserRateLimit(userId: string, ip?: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const token = this.getToken();
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/auth/reset-user-rate-limit/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ip }),
+      });
+
+      const result = await response.json();
+      return {
+        success: result.success,
+        message: result.message || (result.success ? 'User rate limit reset successfully' : 'Failed to reset user rate limit'),
+      };
+    } catch (error) {
+      console.error('Failed to reset user rate limit:', error);
+      return {
+        success: false,
+        message: 'Network error occurred while resetting user rate limit',
+      };
+    }
+  }
 }
 
 export const authService = new AuthService();

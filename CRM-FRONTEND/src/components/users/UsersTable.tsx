@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { MoreHorizontal, Edit, Trash2, UserCheck, UserX, Eye, Shield, Key } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, UserCheck, UserX, Eye, Shield, Key, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { usersService } from '@/services/users';
+import { authService } from '@/services/auth';
 import { User } from '@/types/user';
 import { EditUserDialog } from './EditUserDialog';
 import { UserDetailsDialog } from './UserDetailsDialog';
@@ -126,7 +127,19 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
     setShowResetPasswordDialog(true);
   };
 
-
+  const handleResetRateLimit = async (user: User) => {
+    try {
+      const result = await authService.resetUserRateLimit(user.id);
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      console.error('Failed to reset rate limit:', error);
+      toast.error('Failed to reset rate limit for user');
+    }
+  };
 
   const handleDelete = (user: User) => {
     setUserToDelete(user);
@@ -309,6 +322,10 @@ export function UsersTable({ data, isLoading }: UsersTableProps) {
                       <DropdownMenuItem onClick={() => handleResetPassword(user)}>
                         <Key className="mr-2 h-4 w-4" />
                         Reset Password
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleResetRateLimit(user)}>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Clear Rate Limit
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate(`/users/${user.id}/permissions`)}>
                         <Shield className="mr-2 h-4 w-4" />
