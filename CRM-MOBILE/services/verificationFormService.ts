@@ -64,7 +64,7 @@ export interface VerificationSubmissionResult {
  * Service for submitting verification forms to the backend
  */
 class VerificationFormService {
-  private static readonly API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.42:3000/api';
+  private static readonly API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://172.20.10.8:3000/api';
 
   /**
    * Submit residence verification form with enhanced error recovery, progress tracking, and compression

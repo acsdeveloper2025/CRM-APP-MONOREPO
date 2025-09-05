@@ -16,6 +16,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  --help, -h     Show this help message"
     echo "  --version, -v  Show version information"
     echo "  --stop         Stop all running CRM services"
+    echo "  --clean-backups Clean up old backup files (older than 7 days)"
     echo ""
     echo "This script will:"
     echo "  1. Auto-detect your network IP address"
@@ -23,6 +24,11 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  3. Install dependencies if needed"
     echo "  4. Start all services (Backend, Frontend, Mobile)"
     echo "  5. Provide access URLs for localhost and network"
+    echo ""
+    echo "Backup Management:"
+    echo "  • Creates smart backups (one per day per file)"
+    echo "  • Automatically cleans up backups older than 7 days"
+    echo "  • Backup format: filename.backup.YYYYMMDD"
     echo ""
     echo "Access URLs after running (FIXED PORTS):"
     echo "  • Frontend:  http://localhost:5173 or http://YOUR_IP:5173 (PORT 5173 FIXED)"
@@ -37,6 +43,52 @@ fi
 if [ "$1" = "--version" ] || [ "$1" = "-v" ]; then
     echo "CRM Application Network Launcher v1.0"
     echo "Compatible with CRM Backend, Frontend, and Mobile applications"
+    exit 0
+fi
+
+# Function to clean up old backup files (keep only last 7 days)
+cleanup_old_backups() {
+    print_info "Cleaning up old backup files (keeping last 7 days)..."
+
+    # Find all backup files older than 7 days
+    local old_backups=$(find . -name "*.backup.*" -type f -mtime +7 2>/dev/null)
+    local cleanup_count=0
+
+    for backup_file in $old_backups; do
+        if [ -f "$backup_file" ]; then
+            rm -f "$backup_file"
+            cleanup_count=$((cleanup_count + 1))
+        fi
+    done
+
+    if [ $cleanup_count -gt 0 ]; then
+        print_status "Cleaned up $cleanup_count old backup files"
+    else
+        print_info "No old backup files to clean up"
+    fi
+}
+
+if [ "$1" = "--clean-backups" ]; then
+    echo "🧹 Cleaning up old backup files..."
+
+    # Find all backup files older than 7 days
+    old_backups=$(find . -name "*.backup.*" -type f -mtime +7 2>/dev/null)
+    cleanup_count=0
+
+    for backup_file in $old_backups; do
+        if [ -f "$backup_file" ]; then
+            rm -f "$backup_file"
+            cleanup_count=$((cleanup_count + 1))
+        fi
+    done
+
+    if [ $cleanup_count -gt 0 ]; then
+        echo "✅ Cleaned up $cleanup_count old backup files"
+    else
+        echo "ℹ️  No old backup files to clean up"
+    fi
+
+    echo "✅ Backup cleanup completed!"
     exit 0
 fi
 
@@ -326,19 +378,98 @@ ensure_ports_available || {
 }
 echo ""
 
+# Function to create smart backup (only one per day per file)
+create_smart_backup() {
+    local file=$1
+    local backup_date=$(date +%Y%m%d)
+    local backup_file="${file}.backup.${backup_date}"
+
+    # Only create backup if one doesn't exist for today
+    if [ ! -f "$backup_file" ]; then
+        cp "$file" "$backup_file"
+        return 0
+    else
+        return 1
+    fi
+}
+
+
+
+# Function to update all environment and config files
+update_all_env_files() {
+    print_info "Updating all environment and configuration files..."
+
+    # Find all .env files in all projects
+    local env_files=$(find . -name ".env" -not -path "./node_modules/*" -not -path "*/.git/*" 2>/dev/null)
+    local config_files=$(find . -name "*.config.*" -not -path "./node_modules/*" -not -path "*/.git/*" 2>/dev/null)
+
+    # Update .env files
+    for env_file in $env_files; do
+        if [ -f "$env_file" ]; then
+            print_info "  Processing: $env_file"
+            # Create smart backup
+            if create_smart_backup "$env_file"; then
+                print_info "    Backup created: ${env_file}.backup.$(date +%Y%m%d)"
+            fi
+
+            # Update any hardcoded IPs in environment variables
+            sed -i.tmp -E "s|=http://192\.168\.[0-9]+\.[0-9]+:([0-9]+)|=http://$NETWORK_IP:\1|g" "$env_file"
+            sed -i.tmp -E "s|=http://172\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|=http://$NETWORK_IP:\1|g" "$env_file"
+            sed -i.tmp -E "s|=http://10\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|=http://$NETWORK_IP:\1|g" "$env_file"
+            sed -i.tmp -E "s|=ws://192\.168\.[0-9]+\.[0-9]+:([0-9]+)|=ws://$NETWORK_IP:\1|g" "$env_file"
+            sed -i.tmp -E "s|=ws://172\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|=ws://$NETWORK_IP:\1|g" "$env_file"
+            sed -i.tmp -E "s|=ws://10\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|=ws://$NETWORK_IP:\1|g" "$env_file"
+
+            rm -f "$env_file.tmp"
+        fi
+    done
+
+    # Update config files
+    for config_file in $config_files; do
+        if [ -f "$config_file" ]; then
+            if grep -q -E "(192\.168\.[0-9]+\.[0-9]+|172\.[0-9]+\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+)" "$config_file"; then
+                print_info "  Processing: $config_file"
+                # Create smart backup
+                if create_smart_backup "$config_file"; then
+                    print_info "    Backup created: ${config_file}.backup.$(date +%Y%m%d)"
+                fi
+
+                # Update hardcoded IPs in config files
+                sed -i.tmp -E "s|http://192\.168\.[0-9]+\.[0-9]+:([0-9]+)|http://$NETWORK_IP:\1|g" "$config_file"
+                sed -i.tmp -E "s|http://172\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|http://$NETWORK_IP:\1|g" "$config_file"
+                sed -i.tmp -E "s|http://10\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|http://$NETWORK_IP:\1|g" "$config_file"
+
+                rm -f "$config_file.tmp"
+            fi
+        fi
+    done
+}
+
 # Configure network access
 print_header "🔧 Configuring Network Access"
 
-# Update Backend .env file
+# Clean up old backup files first
+cleanup_old_backups
+
+# Update all environment files first
+update_all_env_files
+
+# Update Backend .env file with specific CORS settings
 BACKEND_ENV="CRM-BACKEND/.env"
 if [ -f "$BACKEND_ENV" ]; then
-    # Create backup
-    cp "$BACKEND_ENV" "$BACKEND_ENV.backup.$(date +%Y%m%d_%H%M%S)"
-    
+    # Create smart backup
+    if create_smart_backup "$BACKEND_ENV"; then
+        print_info "Backend .env backup created: ${BACKEND_ENV}.backup.$(date +%Y%m%d)"
+    fi
+
     # Update CORS_ORIGIN to include both localhost and network IP
     sed -i.tmp "s|CORS_ORIGIN=.*|CORS_ORIGIN=http://localhost:5173,http://localhost:5180,http://127.0.0.1:5173,http://127.0.0.1:5180,http://$NETWORK_IP:5173,http://$NETWORK_IP:5180|g" "$BACKEND_ENV"
+
+    # Update WebSocket CORS_ORIGIN to include both localhost and network IP
+    sed -i.tmp "s|WS_CORS_ORIGIN=.*|WS_CORS_ORIGIN=http://localhost:5173,http://localhost:5180,http://127.0.0.1:5173,http://127.0.0.1:5180,http://$NETWORK_IP:5173,http://$NETWORK_IP:5180|g" "$BACKEND_ENV"
+
     rm -f "$BACKEND_ENV.tmp"
-    print_status "Backend CORS updated to support both localhost and $NETWORK_IP"
+    print_status "Backend CORS and WebSocket CORS updated to support both localhost and $NETWORK_IP"
 else
     print_error "Backend .env file not found at $BACKEND_ENV"
     exit 1
@@ -347,9 +478,11 @@ fi
 # Update Frontend .env file
 FRONTEND_ENV="CRM-FRONTEND/.env"
 if [ -f "$FRONTEND_ENV" ]; then
-    # Create backup
-    cp "$FRONTEND_ENV" "$FRONTEND_ENV.backup.$(date +%Y%m%d_%H%M%S)"
-    
+    # Create smart backup
+    if create_smart_backup "$FRONTEND_ENV"; then
+        print_info "Frontend .env backup created: ${FRONTEND_ENV}.backup.$(date +%Y%m%d)"
+    fi
+
     # Update API URLs
     sed -i.tmp "s|VITE_API_BASE_URL_NETWORK=.*|VITE_API_BASE_URL_NETWORK=http://$NETWORK_IP:3000/api|g" "$FRONTEND_ENV"
     sed -i.tmp "s|VITE_WS_URL_NETWORK=.*|VITE_WS_URL_NETWORK=ws://$NETWORK_IP:3000|g" "$FRONTEND_ENV"
@@ -365,9 +498,11 @@ fi
 # Update Mobile .env file
 MOBILE_ENV="CRM-MOBILE/.env"
 if [ -f "$MOBILE_ENV" ]; then
-    # Create backup
-    cp "$MOBILE_ENV" "$MOBILE_ENV.backup.$(date +%Y%m%d_%H%M%S)"
-    
+    # Create smart backup
+    if create_smart_backup "$MOBILE_ENV"; then
+        print_info "Mobile .env backup created: ${MOBILE_ENV}.backup.$(date +%Y%m%d)"
+    fi
+
     # Update API URLs
     sed -i.tmp "s|VITE_API_BASE_URL_DEVICE=.*|VITE_API_BASE_URL_DEVICE=http://$NETWORK_IP:3000/api|g" "$MOBILE_ENV"
     rm -f "$MOBILE_ENV.tmp"
@@ -377,6 +512,86 @@ else
     exit 1
 fi
 
+# Function to update hardcoded IPs in all source files
+update_hardcoded_ips() {
+    local project_dir=$1
+    local project_name=$2
+
+    print_info "Scanning $project_name for hardcoded IP addresses..."
+
+    # Find all relevant source files (excluding node_modules, .git, dist, build)
+    local files=$(find "$project_dir" -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.vue" \) \
+        -not -path "*/node_modules/*" \
+        -not -path "*/.git/*" \
+        -not -path "*/dist/*" \
+        -not -path "*/build/*" \
+        -not -path "*/.next/*" \
+        -not -path "*/.vite/*" 2>/dev/null)
+
+    local updated_count=0
+
+    for file in $files; do
+        if [ -f "$file" ]; then
+            # Check if file contains any hardcoded IP patterns
+            if grep -q -E "(192\.168\.[0-9]+\.[0-9]+|172\.[0-9]+\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+)" "$file"; then
+                # Create smart backup
+                if create_smart_backup "$file"; then
+                    print_info "    Backup created: ${file}.backup.$(date +%Y%m%d)"
+                fi
+
+                # Update all common private IP ranges to current network IP
+                sed -i.tmp -E "s|http://192\.168\.[0-9]+\.[0-9]+:3000|http://$NETWORK_IP:3000|g" "$file"
+                sed -i.tmp -E "s|http://172\.[0-9]+\.[0-9]+\.[0-9]+:3000|http://$NETWORK_IP:3000|g" "$file"
+                sed -i.tmp -E "s|http://10\.[0-9]+\.[0-9]+\.[0-9]+:3000|http://$NETWORK_IP:3000|g" "$file"
+                sed -i.tmp -E "s|ws://192\.168\.[0-9]+\.[0-9]+:3000|ws://$NETWORK_IP:3000|g" "$file"
+                sed -i.tmp -E "s|ws://172\.[0-9]+\.[0-9]+\.[0-9]+:3000|ws://$NETWORK_IP:3000|g" "$file"
+                sed -i.tmp -E "s|ws://10\.[0-9]+\.[0-9]+\.[0-9]+:3000|ws://$NETWORK_IP:3000|g" "$file"
+
+                # Also update API URLs with /api suffix
+                sed -i.tmp -E "s|http://192\.168\.[0-9]+\.[0-9]+:3000/api|http://$NETWORK_IP:3000/api|g" "$file"
+                sed -i.tmp -E "s|http://172\.[0-9]+\.[0-9]+\.[0-9]+:3000/api|http://$NETWORK_IP:3000/api|g" "$file"
+                sed -i.tmp -E "s|http://10\.[0-9]+\.[0-9]+\.[0-9]+:3000/api|http://$NETWORK_IP:3000/api|g" "$file"
+
+                rm -f "$file.tmp"
+                updated_count=$((updated_count + 1))
+                print_info "  Updated: $(basename "$file")"
+            fi
+        fi
+    done
+
+    if [ $updated_count -gt 0 ]; then
+        print_status "$project_name: Updated $updated_count files with hardcoded IPs"
+    else
+        print_info "$project_name: No hardcoded IPs found to update"
+    fi
+}
+
+# Update hardcoded IPs in all projects
+print_header "🔄 Updating Hardcoded IP Addresses"
+update_hardcoded_ips "CRM-BACKEND" "Backend"
+update_hardcoded_ips "CRM-FRONTEND" "Frontend"
+update_hardcoded_ips "CRM-MOBILE" "Mobile"
+
+echo ""
+
+# Verify network configuration
+print_header "🔍 Verifying Network Configuration"
+print_info "Testing network connectivity to $NETWORK_IP..."
+
+# Test if the network IP is reachable
+if ping -c 1 -W 1000 "$NETWORK_IP" >/dev/null 2>&1; then
+    print_status "Network IP $NETWORK_IP is reachable"
+else
+    print_warning "Network IP $NETWORK_IP may not be reachable"
+    print_info "This might affect network access from other devices"
+fi
+
+# Display configuration summary
+print_info "Configuration Summary:"
+echo "  • Backend will accept connections from: localhost and $NETWORK_IP"
+echo "  • Frontend will connect to: http://$NETWORK_IP:3000/api"
+echo "  • Mobile will connect to: http://$NETWORK_IP:3000/api (when accessed from network)"
+echo "  • WebSocket connections allowed from: localhost and $NETWORK_IP"
 echo ""
 
 # Create logs directory
@@ -550,6 +765,18 @@ print_status "Backend: Port $BACKEND_PORT (PID: $backend_running)"
 print_status "Frontend: Port $FRONTEND_PORT (PID: $frontend_running)"
 print_status "Mobile: Port $MOBILE_PORT (PID: $mobile_running)"
 
+# Test network connectivity to backend
+print_info "Testing backend network connectivity..."
+if curl -s --max-time 5 "http://$NETWORK_IP:$BACKEND_PORT/health" >/dev/null 2>&1; then
+    print_status "Backend is accessible via network IP: http://$NETWORK_IP:$BACKEND_PORT"
+elif curl -s --max-time 5 "http://$NETWORK_IP:$BACKEND_PORT/" >/dev/null 2>&1; then
+    print_status "Backend is responding via network IP: http://$NETWORK_IP:$BACKEND_PORT"
+else
+    print_warning "Backend may not be accessible via network IP"
+    print_info "This could be due to firewall settings or network configuration"
+    print_info "Try accessing http://$NETWORK_IP:$BACKEND_PORT from another device to verify"
+fi
+
 echo ""
 print_header "🎉 CRM Application Started Successfully!"
 print_header "======================================"
@@ -596,7 +823,16 @@ echo "• Port conflicts are automatically resolved by stopping existing service
 echo "• Make sure your firewall allows connections on ports 3000, 5173, and 5180"
 echo "• All devices must be on the same network to access via IP address"
 echo "• Configuration backups created with timestamp"
+echo "• All hardcoded IP addresses updated to current network IP: $NETWORK_IP"
 echo "• Use Ctrl+C to stop this script (services will continue running)"
+echo ""
+
+print_header "🔧 Configuration Changes Applied:"
+echo "• Environment files (.env) updated with network IP: $NETWORK_IP"
+echo "• Source code files scanned and hardcoded IPs updated"
+echo "• CORS origins configured for both localhost and network access"
+echo "• WebSocket origins configured for both localhost and network access"
+echo "• All backup files created with timestamp for rollback if needed"
 echo ""
 
 print_header "🔧 Troubleshooting:"

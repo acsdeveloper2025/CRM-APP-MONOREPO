@@ -1080,7 +1080,7 @@ export class MobileFormController {
 
       // Update case with verification data using detected verification outcome
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'RESIDENCE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
       // Create comprehensive residence verification report using all available fields
@@ -1091,9 +1091,9 @@ export class MobileFormController {
         form_type: formType,
         verification_outcome: verificationOutcome,
         customer_name: updatedCase.customerName || 'Unknown',
-        customer_phone: updatedCase.systemContact || null,
+        customer_phone: updatedCase.backendContactNumber || null,
         customer_email: null, // Not available from case data
-        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+        full_address: updatedCase.address || 'Address not provided',
 
         // Verification metadata
         verification_date: new Date().toISOString().split('T')[0],
@@ -1226,7 +1226,7 @@ export class MobileFormController {
       }
 
       // Validate case exists and user has access
-      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "backendContactNumber" as "systemContact" FROM cases WHERE id = $1`, [caseId]);
       if (caseQuery.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -1354,7 +1354,7 @@ export class MobileFormController {
 
       // Update case with verification data using detected verification outcome
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'OFFICE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
       // Create comprehensive office verification report using all available fields
@@ -1365,9 +1365,9 @@ export class MobileFormController {
         form_type: formType,
         verification_outcome: verificationOutcome,
         customer_name: updatedCase.customerName || 'Unknown',
-        customer_phone: updatedCase.systemContact || null,
+        customer_phone: updatedCase.backendContactNumber || null,
         customer_email: null, // Not available from case data
-        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+        full_address: updatedCase.address || 'Address not provided',
 
         // Verification metadata
         verification_date: new Date().toISOString().split('T')[0],
@@ -1498,7 +1498,7 @@ export class MobileFormController {
       }
 
       // Validate case exists and user has access
-      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "backendContactNumber" as "systemContact" FROM cases WHERE id = $1`, [caseId]);
       if (caseQuery.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -1626,7 +1626,7 @@ export class MobileFormController {
 
       // Update case with verification data using detected verification outcome
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'BUSINESS', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
       // Create comprehensive business verification report using all available fields
@@ -1637,9 +1637,9 @@ export class MobileFormController {
         form_type: formType,
         verification_outcome: verificationOutcome,
         customer_name: updatedCase.customerName || 'Unknown',
-        customer_phone: updatedCase.systemContact || null,
+        customer_phone: updatedCase.backendContactNumber || null,
         customer_email: null, // Not available from case data
-        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+        full_address: updatedCase.address || 'Address not provided',
 
         // Verification metadata
         verification_date: new Date().toISOString().split('T')[0],
@@ -1770,7 +1770,7 @@ export class MobileFormController {
       }
 
       // Validate case exists and user has access
-      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "backendContactNumber" as "systemContact" FROM cases WHERE id = $1`, [caseId]);
       if (caseQuery.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -1898,7 +1898,7 @@ export class MobileFormController {
 
       // Update case with verification data using detected verification outcome
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'BUILDER', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
       // Create comprehensive builder verification report using all available fields
@@ -1909,9 +1909,9 @@ export class MobileFormController {
         form_type: formType,
         verification_outcome: verificationOutcome,
         customer_name: updatedCase.customerName || 'Unknown',
-        customer_phone: updatedCase.systemContact || null,
+        customer_phone: updatedCase.backendContactNumber || null,
         customer_email: null, // Not available from case data
-        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+        full_address: updatedCase.address || 'Address not provided',
 
         // Verification metadata
         verification_date: new Date().toISOString().split('T')[0],
@@ -2042,7 +2042,7 @@ export class MobileFormController {
       }
 
       // Validate case exists and user has access
-      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "backendContactNumber" as "systemContact" FROM cases WHERE id = $1`, [caseId]);
       if (caseQuery.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -2170,7 +2170,7 @@ export class MobileFormController {
 
       // Update case with verification data using detected verification outcome
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'RESIDENCE_CUM_OFFICE', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
       // Create comprehensive residence-cum-office verification report using all available fields
@@ -2181,9 +2181,9 @@ export class MobileFormController {
         form_type: formType,
         verification_outcome: verificationOutcome,
         customer_name: updatedCase.customerName || 'Unknown',
-        customer_phone: updatedCase.systemContact || null,
+        customer_phone: updatedCase.backendContactNumber || null,
         customer_email: null, // Not available from case data
-        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+        full_address: updatedCase.address || 'Address not provided',
 
         // Verification metadata
         verification_date: new Date().toISOString().split('T')[0],
@@ -2314,7 +2314,7 @@ export class MobileFormController {
       }
 
       // Validate case exists and user has access
-      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "backendContactNumber" as "systemContact" FROM cases WHERE id = $1`, [caseId]);
       if (caseQuery.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -2442,7 +2442,7 @@ export class MobileFormController {
 
       // Update case with verification data using detected verification outcome
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'DSA_CONNECTOR', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
       // Create comprehensive DSA/DST Connector verification report using all available fields
@@ -2453,9 +2453,9 @@ export class MobileFormController {
         form_type: formType,
         verification_outcome: verificationOutcome,
         customer_name: updatedCase.customerName || 'Unknown',
-        customer_phone: updatedCase.systemContact || null,
+        customer_phone: updatedCase.backendContactNumber || null,
         customer_email: null, // Not available from case data
-        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+        full_address: updatedCase.address || 'Address not provided',
 
         // Verification metadata
         verification_date: new Date().toISOString().split('T')[0],
@@ -2586,7 +2586,7 @@ export class MobileFormController {
       }
 
       // Validate case exists and user has access
-      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "backendContactNumber" as "systemContact" FROM cases WHERE id = $1`, [caseId]);
       if (caseQuery.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -2714,7 +2714,7 @@ export class MobileFormController {
 
       // Update case with verification data using detected verification outcome
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'PROPERTY_INDIVIDUAL', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
       // Create comprehensive Property Individual verification report using all available fields
@@ -2725,9 +2725,9 @@ export class MobileFormController {
         form_type: formType,
         verification_outcome: verificationOutcome,
         customer_name: updatedCase.customerName || 'Unknown',
-        customer_phone: updatedCase.systemContact || null,
+        customer_phone: updatedCase.backendContactNumber || null,
         customer_email: null, // Not available from case data
-        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+        full_address: updatedCase.address || 'Address not provided',
 
         // Verification metadata
         verification_date: new Date().toISOString().split('T')[0],
@@ -2858,7 +2858,7 @@ export class MobileFormController {
       }
 
       // Validate case exists and user has access
-      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "backendContactNumber" as "systemContact" FROM cases WHERE id = $1`, [caseId]);
       if (caseQuery.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -2986,7 +2986,7 @@ export class MobileFormController {
 
       // Update case with verification data using detected verification outcome
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'PROPERTY_APF', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
       // Create comprehensive Property APF verification report using all available fields
@@ -2997,9 +2997,9 @@ export class MobileFormController {
         form_type: formType,
         verification_outcome: verificationOutcome,
         customer_name: updatedCase.customerName || 'Unknown',
-        customer_phone: updatedCase.systemContact || null,
+        customer_phone: updatedCase.backendContactNumber || null,
         customer_email: null, // Not available from case data
-        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+        full_address: updatedCase.address || 'Address not provided',
 
         // Verification metadata
         verification_date: new Date().toISOString().split('T')[0],
@@ -3130,7 +3130,7 @@ export class MobileFormController {
       }
 
       // Validate case exists and user has access
-      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "systemContact" as "systemContact", "visitAddress" FROM cases WHERE id = $1`, [caseId]);
+      const caseQuery = await query(`SELECT id, "caseId", "customerName", "assignedTo", address, "backendContactNumber" as "systemContact" FROM cases WHERE id = $1`, [caseId]);
       if (caseQuery.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -3258,7 +3258,7 @@ export class MobileFormController {
 
       // Update case with verification data using detected verification outcome
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'NOC', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
-      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "systemContact", address, "visitAddress" FROM cases WHERE id = $1`, [actualCaseId]);
+      const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
       // Create comprehensive NOC verification report using all available fields
@@ -3269,9 +3269,9 @@ export class MobileFormController {
         form_type: formType,
         verification_outcome: verificationOutcome,
         customer_name: updatedCase.customerName || 'Unknown',
-        customer_phone: updatedCase.systemContact || null,
+        customer_phone: updatedCase.backendContactNumber || null,
         customer_email: null, // Not available from case data
-        full_address: updatedCase.visitAddress || updatedCase.address || 'Address not provided',
+        full_address: updatedCase.address || 'Address not provided',
 
         // Verification metadata
         verification_date: new Date().toISOString().split('T')[0],

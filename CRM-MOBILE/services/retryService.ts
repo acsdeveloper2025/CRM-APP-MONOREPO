@@ -21,6 +21,7 @@ export interface RetryableRequest {
   error?: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   type: 'VERIFICATION_SUBMISSION' | 'ATTACHMENT_UPLOAD' | 'CASE_UPDATE';
+  permanentFailureLogged?: boolean;
 }
 
 export interface RetryProgress {
@@ -53,7 +54,9 @@ class RetryService {
   private progressCallbacks: Map<string, (progress: RetryProgress) => void> = new Map();
 
   constructor() {
-    this.loadRetryQueue();
+    this.loadRetryQueue().then(() => {
+      this.clearOldFailedRequests();
+    });
     this.startRetryProcessor();
   }
 
@@ -279,24 +282,28 @@ class RetryService {
    */
   private async cleanupFailedRequests() {
     const failedRequests = this.retryQueue.filter(r => r.attempts >= RetryService.DEFAULT_CONFIG.maxAttempts);
-    
+
     for (const request of failedRequests) {
-      console.error(`💀 Request ${request.id} permanently failed after ${request.attempts} attempts`);
-      this.updateProgress(request.id, {
-        requestId: request.id,
-        currentAttempt: request.attempts,
-        maxAttempts: RetryService.DEFAULT_CONFIG.maxAttempts,
-        nextRetryIn: 0,
-        status: 'FAILED',
-        error: request.error
-      });
+      // Only log the permanent failure once
+      if (!request.permanentFailureLogged) {
+        console.error(`💀 Request ${request.id} permanently failed after ${request.attempts} attempts`);
+        request.permanentFailureLogged = true;
+        this.updateProgress(request.id, {
+          requestId: request.id,
+          currentAttempt: request.attempts,
+          maxAttempts: RetryService.DEFAULT_CONFIG.maxAttempts,
+          nextRetryIn: 0,
+          status: 'FAILED',
+          error: request.error
+        });
+      }
     }
 
-    // Keep failed requests for 24 hours for debugging
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    this.retryQueue = this.retryQueue.filter(r => 
+    // Keep failed requests for 1 hour for debugging
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    this.retryQueue = this.retryQueue.filter(r =>
       r.attempts < RetryService.DEFAULT_CONFIG.maxAttempts ||
-      new Date(r.lastAttempt) > oneDayAgo
+      new Date(r.lastAttempt) > oneHourAgo
     );
 
     await this.saveRetryQueue();
@@ -308,8 +315,44 @@ class RetryService {
   getQueueStatus(): { pending: number; retrying: number; failed: number } {
     const pending = this.retryQueue.filter(r => r.attempts < RetryService.DEFAULT_CONFIG.maxAttempts).length;
     const failed = this.retryQueue.filter(r => r.attempts >= RetryService.DEFAULT_CONFIG.maxAttempts).length;
-    
+
     return { pending, retrying: 0, failed };
+  }
+
+  /**
+   * Clear all failed requests from the retry queue
+   */
+  async clearFailedRequests(): Promise<void> {
+    const beforeCount = this.retryQueue.length;
+    this.retryQueue = this.retryQueue.filter(r => r.attempts < RetryService.DEFAULT_CONFIG.maxAttempts);
+    const afterCount = this.retryQueue.length;
+    const removedCount = beforeCount - afterCount;
+
+    if (removedCount > 0) {
+      console.log(`🧹 Cleared ${removedCount} failed requests from retry queue`);
+      await this.saveRetryQueue();
+    }
+  }
+
+  /**
+   * Clear old failed requests (older than 1 hour)
+   */
+  private async clearOldFailedRequests() {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const beforeCount = this.retryQueue.length;
+
+    this.retryQueue = this.retryQueue.filter(r =>
+      r.attempts < RetryService.DEFAULT_CONFIG.maxAttempts ||
+      new Date(r.lastAttempt) > oneHourAgo
+    );
+
+    const afterCount = this.retryQueue.length;
+    const removedCount = beforeCount - afterCount;
+
+    if (removedCount > 0) {
+      console.log(`🧹 Cleared ${removedCount} old failed requests on startup`);
+      await this.saveRetryQueue();
+    }
   }
 
   /**
@@ -355,6 +398,7 @@ const retryServiceInstance = new RetryService();
 // Expose to global scope for debugging
 if (typeof window !== 'undefined') {
   (window as any).clearRetryQueue = () => retryServiceInstance.clearQueue();
+  (window as any).clearFailedRequests = () => retryServiceInstance.clearFailedRequests();
 }
 
 export default retryServiceInstance;
