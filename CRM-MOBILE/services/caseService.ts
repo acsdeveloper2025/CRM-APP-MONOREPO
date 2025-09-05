@@ -1,6 +1,7 @@
 import { Case, CaseStatus, VerificationType, Attachment } from '../types';
 import AsyncStorage from '../polyfills/AsyncStorage';
 import { migrateCasesVerificationOutcomes, isDeprecatedOutcome } from '../utils/verificationOutcomeMigration';
+import { apiService } from './apiService';
 
 const LOCAL_STORAGE_KEY = 'caseflow_cases';
 
@@ -198,45 +199,22 @@ class CaseService {
     await AsyncStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cases));
   }
 
-  // Get authentication token (placeholder - implement based on your auth system)
-  private async getAuthToken(): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem('auth_token');
-    } catch (error) {
-      console.error('Failed to get auth token:', error);
-      return null;
-    }
-  }
+
 
   // Fetch cases from backend API
   private async fetchCasesFromAPI(): Promise<Case[]> {
     try {
-      const token = await this.getAuthToken();
-      if (!token) {
-        console.warn('No auth token available, falling back to mock data');
-        return this.getMockCases();
-      }
-
-      const response = await fetch(`${API_BASE_URL}/cases`, {
+      const result = await apiService.request('/mobile/cases', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        requireAuth: true,
       });
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
-
-      if (!result.success || !result.data) {
+      if (!result.success || !result.data || !result.data.cases) {
         throw new Error('Invalid API response format');
       }
 
       // Map backend cases to mobile format
-      const mobileCases = result.data.map((backendCase: BackendCase) =>
+      const mobileCases = result.data.cases.map((backendCase: BackendCase) =>
         mapBackendCaseToMobile(backendCase)
       );
 

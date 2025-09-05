@@ -1,6 +1,7 @@
 import { CaseStatus } from '../types';
 import AuthStorageService from './authStorageService';
 import NetworkService from './networkService';
+import { apiService } from './apiService';
 
 /**
  * Audit Service
@@ -266,40 +267,21 @@ class AuditService {
    */
   private static async syncLogBatch(logs: AuditLogEntry[]): Promise<{ success: boolean; error?: string }> {
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.36:3000/api';
-      const authToken = await AuthStorageService.getCurrentAccessToken();
-
-      if (!authToken) {
-        return { success: false, error: 'No authentication token available' };
-      }
-
-      const response = await fetch(`${API_BASE_URL}/mobile/audit/logs`, {
+      const result = await apiService.request('/mobile/audit/logs', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
+        requireAuth: true,
+        body: {
           logs,
           batchId: `batch_${Date.now()}`,
           deviceId: 'web-mobile-app',
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        return { 
-          success: false, 
-          error: errorData.message || `HTTP ${response.status}: ${response.statusText}` 
-        };
-      }
-
-      const result = await response.json();
-      return { success: result.success || true };
+      return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Network error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error'
       };
     }
   }
