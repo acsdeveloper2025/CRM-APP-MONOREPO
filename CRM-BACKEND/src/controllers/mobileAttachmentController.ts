@@ -494,4 +494,130 @@ export class MobileAttachmentController {
       });
     }
   }
+
+  /**
+   * Get attachments for multiple cases in batch
+   * Reduces the number of API calls from frontend
+   */
+  static async getBatchAttachments(req: Request, res: Response): Promise<void> {
+    try {
+      const { caseIds } = req.body;
+
+      if (!Array.isArray(caseIds) || caseIds.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Case IDs array is required',
+          error: {
+            code: 'INVALID_CASE_IDS',
+            timestamp: new Date().toISOString(),
+          },
+        });
+        return;
+      }
+
+      // Limit batch size to prevent abuse
+      if (caseIds.length > 50) {
+        res.status(400).json({
+          success: false,
+          message: 'Maximum 50 cases allowed per batch request',
+          error: {
+            code: 'BATCH_SIZE_EXCEEDED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+        return;
+      }
+
+      console.log('📦 Batch attachments request for cases:', caseIds.length);
+
+      // Create placeholders for the IN clause
+      const placeholders = caseIds.map((_, index) => `$${index + 1}`).join(', ');
+
+      const attachmentsSql = `
+        SELECT
+          a.id,
+          a."caseId",
+          a.filename,
+          a."originalName",
+          a."mimeType",
+          a."fileSize",
+          a."uploadedAt",
+          a."uploadedBy",
+          a.metadata,
+          a."isProcessed",
+          a."processingStatus",
+          a."thumbnailPath",
+          a."compressedPath",
+          u.name as "uploaderName"
+        FROM attachments a
+        LEFT JOIN users u ON u.id = a."uploadedBy"
+        WHERE a."caseId" IN (${placeholders})
+        ORDER BY a."caseId", a."uploadedAt" DESC
+      `;
+
+      const attachmentsResult = await query(attachmentsSql, caseIds);
+
+      // Group attachments by case ID
+      const attachmentsByCase: Record<string, any[]> = {};
+
+      // Initialize all case IDs with empty arrays
+      caseIds.forEach(caseId => {
+        attachmentsByCase[caseId] = [];
+      });
+
+      // Group the results
+      attachmentsResult.rows.forEach(attachment => {
+        const caseId = attachment.caseId;
+        if (!attachmentsByCase[caseId]) {
+          attachmentsByCase[caseId] = [];
+        }
+
+        attachmentsByCase[caseId].push({
+          id: attachment.id,
+          filename: attachment.filename,
+          originalName: attachment.originalName,
+          mimeType: attachment.mimeType,
+          fileSize: attachment.fileSize,
+          uploadedAt: attachment.uploadedAt,
+          uploadedBy: attachment.uploadedBy,
+          uploaderName: attachment.uploaderName,
+          metadata: attachment.metadata,
+          isProcessed: attachment.isProcessed,
+          processingStatus: attachment.processingStatus,
+          thumbnailPath: attachment.thumbnailPath,
+          compressedPath: attachment.compressedPath,
+          downloadUrl: `/api/mobile/attachments/${attachment.id}/content`,
+        });
+      });
+
+      console.log('📦 Batch attachments results:', {
+        requestedCases: caseIds.length,
+        totalAttachments: attachmentsResult.rows.length,
+        casesWithAttachments: Object.keys(attachmentsByCase).filter(caseId => attachmentsByCase[caseId].length > 0).length
+      });
+
+      res.json({
+        success: true,
+        message: 'Batch attachments retrieved successfully',
+        data: {
+          attachmentsByCase,
+          summary: {
+            totalCases: caseIds.length,
+            totalAttachments: attachmentsResult.rows.length,
+            casesWithAttachments: Object.keys(attachmentsByCase).filter(caseId => attachmentsByCase[caseId].length > 0).length
+          }
+        },
+      });
+    } catch (error) {
+      console.error('Batch attachments error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'BATCH_ATTACHMENTS_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+  }
 }

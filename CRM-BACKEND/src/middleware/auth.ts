@@ -48,6 +48,17 @@ export const authenticateToken = (
     return;
   }
 
+  // Development field agent bypass
+  if (config.nodeEnv === 'development' && token === 'field-agent-token') {
+    req.user = {
+      id: '66ed9c1b-e02e-4769-b7d5-903bcc0a3ba9', // nikhil.parab's ID from debug script
+      username: 'nikhil.parab',
+      role: Role.FIELD_AGENT,
+    };
+    next();
+    return;
+  }
+
   try {
     const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
     req.user = {

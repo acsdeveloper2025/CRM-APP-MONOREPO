@@ -73,11 +73,17 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
 
   // Update state when initialData changes (for edit mode)
   useEffect(() => {
+    console.log('🔄 CaseCreationStepper - useEffect triggered');
+    console.log('📝 Edit mode:', editMode);
+    console.log('📊 Initial data:', initialData);
+
     if (editMode && initialData) {
       if (initialData.customerInfo) {
+        console.log('👤 Setting customer info:', initialData.customerInfo);
         setCustomerInfo(initialData.customerInfo);
       }
       if (initialData.caseFormData) {
+        console.log('📝 Setting case form data:', initialData.caseFormData);
         setCaseFormData(initialData.caseFormData);
       }
     }
@@ -389,7 +395,7 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
             onSubmit={handleCaseFormSubmit}
             onBack={editMode ? undefined : handleBackToCustomerInfo}
             isSubmitting={isSubmitting}
-            initialData={caseFormData || {}}
+            initialData={caseFormData || initialData?.caseFormData || {}}
             editMode={editMode}
           />
         )}

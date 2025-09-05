@@ -56,16 +56,22 @@ export const NewCasePage: React.FC = () => {
   // Second useEffect: Map all case data when areas are loaded
   useEffect(() => {
     try {
-      if (isEditMode && caseData?.data && pincodesResponse?.data && areasResponse?.data) {
+      if (isEditMode && caseData?.data && pincodesResponse?.data) {
         const caseItem = caseData.data;
         const pincodes = pincodesResponse.data;
-        const areas = areasResponse.data;
+        const areas = areasResponse?.data || [];
 
-
+        console.log('🔄 NewCasePage - Mapping case data for edit mode');
+        console.log('📋 Case data:', caseItem);
+        console.log('📍 Available pincodes:', pincodes.length);
+        console.log('🏘️ Available areas:', areas.length);
 
         // Find pincode ID based on pincode code
         const foundPincode = pincodes.find(p => p.code === caseItem.pincode);
         const pincodeId = foundPincode?.id?.toString() || '';
+
+        console.log('🔍 Found pincode:', foundPincode);
+        console.log('🆔 Pincode ID:', pincodeId);
 
         // Find the correct area based on case data
         let areaId = '';
@@ -77,7 +83,7 @@ export const NewCasePage: React.FC = () => {
           areaId = areas[0].id.toString();
         }
 
-
+        console.log('🏘️ Selected area ID:', areaId);
 
         // Map case data to CustomerInfoData format
         const customerInfo: CustomerInfoData = {
@@ -104,15 +110,19 @@ export const NewCasePage: React.FC = () => {
           areaId: areaId, // Use the found area ID
         };
 
+        console.log('👤 Mapped customer info:', customerInfo);
+        console.log('📝 Mapped case form data:', caseFormData);
 
-
-        setInitialData({
+        const mappedData = {
           customerInfo,
           caseFormData
-        });
+        };
+
+        console.log('✅ Setting initial data:', mappedData);
+        setInitialData(mappedData);
       }
     } catch (error) {
-      console.error('Error in NewCasePage useEffect:', error);
+      console.error('❌ Error in NewCasePage useEffect:', error);
       // Don't redirect on error, just log it
     }
   }, [isEditMode, caseData, pincodesResponse, areasResponse]);
@@ -156,6 +166,21 @@ export const NewCasePage: React.FC = () => {
           <Button onClick={() => navigate('/cases')} className="mt-4">
             Back to Cases
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the form in edit mode until we have initial data
+  if (isEditMode && !initialData) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight">Edit Case</h1>
+          <p className="text-muted-foreground">Preparing form data... (ID: {editCaseId})</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </div>
     );

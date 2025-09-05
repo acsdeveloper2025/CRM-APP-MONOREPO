@@ -14,8 +14,8 @@ import { validate } from '../middleware/validation';
 
 const router = Router();
 
-// Apply mobile-specific rate limiting
-router.use(mobileRateLimit(200, 15 * 60 * 1000)); // 200 requests per 15 minutes
+// Apply mobile-specific rate limiting - increased for field app usage
+router.use(mobileRateLimit(1000, 15 * 60 * 1000)); // 1000 requests per 15 minutes
 
 // Mobile Authentication Routes
 router.post('/auth/login', MobileAuthController.mobileLogin);
@@ -38,6 +38,8 @@ router.post('/cases/:caseId/auto-save', authenticateToken, validateMobileVersion
 router.get('/cases/:caseId/auto-save/:formType', authenticateToken, validateMobileVersion, MobileCaseController.getAutoSavedForm);
 
 // Mobile Attachment Routes
+// Note: More specific routes must come before parameterized routes
+router.post('/cases/batch/attachments', authenticateToken, validateMobileVersion, MobileAttachmentController.getBatchAttachments);
 router.post('/cases/:caseId/attachments',
   authenticateToken,
   validateMobileVersion,

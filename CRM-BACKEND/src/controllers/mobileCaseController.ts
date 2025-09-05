@@ -35,10 +35,16 @@ export class MobileCaseController {
       const where: any = {};
 
       // Role-based filtering
+      console.log('🔍 Mobile Cases - User Info:', { userId, userRole, assignedTo });
+
       if (userRole === 'FIELD_AGENT') {
         where.assignedTo = userId;
+        console.log('👤 Field Agent - Filtering by assignedTo:', userId);
       } else if (assignedTo) {
         where.assignedTo = assignedTo;
+        console.log('🎯 Admin/Manager - Filtering by assignedTo:', assignedTo);
+      } else {
+        console.log('📋 Admin/Manager - No assignedTo filter');
       }
 
       if (status) {
@@ -102,7 +108,7 @@ export class MobileCaseController {
         LEFT JOIN clients cl ON cl.id = c."clientId"
         LEFT JOIN products p ON p.id = c."productId"
         LEFT JOIN "verificationTypes" vt ON vt.id = c."verificationTypeId"
-        LEFT JOIN users cu ON cu.id = c."createdBy"
+        LEFT JOIN users cu ON cu.id = c."createdByBackendUser"
         LEFT JOIN users au ON au.id = c."assignedTo"
         LEFT JOIN (
           SELECT "caseId", COUNT(*) as attachment_count
@@ -112,11 +118,21 @@ export class MobileCaseController {
         ${whereSql}
         ORDER BY c.priority DESC, c."createdAt" DESC
         LIMIT $${vals.length + 1} OFFSET $${vals.length + 2}`;
+      console.log('📊 Mobile Cases Query:', { whereSql, vals, take, skip });
       const casesRes = await query(listSql, [...vals, take, skip]);
 
       const countRes = await query<{ count: string }>(`SELECT COUNT(*)::text as count FROM cases c ${whereSql}`, vals);
       const totalCount = Number(countRes.rows[0]?.count || 0);
       const cases = casesRes.rows as any[];
+
+      console.log('📋 Mobile Cases Results:', {
+        totalCount,
+        casesFound: cases.length,
+        userRole,
+        userId,
+        firstCaseAssignedTo: cases[0]?.assignedTo,
+        firstCaseId: cases[0]?.caseId
+      });
 
       // Transform cases for mobile response with all required assignment fields
       const mobileCases: MobileCaseResponse[] = cases.map(caseItem => ({
@@ -224,7 +240,7 @@ export class MobileCaseController {
         LEFT JOIN clients cl ON cl.id = c."clientId"
         LEFT JOIN products p ON p.id = c."productId"
         LEFT JOIN "verificationTypes" vt ON vt.id = c."verificationTypeId"
-        LEFT JOIN users cu ON cu.id = c."createdBy"
+        LEFT JOIN users cu ON cu.id = c."createdByBackendUser"
         LEFT JOIN users au ON au.id = c."assignedTo"
         WHERE c.id = $1`;
       if (userRole === 'FIELD_AGENT') { caseSql += ` AND c."assignedTo" = $2`; vals2.push(userId); }

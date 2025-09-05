@@ -148,8 +148,13 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
 
   // Update form when initialData changes (for edit mode)
   useEffect(() => {
+    console.log('🔄 FullCaseFormStep - Form reset useEffect triggered');
+    console.log('📝 Edit mode:', editMode);
+    console.log('📊 Initial data:', initialData);
+    console.log('🔑 Initial data keys:', Object.keys(initialData || {}));
+
     if (editMode && initialData && Object.keys(initialData).length > 0) {
-      form.reset({
+      const formData = {
         applicantType: initialData.applicantType || '',
         address: initialData.address || '',
         trigger: initialData.trigger || '', // TRIGGER field
@@ -163,7 +168,11 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
         areaId: initialData.areaId || '',
         assignedToId: initialData.assignedToId || '',
         priority: initialData.priority || 'MEDIUM',
-      });
+      };
+
+      console.log('📝 Resetting form with data:', formData);
+      form.reset(formData);
+      console.log('✅ Form reset completed');
     }
   }, [editMode, initialData, form, user]);
 
