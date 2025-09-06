@@ -865,7 +865,7 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                 {/* 4. Product */}
                 <div>
                     <h4 className="font-bold text-sm text-medium-text">Product *</h4>
-                    <p>{caseData.product?.name || caseData.productName || 'N/A'}</p>
+                    <p>{typeof caseData.product === 'object' && caseData.product?.name ? caseData.product.name : caseData.productName || 'N/A'}</p>
                 </div>
 
                 {/* 5. Verification Type */}

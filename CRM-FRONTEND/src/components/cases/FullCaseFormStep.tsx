@@ -148,11 +148,6 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
 
   // Update form when initialData changes (for edit mode)
   useEffect(() => {
-    console.log('🔄 FullCaseFormStep - Form reset useEffect triggered');
-    console.log('📝 Edit mode:', editMode);
-    console.log('📊 Initial data:', initialData);
-    console.log('🔑 Initial data keys:', Object.keys(initialData || {}));
-
     if (editMode && initialData && Object.keys(initialData).length > 0) {
       const formData = {
         applicantType: initialData.applicantType || '',
@@ -170,9 +165,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
         priority: initialData.priority || 'MEDIUM',
       };
 
-      console.log('📝 Resetting form with data:', formData);
       form.reset(formData);
-      console.log('✅ Form reset completed');
     }
   }, [editMode, initialData, form, user]);
 

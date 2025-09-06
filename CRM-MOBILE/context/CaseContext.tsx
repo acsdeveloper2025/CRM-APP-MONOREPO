@@ -89,8 +89,6 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // Update case counters
       await CaseCounterService.updateCounts(sortedCases);
-
-      console.log(`📊 Fetched ${sortedCases.length} cases and updated counters`);
     } catch (err) {
       setError('Failed to fetch cases.');
       console.error(err);
@@ -111,8 +109,6 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const currentCase = cases.find(c => c.id === caseId);
       if (!currentCase) throw new Error("Case not found");
-
-      console.log(`🔄 Updating case ${caseId} from ${currentCase.status} to ${status}...`);
 
       // Prepare audit metadata
       const auditMetadata = {
@@ -161,14 +157,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Update case counters with the new state
         await CaseCounterService.updateCounts(updatedCases);
 
-        // Show user feedback based on result
-        if (result.wasOffline) {
-          console.log(`📱 Case ${caseId} updated offline, will sync when online`);
-        } else if (result.error) {
-          console.log(`⚠️ Case ${caseId} updated locally: ${result.error}`);
-        } else {
-          console.log(`✅ Case ${caseId} updated and synced successfully`);
-        }
+        // Update completed successfully
       } else {
         throw new Error(result.error || 'Failed to update case status');
       }
@@ -196,8 +185,6 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           (updates as any)[reportInfo.key] = reportInfo.data;
         }
       }
-  
-      console.log(`🔄 Updating verification outcome for case ${caseId}: ${outcome || 'null'}`);
 
       await caseService.updateCase(caseId, updates);
 
@@ -209,8 +196,6 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : c
       );
       setCases(updatedCases);
-
-      console.log(`✅ Verification outcome updated for case ${caseId}: ${outcome || 'cleared'}`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update verification outcome';
       setError(errorMessage);
@@ -1072,7 +1057,6 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           // If local case was updated more recently, preserve local status
           if (localUpdatedAt > serverUpdatedAt) {
-            console.log(`🔄 Preserving local status for case ${serverCase.id}: ${localCase.status} (local) vs ${serverCase.status} (server)`);
             return {
               ...serverCase,
               status: localCase.status,
@@ -1094,8 +1078,6 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const finalCases = [...mergedCases, ...localOnlyCases];
       setCases(finalCases.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
-
-      console.log(`✅ Sync complete: ${serverData.length} server cases, ${localOnlyCases.length} local-only cases`);
     } catch (err) {
       setError('Failed to sync cases.');
       console.error(err);

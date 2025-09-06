@@ -5,7 +5,7 @@ import { Camera, CameraResultType, CameraSource, CameraDirection } from '@capaci
 import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
 import { requestCameraPermissions, requestLocationPermissions } from '../utils/permissions';
-import { getAndroidCameraConfig, getAndroidCameraErrorMessage, checkAndroidCameraAvailability } from '../utils/androidCameraConfig';
+import { getAndroidCameraConfig, getAndroidCameraErrorMessage } from '../utils/androidCameraConfig';
 import CompactImageDisplay from './CompactImageDisplay';
 import { enhancedGeolocationService, EnhancedLocationData } from '../services/enhancedGeolocationService';
 import { googleMapsService } from '../services/googleMapsService';
@@ -51,13 +51,11 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
     try {
       if (Capacitor.isNativePlatform()) {
         // On native platforms, assume camera is available if permissions can be checked
-        const permissions = await Camera.checkPermissions();
-        console.log('📷 Camera availability check:', permissions);
+        await Camera.checkPermissions();
         return true; // Camera exists if we can check permissions
       } else {
         // On web, check if MediaDevices API is available
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          console.log('📷 Web camera API available');
           return true;
         } else {
           console.warn('📷 Web camera API not available');
@@ -71,7 +69,6 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
   };
 
   const handleTakePhoto = async () => {
-    console.log(`📷 Starting ${componentType} capture...`);
     setError(null);
     setIsLoading(true);
 
@@ -89,14 +86,11 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
         }
       }
       // Request camera permissions first with enhanced options
-      console.log('🔐 Requesting camera permissions...');
       const cameraPermission = await requestCameraPermissions({
         showRationale: true,
         fallbackToSettings: true,
         context: componentType === 'selfie' ? 'take verification selfies' : 'capture verification photos'
       });
-
-      console.log('🔐 Camera permission result:', cameraPermission);
 
       if (!cameraPermission.granted) {
         if (cameraPermission.denied) {
@@ -109,11 +103,9 @@ const ImageCapture: React.FC<ImageCaptureProps> = ({
         return;
       }
 
-      console.log('✅ Camera permission granted, attempting to capture image...');
-
       // Use platform-specific camera configuration
       const platform = Capacitor.getPlatform();
-      let cameraOptions;
+      let cameraOptions: any;
 
       if (platform === 'android') {
         // Use Android-optimized configuration

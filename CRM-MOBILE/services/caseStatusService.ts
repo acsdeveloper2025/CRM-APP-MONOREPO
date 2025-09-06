@@ -21,7 +21,8 @@ class CaseStatusService {
    */
   static async updateCaseStatus(
     caseId: string,
-    newStatus: CaseStatus
+    newStatus: CaseStatus,
+    options?: { optimistic?: boolean; auditMetadata?: any }
   ): Promise<StatusUpdateResult> {
     try {
       console.log(`🔄 Updating case ${caseId} status to ${newStatus}...`);

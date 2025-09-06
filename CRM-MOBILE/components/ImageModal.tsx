@@ -53,9 +53,9 @@ const ImageModal: React.FC<ImageModalProps> = ({
     };
 
     loadAddress();
-  }, [image.id, hasLocation]);
+  }, [image.id]);
 
-  const formatDateTime = (timestamp: number) => {
+  const formatDateTime = (timestamp: string | number) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
   };
@@ -116,7 +116,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
             // Ensure scrolling works on mobile
             touchAction: 'pan-y',
             // Add momentum scrolling for iOS
-            WebkitMomentumScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch' as any
           }}
         >
           <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 p-6">

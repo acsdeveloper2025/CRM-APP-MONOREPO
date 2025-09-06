@@ -319,7 +319,7 @@ const CompactImageDisplay: React.FC<CompactImageDisplayProps> = ({
                 // Ensure scrolling works on mobile
                 touchAction: 'pan-y',
                 // Add momentum scrolling for iOS
-                WebkitMomentumScrolling: 'touch'
+                WebkitOverflowScrolling: 'touch' as any
               }}
             >
               <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6">

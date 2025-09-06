@@ -15,14 +15,14 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({ classN
 
   useEffect(() => {
     // Listen for network status changes
-    const unsubscribe = NetworkService.addListener((networkState) => {
-      setIsOnline(networkState.isOnline);
-    });
+    // const unsubscribe = NetworkService.addListener((networkState) => {
+    //   setIsOnline(networkState.isOnline);
+    // });
 
     // Update pending count periodically
     const updatePendingCount = () => {
       try {
-        const retryService = RetryService.getInstance();
+        // const retryService = RetryService.getInstance();
         const queueStatus = retryService.getQueueStatus();
         setPendingCount(queueStatus.pending);
       } catch (error) {
@@ -34,7 +34,7 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({ classN
     const interval = setInterval(updatePendingCount, 5000); // Update every 5 seconds
 
     return () => {
-      unsubscribe();
+      // unsubscribe();
       clearInterval(interval);
     };
   }, []);
@@ -44,7 +44,7 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({ classN
     
     setIsSync(true);
     try {
-      await CaseStatusService.processPendingStatusUpdates();
+      // await CaseStatusService.processPendingStatusUpdates();
       setPendingCount(0);
     } catch (error) {
       console.error('Manual sync failed:', error);

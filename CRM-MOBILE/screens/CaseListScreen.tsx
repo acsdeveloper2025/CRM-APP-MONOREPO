@@ -112,7 +112,7 @@ const CaseListScreen: React.FC<CaseListScreenProps> = ({
         totalCount={totalCount}
       />
       {customHeaderActions && (
-        <div style={{ paddingHorizontal: 16, marginBottom: 8 }}>
+        <div style={{ padding: '0 16px', marginBottom: 8 }}>
           {customHeaderActions}
         </div>
       )}

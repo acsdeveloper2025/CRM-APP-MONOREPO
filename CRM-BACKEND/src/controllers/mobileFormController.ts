@@ -133,14 +133,12 @@ export class MobileFormController {
 
   // Helper method to organize form data into sections for display
   private static organizeFormDataIntoSections(formData: any, verificationType: string, formType?: string): FormSection[] {
-    console.log(`Creating comprehensive form sections for ${verificationType} - ${formType || 'UNKNOWN'}`);
-    console.log('Form data keys:', Object.keys(formData));
+
 
     // If we have form type, use comprehensive mapping
     if (formType) {
       try {
         const sections = createComprehensiveFormSections(formData, verificationType, formType);
-        console.log(`Generated ${sections.length} comprehensive sections:`, sections.map(s => `${s.title} (${s.fields.length} fields)`));
         return sections;
       } catch (error) {
         console.error('Error creating comprehensive form sections:', error);

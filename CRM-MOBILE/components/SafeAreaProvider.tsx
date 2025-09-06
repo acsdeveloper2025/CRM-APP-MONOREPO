@@ -118,7 +118,7 @@ export const SafeAreaProvider: React.FC<SafeAreaProviderProps> = ({ children }) 
         if (isNative) {
           try {
             // Configure status bar for native platforms
-            await StatusBar.setStyle({ style: 'light' });
+            await StatusBar.setStyle({ style: 'LIGHT' as any });
             await StatusBar.setBackgroundColor({ color: '#111827' });
             await StatusBar.setOverlaysWebView({ overlay: false });
 

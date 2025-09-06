@@ -126,7 +126,7 @@ export const EnterpriseDashboard: React.FC = () => {
 
   const handleCaseSelect = (caseItem: any) => {
     // Navigate to case details
-    console.log('Selected case:', caseItem);
+    // TODO: Implement navigation to case details
   };
 
   const handleLoadMore = () => {

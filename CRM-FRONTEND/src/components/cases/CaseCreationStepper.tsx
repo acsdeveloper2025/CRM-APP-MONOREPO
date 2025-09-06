@@ -73,17 +73,11 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
 
   // Update state when initialData changes (for edit mode)
   useEffect(() => {
-    console.log('🔄 CaseCreationStepper - useEffect triggered');
-    console.log('📝 Edit mode:', editMode);
-    console.log('📊 Initial data:', initialData);
-
     if (editMode && initialData) {
       if (initialData.customerInfo) {
-        console.log('👤 Setting customer info:', initialData.customerInfo);
         setCustomerInfo(initialData.customerInfo);
       }
       if (initialData.caseFormData) {
-        console.log('📝 Setting case form data:', initialData.caseFormData);
         setCaseFormData(initialData.caseFormData);
       }
     }
@@ -267,8 +261,6 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
         toast.error(`Failed to ${action} case`);
       }
     } catch (error: any) {
-      console.error('Case creation failed:', error);
-      console.error('Error response:', error.response?.data);
       const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || 'Failed to create case';
       toast.error(errorMessage);
     } finally {

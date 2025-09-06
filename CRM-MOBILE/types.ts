@@ -3,6 +3,7 @@ export enum CaseStatus {
   Assigned = 'Assigned',
   InProgress = 'In Progress',
   Completed = 'Completed',
+  Saved = 'Saved',
 }
 
 export enum VerificationType {

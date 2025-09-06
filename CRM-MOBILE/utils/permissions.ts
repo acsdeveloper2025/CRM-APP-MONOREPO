@@ -29,16 +29,12 @@ export interface PermissionRequestOptions {
  */
 export const requestCameraPermissions = async (options: PermissionRequestOptions = {}): Promise<PermissionStatus> => {
   try {
-    console.log('📷 Requesting camera permissions...');
-
     if (Capacitor.isNativePlatform()) {
       // First check current status
       const currentStatus = await Camera.checkPermissions();
-      console.log('📷 Current camera permissions:', currentStatus);
 
       // If already granted, return immediately
       if (currentStatus.camera === 'granted' && currentStatus.photos === 'granted') {
-        console.log('✅ Camera permissions already granted');
         return { granted: true, denied: false, prompt: false };
       }
 

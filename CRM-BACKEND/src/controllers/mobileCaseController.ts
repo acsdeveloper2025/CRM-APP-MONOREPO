@@ -35,16 +35,10 @@ export class MobileCaseController {
       const where: any = {};
 
       // Role-based filtering
-      console.log('🔍 Mobile Cases - User Info:', { userId, userRole, assignedTo });
-
       if (userRole === 'FIELD_AGENT') {
         where.assignedTo = userId;
-        console.log('👤 Field Agent - Filtering by assignedTo:', userId);
       } else if (assignedTo) {
         where.assignedTo = assignedTo;
-        console.log('🎯 Admin/Manager - Filtering by assignedTo:', assignedTo);
-      } else {
-        console.log('📋 Admin/Manager - No assignedTo filter');
       }
 
       if (status) {
