@@ -2207,8 +2207,22 @@ export class MobileFormController {
       `;
 
       console.log(`📝 Inserting residence-cum-office verification with ${columns.length} fields:`, columns);
+      console.log(`🔍 Insert query:`, insertQuery);
+      console.log(`🔍 Insert values:`, values);
 
-      await query(insertQuery, values);
+      try {
+        await query(insertQuery, values);
+        console.log(`✅ Successfully inserted residence-cum-office verification into database`);
+      } catch (dbError) {
+        console.error(`❌ Database insertion error for residence-cum-office verification:`, {
+          error: dbError,
+          query: insertQuery,
+          values: values,
+          columns: columns,
+          dbInsertData: dbInsertData
+        });
+        throw dbError; // Re-throw to trigger the main catch block
+      }
 
       // Remove auto-save data
       await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'RESIDENCE_CUM_OFFICE'`, [actualCaseId]);

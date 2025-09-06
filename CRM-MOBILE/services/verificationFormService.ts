@@ -476,10 +476,24 @@ class VerificationFormService {
         }))
       };
 
-      // Submit to backend
-      const result = await this.submitToBackend(
+      // Debug logging for submission data
+      console.log(`🔍 ${verificationType} submission debug info:`, {
+        caseId,
+        verificationType,
+        formDataKeys: Object.keys(formData),
+        imageCount: images.length,
+        hasGeoLocation: !!geoLocation,
+        submissionDataSize: JSON.stringify(submissionData).length,
+        endpoint: `${this.API_BASE_URL}/mobile/cases/${caseId}/verification/${verificationType}`
+      });
+
+      // Submit to backend with enhanced retry mechanism
+      const result = await this.submitToBackendWithRetry(
         `${this.API_BASE_URL}/mobile/cases/${caseId}/verification/${verificationType}`,
-        submissionData
+        submissionData,
+        'VERIFICATION_SUBMISSION',
+        'HIGH',
+        `${caseId}-${verificationType}-${Date.now()}`
       );
 
       if (result.success) {
@@ -768,6 +782,17 @@ class VerificationFormService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error(`🚨 Backend API Error Details:`, {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          requestData: {
+            formDataKeys: Object.keys(data.formData || {}),
+            imageCount: data.images?.length || 0,
+            hasGeoLocation: !!data.geoLocation
+          }
+        });
         return {
           success: false,
           error: errorData.message || `HTTP ${response.status}: ${response.statusText}`
