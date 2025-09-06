@@ -1,4 +1,4 @@
-# ACS Web Application
+# CRM Frontend Application
 
 A comprehensive web application for case management and verification services built with React, TypeScript, and modern web technologies.
 
@@ -38,7 +38,7 @@ A comprehensive web application for case management and verification services bu
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd acs-web
+cd CRM-FRONTEND
 ```
 
 2. Install dependencies:
@@ -119,7 +119,7 @@ npm run test:component
 ## 📁 Project Structure
 
 ```
-acs-web/
+CRM-FRONTEND/
 ├── public/                 # Static assets
 ├── src/
 │   ├── components/         # Reusable UI components

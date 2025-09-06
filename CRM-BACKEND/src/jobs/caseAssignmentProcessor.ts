@@ -253,9 +253,9 @@ async function processBulkAssignment(
 
   const assignee = userResult.rows[0];
 
-  // Enterprise-scale batch processing: larger batches for better performance
-  // Scale batch size based on total cases: 20-50 cases per batch
-  const batchSize = Math.min(Math.max(Math.floor(caseIds.length / 10), 20), 50);
+  // High-performance batch processing for 2000+ users: optimized batch sizes
+  // Scale batch size based on total cases: 30-100 cases per batch for better throughput
+  const batchSize = Math.min(Math.max(Math.floor(caseIds.length / 8), 30), 100);
   const totalBatches = Math.ceil(caseIds.length / batchSize);
 
   logger.info('Starting bulk assignment processing', {
@@ -370,11 +370,11 @@ async function processBulkAssignment(
 /**
  * Case Assignment Worker
  */
-// Enterprise-scale worker configuration for 500+ users
+// Enterprise-scale worker configuration for 2000+ users
 const getWorkerConcurrency = (): number => {
-  const totalUsers = parseInt(process.env.TOTAL_CONCURRENT_USERS || '1000');
-  // Scale concurrency based on total users: 1 worker per 20 users, min 10, max 100
-  return Math.min(Math.max(Math.floor(totalUsers / 20), 10), 100);
+  const totalUsers = parseInt(process.env.TOTAL_CONCURRENT_USERS || '2000');
+  // Enhanced concurrency: 1 worker per 15 users for better throughput, min 20, max 200
+  return Math.min(Math.max(Math.floor(totalUsers / 15), 20), 200);
 };
 
 export const caseAssignmentWorker = new Worker(

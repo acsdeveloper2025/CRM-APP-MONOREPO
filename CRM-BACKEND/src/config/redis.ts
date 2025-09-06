@@ -7,14 +7,23 @@ export const redisClient = createClient({
   url: redisUrl,
   password: process.env.REDIS_PASSWORD || undefined,
   socket: {
+    // Enhanced reconnection strategy for high-load scenarios
     reconnectStrategy: (retries: number) => {
-      if (retries > 10) {
-        logger.error('Redis connection failed after 10 retries');
+      if (retries > 20) { // Increased retry limit for enterprise
+        logger.error('Redis connection failed after 20 retries');
         return new Error('Redis connection failed');
       }
-      return Math.min(retries * 50, 1000);
+      return Math.min(retries * 100, 2000); // Faster reconnection
     },
+    // High-performance socket settings for 2000+ users
+    connectTimeout: 5000, // 5 seconds connection timeout
+    commandTimeout: 3000, // 3 seconds command timeout
+    lazyConnect: true, // Connect only when needed
+    keepAlive: 30000, // 30 seconds keep-alive
   },
+  // Enhanced performance settings for high concurrency
+  commandsQueueMaxLength: 10000, // Increased queue size
+  disableOfflineQueue: false, // Keep offline queue for reliability
 });
 
 redisClient.on('error', (err) => {

@@ -9,7 +9,7 @@ export const logger = winston.createLogger({
     winston.format.errors({ stack: true }),
     winston.format.json()
   ),
-  defaultMeta: { service: 'acs-backend' },
+  defaultMeta: { service: 'crm-backend' },
   transports: [
     // Write all logs with level 'error' and below to error.log
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),

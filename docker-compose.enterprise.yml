@@ -29,8 +29,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
       - REDIS_CLUSTER_ENABLED=true
-      - TOTAL_CONCURRENT_USERS=1000
-      - MAX_BATCH_SIZE=500
+      - TOTAL_CONCURRENT_USERS=2000
+      - MAX_BATCH_SIZE=1000
       - INSTANCE_ID=backend-1
     volumes:
       - ./logs:/app/logs
@@ -54,8 +54,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
       - REDIS_CLUSTER_ENABLED=true
-      - TOTAL_CONCURRENT_USERS=1000
-      - MAX_BATCH_SIZE=500
+      - TOTAL_CONCURRENT_USERS=2000
+      - MAX_BATCH_SIZE=1000
       - INSTANCE_ID=backend-2
     volumes:
       - ./logs:/app/logs
@@ -79,8 +79,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
       - REDIS_CLUSTER_ENABLED=true
-      - TOTAL_CONCURRENT_USERS=1000
-      - MAX_BATCH_SIZE=500
+      - TOTAL_CONCURRENT_USERS=2000
+      - MAX_BATCH_SIZE=1000
       - INSTANCE_ID=backend-3
     volumes:
       - ./logs:/app/logs

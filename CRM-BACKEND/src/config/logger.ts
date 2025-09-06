@@ -28,7 +28,7 @@ const consoleFormat = winston.format.combine(
 export const logger = winston.createLogger({
   level: logLevel,
   format: logFormat,
-  defaultMeta: { service: 'acs-backend' },
+  defaultMeta: { service: 'crm-backend' },
   transports: [
     new winston.transports.File({
       filename: 'logs/error.log',

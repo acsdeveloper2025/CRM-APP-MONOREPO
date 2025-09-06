@@ -1,7 +1,7 @@
 {
-  "name": "acs-backend",
+  "name": "crm-backend",
   "version": "1.0.0",
-  "description": "A backend service for the ACS (Access Control System) application.",
+  "description": "A backend service for the CRM (Customer Relationship Management) application.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

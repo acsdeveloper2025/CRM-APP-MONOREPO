@@ -6,26 +6,30 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not set');
 }
 
-// Enterprise-scale database pool configuration for 500+ concurrent users
+// Enterprise-scale database pool configuration for 2000+ concurrent users
 const getPoolConfig = () => {
-  const totalUsers = parseInt(process.env.TOTAL_CONCURRENT_USERS || '1000');
+  const totalUsers = parseInt(process.env.TOTAL_CONCURRENT_USERS || '2000');
 
-  // Scale connection pool based on concurrent users
-  // Rule: 1 connection per 10 concurrent users, min 20, max 200
-  const maxConnections = Math.min(Math.max(Math.floor(totalUsers / 10), 20), 200);
+  // Enhanced scaling for high-concurrency systems
+  // Rule: 1 connection per 6 concurrent users for optimal performance, min 50, max 500
+  const maxConnections = Math.min(Math.max(Math.floor(totalUsers / 6), 50), 500);
+  const minConnections = Math.max(Math.floor(maxConnections / 3), 30); // 33% of max, min 30
 
   return {
     connectionString,
-    // Enterprise connection pool settings
-    max: maxConnections, // Maximum number of connections
-    min: Math.floor(maxConnections / 4), // Minimum number of connections (25% of max)
-    idleTimeoutMillis: 30000, // 30 seconds idle timeout
-    connectionTimeoutMillis: 5000, // 5 seconds connection timeout
-    acquireTimeoutMillis: 10000, // 10 seconds acquire timeout
-    // Enterprise performance settings
-    statement_timeout: 30000, // 30 seconds statement timeout
-    query_timeout: 30000, // 30 seconds query timeout
-    application_name: 'CRM-Enterprise-Backend',
+    // High-performance enterprise connection pool settings
+    max: maxConnections, // Maximum number of connections (up to 500)
+    min: minConnections, // Minimum number of connections (33% of max)
+    idleTimeoutMillis: 45000, // 45 seconds idle timeout (optimized for high load)
+    connectionTimeoutMillis: 3000, // 3 seconds connection timeout (faster response)
+    acquireTimeoutMillis: 8000, // 8 seconds acquire timeout
+    // Enhanced performance settings for 2000+ users
+    statement_timeout: 25000, // 25 seconds statement timeout (faster)
+    query_timeout: 20000, // 20 seconds query timeout (optimized)
+    application_name: 'CRM-Enterprise-Backend-2K+',
+    // Additional high-concurrency optimizations
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 5000,
   };
 };
 
@@ -35,7 +39,9 @@ export const pool = new Pool(getPoolConfig());
 logger.info('Database pool configured for enterprise scale', {
   maxConnections: pool.options.max,
   minConnections: pool.options.min,
-  totalConcurrentUsers: process.env.TOTAL_CONCURRENT_USERS || '1000',
+  totalConcurrentUsers: process.env.TOTAL_CONCURRENT_USERS || '2000',
+  scalingRatio: '1 connection per 6 users',
+  maxCapacity: '500 connections',
 });
 
 export const query = async <T = any>(text: string, params: any[] = []): Promise<QueryResult<T>> => {

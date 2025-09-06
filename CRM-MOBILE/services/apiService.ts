@@ -41,19 +41,34 @@ class ApiService {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
+    console.log('🔍 API URL Detection:', {
+      hostname,
+      isLocalhost,
+      MODE: import.meta.env.MODE,
+      VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+      VITE_API_BASE_URL_DEVICE: import.meta.env.VITE_API_BASE_URL_DEVICE,
+      VITE_API_BASE_URL_PRODUCTION: import.meta.env.VITE_API_BASE_URL_PRODUCTION
+    });
+
     // Priority order for API URL selection:
     // 1. Production URL if in production mode
     if (import.meta.env.MODE === 'production' && import.meta.env.VITE_API_BASE_URL_PRODUCTION) {
-      return import.meta.env.VITE_API_BASE_URL_PRODUCTION;
+      const url = import.meta.env.VITE_API_BASE_URL_PRODUCTION;
+      console.log('🚀 Using production API URL:', url);
+      return url;
     }
 
     // 2. Use network URL if not on localhost (physical device or network access)
     if (!isLocalhost && import.meta.env.VITE_API_BASE_URL_DEVICE) {
-      return import.meta.env.VITE_API_BASE_URL_DEVICE;
+      const url = import.meta.env.VITE_API_BASE_URL_DEVICE;
+      console.log('📱 Using device API URL:', url);
+      return url;
     }
 
     // 3. Use localhost URL for local development
-    return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+    const url = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+    console.log('🏠 Using localhost API URL:', url);
+    return url;
   }
 
   /**
