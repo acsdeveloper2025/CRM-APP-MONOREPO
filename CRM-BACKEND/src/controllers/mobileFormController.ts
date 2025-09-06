@@ -1394,8 +1394,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data (autoSaves table doesn't have formType column)
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'OFFICE'`, [actualCaseId]);
 
       await createAuditLog({
         action: 'OFFICE_VERIFICATION_SUBMITTED',
@@ -1651,11 +1651,38 @@ export class MobileFormController {
         ...mappedFormData
       };
 
+      // Ensure final_status is always provided (required field)
+      if (!dbInsertData['final_status']) {
+        // Map outcome to final_status if not provided
+        const outcomeToFinalStatusMap: Record<string, string> = {
+          'VERIFIED': 'Positive',
+          'NOT_VERIFIED': 'Negative',
+          'FRAUD': 'Fraud',
+          'REFER': 'Refer',
+          'HOLD': 'Hold',
+          'PARTIAL': 'Refer'
+        };
+
+        const outcome = formData.outcome || 'VERIFIED';
+        dbInsertData['final_status'] = outcomeToFinalStatusMap[outcome] || 'Positive';
+        console.log(`🔧 Auto-mapped outcome '${outcome}' to final_status '${dbInsertData['final_status']}'`);
+      }
+
       // Build dynamic INSERT query based on available data
-      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      // Filter out any camelCase fields that might have been accidentally included
+      const columns = Object.keys(dbInsertData)
+        .filter(key => dbInsertData[key] !== undefined)
+        .filter(key => {
+          // Only include snake_case database column names, exclude camelCase fields
+          // Allow specific fields that don't have underscores but are valid DB columns
+          return key.includes('_') || ['id', 'caseId', 'remarks', 'locality'].includes(key);
+        });
+
       const values = columns.map(key => dbInsertData[key]);
       const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
       const columnNames = columns.map(col => `"${col}"`).join(', ');
+
+      console.log(`🔍 Filtered columns for SQL insert:`, columns);
 
       const insertQuery = `
         INSERT INTO "businessVerificationReports" (${columnNames})
@@ -1666,8 +1693,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data (autoSaves table doesn't have formType column)
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'BUSINESS'`, [actualCaseId]);
 
       await createAuditLog({
         action: 'BUSINESS_VERIFICATION_SUBMITTED',
@@ -1938,8 +1965,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data (autoSaves table doesn't have formType column)
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'BUILDER'`, [actualCaseId]);
 
       await createAuditLog({
         action: 'BUILDER_VERIFICATION_SUBMITTED',
@@ -2210,8 +2237,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data (autoSaves table doesn't have formType column)
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'RESIDENCE_CUM_OFFICE'`, [actualCaseId]);
 
       await createAuditLog({
         action: 'RESIDENCE_CUM_OFFICE_VERIFICATION_SUBMITTED',
@@ -2482,8 +2509,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data (autoSaves table doesn't have formType column)
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'DSA_CONNECTOR'`, [actualCaseId]);
 
       await createAuditLog({
         action: 'DSA_CONNECTOR_VERIFICATION_SUBMITTED',
@@ -2754,8 +2781,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data (autoSaves table doesn't have formType column)
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'PROPERTY_INDIVIDUAL'`, [actualCaseId]);
 
       await createAuditLog({
         action: 'PROPERTY_INDIVIDUAL_VERIFICATION_SUBMITTED',
@@ -3026,8 +3053,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data (autoSaves table doesn't have formType column)
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'PROPERTY_APF'`, [actualCaseId]);
 
       await createAuditLog({
         action: 'PROPERTY_APF_VERIFICATION_SUBMITTED',
@@ -3298,8 +3325,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data (autoSaves table doesn't have formType column)
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
+      // Remove auto-save data
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'NOC'`, [actualCaseId]);
 
       await createAuditLog({
         action: 'NOC_VERIFICATION_SUBMITTED',

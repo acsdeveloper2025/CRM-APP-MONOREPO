@@ -48,6 +48,11 @@ export const BUSINESS_FIELD_MAPPING: DatabaseFieldMapping = {
   'officeApproxArea': 'business_approx_area', // Alternative field name
   'staffStrength': 'staff_strength',
   'staffSeen': 'staff_seen',
+
+  // Additional business fields from mobile forms
+  'businessAddress': 'full_address', // Map businessAddress to full_address
+  'operatingHours': null, // Map to other_observation or ignore
+  'employeeCount': 'staff_strength', // Map employeeCount to staff_strength
   
   // Owner/Person details
   'metPerson': 'met_person_name',

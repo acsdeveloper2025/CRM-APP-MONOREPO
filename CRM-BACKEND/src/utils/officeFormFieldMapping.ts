@@ -172,16 +172,32 @@ function processOfficeFieldValue(fieldName: string, value: any): any {
     return String(value);
   }
   
+  // Handle final_status field - convert case to match database constraint
+  if (fieldName === 'recommendationStatus') {
+    const statusValue = String(value).trim().toUpperCase();
+    // Convert to proper case format expected by database constraint
+    switch (statusValue) {
+      case 'POSITIVE': return 'Positive';
+      case 'NEGATIVE': return 'Negative';
+      case 'REFER': return 'Refer';
+      case 'FRAUD': return 'Fraud';
+      case 'HOLD': return 'Hold';
+      default:
+        console.warn(`⚠️ Unknown recommendationStatus value: ${value}, defaulting to 'Refer'`);
+        return 'Refer'; // Safe default
+    }
+  }
+
   // Handle numeric fields
   const numericFields = [
     'staffStrength', 'staffSeen', 'officeApproxArea', 'totalEmployees'
   ];
-  
+
   if (numericFields.includes(fieldName)) {
     const num = Number(value);
     return isNaN(num) ? null : num;
   }
-  
+
   // Default: convert to string and trim
   return String(value).trim() || null;
 }

@@ -12,6 +12,7 @@ export interface AutoSaveData {
   lastSaved: string;
   version: number;
   isComplete: boolean;
+
   metadata: {
     userAgent: string;
     timestamp: string;
@@ -40,6 +41,7 @@ class AutoSaveService {
   private readonly AUTOSAVE_PREFIX = 'autosave_';
   private readonly CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
   private readonly MAX_AUTOSAVE_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+
   private readonly CURRENT_VERSION = 1;
   
   private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
@@ -194,28 +196,30 @@ class AutoSaveService {
   }
 
   /**
-   * Mark form as completed and clean up auto-save data
+   * Mark form as completed and clean up auto-save data after 15 days
    */
   async markFormCompleted(caseId: string, formType: string): Promise<void> {
     try {
       const key = this.getAutoSaveKeyInternal(caseId, formType);
       const data = await this.getFormData(caseId, formType);
-      
+
       if (data) {
         data.isComplete = true;
         data.lastSaved = new Date().toISOString();
         await encryptedStorage.setItem(key, data);
       }
-      
+
       // Schedule cleanup after a delay
       setTimeout(() => {
         this.removeAutoSaveData(caseId, formType);
       }, 5000); // 5 seconds delay
-      
+
     } catch (error) {
       console.error('Error marking form as completed:', error);
     }
   }
+
+
 
   /**
    * Remove auto-save data
@@ -224,7 +228,7 @@ class AutoSaveService {
     try {
       const key = this.getAutoSaveKeyInternal(caseId, formType);
       await encryptedStorage.removeItem(key);
-      
+
       // Clear any pending saves
       this.saveQueue.delete(key);
       const timer = this.debounceTimers.get(key);
@@ -232,10 +236,10 @@ class AutoSaveService {
         clearTimeout(timer);
         this.debounceTimers.delete(key);
       }
-      
+
       // Notify listeners
       this.notifyListeners(key, null);
-      
+
       console.log(`Removed auto-save data for ${caseId} (${formType})`);
     } catch (error) {
       console.error('Error removing auto-save data:', error);
@@ -293,13 +297,13 @@ class AutoSaveService {
       const keys = await encryptedStorage.getAllKeys();
       const autoSaveKeys = keys.filter(key => key.startsWith(this.AUTOSAVE_PREFIX));
       const now = Date.now();
-      
+
       for (const key of autoSaveKeys) {
         const data = await encryptedStorage.getItem<AutoSaveData>(key);
         if (data) {
           const lastSavedTime = new Date(data.lastSaved).getTime();
           const age = now - lastSavedTime;
-          
+
           // Remove old or completed auto-save data
           if (age > this.MAX_AUTOSAVE_AGE || data.isComplete) {
             await encryptedStorage.removeItem(key);

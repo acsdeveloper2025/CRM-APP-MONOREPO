@@ -184,6 +184,24 @@ export const useAutoSave = (
   }, [caseId, formType, updateStatus]);
 
   /**
+   * Immediately clean up completed form (for use after successful submission)
+   */
+  const cleanupCompletedForm = useCallback(async (): Promise<void> => {
+    try {
+      await autoSaveService.cleanupCompletedForm(caseId, formType);
+      updateStatus({
+        hasUnsavedChanges: false,
+        hasSavedData: false,
+        lastSaved: null,
+        autoSaveError: null
+      });
+    } catch (error) {
+      console.error('Error cleaning up completed form:', error);
+      updateStatus({ autoSaveError: 'Failed to cleanup completed form' });
+    }
+  }, [caseId, formType, updateStatus]);
+
+  /**
    * Force save immediately
    */
   const forceSave = useCallback(async (): Promise<void> => {
