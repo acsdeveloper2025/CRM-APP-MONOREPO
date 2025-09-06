@@ -90,7 +90,6 @@ export const OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'otherObservation': 'other_observation',
   'otherExtraRemark': 'other_extra_remark',
   'holdReason': 'hold_reason',
-  'recommendationStatus': 'recommendation_status',
   
   // Legacy/alternative field names
   'companyName': 'company_nature_of_business', // Maps to company nature
