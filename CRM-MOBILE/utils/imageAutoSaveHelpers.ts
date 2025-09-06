@@ -25,15 +25,19 @@ export const createImageChangeHandler = (
       ...img,
       componentType: 'photo' as const
     }));
-    
+
+    console.log(`📸 Regular images changed: ${imagesWithMetadata.length} photos for case ${caseId}`);
+
     const updatedReport = { ...report, images: imagesWithMetadata };
     updateReport(caseId, updatedReport);
-    
+
     // Trigger auto-save with all images (regular + selfie)
     const allImages = [
       ...imagesWithMetadata,
       ...(report.selfieImages || []).map((img: CapturedImage) => ({ ...img, componentType: 'selfie' as const }))
     ];
+
+    console.log(`💾 Triggering auto-save with ${allImages.length} total images (${imagesWithMetadata.length} photos + ${report.selfieImages?.length || 0} selfies)`);
     handleAutoSaveImagesChange(allImages);
   };
 };
@@ -58,15 +62,19 @@ export const createSelfieImageChangeHandler = (
       ...img,
       componentType: 'selfie' as const
     }));
-    
+
+    console.log(`🤳 Selfie images changed: ${selfieImagesWithMetadata.length} selfies for case ${caseId}`);
+
     const updatedReport = { ...report, selfieImages: selfieImagesWithMetadata };
     updateReport(caseId, updatedReport);
-    
+
     // Trigger auto-save with all images (regular + selfie)
     const allImages = [
       ...(report.images || []).map((img: CapturedImage) => ({ ...img, componentType: 'photo' as const })),
       ...selfieImagesWithMetadata
     ];
+
+    console.log(`💾 Triggering auto-save with ${allImages.length} total images (${report.images?.length || 0} photos + ${selfieImagesWithMetadata.length} selfies)`);
     handleAutoSaveImagesChange(allImages);
   };
 };
@@ -89,12 +97,14 @@ export const createAutoSaveImagesChangeHandler = (
   return (allImages: CapturedImage[]) => {
     // This callback is used by AutoSaveFormWrapper for auto-save restoration
     // Split images based on componentType metadata
-    if (!isReadOnly && report) {
+    if (!isReadOnly && report && Array.isArray(allImages)) {
       const selfieImages = allImages.filter(img => img.componentType === 'selfie');
       const regularImages = allImages.filter(img => img.componentType !== 'selfie');
-      
-      updateReport(caseId, { 
-        ...report, 
+
+      console.log(`🔄 Auto-save images handler: ${regularImages.length} photos, ${selfieImages.length} selfies for case ${caseId}`);
+
+      updateReport(caseId, {
+        ...report,
         images: regularImages,
         selfieImages: selfieImages
       });
@@ -147,7 +157,23 @@ export const createDataRestoredHandler = (
 ) => {
   return (data: any) => {
     if (!isReadOnly && data.formData) {
-      updateReport(caseId, data.formData);
+      // Restore form data
+      const restoredData = { ...data.formData };
+
+      // Also restore images if they exist in the saved data
+      if (data.images && Array.isArray(data.images)) {
+        // Split images based on componentType metadata
+        const selfieImages = data.images.filter((img: any) => img.componentType === 'selfie');
+        const regularImages = data.images.filter((img: any) => img.componentType !== 'selfie');
+
+        // Add images to the restored data
+        restoredData.images = regularImages;
+        restoredData.selfieImages = selfieImages;
+
+        console.log(`🔄 Auto-save restored: ${regularImages.length} photos, ${selfieImages.length} selfies for case ${caseId}`);
+      }
+
+      updateReport(caseId, restoredData);
     }
   };
 };
