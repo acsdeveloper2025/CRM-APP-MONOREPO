@@ -107,7 +107,9 @@ export const OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'totalEmployees': 'staff_strength', // Maps to staff strength
   'businessNature': 'company_nature_of_business', // Maps to business nature
   'verificationMethod': null, // Derived field, ignore
-  
+  'documentsSeen': 'document_shown', // Maps to document shown
+  'verificationNotes': 'other_observation', // Maps to other observation
+
   // Fields to ignore (UI state, images, etc.)
   'images': null,
   'selfieImages': null,
