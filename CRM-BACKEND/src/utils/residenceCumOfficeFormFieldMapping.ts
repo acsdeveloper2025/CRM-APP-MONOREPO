@@ -195,17 +195,23 @@ export function mapResidenceCumOfficeFormDataToDatabase(formData: any): Record<s
   // Process each field in the form data
   for (const [mobileField, value] of Object.entries(formData)) {
     const dbColumn = RESIDENCE_CUM_OFFICE_FIELD_MAPPING[mobileField];
-    
+
     // Skip fields that should be ignored
     if (dbColumn === null) {
       continue;
     }
-    
-    // Use the mapped column name or the original field name if no mapping exists
-    const columnName = dbColumn || mobileField;
-    
-    // Process the value based on type
-    mappedData[columnName] = processResidenceCumOfficeFieldValue(mobileField, value);
+
+    // Only process fields that have explicit mappings to prevent database errors
+    if (dbColumn) {
+      // Use the mapped column name
+      const columnName = dbColumn;
+
+      // Process the value based on type
+      mappedData[columnName] = processResidenceCumOfficeFieldValue(mobileField, value);
+    } else {
+      // Log unmapped fields for debugging but don't include them in database insertion
+      console.warn(`⚠️ Unmapped residence-cum-office field: ${mobileField} (value: ${value}) - skipping to prevent database errors`);
+    }
   }
   
   return mappedData;
