@@ -17,6 +17,7 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'outcome': null, // Handled separately as verification_outcome
   'remarks': 'remarks',
   'finalStatus': 'final_status',
+  'resiCumOfficeStatus': null, // Ignore this field - it's redundant with finalStatus
   
   // Address and location fields
   'addressLocatable': 'address_locatable',
@@ -109,6 +110,15 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'metPerson': 'met_person_name', // Maps to met person name
   'companyName': 'company_nature_of_business', // Maps to company nature
   'totalEmployees': 'staff_strength', // Maps to staff strength
+
+  // Additional mobile form fields that need mapping or ignoring
+  'residenceSetup': null, // Ignore - not a database field
+  'businessSetup': null, // Ignore - not a database field
+  'relation': 'met_person_relation', // Maps to met person relation
+  'businessStatus': 'office_status', // Maps to office status
+  'businessLocation': 'sitting_location', // Maps to sitting location
+  'businessOperatingAddress': null, // Ignore - redundant with address
+  'applicantStayingFloor': 'address_floor', // Maps to address floor
   'businessNature': 'company_nature_of_business', // Maps to business nature
   'verificationMethod': null, // Derived field, ignore
   
