@@ -17,6 +17,17 @@ export interface AutoSaveData {
     timestamp: string;
     formVersion: string;
   };
+  // Browser optimization properties
+  platform?: string;
+  storageVersion?: string;
+  hasChunkedImages?: boolean;
+  imageCount?: number;
+  imagesSkipped?: boolean;
+  skippedImageCount?: number;
+  isMinimal?: boolean;
+  originalDataSize?: number;
+  restoredFromChunks?: boolean;
+  imageRestorationFailed?: boolean;
 }
 
 export interface AutoSaveOptions {
@@ -461,7 +472,7 @@ class AutoSaveService {
   }
 
   /**
-   * Optimize data for storage (mainly for web browsers)
+   * Optimize data for storage with advanced browser compression
    */
   private async optimizeDataForStorage(data: any): Promise<any> {
     try {
@@ -470,25 +481,119 @@ class AutoSaveService {
 
       // Add storage metadata
       optimizedData.lastSaved = new Date().toISOString();
-      optimizedData.storageVersion = '1.0';
+      optimizedData.storageVersion = '2.0';
       optimizedData.platform = 'web';
 
-      // For web browsers, validate and clean image data
-      if (optimizedData.images) {
-        optimizedData.images = optimizedData.images.filter((img: any) => img && img.dataUrl);
-      }
-      if (optimizedData.selfieImages) {
-        optimizedData.selfieImages = optimizedData.selfieImages.filter((img: any) => img && img.dataUrl);
+      // Advanced image optimization for browsers
+      if (optimizedData.images && optimizedData.images.length > 0) {
+        console.log(`🖼️ Optimizing ${optimizedData.images.length} regular images for browser storage...`);
+        optimizedData.images = await this.optimizeImagesForBrowser(optimizedData.images, 'photos');
       }
 
-      const dataSize = JSON.stringify(optimizedData).length;
-      console.log(`📊 Web-optimized data size: ${dataSize} characters for ${data.caseId}`);
+      if (optimizedData.selfieImages && optimizedData.selfieImages.length > 0) {
+        console.log(`🤳 Optimizing ${optimizedData.selfieImages.length} selfie images for browser storage...`);
+        optimizedData.selfieImages = await this.optimizeImagesForBrowser(optimizedData.selfieImages, 'selfies');
+      }
+
+      const originalSize = JSON.stringify(data).length;
+      const optimizedSize = JSON.stringify(optimizedData).length;
+      const compressionRatio = ((originalSize - optimizedSize) / originalSize * 100).toFixed(1);
+
+      console.log(`📊 Browser optimization complete for ${data.caseId}:`);
+      console.log(`   Original: ${originalSize} chars`);
+      console.log(`   Optimized: ${optimizedSize} chars`);
+      console.log(`   Compression: ${compressionRatio}% reduction`);
 
       return optimizedData;
     } catch (error) {
       console.error('❌ Error optimizing data for storage:', error);
       return data; // Return original data if optimization fails
     }
+  }
+
+  /**
+   * Advanced image optimization for browser storage
+   */
+  private async optimizeImagesForBrowser(images: CapturedImage[], type: string): Promise<CapturedImage[]> {
+    const optimizedImages: CapturedImage[] = [];
+
+    for (let i = 0; i < images.length; i++) {
+      try {
+        const image = images[i];
+        if (!image || !image.dataUrl) continue;
+
+        // Compress image for browser storage
+        const compressedImage = await this.compressImageForBrowser(image);
+        optimizedImages.push(compressedImage);
+
+        const originalSize = image.dataUrl.length;
+        const compressedSize = compressedImage.dataUrl.length;
+        const reduction = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+
+        console.log(`   ${type} ${i + 1}: ${originalSize} → ${compressedSize} chars (${reduction}% reduction)`);
+      } catch (error) {
+        console.warn(`⚠️ Failed to optimize ${type} image ${i + 1}, keeping original`);
+        optimizedImages.push(images[i]);
+      }
+    }
+
+    return optimizedImages;
+  }
+
+  /**
+   * Compress individual image for browser storage
+   */
+  private async compressImageForBrowser(image: CapturedImage): Promise<CapturedImage> {
+    return new Promise((resolve) => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        img.onload = () => {
+          // Calculate optimal dimensions (max 800px width/height for browser storage)
+          const maxDimension = 800;
+          let { width, height } = img;
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height * maxDimension) / width;
+              width = maxDimension;
+            } else {
+              width = (width * maxDimension) / height;
+              height = maxDimension;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          // Draw and compress
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          // Use JPEG compression for better file size (quality: 0.7 for good balance)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+          resolve({
+            ...image,
+            dataUrl: compressedDataUrl,
+            compressed: true,
+            originalSize: image.dataUrl.length,
+            compressedSize: compressedDataUrl.length
+          });
+        };
+
+        img.onerror = () => {
+          console.warn('Failed to load image for compression, keeping original');
+          resolve(image);
+        };
+
+        img.src = image.dataUrl;
+      } catch (error) {
+        console.warn('Error compressing image, keeping original:', error);
+        resolve(image);
+      }
+    });
   }
 
   /**
@@ -599,7 +704,7 @@ class AutoSaveService {
       const keyDataPairs = await Promise.all(
         autoSaveKeys.map(async key => {
           try {
-            const data = await encryptedStorage.getItem(key);
+            const data = await encryptedStorage.getItem(key) as AutoSaveData | null;
             return { key, lastSaved: data?.lastSaved || '1970-01-01' };
           } catch {
             return { key, lastSaved: '1970-01-01' };
@@ -638,7 +743,11 @@ class AutoSaveService {
       for (let i = 0; i < (formData.imageCount || 0); i++) {
         const imageKey = `${baseKey}_image_${i}`;
         try {
-          const imageData = await encryptedStorage.getItem(imageKey);
+          const imageData = await encryptedStorage.getItem(imageKey) as {
+            imageData: CapturedImage;
+            index: number;
+            isRegularImage: boolean;
+          } | null;
           if (imageData && imageData.imageData) {
             if (imageData.isRegularImage) {
               images.push(imageData.imageData);
@@ -646,7 +755,7 @@ class AutoSaveService {
               selfieImages.push(imageData.imageData);
             }
           }
-        } catch (imageError) {
+        } catch {
           console.warn(`⚠️ Failed to restore image chunk ${i} for ${formData.caseId}`);
         }
       }

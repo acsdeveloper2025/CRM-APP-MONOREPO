@@ -453,6 +453,10 @@ export interface CapturedImage {
     timestamp?: string;
     address?: string;
   };
+  // Browser optimization properties
+  compressed?: boolean;
+  originalSize?: number;
+  compressedSize?: number;
 }
 
 export interface Attachment {
