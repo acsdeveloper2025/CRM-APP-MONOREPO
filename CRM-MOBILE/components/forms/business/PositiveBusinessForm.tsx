@@ -431,8 +431,9 @@ const PositiveBusinessForm: React.FC<PositiveBusinessFormProps> = ({ caseData })
                     setSubmissionError(null);
 
                     try {
-                        // Prepare form data for submission
+                        // Prepare comprehensive form data for submission including ALL form fields
                         const formData = {
+                            // Basic business information
                             businessName: report.nameOnBoard || report.companyNatureOfBusiness,
                             businessType: report.businessType,
                             ownerName: report.nameOfCompanyOwners,
@@ -445,13 +446,54 @@ const PositiveBusinessForm: React.FC<PositiveBusinessFormProps> = ({ caseData })
                                     report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
                                     report.finalStatus === FinalStatus.Refer ? 'REFER' :
                                     report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
-                            // Additional fields from the form
+
+                            // Address verification details
+                            addressLocatable: report.addressLocatable,
                             addressRating: report.addressRating,
                             locality: report.locality,
+                            addressStructure: report.addressStructure,
+                            addressStructureColor: report.addressStructureColor,
+                            doorColor: report.doorColor,
+                            landmark1: report.landmark1,
+                            landmark2: report.landmark2,
+
+                            // Business status and details
                             businessStatus: report.officeStatus,
                             ownershipType: report.ownershipType,
+                            addressStatus: report.addressStatus,
+
+                            // Company information
+                            companyNatureOfBusiness: report.companyNatureOfBusiness,
+                            businessPeriod: report.businessPeriod,
+                            companyNamePlateStatus: report.companyNamePlateStatus,
+                            nameOnBoard: report.nameOnBoard,
+                            documentShown: report.documentShown,
+
+                            // Staff and office details
+                            officeApproxArea: report.officeApproxArea,
+                            staffStrength: report.staffStrength,
+                            staffSeen: report.staffSeen,
+                            metPerson: report.metPerson,
+                            designation: report.designation,
+                            nameOfCompanyOwners: report.nameOfCompanyOwners,
+
+                            // Third Party Confirmation
+                            tpcMetPerson1: report.tpcMetPerson1,
+                            nameOfTpc1: report.nameOfTpc1,
+                            tpcConfirmation1: report.tpcConfirmation1,
+                            tpcMetPerson2: report.tpcMetPerson2,
+                            nameOfTpc2: report.nameOfTpc2,
+                            tpcConfirmation2: report.tpcConfirmation2,
+
+                            // Area assessment
                             politicalConnection: report.politicalConnection,
                             dominatedArea: report.dominatedArea,
+                            feedbackFromNeighbour: report.feedbackFromNeighbour,
+                            otherObservation: report.otherObservation,
+
+                            // Final status and recommendations
+                            finalStatus: report.finalStatus,
+                            holdReason: report.holdReason,
                             recommendationStatus: report.finalStatus === FinalStatus.Positive ? 'Positive' :
                                                  report.finalStatus === FinalStatus.Negative ? 'Negative' :
                                                  report.finalStatus === FinalStatus.Refer ? 'Refer' :

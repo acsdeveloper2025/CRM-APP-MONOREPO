@@ -479,9 +479,9 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
                     <PositiveNegativePropertyApfForm caseData={caseData} /> :
                     <p>Loading Property APF Form...</p>;
             case VerificationOutcome.ERT:
-                return caseData.entryRestrictedPropertyApfReport ? <EntryRestrictedPropertyApfForm caseData={caseData} /> : <p>Loading ERT Property (APF) Form...</p>;
+                return caseData.entryRestrictedPropertyApfReport ? <EntryRestrictedPropertyApfForm caseData={caseData} /> : <p>Loading ERT Property APF Form...</p>;
             case VerificationOutcome.Untraceable:
-                return caseData.untraceablePropertyApfReport ? <UntraceablePropertyApfForm caseData={caseData} /> : <p>Loading Untraceable Property (APF) Form...</p>;
+                return caseData.untraceablePropertyApfReport ? <UntraceablePropertyApfForm caseData={caseData} /> : <p>Loading Untraceable Property APF Form...</p>;
             default:
                 return renderOutcomeSelectionPrompt();
         }
@@ -490,13 +490,13 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, isReorderable = false, is
     if (caseData.verificationType === VerificationType.PropertyIndividual) {
         switch (caseData.verificationOutcome) {
             case VerificationOutcome.PositiveAndDoorLocked:
-                return caseData.positivePropertyIndividualReport ? <PositivePropertyIndividualForm caseData={caseData} /> : <p>Loading Property (Individual) Form...</p>;
+                return caseData.positivePropertyIndividualReport ? <PositivePropertyIndividualForm caseData={caseData} /> : <p>Loading Property Individual Form...</p>;
             case VerificationOutcome.NSPAndDoorLocked:
-                return caseData.nspPropertyIndividualReport ? <NspPropertyIndividualForm caseData={caseData} /> : <p>Loading NSP Property (Individual) Form...</p>;
+                return caseData.nspPropertyIndividualReport ? <NspPropertyIndividualForm caseData={caseData} /> : <p>Loading NSP Property Individual Form...</p>;
             case VerificationOutcome.ERT:
-                return caseData.entryRestrictedPropertyIndividualReport ? <EntryRestrictedPropertyIndividualForm caseData={caseData} /> : <p>Loading ERT Property (Individual) Form...</p>;
+                return caseData.entryRestrictedPropertyIndividualReport ? <EntryRestrictedPropertyIndividualForm caseData={caseData} /> : <p>Loading ERT Property Individual Form...</p>;
             case VerificationOutcome.Untraceable:
-                return caseData.untraceablePropertyIndividualReport ? <UntraceablePropertyIndividualForm caseData={caseData} /> : <p>Loading Untraceable Property (Individual) Form...</p>;
+                return caseData.untraceablePropertyIndividualReport ? <UntraceablePropertyIndividualForm caseData={caseData} /> : <p>Loading Untraceable Property Individual Form...</p>;
             default:
                 return renderOutcomeSelectionPrompt();
         }

@@ -845,7 +845,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : c
       ));
     } catch (err) {
-      setError('Failed to update positive Property (APF) report.');
+      setError('Failed to update positive Property APF report.');
       console.error(err);
       fetchCases();
     }
@@ -863,7 +863,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : c
       ));
     } catch (err) {
-      setError('Failed to update NSP Property (APF) report.');
+      setError('Failed to update NSP Property APF report.');
       console.error(err);
       fetchCases();
     }
@@ -881,7 +881,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : c
       ));
     } catch (err) {
-      setError('Failed to update ERT Property (APF) report.');
+      setError('Failed to update ERT Property APF report.');
       console.error(err);
       fetchCases();
     }
@@ -899,7 +899,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : c
       ));
     } catch (err) {
-      setError('Failed to update untraceable Property (APF) report.');
+      setError('Failed to update untraceable Property APF report.');
       console.error(err);
       fetchCases();
     }
@@ -917,7 +917,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : c
       ));
     } catch (err) {
-      setError('Failed to update positive Property (Individual) report.');
+      setError('Failed to update positive Property Individual report.');
       console.error(err);
       fetchCases();
     }
@@ -935,7 +935,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : c
       ));
     } catch (err) {
-      setError('Failed to update NSP Property (Individual) report.');
+      setError('Failed to update NSP Property Individual report.');
       console.error(err);
       fetchCases();
     }
@@ -953,7 +953,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : c
       ));
     } catch (err) {
-      setError('Failed to update ERT Property (Individual) report.');
+      setError('Failed to update ERT Property Individual report.');
       console.error(err);
       fetchCases();
     }
@@ -971,7 +971,7 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : c
       ));
     } catch (err) {
-      setError('Failed to update Untraceable Property (Individual) report.');
+      setError('Failed to update Untraceable Property Individual report.');
       console.error(err);
       fetchCases();
     }

@@ -60,7 +60,7 @@ const PositivePropertyIndividualForm: React.FC<PositivePropertyIndividualFormPro
   );
 
   if (!report) {
-    return <p className="text-medium-text">No Positive Property (Individual) report data available.</p>;
+    return <p className="text-medium-text">No Positive Property Individual report data available.</p>;
   }
 
   const isFormValid = useMemo(() => {

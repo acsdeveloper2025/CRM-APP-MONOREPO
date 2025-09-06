@@ -39,8 +39,8 @@ export const VerificationType = {
   BUILDER: 'Builder',
   NOC: 'NOC',
   CONNECTOR: 'DSA/DST & Connector',
-  PROPERTY_APF: 'Property (APF)',
-  PROPERTY_INDIVIDUAL: 'Property (Individual)',
+  PROPERTY_APF: 'Property APF',
+  PROPERTY_INDIVIDUAL: 'Property Individual',
 } as const;
 
 export type VerificationType = typeof VerificationType[keyof typeof VerificationType];

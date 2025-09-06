@@ -14,8 +14,8 @@ export enum VerificationType {
   Builder = 'Builder',
   NOC = 'NOC',
   Connector = 'DSA/DST & Connector',
-  PropertyAPF = 'Property (APF)',
-  PropertyIndividual = 'Property (Individual)',
+  PropertyAPF = 'Property APF',
+  PropertyIndividual = 'Property Individual',
 }
 
 export enum VerificationOutcome {

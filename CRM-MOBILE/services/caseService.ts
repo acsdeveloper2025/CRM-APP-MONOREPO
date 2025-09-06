@@ -6,7 +6,7 @@ import { apiService } from './apiService';
 const LOCAL_STORAGE_KEY = 'caseflow_cases';
 
 // Backend API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://10.0.0.94:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://172.20.10.8:3000/api';
 
 // Backend case interface for API responses
 interface BackendCase {
@@ -79,8 +79,8 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
     'Noc Verification': VerificationType.NOC, // Exact DB name (lowercase 'oc')
     'NOC Verification': VerificationType.NOC, // Alternative uppercase
     'DSA DST & connector Verification': VerificationType.Connector,
-    'Property (APF) Verification': VerificationType.PropertyAPF,
-    'Property (Individual) Verification': VerificationType.PropertyIndividual
+    'Property APF Verification': VerificationType.PropertyAPF,
+    'Property Individual Verification': VerificationType.PropertyIndividual
   };
 
   return {
@@ -96,7 +96,16 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
     isSaved: false,
     createdAt: backendCase.createdAt,
     updatedAt: backendCase.updatedAt,
-    verificationType: verificationTypeMap[backendCase.verificationTypeName || backendCase.verificationType || ''] || VerificationType.Residence,
+    verificationType: (() => {
+      const typeKey = backendCase.verificationTypeName || backendCase.verificationType || '';
+      const mappedType = verificationTypeMap[typeKey];
+      console.log('🔍 Verification Type Mapping:', {
+        typeKey,
+        mappedType,
+        fallback: mappedType || VerificationType.Residence
+      });
+      return mappedType || VerificationType.Residence;
+    })(),
     verificationOutcome: null,
     priority: priorityMap[backendCase.priority || 'MEDIUM'] || 2,
 

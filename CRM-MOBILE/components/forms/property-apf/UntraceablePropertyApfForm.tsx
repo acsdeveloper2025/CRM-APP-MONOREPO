@@ -58,7 +58,7 @@ const UntraceablePropertyApfForm: React.FC<UntraceablePropertyApfFormProps> = ({
   );
 
   if (!report) {
-    return <p className="text-medium-text">No Untraceable Property (APF) report data available.</p>;
+    return <p className="text-medium-text">No Untraceable Property APF report data available.</p>;
   }
   
   const isFormValid = useMemo(() => {

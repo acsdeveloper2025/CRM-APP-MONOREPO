@@ -58,7 +58,7 @@ const UntraceablePropertyIndividualForm: React.FC<UntraceablePropertyIndividualF
   );
 
   if (!report) {
-    return <p className="text-medium-text">No Untraceable Property (Individual) report data available.</p>;
+    return <p className="text-medium-text">No Untraceable Property Individual report data available.</p>;
   }
 
   const isFormValid = useMemo(() => {

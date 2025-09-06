@@ -1395,7 +1395,7 @@ export class MobileFormController {
       await query(insertQuery, values);
 
       // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'OFFICE'`, [actualCaseId]);
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'OFFICE_VERIFICATION_SUBMITTED',
@@ -1694,7 +1694,7 @@ export class MobileFormController {
       await query(insertQuery, values);
 
       // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'BUSINESS'`, [actualCaseId]);
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'BUSINESS_VERIFICATION_SUBMITTED',
@@ -1950,8 +1950,27 @@ export class MobileFormController {
         ...mappedFormData
       };
 
-      // Build dynamic INSERT query based on available data
-      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      // Get valid database columns for builder verification
+      const availableDbColumns = getBuilderAvailableDbColumns();
+
+      // Add essential system fields that are always required
+      const essentialFields = [
+        'case_id', 'caseId', 'form_type', 'verification_outcome',
+        'customer_name', 'customer_phone', 'customer_email', 'full_address',
+        'verification_date', 'verification_time', 'verified_by',
+        'total_images', 'total_selfies', 'remarks'
+      ];
+      const allValidColumns = [...new Set([...availableDbColumns, ...essentialFields])];
+
+      // Filter columns to only include valid database columns
+      const filteredColumns = Object.keys(dbInsertData)
+        .filter(key => dbInsertData[key] !== undefined)
+        .filter(key => allValidColumns.includes(key));
+
+      console.log('🔍 Filtered columns for SQL insert:', filteredColumns);
+
+      // Build dynamic INSERT query based on filtered columns
+      const columns = filteredColumns;
       const values = columns.map(key => dbInsertData[key]);
       const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
       const columnNames = columns.map(col => `"${col}"`).join(', ');
@@ -1966,7 +1985,7 @@ export class MobileFormController {
       await query(insertQuery, values);
 
       // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'BUILDER'`, [actualCaseId]);
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'BUILDER_VERIFICATION_SUBMITTED',
@@ -2238,7 +2257,7 @@ export class MobileFormController {
       await query(insertQuery, values);
 
       // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'RESIDENCE_CUM_OFFICE'`, [actualCaseId]);
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'RESIDENCE_CUM_OFFICE_VERIFICATION_SUBMITTED',
@@ -2494,8 +2513,27 @@ export class MobileFormController {
         ...mappedFormData
       };
 
-      // Build dynamic INSERT query based on available data
-      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      // Get valid database columns for DSA Connector verification
+      const availableDbColumns = getDsaConnectorAvailableDbColumns();
+
+      // Add essential system fields that are always required
+      const essentialFields = [
+        'case_id', 'caseId', 'form_type', 'verification_outcome',
+        'customer_name', 'customer_phone', 'customer_email', 'full_address',
+        'verification_date', 'verification_time', 'verified_by',
+        'total_images', 'total_selfies', 'remarks'
+      ];
+      const allValidColumns = [...new Set([...availableDbColumns, ...essentialFields])];
+
+      // Filter columns to only include valid database columns
+      const filteredColumns = Object.keys(dbInsertData)
+        .filter(key => dbInsertData[key] !== undefined)
+        .filter(key => allValidColumns.includes(key));
+
+      console.log('🔍 Filtered columns for SQL insert:', filteredColumns);
+
+      // Build dynamic INSERT query based on filtered columns
+      const columns = filteredColumns;
       const values = columns.map(key => dbInsertData[key]);
       const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
       const columnNames = columns.map(col => `"${col}"`).join(', ');
@@ -2510,7 +2548,7 @@ export class MobileFormController {
       await query(insertQuery, values);
 
       // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'DSA_CONNECTOR'`, [actualCaseId]);
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'DSA_CONNECTOR_VERIFICATION_SUBMITTED',
@@ -2782,7 +2820,7 @@ export class MobileFormController {
       await query(insertQuery, values);
 
       // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'PROPERTY_INDIVIDUAL'`, [actualCaseId]);
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'PROPERTY_INDIVIDUAL_VERIFICATION_SUBMITTED',
@@ -3038,8 +3076,27 @@ export class MobileFormController {
         ...mappedFormData
       };
 
-      // Build dynamic INSERT query based on available data
-      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      // Get valid database columns for Property APF verification
+      const availableDbColumns = getPropertyApfAvailableDbColumns();
+
+      // Add essential system fields that are always required
+      const essentialFields = [
+        'case_id', 'caseId', 'form_type', 'verification_outcome',
+        'customer_name', 'customer_phone', 'customer_email', 'full_address',
+        'verification_date', 'verification_time', 'verified_by',
+        'total_images', 'total_selfies', 'remarks'
+      ];
+      const allValidColumns = [...new Set([...availableDbColumns, ...essentialFields])];
+
+      // Filter columns to only include valid database columns
+      const filteredColumns = Object.keys(dbInsertData)
+        .filter(key => dbInsertData[key] !== undefined)
+        .filter(key => allValidColumns.includes(key));
+
+      console.log('🔍 Filtered columns for SQL insert:', filteredColumns);
+
+      // Build dynamic INSERT query based on filtered columns
+      const columns = filteredColumns;
       const values = columns.map(key => dbInsertData[key]);
       const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
       const columnNames = columns.map(col => `"${col}"`).join(', ');
@@ -3054,7 +3111,7 @@ export class MobileFormController {
       await query(insertQuery, values);
 
       // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'PROPERTY_APF'`, [actualCaseId]);
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'PROPERTY_APF_VERIFICATION_SUBMITTED',
@@ -3310,8 +3367,27 @@ export class MobileFormController {
         ...mappedFormData
       };
 
-      // Build dynamic INSERT query based on available data
-      const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
+      // Get valid database columns for NOC verification
+      const availableDbColumns = getNocAvailableDbColumns();
+
+      // Add essential system fields that are always required
+      const essentialFields = [
+        'case_id', 'caseId', 'form_type', 'verification_outcome',
+        'customer_name', 'customer_phone', 'customer_email', 'full_address',
+        'verification_date', 'verification_time', 'verified_by',
+        'total_images', 'total_selfies', 'remarks'
+      ];
+      const allValidColumns = [...new Set([...availableDbColumns, ...essentialFields])];
+
+      // Filter columns to only include valid database columns
+      const filteredColumns = Object.keys(dbInsertData)
+        .filter(key => dbInsertData[key] !== undefined)
+        .filter(key => allValidColumns.includes(key));
+
+      console.log('🔍 Filtered columns for SQL insert:', filteredColumns);
+
+      // Build dynamic INSERT query based on filtered columns
+      const columns = filteredColumns;
       const values = columns.map(key => dbInsertData[key]);
       const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
       const columnNames = columns.map(col => `"${col}"`).join(', ');
@@ -3326,7 +3402,7 @@ export class MobileFormController {
       await query(insertQuery, values);
 
       // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "form_type" = 'NOC'`, [actualCaseId]);
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'NOC_VERIFICATION_SUBMITTED',

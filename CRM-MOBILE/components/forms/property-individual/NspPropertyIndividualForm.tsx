@@ -60,7 +60,7 @@ const NspPropertyIndividualForm: React.FC<NspPropertyIndividualFormProps> = ({ c
   );
 
   if (!report) {
-    return <p className="text-medium-text">No NSP Property (Individual) report data available.</p>;
+    return <p className="text-medium-text">No NSP Property Individual report data available.</p>;
   }
 
   const isFormValid = useMemo(() => {
