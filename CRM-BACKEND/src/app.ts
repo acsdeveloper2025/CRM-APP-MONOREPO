@@ -71,6 +71,23 @@ app.use(cors({
     'X-Device-Model',
     'X-OS-Version',
     'X-Client-Type',
+    // Standard browser headers
+    'User-Agent',
+    'Accept',
+    'Accept-Language',
+    'Accept-Encoding',
+    'Cache-Control',
+    'Connection',
+    'Host',
+    'Origin',
+    'Referer',
+    'Sec-Fetch-Dest',
+    'Sec-Fetch-Mode',
+    'Sec-Fetch-Site',
+    // Additional headers for mobile apps
+    'X-Forwarded-For',
+    'X-Real-IP',
+    'X-Forwarded-Proto',
   ],
 }));
 
