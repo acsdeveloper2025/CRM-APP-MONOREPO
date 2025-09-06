@@ -96,7 +96,7 @@ class CaseStatusService {
     metadata: Record<string, any>
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://172.20.10.8:3000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://10.10.148.219:3000/api';
       const authToken = await AuthStorageService.getCurrentAccessToken();
 
       if (!authToken) {
