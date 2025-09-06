@@ -17,9 +17,7 @@ export const redisClient = createClient({
     },
     // High-performance socket settings for 2000+ users
     connectTimeout: 5000, // 5 seconds connection timeout
-    commandTimeout: 3000, // 3 seconds command timeout
-    lazyConnect: true, // Connect only when needed
-    keepAlive: 30000, // 30 seconds keep-alive
+    keepAlive: true, // Enable keep-alive
   },
   // Enhanced performance settings for high concurrency
   commandsQueueMaxLength: 10000, // Increased queue size
