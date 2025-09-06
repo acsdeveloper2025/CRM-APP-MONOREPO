@@ -214,67 +214,7 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    try {
-      console.log(`📋 Submitting office verification for case ${caseId}...`);
-
-      // Validate minimum requirements
-      if (images.length < 5) {
-        return {
-          success: false,
-          error: 'Minimum 5 geo-tagged photos required for office verification'
-        };
-      }
-
-      // Check if all images have geo-location
-      const photosWithoutGeo = images.filter(img =>
-        !img.geoLocation ||
-        !img.geoLocation.latitude ||
-        !img.geoLocation.longitude
-      );
-
-      if (photosWithoutGeo.length > 0) {
-        return {
-          success: false,
-          error: 'All photos must have geo-location data'
-        };
-      }
-
-      // Prepare submission data with embedded images
-      const submissionData: VerificationSubmissionRequest = {
-        formData,
-        attachmentIds: [], // Empty for new approach
-        geoLocation,
-        photos: [], // Empty for new approach
-        images: images.map(img => ({
-          dataUrl: img.dataUrl,
-          type: 'verification' as 'verification' | 'selfie',
-          geoLocation: img.geoLocation
-        }))
-      };
-
-      // Submit to backend
-      const result = await this.submitToBackendWithRetry(
-        `${this.API_BASE_URL}/mobile/cases/${caseId}/verification/office`,
-        submissionData,
-        'VERIFICATION_SUBMISSION',
-        'HIGH'
-      );
-
-      if (result.success) {
-        console.log(`✅ Office verification submitted successfully for case ${caseId}`);
-      } else {
-        console.error(`❌ Office verification submission failed for case ${caseId}:`, result.error);
-      }
-
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error(`❌ Office verification submission error for case ${caseId}:`, error);
-      return {
-        success: false,
-        error: errorMessage
-      };
-    }
+    return this.submitVerificationForm(caseId, 'office', formData, images, geoLocation);
   }
 
   /**
@@ -286,67 +226,7 @@ class VerificationFormService {
     images: CapturedImage[],
     geoLocation?: { latitude: number; longitude: number; accuracy?: number }
   ): Promise<VerificationSubmissionResult> {
-    try {
-      console.log(`📋 Submitting business verification for case ${caseId}...`);
-
-      // Validate minimum requirements
-      if (images.length < 5) {
-        return {
-          success: false,
-          error: 'Minimum 5 geo-tagged photos required for business verification'
-        };
-      }
-
-      // Check if all images have geo-location
-      const photosWithoutGeo = images.filter(img =>
-        !img.geoLocation ||
-        !img.geoLocation.latitude ||
-        !img.geoLocation.longitude
-      );
-
-      if (photosWithoutGeo.length > 0) {
-        return {
-          success: false,
-          error: 'All photos must have geo-location data'
-        };
-      }
-
-      // Prepare submission data with embedded images
-      const submissionData: VerificationSubmissionRequest = {
-        formData,
-        attachmentIds: [], // Empty for new approach
-        geoLocation,
-        photos: [], // Empty for new approach
-        images: images.map(img => ({
-          dataUrl: img.dataUrl,
-          type: 'verification' as 'verification' | 'selfie',
-          geoLocation: img.geoLocation
-        }))
-      };
-
-      // Submit to backend
-      const result = await this.submitToBackendWithRetry(
-        `${this.API_BASE_URL}/mobile/cases/${caseId}/verification/business`,
-        submissionData,
-        'VERIFICATION_SUBMISSION',
-        'HIGH'
-      );
-
-      if (result.success) {
-        console.log(`✅ Business verification submitted successfully for case ${caseId}`);
-      } else {
-        console.error(`❌ Business verification submission failed for case ${caseId}:`, result.error);
-      }
-
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error(`❌ Business verification submission error for case ${caseId}:`, error);
-      return {
-        success: false,
-        error: errorMessage
-      };
-    }
+    return this.submitVerificationForm(caseId, 'business', formData, images, geoLocation);
   }
 
   /**
