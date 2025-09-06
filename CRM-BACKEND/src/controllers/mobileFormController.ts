@@ -1394,8 +1394,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'OFFICE'`, [actualCaseId]);
+      // Remove auto-save data (autoSaves table doesn't have formType column)
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'OFFICE_VERIFICATION_SUBMITTED',
@@ -1666,8 +1666,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'BUSINESS'`, [actualCaseId]);
+      // Remove auto-save data (autoSaves table doesn't have formType column)
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'BUSINESS_VERIFICATION_SUBMITTED',
@@ -1938,8 +1938,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'BUILDER'`, [actualCaseId]);
+      // Remove auto-save data (autoSaves table doesn't have formType column)
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'BUILDER_VERIFICATION_SUBMITTED',
@@ -2482,8 +2482,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'DSA_CONNECTOR'`, [actualCaseId]);
+      // Remove auto-save data (autoSaves table doesn't have formType column)
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'DSA_CONNECTOR_VERIFICATION_SUBMITTED',
@@ -2754,8 +2754,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'PROPERTY_INDIVIDUAL'`, [actualCaseId]);
+      // Remove auto-save data (autoSaves table doesn't have formType column)
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'PROPERTY_INDIVIDUAL_VERIFICATION_SUBMITTED',
@@ -3026,8 +3026,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'PROPERTY_APF'`, [actualCaseId]);
+      // Remove auto-save data (autoSaves table doesn't have formType column)
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'PROPERTY_APF_VERIFICATION_SUBMITTED',
@@ -3298,8 +3298,8 @@ export class MobileFormController {
 
       await query(insertQuery, values);
 
-      // Remove auto-save data
-      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid AND "formType" = 'NOC'`, [actualCaseId]);
+      // Remove auto-save data (autoSaves table doesn't have formType column)
+      await query(`DELETE FROM "autoSaves" WHERE case_id = $1::uuid`, [actualCaseId]);
 
       await createAuditLog({
         action: 'NOC_VERIFICATION_SUBMITTED',
