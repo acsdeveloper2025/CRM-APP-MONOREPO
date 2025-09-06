@@ -121,7 +121,56 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'applicantStayingFloor': 'address_floor', // Maps to address floor
   'businessNature': 'company_nature_of_business', // Maps to business nature
   'verificationMethod': null, // Derived field, ignore
-  
+
+  // Additional form-specific fields from mobile components (avoiding duplicates)
+  'metPersonStatus': 'met_person_type', // Maps to met person type
+  'addressTraceable': 'address_locatable', // Alternative name for address locatable
+  'fullAddress': 'full_address', // Maps to full address
+  'customerName': 'customer_name', // Maps to customer name
+  'customerPhone': 'customer_phone', // Maps to customer phone
+  'customerEmail': 'customer_email', // Maps to customer email
+
+  // Business/Office related fields (avoiding duplicates)
+  'businessOperatingHours': null, // Ignore - not in database
+  'workingHours': 'working_period', // Maps to working period
+  'businessType': 'office_type', // Maps to office type
+  'establishmentYear': 'establishment_period', // Maps to establishment period
+  'totalStaff': 'staff_strength', // Maps to staff strength
+  'staffPresent': 'staff_seen', // Maps to staff seen
+
+  // Residence related fields
+  'familyMembers': 'total_family_members', // Maps to family members
+  'monthlyIncome': 'total_earning', // Maps to total earning
+  'dateOfBirth': 'applicant_dob', // Maps to applicant DOB
+  'age': 'applicant_age', // Maps to applicant age
+  'residenceType': 'house_status', // Maps to house status
+  'ownershipStatus': 'staying_status', // Maps to staying status
+
+  // Document related fields
+  'documentShown': 'document_shown_status', // Maps to document shown status
+  'documentTypes': 'document_type', // Maps to document type
+  'idProofShown': 'document_shown_status', // Alternative for document shown
+
+  // Additional comprehensive field mappings from all form types
+  'applicantName': 'customer_name', // Maps to customer name
+  'residenceConfirmed': null, // Ignore - derived field
+  'officeConfirmed': null, // Ignore - derived field
+  'nameOnNamePlate': 'name_on_door_plate', // Maps to name on door plate
+  'nameOnSocietyNamePlate': 'name_on_society_board', // Maps to society board name
+  'nameOnCompanyNamePlate': 'name_on_company_board', // Maps to company board name
+  'shiftedFrom': 'shifted_period', // Maps to shifted period
+  'oldOfficeAddress': null, // Ignore - not in database
+  'newOfficeAddress': null, // Ignore - not in database
+  'reasonForShift': null, // Ignore - not in database
+  'verificationOutcome': null, // Handled separately
+  'submissionDate': null, // Ignore - auto-generated
+  'submissionTime': null, // Ignore - auto-generated
+  'geoLocation': null, // Ignore - handled separately
+  'photoCount': null, // Ignore - calculated field
+  'formType': null, // Ignore - handled separately
+  'caseNumber': null, // Ignore - from case data
+  'assignedAgent': null, // Ignore - from case data
+
   // Fields to ignore (UI state, images, etc.)
   'images': null,
   'selfieImages': null,
