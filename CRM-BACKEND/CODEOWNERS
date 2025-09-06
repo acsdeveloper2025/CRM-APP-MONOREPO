@@ -1,18 +1,18 @@
 # Global Owners
-* @acs-team
+* @crm-team
 
 # Backend specific
-/src/ @acs-backend-team
-/prisma/ @acs-backend-team @acs-database-team
-/scripts/ @acs-backend-team
+/src/ @crm-backend-team
+/prisma/ @crm-backend-team @crm-database-team
+/scripts/ @crm-backend-team
 
 # Configuration files
-/.github/ @acs-devops-team
-/package.json @acs-backend-team
-/package-lock.json @acs-backend-team
-/.env.example @acs-backend-team
-/docker* @acs-devops-team
+/.github/ @crm-devops-team
+/package.json @crm-backend-team
+/package-lock.json @crm-backend-team
+/.env.example @crm-backend-team
+/docker* @crm-devops-team
 
 # Documentation
-/README.md @acs-team
-/docs/ @acs-team
+/README.md @crm-team
+/docs/ @crm-team

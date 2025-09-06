@@ -28,7 +28,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/acsdeveloper2025/acs-backend.git"
+    "url": "git+https://github.com/acsdeveloper2025/CRM-APP-MONOREPO.git"
   },
   "keywords": [
     "nodejs",
@@ -45,9 +45,9 @@
   "license": "MIT",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/acsdeveloper2025/acs-backend/issues"
+    "url": "https://github.com/acsdeveloper2025/CRM-APP-MONOREPO/issues"
   },
-  "homepage": "https://github.com/acsdeveloper2025/acs-backend#readme",
+  "homepage": "https://github.com/acsdeveloper2025/CRM-APP-MONOREPO#readme",
   "_moduleAliases": {
     "@": "dist"
   },

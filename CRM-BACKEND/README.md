@@ -2,8 +2,8 @@
 
 This repository contains a multi-app CRM stack:
 
-- Backend API: `acs-backend` (Node.js/Express + PostgreSQL + Redis)
-- Web Frontend: `acs-web` (React + Vite + TypeScript)
+- Backend API: `crm-backend` (Node.js/Express + PostgreSQL + Redis)
+- Web Frontend: `crm-frontend` (React + Vite + TypeScript)
 - Mobile App: `caseflow-mobile` (React Native/Capacitor)
 
 Docker is no longer required for local development. Run all services directly on your machine.
@@ -17,10 +17,10 @@ Docker is no longer required for local development. Run all services directly on
 
 ## Quick Start
 
-### 1) Backend API (acs-backend)
+### 1) Backend API (crm-backend)
 
 ```bash
-cd acs-backend
+cd CRM-BACKEND
 npm install
 cp .env.example .env
 # Ensure DATABASE_URL points to your local SQL Server (localhost:1433)
@@ -39,10 +39,10 @@ npm run build && npm start   # for a compiled run
 
 Health check: http://localhost:3000/health
 
-### 2) Web Frontend (acs-web)
+### 2) Web Frontend (crm-frontend)
 
 ```bash
-cd acs-web
+cd CRM-FRONTEND
 npm install
 cp .env.example .env.local
 # Set VITE_API_URL and VITE_WS_URL to http://localhost:3000

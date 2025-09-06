@@ -17,11 +17,11 @@ jobs:
           node-version: 20
 
       - name: Install dependencies (backend)
-        working-directory: acs-backend
+        working-directory: CRM-BACKEND
         run: npm ci
 
       - name: Install dependencies (web)
-        working-directory: acs-web
+        working-directory: CRM-FRONTEND
         run: npm ci
 
       - name: Install dependencies (mobile)
@@ -29,11 +29,11 @@ jobs:
         run: npm ci
 
       - name: Lint backend
-        working-directory: acs-backend
+        working-directory: CRM-BACKEND
         run: npm run lint
 
       - name: Lint web
-        working-directory: acs-web
+        working-directory: CRM-FRONTEND
         run: npm run lint
 
       - name: Lint mobile

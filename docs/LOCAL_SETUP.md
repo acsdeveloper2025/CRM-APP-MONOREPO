@@ -11,10 +11,10 @@ This guide explains how to run the CRM app locally without Docker. You will run 
 
 ## Overview
 
-- Backend API: acs-backend (Express + PostgreSQL)
+- Backend API: crm-backend (Express + PostgreSQL)
 - Database: PostgreSQL on localhost:5432 (database: acs_db)
 - Cache/Queue: Redis on localhost:6379
-- Frontend (optional): acs-web hitting http://localhost:3000
+- Frontend (optional): crm-frontend hitting http://localhost:3000
 
 ## 1) Install PostgreSQL
 
@@ -48,7 +48,7 @@ Verify: `redis-cli PING` -> PONG
 From repository root:
 
 ```bash
-cd acs-backend
+cd CRM-BACKEND
 cp .env.example .env
 # Edit .env if needed
 ```
@@ -66,7 +66,7 @@ JWT_REFRESH_SECRET=dev-refresh-secret
 ## 4) Install dependencies and initialize DB
 
 ```bash
-cd acs-backend
+cd CRM-BACKEND
 npm install
 npm run db:generate
 npm run db:migrate
@@ -96,7 +96,7 @@ Check health: http://localhost:3000/health
 ## 6) Run the frontend (optional)
 
 ```bash
-cd ../acs-web
+cd ../CRM-FRONTEND
 cp .env.example .env.local
 # Set VITE_API_URL and VITE_WS_URL to http://localhost:3000
 npm install
