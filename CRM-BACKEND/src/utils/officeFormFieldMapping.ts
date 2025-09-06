@@ -109,6 +109,7 @@ export const OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'verificationMethod': null, // Derived field, ignore
   'documentsSeen': 'document_shown', // Maps to document shown
   'verificationNotes': 'other_observation', // Maps to other observation
+  'recommendationStatus': 'final_status', // Maps to final status (required field)
 
   // Fields to ignore (UI state, images, etc.)
   'images': null,
