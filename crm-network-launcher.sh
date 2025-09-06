@@ -16,7 +16,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  --help, -h     Show this help message"
     echo "  --version, -v  Show version information"
     echo "  --stop         Stop all running CRM services"
-    echo "  --clean-backups Clean up old backup files (older than 7 days)"
+
     echo ""
     echo "This script will:"
     echo "  1. Auto-detect your network IP address"
@@ -24,11 +24,6 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  3. Install dependencies if needed"
     echo "  4. Start all services (Backend, Frontend, Mobile)"
     echo "  5. Provide access URLs for localhost and network"
-    echo ""
-    echo "Backup Management:"
-    echo "  • Creates smart backups (one per day per file)"
-    echo "  • Automatically cleans up backups older than 7 days"
-    echo "  • Backup format: filename.backup.YYYYMMDD"
     echo ""
     echo "Access URLs after running (FIXED PORTS):"
     echo "  • Frontend:  http://localhost:5173 or http://YOUR_IP:5173 (PORT 5173 FIXED)"
@@ -65,6 +60,28 @@ cleanup_old_backups() {
         print_status "Cleaned up $cleanup_count old backup files"
     else
         print_info "No old backup files to clean up"
+    fi
+}
+
+# Function to clean up ALL backup files created during this session
+cleanup_all_session_backups() {
+    print_info "🧹 Cleaning up all backup files created during this session..."
+
+    # Find all backup files created today
+    local today_backups=$(find . -name "*.backup.*" -type f 2>/dev/null)
+    local cleanup_count=0
+
+    for backup_file in $today_backups; do
+        if [ -f "$backup_file" ]; then
+            rm -f "$backup_file"
+            cleanup_count=$((cleanup_count + 1))
+        fi
+    done
+
+    if [ $cleanup_count -gt 0 ]; then
+        print_status "✅ Cleaned up $cleanup_count backup files"
+    else
+        print_info "No backup files to clean up"
     fi
 }
 
@@ -765,6 +782,9 @@ print_status "Backend: Port $BACKEND_PORT (PID: $backend_running)"
 print_status "Frontend: Port $FRONTEND_PORT (PID: $frontend_running)"
 print_status "Mobile: Port $MOBILE_PORT (PID: $mobile_running)"
 
+# Clean up all backup files now that services are running successfully
+cleanup_all_session_backups
+
 # Test network connectivity to backend
 print_info "Testing backend network connectivity..."
 if curl -s --max-time 5 "http://$NETWORK_IP:$BACKEND_PORT/health" >/dev/null 2>&1; then
@@ -822,7 +842,7 @@ echo "• FIXED PORTS: Backend(3000), Frontend(5173), Mobile(5180) - NEVER CHANG
 echo "• Port conflicts are automatically resolved by stopping existing services"
 echo "• Make sure your firewall allows connections on ports 3000, 5173, and 5180"
 echo "• All devices must be on the same network to access via IP address"
-echo "• Configuration backups created with timestamp"
+echo "• Temporary configuration backups created and cleaned up automatically"
 echo "• All hardcoded IP addresses updated to current network IP: $NETWORK_IP"
 echo "• Use Ctrl+C to stop this script (services will continue running)"
 echo ""
@@ -832,7 +852,7 @@ echo "• Environment files (.env) updated with network IP: $NETWORK_IP"
 echo "• Source code files scanned and hardcoded IPs updated"
 echo "• CORS origins configured for both localhost and network access"
 echo "• WebSocket origins configured for both localhost and network access"
-echo "• All backup files created with timestamp for rollback if needed"
+echo "• All temporary backup files automatically cleaned up after successful startup"
 echo ""
 
 print_header "🔧 Troubleshooting:"
