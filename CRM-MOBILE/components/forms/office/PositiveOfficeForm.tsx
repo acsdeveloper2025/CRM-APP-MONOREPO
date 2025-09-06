@@ -471,7 +471,11 @@ const PositiveOfficeForm: React.FC<PositiveOfficeFormProps> = ({ caseData }) => 
                             verificationMethod: 'PHYSICAL',
                             documentsSeen: report.documentShown,
                             verificationNotes: report.otherObservation,
-                            recommendationStatus: report.finalStatus === FinalStatus.Positive ? 'POSITIVE' : 'NEGATIVE'
+                            recommendationStatus: report.finalStatus === FinalStatus.Positive ? 'Positive' :
+                                                 report.finalStatus === FinalStatus.Negative ? 'Negative' :
+                                                 report.finalStatus === FinalStatus.Refer ? 'Refer' :
+                                                 report.finalStatus === FinalStatus.Fraud ? 'Fraud' :
+                                                 report.finalStatus === FinalStatus.Hold ? 'Hold' : 'Refer'
                         };
 
                         // Combine all images (regular + selfie)
