@@ -179,6 +179,7 @@ const PositiveOfficeForm: React.FC<PositiveOfficeFormProps> = ({ caseData }) => 
       autoSaveOptions={{
         enableAutoSave: !isReadOnly,
         showIndicator: !isReadOnly,
+        debounceMs: 500, // Faster auto-save for images (500ms instead of 2000ms)
       }}
     >
       <div className="space-y-4 pt-4 border-t border-dark-border">
