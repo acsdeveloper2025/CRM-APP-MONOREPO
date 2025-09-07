@@ -317,9 +317,7 @@ const CompactImageDisplay: React.FC<CompactImageDisplayProps> = ({
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#4B5563 #1F2937',
                 // Ensure scrolling works on mobile
-                touchAction: 'pan-y',
-                // Add momentum scrolling for iOS
-                WebkitOverflowScrolling: 'touch' as any
+                touchAction: 'pan-y'
               }}
             >
               <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6">

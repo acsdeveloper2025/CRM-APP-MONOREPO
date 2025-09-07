@@ -36,16 +36,16 @@ export interface RetryProgress {
 class RetryService {
   private static readonly STORAGE_KEY = 'retry_queue';
   private static readonly DEFAULT_CONFIG: RetryConfig = {
-    maxAttempts: 2, // REDUCED from 5 to 2 to prevent spam
-    baseDelay: 1000, // 1 second
-    maxDelay: 30000, // 30 seconds
-    backoffMultiplier: 2,
+    maxAttempts: 1, // REDUCED to 1 to prevent rate limiting issues
+    baseDelay: 2000, // 2 seconds
+    maxDelay: 60000, // 60 seconds
+    backoffMultiplier: 3,
     retryableErrors: [
       'NETWORK_ERROR',
       'TIMEOUT',
       'SERVER_ERROR',
-      'CONNECTION_FAILED',
-      'RATE_LIMITED'
+      'CONNECTION_FAILED'
+      // REMOVED 'RATE_LIMITED' - don't retry rate limited requests
     ]
   };
 
@@ -147,6 +147,13 @@ class RetryService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+
+        // Handle rate limiting specifically - don't retry
+        if (response.status === 429) {
+          console.warn(`⚠️ Rate limited for request ${requestId}. Not retrying.`);
+          throw new Error(`RATE_LIMITED: ${errorData.message || 'Too many requests'}`);
+        }
+
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
 
@@ -170,6 +177,12 @@ class RetryService {
       request.attempts += 1;
       request.lastAttempt = new Date().toISOString();
       request.error = errorMessage;
+
+      // Don't retry rate limited requests - mark as permanently failed
+      if (errorMessage.includes('RATE_LIMITED')) {
+        request.attempts = RetryService.DEFAULT_CONFIG.maxAttempts; // Mark as max attempts reached
+        console.warn(`⚠️ Rate limited request ${requestId} marked as permanently failed`);
+      }
 
       // Calculate next retry time
       const delay = Math.min(
@@ -205,7 +218,7 @@ class RetryService {
       }
 
       await this.processRetryQueue();
-    }, 5000); // Check every 5 seconds
+    }, 30000); // Check every 30 seconds (reduced frequency to prevent spam)
   }
 
   /**
