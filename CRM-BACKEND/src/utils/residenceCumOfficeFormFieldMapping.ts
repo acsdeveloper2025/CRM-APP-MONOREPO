@@ -11,6 +11,8 @@ export interface DatabaseFieldMapping {
 
 /**
  * Complete field mapping from mobile residence-cum-office form fields to database columns
+ * Covers all residence-cum-office verification form types: POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE
+ * This combines both residence and office verification aspects
  */
 export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   // Basic form information
@@ -18,8 +20,8 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'remarks': 'remarks',
   'finalStatus': 'final_status',
   'resiCumOfficeStatus': null, // Ignore this field - it's redundant with finalStatus
-  
-  // Address and location fields
+
+  // Address and location fields (Common to all forms)
   'addressLocatable': 'address_locatable',
   'addressRating': 'address_rating',
   'locality': 'locality',
@@ -34,20 +36,20 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'nameOnDoorPlate': 'name_on_door_plate',
   'societyNamePlateStatus': 'society_nameplate_status',
   'nameOnSocietyBoard': 'name_on_society_board',
-  
-  // Landmarks
+
+  // Landmarks (Common to all forms, untraceable may have more)
   'landmark1': 'landmark1',
   'landmark2': 'landmark2',
-  'landmark3': 'landmark3',
-  'landmark4': 'landmark4',
-  
-  // Residence-specific fields
-  'houseStatus': 'house_status',
-  'metPersonName': 'met_person_name',
-  'metPersonRelation': 'met_person_relation',
-  'totalFamilyMembers': 'total_family_members',
-  'totalEarning': 'total_earning',
-  'applicantDob': 'applicant_dob',
+  'landmark3': 'landmark3', // Used in untraceable forms
+  'landmark4': 'landmark4', // Used in untraceable forms
+
+  // Residence-specific fields (Form specific)
+  'houseStatus': 'house_status',                 // Used in POSITIVE, NSP forms
+  'metPersonName': 'met_person_name',            // Used in POSITIVE, SHIFTED, NSP forms
+  'metPersonRelation': 'met_person_relation',    // Used in POSITIVE forms
+  'totalFamilyMembers': 'total_family_members',  // Used in POSITIVE forms
+  'totalEarning': 'total_earning',               // Used in POSITIVE forms
+  'applicantDob': 'applicant_dob',               // Used in POSITIVE forms
   'applicantAge': 'applicant_age',
   'stayingPeriod': 'staying_period',
   'stayingStatus': 'staying_status',
@@ -184,14 +186,16 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
 };
 
 /**
- * Maps mobile residence-cum-office form data to database field values
- * 
+ * Maps mobile residence-cum-office form data to database field values with comprehensive field coverage
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ *
  * @param formData - Raw form data from mobile app
+ * @param formType - The type of residence-cum-office form (POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE)
  * @returns Object with database column names as keys
  */
-export function mapResidenceCumOfficeFormDataToDatabase(formData: any): Record<string, any> {
+export function mapResidenceCumOfficeFormDataToDatabase(formData: any, formType?: string): Record<string, any> {
   const mappedData: Record<string, any> = {};
-  
+
   // Process each field in the form data
   for (const [mobileField, value] of Object.entries(formData)) {
     const dbColumn = RESIDENCE_CUM_OFFICE_FIELD_MAPPING[mobileField];
@@ -213,8 +217,11 @@ export function mapResidenceCumOfficeFormDataToDatabase(formData: any): Record<s
       console.warn(`⚠️ Unmapped residence-cum-office field: ${mobileField} (value: ${value}) - skipping to prevent database errors`);
     }
   }
-  
-  return mappedData;
+
+  // Ensure all database fields have values based on form type
+  const completeData = ensureAllResidenceCumOfficeFieldsPopulated(mappedData, formType || 'POSITIVE');
+
+  return completeData;
 }
 
 /**
@@ -264,6 +271,144 @@ function processResidenceCumOfficeFieldValue(fieldName: string, value: any): any
   
   // Default: convert to string and trim
   return String(value).trim() || null;
+}
+
+/**
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ * This function guarantees that every database column has a value, preventing null/undefined issues
+ *
+ * @param mappedData - Already mapped form data
+ * @param formType - Type of residence-cum-office form
+ * @returns Complete data object with all fields populated
+ */
+export function ensureAllResidenceCumOfficeFieldsPopulated(mappedData: Record<string, any>, formType: string): Record<string, any> {
+  const completeData = { ...mappedData };
+
+  // Define all possible database fields for residence-cum-office verification
+  const allDatabaseFields = [
+    // Address and location fields
+    'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+    'address_structure_color', 'door_color', 'company_nameplate_status', 'name_on_company_board',
+    'door_nameplate_status', 'name_on_door_plate', 'society_nameplate_status', 'name_on_society_board',
+
+    // Landmarks
+    'landmark1', 'landmark2', 'landmark3', 'landmark4',
+
+    // Residence-specific fields
+    'house_status', 'met_person_name', 'met_person_relation', 'total_family_members',
+    'total_earning', 'applicant_dob', 'applicant_age', 'working_status', 'staying_period',
+    'staying_status', 'approx_area', 'document_shown_status', 'document_type',
+
+    // Office-specific fields
+    'office_status', 'office_existence', 'office_type', 'company_nature_of_business',
+    'business_period', 'establishment_period', 'office_approx_area', 'staff_strength',
+    'staff_seen', 'designation', 'applicant_designation', 'working_period',
+    'applicant_working_premises', 'current_company_name', 'old_office_shifted_period',
+
+    // Third Party Confirmation
+    'tpc_met_person1', 'tpc_name1', 'tpc_confirmation1',
+    'tpc_met_person2', 'tpc_name2', 'tpc_confirmation2',
+
+    // Form specific fields
+    'shifted_period', 'premises_status', 'name_of_met_person', 'met_person_type',
+    'met_person_confirmation', 'applicant_staying_status', 'applicant_working_status',
+    'call_remark', 'contact_person',
+
+    // Environment and area details
+    'political_connection', 'dominated_area', 'feedback_from_neighbour',
+    'other_observation', 'hold_reason', 'recommendation_status',
+
+    // Final status
+    'final_status'
+  ];
+
+  // Get fields that are relevant for this form type
+  const relevantFields = getRelevantResidenceCumOfficeFieldsForFormType(formType);
+
+  // Populate missing fields with appropriate defaults
+  for (const field of allDatabaseFields) {
+    if (completeData[field] === undefined || completeData[field] === null) {
+      if (relevantFields.includes(field)) {
+        // Field is relevant for this form type but missing - this might indicate an issue
+        console.warn(`⚠️ Missing relevant field for ${formType} residence-cum-office form: ${field}`);
+      }
+
+      // Set default value (NULL for all missing fields)
+      completeData[field] = getDefaultResidenceCumOfficeValueForField(field);
+    }
+  }
+
+  return completeData;
+}
+
+/**
+ * Gets relevant database fields for a specific residence-cum-office form type
+ *
+ * @param formType - Type of residence-cum-office form
+ * @returns Array of relevant database field names
+ */
+function getRelevantResidenceCumOfficeFieldsForFormType(formType: string): string[] {
+  const fieldsByType: Record<string, string[]> = {
+    'POSITIVE': [
+      // Address and location
+      'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+      'address_structure_color', 'door_color', 'company_nameplate_status', 'name_on_company_board',
+      'door_nameplate_status', 'name_on_door_plate', 'society_nameplate_status', 'name_on_society_board',
+      'landmark1', 'landmark2',
+      // Residence fields
+      'house_status', 'met_person_name', 'met_person_relation', 'total_family_members',
+      'total_earning', 'applicant_age', 'working_status', 'staying_period', 'staying_status',
+      'approx_area', 'document_shown_status', 'document_type',
+      // Office fields
+      'office_status', 'office_type', 'company_nature_of_business', 'business_period',
+      'establishment_period', 'office_approx_area', 'staff_strength', 'staff_seen',
+      'designation', 'applicant_designation', 'working_period',
+      // TPC and environment
+      'tpc_met_person1', 'tpc_name1', 'tpc_confirmation1', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status'
+    ],
+    'SHIFTED': [
+      'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+      'address_structure_color', 'door_color', 'company_nameplate_status', 'name_on_company_board',
+      'door_nameplate_status', 'name_on_door_plate', 'society_nameplate_status', 'name_on_society_board',
+      'landmark1', 'landmark2', 'met_person_name', 'shifted_period', 'premises_status',
+      'current_company_name', 'old_office_shifted_period', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status'
+    ],
+    'NSP': [
+      'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+      'address_structure_color', 'door_color', 'company_nameplate_status', 'name_on_company_board',
+      'door_nameplate_status', 'name_on_door_plate', 'society_nameplate_status', 'name_on_society_board',
+      'landmark1', 'landmark2', 'house_status', 'office_status', 'office_existence',
+      'met_person_name', 'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status'
+    ],
+    'ENTRY_RESTRICTED': [
+      'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+      'address_structure_color', 'company_nameplate_status', 'name_on_company_board',
+      'society_nameplate_status', 'name_on_society_board', 'landmark1', 'landmark2',
+      'name_of_met_person', 'met_person_type', 'met_person_confirmation',
+      'applicant_staying_status', 'applicant_working_status', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status'
+    ],
+    'UNTRACEABLE': [
+      'call_remark', 'contact_person', 'locality', 'landmark1', 'landmark2', 'landmark3', 'landmark4',
+      'dominated_area', 'other_observation', 'final_status'
+    ]
+  };
+
+  return fieldsByType[formType] || fieldsByType['POSITIVE'];
+}
+
+/**
+ * Gets appropriate default value for a residence-cum-office database field
+ *
+ * @param fieldName - Database field name
+ * @returns Default value for the field
+ */
+function getDefaultResidenceCumOfficeValueForField(fieldName: string): any {
+  // All fields default to null for missing/irrelevant data
+  return null;
 }
 
 /**

@@ -6,6 +6,7 @@ import { mapFormDataToDatabase, validateRequiredFields, getAvailableDbColumns } 
 import { validateAndPrepareResidenceForm, generateFieldCoverageReport } from '../utils/residenceFormValidator';
 import { validateAndPrepareOfficeForm, generateOfficeFieldCoverageReport } from '../utils/officeFormValidator';
 import { validateAndPrepareBusinessForm, generateBusinessFieldCoverageReport } from '../utils/businessFormValidator';
+import { validateAndPrepareResidenceCumOfficeForm, generateResidenceCumOfficeFieldCoverageReport } from '../utils/residenceCumOfficeFormValidator';
 import { mapOfficeFormDataToDatabase, validateOfficeRequiredFields, getOfficeAvailableDbColumns } from '../utils/officeFormFieldMapping';
 import { mapBusinessFormDataToDatabase, validateBusinessRequiredFields, getBusinessAvailableDbColumns } from '../utils/businessFormFieldMapping';
 import {
@@ -2228,19 +2229,31 @@ export class MobileFormController {
 
       console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
 
-      // Map form data to database fields using comprehensive field mapping
-      const mappedFormData = mapResidenceCumOfficeFormDataToDatabase(formData);
+      // Use comprehensive validation and preparation for residence-cum-office form data
+      const { validationResult, preparedData } = validateAndPrepareResidenceCumOfficeForm(formData, formType);
 
-      // Validate required fields for the detected form type
-      const validation = validateResidenceCumOfficeRequiredFields(formData, formType);
-      if (!validation.isValid) {
-        console.warn(`⚠️ Missing required fields for ${formType} residence-cum-office form:`, validation.missingFields);
-      }
-      if (validation.warnings.length > 0) {
-        console.warn(`⚠️ Residence-cum-office form validation warnings:`, validation.warnings);
-      }
+      // Log comprehensive validation results
+      console.log(`📊 Comprehensive validation for ${formType} residence-cum-office verification:`, {
+        isValid: validationResult.isValid,
+        missingFields: validationResult.missingFields,
+        warnings: validationResult.warnings,
+        fieldCoverage: validationResult.fieldCoverage
+      });
 
-      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} residence-cum-office form fields to database columns`);
+      // Generate and log field coverage report
+      const coverageReport = generateResidenceCumOfficeFieldCoverageReport(formData, preparedData, formType);
+      console.log(coverageReport);
+
+      // Use the prepared data (which includes all fields with proper defaults)
+      const mappedFormData = preparedData;
+
+      // Log warnings if any
+      if (!validationResult.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} residence-cum-office form:`, validationResult.missingFields);
+      }
+      if (validationResult.warnings.length > 0) {
+        console.warn(`⚠️ Validation warnings for ${formType} residence-cum-office form:`, validationResult.warnings);
+      }
 
       // Validate minimum photo requirement (≥5 geo-tagged photos)
       // Use images array for new submission format
@@ -2359,6 +2372,21 @@ export class MobileFormController {
         INSERT INTO "residenceCumOfficeVerificationReports" (${columnNames})
         VALUES (${placeholders})
       `;
+
+      // Log comprehensive database insert data for debugging
+      const nullFields = Object.entries(dbInsertData).filter(([_, value]) => value === null);
+      const populatedFields = Object.entries(dbInsertData).filter(([_, value]) =>
+        value !== null && value !== undefined && value !== ''
+      );
+
+      console.log(`📝 Final database insert data for ${formType} residence-cum-office verification:`, {
+        totalFields: Object.keys(dbInsertData).length,
+        populatedFields: populatedFields.length,
+        fieldsWithNullValues: nullFields.length,
+        fieldCoveragePercentage: Math.round((populatedFields.length / Object.keys(dbInsertData).length) * 100),
+        nullFieldNames: nullFields.map(([key]) => key).slice(0, 10), // Show first 10 null fields
+        samplePopulatedData: Object.fromEntries(populatedFields.slice(0, 10)) // Show first 10 populated fields
+      });
 
       console.log(`📝 Inserting residence-cum-office verification with ${columns.length} fields:`, columns);
 
