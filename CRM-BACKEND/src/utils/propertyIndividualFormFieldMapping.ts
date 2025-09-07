@@ -11,14 +11,15 @@ export interface DatabaseFieldMapping {
 
 /**
  * Complete field mapping from mobile Property Individual form fields to database columns
+ * Covers all Property Individual verification form types: POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE
  */
 export const PROPERTY_INDIVIDUAL_FIELD_MAPPING: DatabaseFieldMapping = {
   // Basic form information
   'outcome': null, // Handled separately as verification_outcome
   'remarks': 'remarks',
   'finalStatus': 'final_status',
-  
-  // Address and location fields
+
+  // Address and location fields (Common to all forms)
   'addressLocatable': 'address_locatable',
   'addressRating': 'address_rating',
   'locality': 'locality',
@@ -30,23 +31,23 @@ export const PROPERTY_INDIVIDUAL_FIELD_MAPPING: DatabaseFieldMapping = {
   // Building and property status fields (from mobile form)
   'buildingStatus': 'property_status', // Map building status to property status
   'flatStatus': 'premises_status', // Map flat status to premises status
-  
-  // Landmarks
+
+  // Landmarks (Common to all forms, untraceable may have more)
   'landmark1': 'landmark1',
   'landmark2': 'landmark2',
-  'landmark3': 'landmark3',
-  'landmark4': 'landmark4',
-  
-  // Property-specific fields
-  'propertyType': 'property_type',
-  'propertyStatus': 'property_status',
-  'propertyOwnership': 'property_ownership',
-  'propertyAge': 'property_age',
-  'propertyCondition': 'property_condition',
-  'propertyArea': 'property_area',
-  'propertyValue': 'property_value',
-  'marketValue': 'market_value',
-  'constructionType': 'construction_type',
+  'landmark3': 'landmark3', // Used in untraceable forms
+  'landmark4': 'landmark4', // Used in untraceable forms
+
+  // Property-specific fields (Form specific)
+  'propertyType': 'property_type',               // Used in POSITIVE forms
+  'propertyStatus': 'property_status',           // Used in POSITIVE, NSP forms
+  'propertyOwnership': 'property_ownership',     // Used in POSITIVE forms
+  'propertyAge': 'property_age',                 // Used in POSITIVE forms
+  'propertyCondition': 'property_condition',     // Used in POSITIVE forms
+  'propertyArea': 'property_area',               // Used in POSITIVE forms
+  'propertyValue': 'property_value',             // Used in POSITIVE forms
+  'marketValue': 'market_value',                 // Used in POSITIVE forms
+  'constructionType': 'construction_type',       // Used in POSITIVE forms
   
   // Individual owner details
   'ownerName': 'owner_name',
@@ -158,31 +159,36 @@ export const PROPERTY_INDIVIDUAL_FIELD_MAPPING: DatabaseFieldMapping = {
 };
 
 /**
- * Maps mobile Property Individual form data to database field values
- * 
+ * Maps mobile Property Individual form data to database field values with comprehensive field coverage
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ *
  * @param formData - Raw form data from mobile app
+ * @param formType - The type of Property Individual form (POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE)
  * @returns Object with database column names as keys
  */
-export function mapPropertyIndividualFormDataToDatabase(formData: any): Record<string, any> {
+export function mapPropertyIndividualFormDataToDatabase(formData: any, formType?: string): Record<string, any> {
   const mappedData: Record<string, any> = {};
-  
+
   // Process each field in the form data
   for (const [mobileField, value] of Object.entries(formData)) {
     const dbColumn = PROPERTY_INDIVIDUAL_FIELD_MAPPING[mobileField];
-    
+
     // Skip fields that should be ignored
     if (dbColumn === null) {
       continue;
     }
-    
+
     // Use the mapped column name or the original field name if no mapping exists
     const columnName = dbColumn || mobileField;
-    
+
     // Process the value based on type
     mappedData[columnName] = processPropertyIndividualFieldValue(mobileField, value);
   }
-  
-  return mappedData;
+
+  // Ensure all database fields have values based on form type
+  const completeData = ensureAllPropertyIndividualFieldsPopulated(mappedData, formType || 'POSITIVE');
+
+  return completeData;
 }
 
 /**
@@ -339,4 +345,158 @@ export function validatePropertyIndividualRequiredFields(formData: any, formType
     missingFields,
     warnings
   };
+}
+
+/**
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ * This function guarantees that every database column has a value, preventing null/undefined issues
+ *
+ * @param mappedData - Already mapped form data
+ * @param formType - Type of Property Individual form
+ * @returns Complete data object with all fields populated
+ */
+export function ensureAllPropertyIndividualFieldsPopulated(mappedData: Record<string, any>, formType: string): Record<string, any> {
+  const completeData = { ...mappedData };
+
+  // Define all possible database fields for Property Individual verification
+  const allDatabaseFields = [
+    // Address and location fields
+    'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+    'address_structure_color', 'door_color', 'premises_status',
+
+    // Landmarks
+    'landmark1', 'landmark2', 'landmark3', 'landmark4',
+
+    // Property-specific fields
+    'property_type', 'property_status', 'property_ownership', 'property_age',
+    'property_condition', 'property_area', 'property_value', 'market_value',
+    'construction_type', 'property_location', 'property_description',
+    'construction_year', 'renovation_year', 'property_amenities',
+
+    // Individual/Personal details
+    'individual_name', 'individual_age', 'individual_occupation', 'individual_income',
+    'individual_education', 'individual_marital_status', 'family_members',
+    'earning_members', 'dependents', 'individual_experience',
+
+    // Employment details
+    'employment_type', 'employer_name', 'employment_duration', 'monthly_income',
+    'annual_income', 'income_source', 'business_name', 'business_type',
+    'business_experience', 'business_income',
+
+    // Financial details
+    'bank_name', 'account_number', 'account_type', 'bank_branch',
+    'loan_amount', 'loan_purpose', 'loan_tenure', 'emi_amount',
+    'existing_loans', 'credit_score', 'financial_obligations',
+
+    // Contact and communication
+    'contact_number', 'alternate_number', 'email_address', 'permanent_address',
+    'current_address', 'address_proof', 'identity_proof',
+
+    // Verification details
+    'met_person_name', 'met_person_relation', 'designation', 'met_person_status',
+    'document_shown', 'document_type', 'document_verification_status',
+
+    // References and guarantors
+    'reference1_name', 'reference1_contact', 'reference1_relation',
+    'reference2_name', 'reference2_contact', 'reference2_relation',
+    'guarantor_name', 'guarantor_contact', 'guarantor_relation',
+
+    // Third Party Confirmation
+    'tpc_met_person1', 'name_of_tpc1', 'tpc_confirmation1',
+    'tpc_met_person2', 'name_of_tpc2', 'tpc_confirmation2',
+
+    // Form specific fields
+    'shifted_period', 'current_location', 'name_of_met_person', 'met_person_type',
+    'met_person_confirmation', 'call_remark', 'contact_person',
+
+    // Legal and compliance
+    'legal_issues', 'court_cases', 'criminal_background', 'verification_status',
+    'compliance_status', 'risk_assessment', 'credit_history',
+
+    // Environment and area details
+    'political_connection', 'dominated_area', 'feedback_from_neighbour',
+    'other_observation', 'hold_reason', 'recommendation_status',
+
+    // Final status
+    'final_status'
+  ];
+
+  // Get fields that are relevant for this form type
+  const relevantFields = getRelevantPropertyIndividualFieldsForFormType(formType);
+
+  // Populate missing fields with appropriate defaults
+  for (const field of allDatabaseFields) {
+    if (completeData[field] === undefined || completeData[field] === null) {
+      if (relevantFields.includes(field)) {
+        // Field is relevant for this form type but missing - this might indicate an issue
+        console.warn(`⚠️ Missing relevant field for ${formType} Property Individual form: ${field}`);
+      }
+
+      // Set default value (NULL for all missing fields)
+      completeData[field] = getDefaultPropertyIndividualValueForField(field);
+    }
+  }
+
+  return completeData;
+}
+
+/**
+ * Gets relevant database fields for a specific Property Individual form type
+ *
+ * @param formType - Type of Property Individual form
+ * @returns Array of relevant database field names
+ */
+function getRelevantPropertyIndividualFieldsForFormType(formType: string): string[] {
+  const fieldsByType: Record<string, string[]> = {
+    'POSITIVE': [
+      'address_locatable', 'address_rating', 'property_type', 'property_status',
+      'property_ownership', 'property_age', 'property_condition', 'property_area',
+      'property_value', 'market_value', 'individual_name', 'individual_age',
+      'individual_occupation', 'individual_income', 'family_members', 'earning_members',
+      'employment_type', 'employer_name', 'monthly_income', 'bank_name',
+      'contact_number', 'met_person_name', 'met_person_relation', 'designation',
+      'document_shown', 'document_type', 'locality', 'address_structure',
+      'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'landmark1', 'landmark2', 'tpc_met_person1', 'name_of_tpc1',
+      'tpc_confirmation1', 'reference1_name', 'reference1_contact', 'premises_status'
+    ],
+    'SHIFTED': [
+      'address_locatable', 'address_rating', 'met_person_name', 'met_person_relation',
+      'designation', 'shifted_period', 'current_location', 'locality', 'address_structure',
+      'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'landmark1', 'landmark2'
+    ],
+    'NSP': [
+      'address_locatable', 'address_rating', 'property_status', 'met_person_name',
+      'met_person_relation', 'designation', 'locality', 'address_structure',
+      'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'landmark1', 'landmark2'
+    ],
+    'ENTRY_RESTRICTED': [
+      'address_locatable', 'address_rating', 'name_of_met_person', 'met_person_type',
+      'met_person_confirmation', 'locality', 'address_structure', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status',
+      'address_floor', 'address_structure_color', 'landmark1', 'landmark2'
+    ],
+    'UNTRACEABLE': [
+      'call_remark', 'contact_person', 'locality', 'landmark1', 'landmark2', 'landmark3', 'landmark4',
+      'dominated_area', 'other_observation', 'final_status'
+    ]
+  };
+
+  return fieldsByType[formType] || fieldsByType['POSITIVE'];
+}
+
+/**
+ * Gets appropriate default value for a Property Individual database field
+ *
+ * @param fieldName - Database field name
+ * @returns Default value for the field
+ */
+function getDefaultPropertyIndividualValueForField(fieldName: string): any {
+  // All fields default to null for missing/irrelevant data
+  return null;
 }

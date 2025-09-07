@@ -10,6 +10,7 @@ import { validateAndPrepareResidenceCumOfficeForm, generateResidenceCumOfficeFie
 import { validateAndPrepareBuilderForm, generateBuilderFieldCoverageReport } from '../utils/builderFormValidator';
 import { validateAndPrepareNocForm, generateNocFieldCoverageReport } from '../utils/nocFormValidator';
 import { validateAndPreparePropertyApfForm, generatePropertyApfFieldCoverageReport } from '../utils/propertyApfFormValidator';
+import { validateAndPreparePropertyIndividualForm, generatePropertyIndividualFieldCoverageReport } from '../utils/propertyIndividualFormValidator';
 import { mapOfficeFormDataToDatabase, validateOfficeRequiredFields, getOfficeAvailableDbColumns } from '../utils/officeFormFieldMapping';
 import { mapBusinessFormDataToDatabase, validateBusinessRequiredFields, getBusinessAvailableDbColumns } from '../utils/businessFormFieldMapping';
 import {
@@ -2849,19 +2850,31 @@ export class MobileFormController {
 
       console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
 
-      // Map form data to database fields using comprehensive field mapping
-      const mappedFormData = mapPropertyIndividualFormDataToDatabase(formData);
+      // Use comprehensive validation and preparation for Property Individual form data
+      const { validationResult, preparedData } = validateAndPreparePropertyIndividualForm(formData, formType);
 
-      // Validate required fields for the detected form type
-      const validation = validatePropertyIndividualRequiredFields(formData, formType);
-      if (!validation.isValid) {
-        console.warn(`⚠️ Missing required fields for ${formType} Property Individual form:`, validation.missingFields);
-      }
-      if (validation.warnings.length > 0) {
-        console.warn(`⚠️ Property Individual form validation warnings:`, validation.warnings);
-      }
+      // Log comprehensive validation results
+      console.log(`📊 Comprehensive validation for ${formType} Property Individual verification:`, {
+        isValid: validationResult.isValid,
+        missingFields: validationResult.missingFields,
+        warnings: validationResult.warnings,
+        fieldCoverage: validationResult.fieldCoverage
+      });
 
-      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} Property Individual form fields to database columns`);
+      // Generate and log field coverage report
+      const coverageReport = generatePropertyIndividualFieldCoverageReport(formData, preparedData, formType);
+      console.log(coverageReport);
+
+      // Use the prepared data (which includes all fields with proper defaults)
+      const mappedFormData = preparedData;
+
+      // Log warnings if any
+      if (!validationResult.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} Property Individual form:`, validationResult.missingFields);
+      }
+      if (validationResult.warnings.length > 0) {
+        console.warn(`⚠️ Validation warnings for ${formType} Property Individual form:`, validationResult.warnings);
+      }
 
       // Validate minimum photo requirement (≥5 geo-tagged photos)
       // Use images array for new submission format
@@ -2980,6 +2993,21 @@ export class MobileFormController {
         INSERT INTO "propertyIndividualVerificationReports" (${columnNames})
         VALUES (${placeholders})
       `;
+
+      // Log comprehensive database insert data for debugging
+      const nullFields = Object.entries(dbInsertData).filter(([_, value]) => value === null);
+      const populatedFields = Object.entries(dbInsertData).filter(([_, value]) =>
+        value !== null && value !== undefined && value !== ''
+      );
+
+      console.log(`📝 Final database insert data for ${formType} Property Individual verification:`, {
+        totalFields: Object.keys(dbInsertData).length,
+        populatedFields: populatedFields.length,
+        fieldsWithNullValues: nullFields.length,
+        fieldCoveragePercentage: Math.round((populatedFields.length / Object.keys(dbInsertData).length) * 100),
+        nullFieldNames: nullFields.map(([key]) => key).slice(0, 10), // Show first 10 null fields
+        samplePopulatedData: Object.fromEntries(populatedFields.slice(0, 10)) // Show first 10 populated fields
+      });
 
       console.log(`📝 Inserting Property Individual verification with ${columns.length} fields:`, columns);
 
