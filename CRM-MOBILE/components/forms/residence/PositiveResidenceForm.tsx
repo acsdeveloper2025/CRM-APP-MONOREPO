@@ -501,9 +501,9 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: caseData.verificationOutcome, // Use ONLY case verification outcome, no fallback
                             remarks: report.otherObservation || '',
-                            ...report // Include all report data to ensure complete field coverage
+                            ...report, // Include all report data to ensure complete field coverage
+                            outcome: caseData.verificationOutcome // Use ONLY case verification outcome, no fallback (MUST be after spread)
                         };
 
                         // Combine all images (regular + selfie) and ensure they have geoLocation property
