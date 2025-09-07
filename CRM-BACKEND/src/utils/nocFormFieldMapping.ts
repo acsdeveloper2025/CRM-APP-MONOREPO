@@ -11,14 +11,15 @@ export interface DatabaseFieldMapping {
 
 /**
  * Complete field mapping from mobile NOC form fields to database columns
+ * Covers all NOC verification form types: POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE
  */
 export const NOC_FIELD_MAPPING: DatabaseFieldMapping = {
   // Basic form information
   'outcome': null, // Handled separately as verification_outcome
   'remarks': 'remarks',
   'finalStatus': 'final_status',
-  
-  // Address and location fields
+
+  // Address and location fields (Common to all forms)
   'addressLocatable': 'address_locatable',
   'addressRating': 'address_rating',
   'locality': 'locality',
@@ -26,28 +27,28 @@ export const NOC_FIELD_MAPPING: DatabaseFieldMapping = {
   'addressFloor': 'address_floor',
   'addressStructureColor': 'address_structure_color',
   'doorColor': 'door_color',
-  
-  // Landmarks
+
+  // Landmarks (Common to all forms, untraceable may have more)
   'landmark1': 'landmark1',
   'landmark2': 'landmark2',
-  'landmark3': 'landmark3',
-  'landmark4': 'landmark4',
-  
-  // NOC-specific fields
-  'nocStatus': 'noc_status',
-  'nocType': 'noc_type',
-  'nocNumber': 'noc_number',
-  'nocIssueDate': 'noc_issue_date',
-  'nocExpiryDate': 'noc_expiry_date',
-  'nocIssuingAuthority': 'noc_issuing_authority',
-  'nocValidityStatus': 'noc_validity_status',
-  
-  // Property/Project details
-  'propertyType': 'property_type',
-  'projectName': 'project_name',
-  'projectStatus': 'project_status',
-  'constructionStatus': 'construction_status',
-  'projectApprovalStatus': 'project_approval_status',
+  'landmark3': 'landmark3', // Used in untraceable forms
+  'landmark4': 'landmark4', // Used in untraceable forms
+
+  // NOC-specific fields (Form specific)
+  'nocStatus': 'noc_status',                     // Used in POSITIVE, NSP forms
+  'nocType': 'noc_type',                         // Used in POSITIVE forms
+  'nocNumber': 'noc_number',                     // Used in POSITIVE forms
+  'nocIssueDate': 'noc_issue_date',              // Used in POSITIVE forms
+  'nocExpiryDate': 'noc_expiry_date',            // Used in POSITIVE forms
+  'nocIssuingAuthority': 'noc_issuing_authority', // Used in POSITIVE forms
+  'nocValidityStatus': 'noc_validity_status',    // Used in POSITIVE forms
+
+  // Property/Project details (Form specific)
+  'propertyType': 'property_type',               // Used in POSITIVE forms
+  'projectName': 'project_name',                 // Used in POSITIVE forms
+  'projectStatus': 'project_status',             // Used in POSITIVE forms
+  'constructionStatus': 'construction_status',   // Used in POSITIVE forms
+  'projectApprovalStatus': 'project_approval_status', // Used in POSITIVE forms
   'totalUnits': 'total_units',
   'completedUnits': 'completed_units',
   'soldUnits': 'sold_units',
@@ -132,31 +133,36 @@ export const NOC_FIELD_MAPPING: DatabaseFieldMapping = {
 };
 
 /**
- * Maps mobile NOC form data to database field values
- * 
+ * Maps mobile NOC form data to database field values with comprehensive field coverage
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ *
  * @param formData - Raw form data from mobile app
+ * @param formType - The type of NOC form (POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE)
  * @returns Object with database column names as keys
  */
-export function mapNocFormDataToDatabase(formData: any): Record<string, any> {
+export function mapNocFormDataToDatabase(formData: any, formType?: string): Record<string, any> {
   const mappedData: Record<string, any> = {};
-  
+
   // Process each field in the form data
   for (const [mobileField, value] of Object.entries(formData)) {
     const dbColumn = NOC_FIELD_MAPPING[mobileField];
-    
+
     // Skip fields that should be ignored
     if (dbColumn === null) {
       continue;
     }
-    
+
     // Use the mapped column name or the original field name if no mapping exists
     const columnName = dbColumn || mobileField;
-    
+
     // Process the value based on type
     mappedData[columnName] = processNocFieldValue(mobileField, value);
   }
-  
-  return mappedData;
+
+  // Ensure all database fields have values based on form type
+  const completeData = ensureAllNocFieldsPopulated(mappedData, formType || 'POSITIVE');
+
+  return completeData;
 }
 
 /**
@@ -313,4 +319,143 @@ export function validateNocRequiredFields(formData: any, formType: string): {
     missingFields,
     warnings
   };
+}
+
+/**
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ * This function guarantees that every database column has a value, preventing null/undefined issues
+ *
+ * @param mappedData - Already mapped form data
+ * @param formType - Type of NOC form
+ * @returns Complete data object with all fields populated
+ */
+export function ensureAllNocFieldsPopulated(mappedData: Record<string, any>, formType: string): Record<string, any> {
+  const completeData = { ...mappedData };
+
+  // Define all possible database fields for NOC verification
+  const allDatabaseFields = [
+    // Address and location fields
+    'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+    'address_structure_color', 'door_color',
+
+    // Landmarks
+    'landmark1', 'landmark2', 'landmark3', 'landmark4',
+
+    // NOC-specific fields
+    'noc_status', 'noc_type', 'noc_number', 'noc_issue_date', 'noc_expiry_date',
+    'noc_issuing_authority', 'noc_validity_status', 'noc_purpose', 'noc_category',
+
+    // Property/Project details
+    'property_type', 'project_name', 'project_status', 'construction_status',
+    'project_approval_status', 'project_area', 'total_units', 'completed_units',
+    'project_location', 'project_phase', 'completion_date',
+
+    // Builder/Developer details
+    'builder_name', 'developer_name', 'builder_license_number', 'developer_registration',
+    'contact_person', 'contact_number', 'contact_email',
+
+    // Regulatory and compliance
+    'environmental_clearance', 'fire_safety_clearance', 'structural_safety_clearance',
+    'water_connection_noc', 'sewage_connection_noc', 'electricity_connection_noc',
+    'pollution_control_noc', 'municipal_approval', 'gram_panchayat_approval',
+
+    // Document verification
+    'document_shown', 'document_type', 'document_verification_status',
+
+    // Person details
+    'met_person_name', 'designation', 'met_person_relation', 'met_person_status',
+
+    // Third Party Confirmation
+    'tpc_met_person1', 'name_of_tpc1', 'tpc_confirmation1',
+    'tpc_met_person2', 'name_of_tpc2', 'tpc_confirmation2',
+
+    // Form specific fields
+    'shifted_period', 'current_location', 'name_of_met_person', 'met_person_type',
+    'met_person_confirmation', 'call_remark',
+
+    // Environment and area details
+    'political_connection', 'dominated_area', 'feedback_from_neighbour',
+    'other_observation', 'hold_reason', 'recommendation_status',
+
+    // Final status
+    'final_status'
+  ];
+
+  // Get fields that are relevant for this form type
+  const relevantFields = getRelevantNocFieldsForFormType(formType);
+
+  // Populate missing fields with appropriate defaults
+  for (const field of allDatabaseFields) {
+    if (completeData[field] === undefined || completeData[field] === null) {
+      if (relevantFields.includes(field)) {
+        // Field is relevant for this form type but missing - this might indicate an issue
+        console.warn(`⚠️ Missing relevant field for ${formType} NOC form: ${field}`);
+      }
+
+      // Set default value (NULL for all missing fields)
+      completeData[field] = getDefaultNocValueForField(field);
+    }
+  }
+
+  return completeData;
+}
+
+/**
+ * Gets relevant database fields for a specific NOC form type
+ *
+ * @param formType - Type of NOC form
+ * @returns Array of relevant database field names
+ */
+function getRelevantNocFieldsForFormType(formType: string): string[] {
+  const fieldsByType: Record<string, string[]> = {
+    'POSITIVE': [
+      'address_locatable', 'address_rating', 'noc_status', 'noc_type', 'noc_number',
+      'noc_issue_date', 'noc_expiry_date', 'noc_issuing_authority', 'noc_validity_status',
+      'property_type', 'project_name', 'project_status', 'construction_status',
+      'project_approval_status', 'builder_name', 'developer_name', 'contact_person',
+      'environmental_clearance', 'fire_safety_clearance', 'municipal_approval',
+      'met_person_name', 'designation', 'document_shown', 'document_type',
+      'locality', 'address_structure', 'political_connection', 'dominated_area',
+      'feedback_from_neighbour', 'other_observation', 'final_status',
+      'project_area', 'total_units', 'completed_units', 'contact_number',
+      'builder_license_number', 'tpc_met_person1', 'name_of_tpc1', 'tpc_confirmation1',
+      'address_floor', 'address_structure_color', 'door_color', 'landmark1', 'landmark2'
+    ],
+    'SHIFTED': [
+      'address_locatable', 'address_rating', 'met_person_name', 'designation',
+      'shifted_period', 'current_location', 'locality', 'address_structure',
+      'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'landmark1', 'landmark2'
+    ],
+    'NSP': [
+      'address_locatable', 'address_rating', 'noc_status', 'met_person_name',
+      'designation', 'locality', 'address_structure', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status',
+      'address_floor', 'address_structure_color', 'door_color', 'landmark1', 'landmark2'
+    ],
+    'ENTRY_RESTRICTED': [
+      'address_locatable', 'address_rating', 'name_of_met_person', 'met_person_type',
+      'met_person_confirmation', 'locality', 'address_structure', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status',
+      'address_floor', 'address_structure_color', 'landmark1', 'landmark2'
+    ],
+    'UNTRACEABLE': [
+      'call_remark', 'locality', 'landmark1', 'landmark2', 'landmark3', 'landmark4',
+      'dominated_area', 'other_observation', 'final_status'
+    ]
+  };
+
+  return fieldsByType[formType] || fieldsByType['POSITIVE'];
+}
+
+/**
+ * Gets appropriate default value for a NOC database field
+ *
+ * @param fieldName - Database field name
+ * @returns Default value for the field
+ */
+function getDefaultNocValueForField(fieldName: string): any {
+  // All fields default to null for missing/irrelevant data
+  return null;
 }
