@@ -453,11 +453,11 @@ const PositiveOfficeForm: React.FC<PositiveOfficeFormProps> = ({ caseData }) => 
                             hrVerification: report.nameOfTpc1 ? true : false, // Using TPC contact as HR verification
                             salaryConfirmed: report.workingStatus ? true : false, // Using working status as salary confirmation
                             remarks: report.otherObservation,
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
-                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
-                                    report.finalStatus === FinalStatus.Refer ? 'REFER' :
-                                    report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
+                            outcome: report.finalStatus === FinalStatus.Positive ? 'Positive & Door Locked' :
+                                    report.finalStatus === FinalStatus.Negative ? 'NSP & Door Lock' :
+                                    report.finalStatus === FinalStatus.Fraud ? 'NSP & Door Lock' :
+                                    report.finalStatus === FinalStatus.Refer ? 'ERT' :
+                                    report.finalStatus === FinalStatus.Hold ? 'ERT' : 'Positive & Door Locked',
                             // Additional fields from the form
                             department: report.applicantDesignation, // Using applicant designation as department
                             joiningDate: report.establishmentPeriod, // Using establishment period as joining date

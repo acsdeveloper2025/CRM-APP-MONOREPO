@@ -441,11 +441,11 @@ const PositiveBusinessForm: React.FC<PositiveBusinessFormProps> = ({ caseData })
                             operatingHours: report.businessPeriod,
                             employeeCount: report.staffStrength,
                             remarks: report.otherObservation,
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
-                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
-                                    report.finalStatus === FinalStatus.Refer ? 'REFER' :
-                                    report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
+                            outcome: report.finalStatus === FinalStatus.Positive ? 'Positive & Door Locked' :
+                                    report.finalStatus === FinalStatus.Negative ? 'NSP & Door Lock' :
+                                    report.finalStatus === FinalStatus.Fraud ? 'NSP & Door Lock' :
+                                    report.finalStatus === FinalStatus.Refer ? 'ERT' :
+                                    report.finalStatus === FinalStatus.Hold ? 'ERT' : 'Positive & Door Locked',
 
                             // Address verification details
                             addressLocatable: report.addressLocatable,

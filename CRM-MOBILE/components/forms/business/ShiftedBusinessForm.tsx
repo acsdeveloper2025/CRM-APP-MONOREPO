@@ -419,11 +419,11 @@ const ShiftedBusinessForm: React.FC<ShiftedBusinessFormProps> = ({ caseData }) =
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
-                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
-                                    report.finalStatus === FinalStatus.Refer ? 'REFER' :
-                                    report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
+                            outcome: report.finalStatus === FinalStatus.Positive ? 'Shifted & Door Lock' :
+                                    report.finalStatus === FinalStatus.Negative ? 'Shifted & Door Lock' :
+                                    report.finalStatus === FinalStatus.Fraud ? 'Shifted & Door Lock' :
+                                    report.finalStatus === FinalStatus.Refer ? 'ERT' :
+                                    report.finalStatus === FinalStatus.Hold ? 'ERT' : 'Shifted & Door Lock',
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };

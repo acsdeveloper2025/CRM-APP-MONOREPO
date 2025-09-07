@@ -358,11 +358,11 @@ const NspResiCumOfficeForm: React.FC<NspResiCumOfficeFormProps> = ({ caseData })
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
-                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
-                                    report.finalStatus === FinalStatus.Refer ? 'REFER' :
-                                    report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
+                            outcome: report.finalStatus === FinalStatus.Positive ? 'NSP & Door Lock' :
+                                    report.finalStatus === FinalStatus.Negative ? 'NSP & Door Lock' :
+                                    report.finalStatus === FinalStatus.Fraud ? 'NSP & Door Lock' :
+                                    report.finalStatus === FinalStatus.Refer ? 'ERT' :
+                                    report.finalStatus === FinalStatus.Hold ? 'ERT' : 'NSP & Door Lock',
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };
