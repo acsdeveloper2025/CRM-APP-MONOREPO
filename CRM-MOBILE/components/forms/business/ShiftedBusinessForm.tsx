@@ -419,9 +419,9 @@ const ShiftedBusinessForm: React.FC<ShiftedBusinessFormProps> = ({ caseData }) =
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: caseData.verificationOutcome, // Use ONLY case verification outcome, no fallback
                             remarks: report.otherObservation || '',
-                            ...report // Include all report data
+                            ...report, // Include all report data
+                            outcome: caseData.verificationOutcome // Use ONLY case verification outcome, no fallback (MUST be after spread)
                         };
 
                         // Combine all images (regular + selfie)
