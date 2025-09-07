@@ -26,6 +26,10 @@ export const PROPERTY_INDIVIDUAL_FIELD_MAPPING: DatabaseFieldMapping = {
   'addressFloor': 'address_floor',
   'addressStructureColor': 'address_structure_color',
   'doorColor': 'door_color',
+
+  // Building and property status fields (from mobile form)
+  'buildingStatus': 'property_status', // Map building status to property status
+  'flatStatus': 'premises_status', // Map flat status to premises status
   
   // Landmarks
   'landmark1': 'landmark1',
@@ -126,12 +130,22 @@ export const PROPERTY_INDIVIDUAL_FIELD_MAPPING: DatabaseFieldMapping = {
   'holdReason': 'hold_reason',
   'recommendationStatus': 'recommendation_status',
   
-  // Legacy/alternative field names
+  // Legacy/alternative field names and mobile app specific fields
   'metPerson': 'met_person_name', // Maps to met person name
   'propertyOwner': 'owner_name', // Maps to owner name
+  'propertyOwnerName': 'owner_name', // Maps property owner name to owner name
   'propertyDetails': 'property_type', // Maps to property type
   'neighborFeedback': 'feedback_from_neighbour', // Maps to neighbor feedback
   'verificationMethod': null, // Derived field, ignore
+  'relationship': 'met_person_relation', // Maps to met person relation
+  'approxArea': 'property_area', // Maps to property area
+
+  // Mobile app specific fields that don't have database equivalents
+  'addressExistAt': null, // No database equivalent, ignore
+  'doorNamePlateStatus': null, // No database equivalent, ignore
+  'nameOnDoorPlate': null, // No database equivalent, ignore
+  'societyNamePlateStatus': null, // No database equivalent, ignore
+  'nameOnSocietyBoard': null, // No database equivalent, ignore
   
   // Fields to ignore (UI state, images, etc.)
   'images': null,

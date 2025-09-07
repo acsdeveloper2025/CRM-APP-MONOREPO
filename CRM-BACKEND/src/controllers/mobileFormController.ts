@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { MobileFormSubmissionRequest, FormSubmissionData, FormSection, FormField } from '../types/mobile';
 import { createAuditLog } from '../utils/auditLogger';
-import { detectResidenceFormType, detectOfficeFormType, detectBusinessFormType } from '../utils/formTypeDetection';
+import { detectResidenceFormType, detectOfficeFormType, detectBusinessFormType, detectPropertyIndividualFormType } from '../utils/formTypeDetection';
 import { mapFormDataToDatabase, validateRequiredFields, getAvailableDbColumns } from '../utils/residenceFormFieldMapping';
 import { mapOfficeFormDataToDatabase, validateOfficeRequiredFields, getOfficeAvailableDbColumns } from '../utils/officeFormFieldMapping';
 import { mapBusinessFormDataToDatabase, validateBusinessRequiredFields, getBusinessAvailableDbColumns } from '../utils/businessFormFieldMapping';
@@ -2679,7 +2679,7 @@ export class MobileFormController {
       console.log(`✅ Case found: ${actualCaseId} (Case #${existingCase.caseId})`);
 
       // Determine form type and verification outcome based on form data
-      const { formType, verificationOutcome } = detectResidenceFormType(formData); // Use residence detection for Property Individual (similar structure)
+      const { formType, verificationOutcome } = detectPropertyIndividualFormType(formData);
 
       console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
 
