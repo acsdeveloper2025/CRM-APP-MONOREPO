@@ -11,14 +11,15 @@ export interface DatabaseFieldMapping {
 
 /**
  * Complete field mapping from mobile business form fields to database columns
+ * Covers all business verification form types: POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE
  */
 export const BUSINESS_FIELD_MAPPING: DatabaseFieldMapping = {
   // Basic form information
   'outcome': null, // Handled separately as verification_outcome
   'remarks': 'remarks',
   'finalStatus': 'final_status',
-  
-  // Address and location fields
+
+  // Address and location fields (Common to all forms)
   'addressLocatable': 'address_locatable',
   'addressRating': 'address_rating',
   'locality': 'locality',
@@ -29,25 +30,27 @@ export const BUSINESS_FIELD_MAPPING: DatabaseFieldMapping = {
   'companyNamePlateStatus': 'company_nameplate_status',
   'nameOnBoard': 'name_on_company_board',
   'nameOnCompanyBoard': 'name_on_company_board',
-  
-  // Landmarks
+
+  // Landmarks (Common to all forms, untraceable may have more)
   'landmark1': 'landmark1',
   'landmark2': 'landmark2',
-  
-  // Business status and details
-  'businessStatus': 'business_status',
-  'businessExistance': 'business_existence', // Note: typo in mobile app
-  'businessExistence': 'business_existence',
-  'businessType': 'business_type',
-  'ownershipType': 'ownership_type',
-  'addressStatus': 'address_status',
-  'companyNatureOfBusiness': 'company_nature_of_business',
-  'businessPeriod': 'business_period',
-  'establishmentPeriod': 'establishment_period',
-  'businessApproxArea': 'business_approx_area',
-  'officeApproxArea': 'business_approx_area', // Alternative field name
-  'staffStrength': 'staff_strength',
-  'staffSeen': 'staff_seen',
+  'landmark3': 'landmark3', // Used in untraceable forms
+  'landmark4': 'landmark4', // Used in untraceable forms
+
+  // Business status and details (Form specific)
+  'businessStatus': 'business_status',           // Used in POSITIVE, SHIFTED, NSP forms
+  'businessExistance': 'business_existence',     // Note: typo in mobile app
+  'businessExistence': 'business_existence',     // Used in NSP forms
+  'businessType': 'business_type',               // Used in POSITIVE forms
+  'ownershipType': 'ownership_type',             // Used in POSITIVE forms
+  'addressStatus': 'address_status',             // Used in POSITIVE forms
+  'companyNatureOfBusiness': 'company_nature_of_business', // Used in POSITIVE forms
+  'businessPeriod': 'business_period',           // Used in POSITIVE forms
+  'establishmentPeriod': 'establishment_period', // Used in POSITIVE forms
+  'businessApproxArea': 'business_approx_area',  // Used in POSITIVE forms
+  'officeApproxArea': 'business_approx_area',    // Alternative field name
+  'staffStrength': 'staff_strength',             // Used in POSITIVE forms
+  'staffSeen': 'staff_seen',                     // Used in POSITIVE forms
 
   // Additional business fields from mobile forms
   'businessAddress': 'full_address', // Map businessAddress to full_address
@@ -117,31 +120,36 @@ export const BUSINESS_FIELD_MAPPING: DatabaseFieldMapping = {
 };
 
 /**
- * Maps mobile business form data to database field values
- * 
+ * Maps mobile business form data to database field values with comprehensive field coverage
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ *
  * @param formData - Raw form data from mobile app
+ * @param formType - The type of business form (POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE)
  * @returns Object with database column names as keys
  */
-export function mapBusinessFormDataToDatabase(formData: any): Record<string, any> {
+export function mapBusinessFormDataToDatabase(formData: any, formType?: string): Record<string, any> {
   const mappedData: Record<string, any> = {};
-  
+
   // Process each field in the form data
   for (const [mobileField, value] of Object.entries(formData)) {
     const dbColumn = BUSINESS_FIELD_MAPPING[mobileField];
-    
+
     // Skip fields that should be ignored
     if (dbColumn === null) {
       continue;
     }
-    
+
     // Use the mapped column name or the original field name if no mapping exists
     const columnName = dbColumn || mobileField;
-    
+
     // Process the value based on type
     mappedData[columnName] = processBusinessFieldValue(mobileField, value);
   }
-  
-  return mappedData;
+
+  // Ensure all database fields have values based on form type
+  const completeData = ensureAllBusinessFieldsPopulated(mappedData, formType || 'POSITIVE');
+
+  return completeData;
 }
 
 /**
@@ -282,4 +290,134 @@ export function validateBusinessRequiredFields(formData: any, formType: string):
     missingFields,
     warnings
   };
+}
+
+/**
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ * This function guarantees that every database column has a value, preventing null/undefined issues
+ *
+ * @param mappedData - Already mapped form data
+ * @param formType - Type of business form
+ * @returns Complete data object with all fields populated
+ */
+export function ensureAllBusinessFieldsPopulated(mappedData: Record<string, any>, formType: string): Record<string, any> {
+  const completeData = { ...mappedData };
+
+  // Define all possible database fields for business verification
+  const allDatabaseFields = [
+    // Address and location fields
+    'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+    'address_structure_color', 'door_color', 'company_nameplate_status', 'name_on_company_board',
+
+    // Landmarks
+    'landmark1', 'landmark2', 'landmark3', 'landmark4',
+
+    // Business status and details
+    'business_status', 'business_existence', 'business_type', 'ownership_type', 'address_status',
+    'company_nature_of_business', 'business_period', 'establishment_period', 'business_approx_area',
+    'staff_strength', 'staff_seen', 'business_activity', 'business_setup',
+
+    // Person details
+    'met_person_name', 'designation', 'applicant_designation', 'working_period', 'working_status',
+    'applicant_working_premises', 'current_company_name', 'old_business_shifted_period',
+
+    // Document verification
+    'document_shown', 'document_type',
+
+    // Third Party Confirmation
+    'tpc_met_person1', 'name_of_tpc1', 'tpc_confirmation1',
+    'tpc_met_person2', 'name_of_tpc2', 'tpc_confirmation2',
+
+    // Entry restricted specific fields
+    'name_of_met_person', 'met_person_type', 'met_person_confirmation', 'applicant_working_status',
+
+    // Untraceable specific fields
+    'contact_person', 'call_remark',
+
+    // Environment and area details
+    'political_connection', 'dominated_area', 'feedback_from_neighbour',
+    'other_observation', 'hold_reason', 'recommendation_status',
+
+    // Final status
+    'final_status'
+  ];
+
+  // Get fields that are relevant for this form type
+  const relevantFields = getRelevantBusinessFieldsForFormType(formType);
+
+  // Populate missing fields with appropriate defaults
+  for (const field of allDatabaseFields) {
+    if (completeData[field] === undefined || completeData[field] === null) {
+      if (relevantFields.includes(field)) {
+        // Field is relevant for this form type but missing - this might indicate an issue
+        console.warn(`⚠️ Missing relevant field for ${formType} business form: ${field}`);
+      }
+
+      // Set default value (NULL for all missing fields)
+      completeData[field] = getDefaultBusinessValueForField(field);
+    }
+  }
+
+  return completeData;
+}
+
+/**
+ * Gets relevant database fields for a specific business form type
+ *
+ * @param formType - Type of business form
+ * @returns Array of relevant database field names
+ */
+function getRelevantBusinessFieldsForFormType(formType: string): string[] {
+  const fieldsByType: Record<string, string[]> = {
+    'POSITIVE': [
+      'address_locatable', 'address_rating', 'business_status', 'met_person_name',
+      'designation', 'working_period', 'applicant_designation', 'working_status',
+      'business_type', 'ownership_type', 'company_nature_of_business', 'staff_strength',
+      'locality', 'address_structure', 'political_connection', 'dominated_area',
+      'feedback_from_neighbour', 'other_observation', 'final_status', 'business_period',
+      'establishment_period', 'business_approx_area', 'staff_seen', 'document_shown',
+      'document_type', 'tpc_met_person1', 'name_of_tpc1', 'tpc_confirmation1',
+      'address_floor', 'address_structure_color', 'door_color', 'company_nameplate_status',
+      'name_on_company_board', 'landmark1', 'landmark2', 'business_activity', 'business_setup'
+    ],
+    'SHIFTED': [
+      'address_locatable', 'address_rating', 'business_status', 'met_person_name',
+      'designation', 'current_company_name', 'old_business_shifted_period', 'locality',
+      'address_structure', 'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'company_nameplate_status', 'name_on_company_board', 'landmark1', 'landmark2'
+    ],
+    'NSP': [
+      'address_locatable', 'address_rating', 'business_status', 'business_existence',
+      'met_person_name', 'designation', 'locality', 'address_structure',
+      'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'company_nameplate_status', 'name_on_company_board', 'landmark1', 'landmark2'
+    ],
+    'ENTRY_RESTRICTED': [
+      'address_locatable', 'address_rating', 'name_of_met_person', 'met_person_type',
+      'met_person_confirmation', 'applicant_working_status', 'locality',
+      'address_structure', 'political_connection', 'dominated_area',
+      'feedback_from_neighbour', 'other_observation', 'final_status',
+      'address_floor', 'address_structure_color', 'company_nameplate_status', 'name_on_company_board',
+      'landmark1', 'landmark2'
+    ],
+    'UNTRACEABLE': [
+      'contact_person', 'call_remark', 'locality', 'landmark1', 'landmark2', 'landmark3', 'landmark4',
+      'dominated_area', 'other_observation', 'final_status'
+    ]
+  };
+
+  return fieldsByType[formType] || fieldsByType['POSITIVE'];
+}
+
+/**
+ * Gets appropriate default value for a business database field
+ *
+ * @param fieldName - Database field name
+ * @returns Default value for the field
+ */
+function getDefaultBusinessValueForField(fieldName: string): any {
+  // All fields default to null for missing/irrelevant data
+  return null;
 }

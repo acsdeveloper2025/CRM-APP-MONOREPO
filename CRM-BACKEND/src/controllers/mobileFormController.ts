@@ -5,6 +5,7 @@ import { detectResidenceFormType, detectOfficeFormType, detectBusinessFormType, 
 import { mapFormDataToDatabase, validateRequiredFields, getAvailableDbColumns } from '../utils/residenceFormFieldMapping';
 import { validateAndPrepareResidenceForm, generateFieldCoverageReport } from '../utils/residenceFormValidator';
 import { validateAndPrepareOfficeForm, generateOfficeFieldCoverageReport } from '../utils/officeFormValidator';
+import { validateAndPrepareBusinessForm, generateBusinessFieldCoverageReport } from '../utils/businessFormValidator';
 import { mapOfficeFormDataToDatabase, validateOfficeRequiredFields, getOfficeAvailableDbColumns } from '../utils/officeFormFieldMapping';
 import { mapBusinessFormDataToDatabase, validateBusinessRequiredFields, getBusinessAvailableDbColumns } from '../utils/businessFormFieldMapping';
 import {
@@ -1599,8 +1600,31 @@ export class MobileFormController {
 
       console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
 
-      // Map form data to database fields using comprehensive field mapping
-      const mappedFormData = mapBusinessFormDataToDatabase(formData);
+      // Use comprehensive validation and preparation for business form data
+      const { validationResult, preparedData } = validateAndPrepareBusinessForm(formData, formType);
+
+      // Log comprehensive validation results
+      console.log(`📊 Comprehensive validation for ${formType} business verification:`, {
+        isValid: validationResult.isValid,
+        missingFields: validationResult.missingFields,
+        warnings: validationResult.warnings,
+        fieldCoverage: validationResult.fieldCoverage
+      });
+
+      // Generate and log field coverage report
+      const coverageReport = generateBusinessFieldCoverageReport(formData, preparedData, formType);
+      console.log(coverageReport);
+
+      // Use the prepared data (which includes all fields with proper defaults)
+      const mappedFormData = preparedData;
+
+      // Log warnings if any
+      if (!validationResult.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} business form:`, validationResult.missingFields);
+      }
+      if (validationResult.warnings.length > 0) {
+        console.warn(`⚠️ Validation warnings for ${formType} business form:`, validationResult.warnings);
+      }
 
       // Validate required fields for the detected form type
       const validation = validateBusinessRequiredFields(formData, formType);
@@ -1757,6 +1781,21 @@ export class MobileFormController {
         INSERT INTO "businessVerificationReports" (${columnNames})
         VALUES (${placeholders})
       `;
+
+      // Log comprehensive database insert data for debugging
+      const nullFields = Object.entries(dbInsertData).filter(([_, value]) => value === null);
+      const populatedFields = Object.entries(dbInsertData).filter(([_, value]) =>
+        value !== null && value !== undefined && value !== ''
+      );
+
+      console.log(`📝 Final database insert data for ${formType} business verification:`, {
+        totalFields: Object.keys(dbInsertData).length,
+        populatedFields: populatedFields.length,
+        fieldsWithNullValues: nullFields.length,
+        fieldCoveragePercentage: Math.round((populatedFields.length / Object.keys(dbInsertData).length) * 100),
+        nullFieldNames: nullFields.map(([key]) => key).slice(0, 10), // Show first 10 null fields
+        samplePopulatedData: Object.fromEntries(populatedFields.slice(0, 10)) // Show first 10 populated fields
+      });
 
       console.log(`📝 Inserting business verification with ${columns.length} fields:`, columns);
 
