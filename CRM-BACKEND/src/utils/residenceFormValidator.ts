@@ -133,13 +133,13 @@ function getRequiredFieldsByFormType(formType: string): string[] {
  */
 function validateConditionalFields(formData: any, formType: string): string[] {
   const warnings: string[] = [];
-  
+
   if (formType === 'POSITIVE') {
     // Document verification conditional validation
     if (formData.documentShownStatus === 'Showed' && !formData.documentType) {
       warnings.push('documentType should be specified when documentShownStatus is Showed');
     }
-    
+
     // TPC conditional validation
     if (formData.tpcMetPerson1 && !formData.tpcName1) {
       warnings.push('tpcName1 should be specified when tpcMetPerson1 is selected');
@@ -150,20 +150,37 @@ function validateConditionalFields(formData: any, formType: string): string[] {
     if (formData.tpcMetPerson2 && !formData.tpcName2) {
       warnings.push('tpcName2 should be specified when tpcMetPerson2 is selected');
     }
-    
-    // Family members validation
-    if (formData.totalFamilyMembers && (formData.totalFamilyMembers < 1 || formData.totalFamilyMembers > 50)) {
+    if (formData.tpcMetPerson2 && formData.tpcName2 && !formData.tpcConfirmation2) {
+      warnings.push('tpcConfirmation2 should be specified when TPC person 2 is provided');
+    }
+
+    // Family members validation - Fixed to handle 0 value correctly
+    if (formData.totalFamilyMembers !== undefined && formData.totalFamilyMembers !== null &&
+        (formData.totalFamilyMembers < 1 || formData.totalFamilyMembers > 50)) {
       warnings.push('totalFamilyMembers should be between 1 and 50');
     }
+
+    // House status conditional validation for POSITIVE forms
+    if (formData.houseStatus === 'Opened' && !formData.totalFamilyMembers) {
+      warnings.push('totalFamilyMembers should be specified when house status is Opened');
+    }
+
+    // Staying status validation
+    if (formData.stayingStatus === 'On Rental Basis' && !formData.rentAmount) {
+      warnings.push('rentAmount should be specified when staying status is On Rental Basis');
+    }
   }
-  
+
   if (formType === 'SHIFTED') {
     // TPC validation for shifted forms
     if (formData.tpcMetPerson1 && !formData.tpcName1) {
       warnings.push('tpcName1 should be specified when tpcMetPerson1 is selected');
     }
+    if (formData.tpcMetPerson1 && formData.tpcName1 && !formData.tpcConfirmation1) {
+      warnings.push('tpcConfirmation1 should be specified when TPC person 1 is provided');
+    }
   }
-  
+
   if (formType === 'NSP') {
     // House status conditional validation
     if (formData.houseStatus === 'Closed' && !formData.stayingPersonName) {
@@ -173,22 +190,29 @@ function validateConditionalFields(formData: any, formType: string): string[] {
       warnings.push('metPersonName should be specified when house status is Opened');
     }
   }
-  
+
+  if (formType === 'ENTRY_RESTRICTED') {
+    // Entry restricted specific validations
+    if (formData.metPersonConfirmation === 'Not Confirmed' && !formData.reasonForNonConfirmation) {
+      warnings.push('reasonForNonConfirmation should be specified when met person confirmation is Not Confirmed');
+    }
+  }
+
   // Common validations for all forms
   if (formData.finalStatus === 'Hold' && !formData.holdReason) {
     warnings.push('holdReason should be specified when finalStatus is Hold');
   }
-  
+
   // Society nameplate conditional validation
   if (formData.societyNamePlateStatus === 'Sighted' && !formData.nameOnSocietyBoard) {
     warnings.push('nameOnSocietyBoard should be specified when societyNamePlateStatus is Sighted');
   }
-  
+
   // Door nameplate conditional validation
   if (formData.doorNamePlateStatus === 'Sighted' && !formData.nameOnDoorPlate) {
     warnings.push('nameOnDoorPlate should be specified when doorNamePlateStatus is Sighted');
   }
-  
+
   return warnings;
 }
 

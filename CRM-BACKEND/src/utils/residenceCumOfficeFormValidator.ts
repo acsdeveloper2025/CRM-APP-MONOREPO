@@ -157,13 +157,15 @@ function validateConditionalFields(formData: any, formType: string): string[] {
       warnings.push('tpcName1 should be specified when tpcMetPerson1 is selected');
     }
     
-    // Family members validation
-    if (formData.totalFamilyMembers && (formData.totalFamilyMembers < 1 || formData.totalFamilyMembers > 50)) {
+    // Family members validation - Fixed to handle 0 value correctly
+    if (formData.totalFamilyMembers !== undefined && formData.totalFamilyMembers !== null &&
+        (formData.totalFamilyMembers < 1 || formData.totalFamilyMembers > 50)) {
       warnings.push('totalFamilyMembers should be between 1 and 50');
     }
-    
-    // Staff strength validation
-    if (formData.staffStrength && (formData.staffStrength < 1 || formData.staffStrength > 10000)) {
+
+    // Staff strength validation - Fixed to handle 0 value correctly
+    if (formData.staffStrength !== undefined && formData.staffStrength !== null &&
+        (formData.staffStrength < 1 || formData.staffStrength > 10000)) {
       warnings.push('staffStrength should be between 1 and 10000');
     }
   }
