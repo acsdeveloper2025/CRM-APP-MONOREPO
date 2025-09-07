@@ -14,8 +14,8 @@ import { validate } from '../middleware/validation';
 
 const router = Router();
 
-// Apply mobile-specific rate limiting - increased for testing
-router.use(mobileRateLimit(50000, 15 * 60 * 1000)); // 50000 requests per 15 minutes (significantly increased for testing)
+// Apply mobile-specific rate limiting - DISABLED for testing
+// router.use(mobileRateLimit(50000, 15 * 60 * 1000)); // Temporarily disabled for testing
 
 // Mobile Authentication Routes
 router.post('/auth/login', MobileAuthController.mobileLogin);

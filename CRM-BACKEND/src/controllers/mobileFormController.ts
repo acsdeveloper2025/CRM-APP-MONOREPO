@@ -3,6 +3,7 @@ import { MobileFormSubmissionRequest, FormSubmissionData, FormSection, FormField
 import { createAuditLog } from '../utils/auditLogger';
 import { detectResidenceFormType, detectOfficeFormType, detectBusinessFormType, detectPropertyIndividualFormType } from '../utils/formTypeDetection';
 import { mapFormDataToDatabase, validateRequiredFields, getAvailableDbColumns } from '../utils/residenceFormFieldMapping';
+import { validateAndPrepareResidenceForm, generateFieldCoverageReport } from '../utils/residenceFormValidator';
 import { mapOfficeFormDataToDatabase, validateOfficeRequiredFields, getOfficeAvailableDbColumns } from '../utils/officeFormFieldMapping';
 import { mapBusinessFormDataToDatabase, validateBusinessRequiredFields, getBusinessAvailableDbColumns } from '../utils/businessFormFieldMapping';
 import {
@@ -984,16 +985,30 @@ export class MobileFormController {
 
       console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
 
-      // Map form data to database fields using comprehensive field mapping
-      const mappedFormData = mapFormDataToDatabase(formData);
+      // Use comprehensive validation and preparation for residence form data
+      const { validationResult, preparedData } = validateAndPrepareResidenceForm(formData, formType);
 
-      // Validate required fields for the detected form type
-      const validation = validateRequiredFields(formData, formType);
-      if (!validation.isValid) {
-        console.warn(`⚠️ Missing required fields for ${formType} form:`, validation.missingFields);
+      // Log comprehensive validation results
+      console.log(`📊 Comprehensive validation for ${formType} residence verification:`, {
+        isValid: validationResult.isValid,
+        missingFields: validationResult.missingFields,
+        warnings: validationResult.warnings,
+        fieldCoverage: validationResult.fieldCoverage
+      });
+
+      // Generate and log field coverage report
+      const coverageReport = generateFieldCoverageReport(formData, preparedData, formType);
+      console.log(coverageReport);
+
+      // Use the prepared data (which includes all fields with proper defaults)
+      const mappedFormData = preparedData;
+
+      // Log warnings if any
+      if (!validationResult.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} form:`, validationResult.missingFields);
       }
-      if (validation.warnings.length > 0) {
-        console.warn(`⚠️ Form validation warnings:`, validation.warnings);
+      if (validationResult.warnings.length > 0) {
+        console.warn(`⚠️ Validation warnings for ${formType} residence form:`, validationResult.warnings);
       }
 
       console.log(`📊 Mapped ${Object.keys(mappedFormData).length} form fields to database columns`);
@@ -1101,9 +1116,26 @@ export class MobileFormController {
         total_selfies: uploadedImages.filter(img => img.photoType === 'selfie').length || 0,
         remarks: formData.remarks || `${formType} residence verification completed`,
 
-        // Merge all mapped form data
+        // Merge all mapped form data (already includes defaults for missing fields)
         ...mappedFormData
       };
+
+      // Log comprehensive database insert data for debugging
+      const naFields = Object.entries(dbInsertData).filter(([_, value]) => value === 'na');
+      const nullFields = Object.entries(dbInsertData).filter(([_, value]) => value === null);
+      const populatedFields = Object.entries(dbInsertData).filter(([_, value]) =>
+        value !== null && value !== undefined && value !== 'na' && value !== ''
+      );
+
+      console.log(`📝 Final database insert data for ${formType} residence verification:`, {
+        totalFields: Object.keys(dbInsertData).length,
+        populatedFields: populatedFields.length,
+        fieldsWithNaValues: naFields.length,
+        fieldsWithNullValues: nullFields.length,
+        fieldCoveragePercentage: Math.round((populatedFields.length / Object.keys(dbInsertData).length) * 100),
+        naFieldNames: naFields.map(([key]) => key).slice(0, 10), // Show first 10 'na' fields
+        samplePopulatedData: Object.fromEntries(populatedFields.slice(0, 10)) // Show first 10 populated fields
+      });
 
       // Build dynamic INSERT query based on available data
       const columns = Object.keys(dbInsertData).filter(key => dbInsertData[key] !== undefined);
