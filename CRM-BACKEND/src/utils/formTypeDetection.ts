@@ -67,9 +67,9 @@ export const UNIVERSAL_OUTCOME_MAPPING: Record<string, FormTypeResult> = {
  */
 export const FORM_TYPE_INDICATORS: Record<string, FormTypeIndicators> = {
   RESIDENCE: {
-    positiveIndicators: ['applicantName', 'familyMembers', 'yearsOfStay', 'ownershipStatus', 'rentAmount'],
-    shiftedIndicators: ['shiftedPeriod', 'roomStatus', 'premisesStatus', 'currentLocation', 'previousAddress'],
-    nspIndicators: ['stayingPersonName', 'houseStatus', 'metPersonStatus', 'temporaryStay'],
+    positiveIndicators: ['applicantName', 'familyMembers', 'yearsOfStay', 'ownershipStatus', 'rentAmount', 'houseStatus', 'totalFamilyMembers', 'workingStatus', 'stayingStatus', 'documentShownStatus'],
+    shiftedIndicators: ['shiftedPeriod', 'roomStatus', 'premisesStatus', 'currentLocation', 'previousAddress', 'metPersonStatus'],
+    nspIndicators: ['stayingPersonName', 'houseStatus', 'temporaryStay'],
     entryRestrictedIndicators: ['nameOfMetPerson', 'metPersonType', 'applicantStayingStatus', 'entryRestrictionReason'],
     untraceableIndicators: ['callRemark', 'landmark3', 'landmark4', 'contactPerson', 'alternateContact']
   },

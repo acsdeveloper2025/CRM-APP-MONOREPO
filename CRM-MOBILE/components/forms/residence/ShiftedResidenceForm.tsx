@@ -429,13 +429,13 @@ const ShiftedResidenceForm: React.FC<ShiftedResidenceFormProps> = ({ caseData })
                     setSubmissionError(null);
                     
                     try {
-                        // Prepare form data for submission
+                        // Prepare form data for submission with SHIFTED-specific outcomes
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'VERIFIED' :
-                                    report.finalStatus === FinalStatus.Negative ? 'NOT_VERIFIED' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'FRAUD' :
-                                    report.finalStatus === FinalStatus.Refer ? 'REFER' :
-                                    report.finalStatus === FinalStatus.Hold ? 'HOLD' : 'PARTIAL',
+                            outcome: report.finalStatus === FinalStatus.Positive ? 'Shifted & Door Lock' :
+                                    report.finalStatus === FinalStatus.Negative ? 'Shifted & Door Lock' :
+                                    report.finalStatus === FinalStatus.Fraud ? 'Shifted & Door Lock' :
+                                    report.finalStatus === FinalStatus.Refer ? 'Refer' :
+                                    report.finalStatus === FinalStatus.Hold ? 'Hold' : 'Shifted & Door Lock',
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };
