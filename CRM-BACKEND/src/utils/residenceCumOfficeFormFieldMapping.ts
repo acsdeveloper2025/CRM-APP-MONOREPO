@@ -52,6 +52,7 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'applicantDob': 'applicant_dob',               // Used in POSITIVE forms
   'applicantAge': 'applicant_age',
   'stayingPeriod': 'staying_period',
+  'stayingPersonName': 'staying_person_name',    // Maps to staying_person_name column
   'stayingStatus': 'staying_status',
   'approxArea': 'approx_area',
   'documentShownStatus': 'document_shown_status',
@@ -71,6 +72,7 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'companyNatureOfBusiness': 'company_nature_of_business',
   'businessPeriod': 'business_period',
   'establishmentPeriod': 'establishment_period',
+  'officeApproxArea': 'approx_area',         // Maps to approx_area column (shared with residence area)
   'staffStrength': 'staff_strength',
   'staffSeen': 'staff_seen',
   
@@ -301,7 +303,7 @@ export function ensureAllResidenceCumOfficeFieldsPopulated(mappedData: Record<st
 
     // Office-specific fields
     'office_status', 'office_existence', 'office_type', 'company_nature_of_business',
-    'business_period', 'establishment_period', 'office_approx_area', 'staff_strength',
+    'business_period', 'establishment_period', 'staff_strength',
     'staff_seen', 'designation', 'applicant_designation', 'working_period',
     'applicant_working_premises', 'current_company_name', 'old_office_shifted_period',
 
@@ -361,7 +363,7 @@ function getRelevantResidenceCumOfficeFieldsForFormType(formType: string): strin
       'approx_area', 'document_shown_status', 'document_type',
       // Office fields
       'office_status', 'office_type', 'company_nature_of_business', 'business_period',
-      'establishment_period', 'office_approx_area', 'staff_strength', 'staff_seen',
+      'establishment_period', 'staff_strength', 'staff_seen',
       'designation', 'applicant_designation', 'working_period',
       // TPC and environment
       'tpc_met_person1', 'tpc_name1', 'tpc_confirmation1', 'political_connection',
