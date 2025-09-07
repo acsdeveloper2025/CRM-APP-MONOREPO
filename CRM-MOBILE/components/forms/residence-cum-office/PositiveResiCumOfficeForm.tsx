@@ -504,11 +504,7 @@ const PositiveResiCumOfficeForm: React.FC<PositiveResiCumOfficeFormProps> = ({ c
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'Positive & Door Locked' :
-                                    report.finalStatus === FinalStatus.Negative ? 'NSP & Door Lock' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'NSP & Door Lock' :
-                                    report.finalStatus === FinalStatus.Refer ? 'ERT' :
-                                    report.finalStatus === FinalStatus.Hold ? 'ERT' : 'Positive & Door Locked',
+                            outcome: caseData.verificationOutcome, // Use ONLY case verification outcome, no fallback
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };

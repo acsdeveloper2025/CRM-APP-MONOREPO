@@ -345,13 +345,9 @@ const EntryRestrictedResidenceForm: React.FC<EntryRestrictedResidenceFormProps> 
                     setSubmissionError(null);
                     
                     try {
-                        // Prepare form data for submission with Entry Restricted-specific outcomes
+                        // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'ERT' :
-                                    report.finalStatus === FinalStatus.Negative ? 'ERT' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'ERT' :
-                                    report.finalStatus === FinalStatus.Refer ? 'Refer' :
-                                    report.finalStatus === FinalStatus.Hold ? 'Hold' : 'ERT',
+                            outcome: caseData.verificationOutcome, // Use ONLY case verification outcome, no fallback
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };

@@ -280,10 +280,7 @@ const UntraceableBusinessForm: React.FC<UntraceableBusinessFormProps> = ({ caseD
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Negative ? 'Untraceable' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'Untraceable' :
-                                    report.finalStatus === FinalStatus.Refer ? 'ERT' :
-                                    report.finalStatus === FinalStatus.Hold ? 'ERT' : 'Untraceable',
+                            outcome: caseData.verificationOutcome, // Use ONLY case verification outcome, no fallback
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };

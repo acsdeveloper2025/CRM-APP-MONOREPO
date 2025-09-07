@@ -341,6 +341,7 @@ export const initialPositiveOfficeReport: PositiveOfficeReportData = {
     otherObservation: '',
     finalStatus: null,
     holdReason: '',
+    outcome: '',
     images: [],
     selfieImages: [],
 };
@@ -375,6 +376,7 @@ export const initialShiftedOfficeReport: ShiftedOfficeReportData = {
     otherObservation: '',
     finalStatus: null,
     holdReason: '',
+    outcome: '',
     images: [],
     selfieImages: [],
 };
@@ -406,6 +408,7 @@ export const initialNspOfficeReport: NspOfficeReportData = {
     otherObservation: '',
     finalStatus: null,
     holdReason: '',
+    outcome: '',
     images: [],
     selfieImages: [],
 };
@@ -429,6 +432,7 @@ export const initialEntryRestrictedOfficeReport: EntryRestrictedOfficeReportData
     otherObservation: '',
     finalStatus: null,
     holdReason: '',
+    outcome: '',
     images: [],
     selfieImages: [],
 };
@@ -445,6 +449,7 @@ export const initialUntraceableOfficeReport: UntraceableOfficeReportData = {
     otherObservation: '',
     finalStatus: null,
     holdReason: '',
+    outcome: '',
     images: [],
     selfieImages: [],
 };

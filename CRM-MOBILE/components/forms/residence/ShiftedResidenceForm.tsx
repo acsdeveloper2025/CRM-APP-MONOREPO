@@ -429,13 +429,9 @@ const ShiftedResidenceForm: React.FC<ShiftedResidenceFormProps> = ({ caseData })
                     setSubmissionError(null);
                     
                     try {
-                        // Prepare form data for submission with SHIFTED-specific outcomes
+                        // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'Shifted & Door Lock' :
-                                    report.finalStatus === FinalStatus.Negative ? 'Shifted & Door Lock' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'Shifted & Door Lock' :
-                                    report.finalStatus === FinalStatus.Refer ? 'Refer' :
-                                    report.finalStatus === FinalStatus.Hold ? 'Hold' : 'Shifted & Door Lock',
+                            outcome: caseData.verificationOutcome, // Use ONLY case verification outcome, no fallback
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };

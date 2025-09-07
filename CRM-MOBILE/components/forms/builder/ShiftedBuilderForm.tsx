@@ -418,11 +418,7 @@ const ShiftedBuilderForm: React.FC<ShiftedBuilderFormProps> = ({ caseData }) => 
                     try {
                         // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'Shifted & Door Lock' :
-                                    report.finalStatus === FinalStatus.Negative ? 'Shifted & Door Lock' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'Shifted & Door Lock' :
-                                    report.finalStatus === FinalStatus.Refer ? 'ERT' :
-                                    report.finalStatus === FinalStatus.Hold ? 'ERT' : 'Shifted & Door Lock',
+                            outcome: caseData.verificationOutcome, // Use ONLY case verification outcome, no fallback
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };

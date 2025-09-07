@@ -405,13 +405,9 @@ const NspResidenceForm: React.FC<NspResidenceFormProps> = ({ caseData }) => {
                     setSubmissionError(null);
                     
                     try {
-                        // Prepare form data for submission with NSP-specific outcomes
+                        // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Positive ? 'NSP & Door Lock' :
-                                    report.finalStatus === FinalStatus.Negative ? 'NSP & Door Lock' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'NSP & Door Lock' :
-                                    report.finalStatus === FinalStatus.Refer ? 'Refer' :
-                                    report.finalStatus === FinalStatus.Hold ? 'Hold' : 'NSP & Door Lock',
+                            outcome: caseData.verificationOutcome, // Use ONLY case verification outcome, no fallback
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };

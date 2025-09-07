@@ -819,6 +819,7 @@ export interface PositiveOfficeReportData {
     otherObservation: string;
     finalStatus: FinalStatus | null;
     holdReason: string;
+    outcome: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
 }
@@ -853,6 +854,7 @@ export interface ShiftedOfficeReportData {
     otherObservation: string;
     finalStatus: FinalStatus | null;
     holdReason: string;
+    outcome: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
 }
@@ -884,6 +886,7 @@ export interface NspOfficeReportData {
     otherObservation: string;
     finalStatus: FinalStatus | null;
     holdReason: string;
+    outcome: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
 }
@@ -907,6 +910,7 @@ export interface EntryRestrictedOfficeReportData {
     otherObservation: string;
     finalStatus: FinalStatus | null;
     holdReason: string;
+    outcome: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
 }
@@ -923,6 +927,7 @@ export interface UntraceableOfficeReportData {
     otherObservation: string;
     finalStatus: FinalStatus | null;
     holdReason: string;
+    outcome: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
 }

@@ -281,12 +281,9 @@ const UntraceableResidenceForm: React.FC<UntraceableResidenceFormProps> = ({ cas
                     setSubmissionError(null);
                     
                     try {
-                        // Prepare form data for submission with Untraceable-specific outcomes
+                        // Prepare form data for submission
                         const formData = {
-                            outcome: report.finalStatus === FinalStatus.Negative ? 'Untraceable' :
-                                    report.finalStatus === FinalStatus.Fraud ? 'Untraceable' :
-                                    report.finalStatus === FinalStatus.Refer ? 'Refer' :
-                                    report.finalStatus === FinalStatus.Hold ? 'Hold' : 'Untraceable',
+                            outcome: caseData.verificationOutcome, // Use ONLY case verification outcome, no fallback
                             remarks: report.otherObservation || '',
                             ...report // Include all report data
                         };
