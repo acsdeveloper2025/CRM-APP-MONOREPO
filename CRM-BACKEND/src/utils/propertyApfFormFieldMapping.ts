@@ -11,14 +11,15 @@ export interface DatabaseFieldMapping {
 
 /**
  * Complete field mapping from mobile Property APF form fields to database columns
+ * Covers all Property APF verification form types: POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE
  */
 export const PROPERTY_APF_FIELD_MAPPING: DatabaseFieldMapping = {
   // Basic form information
   'outcome': null, // Handled separately as verification_outcome
   'remarks': 'remarks',
   'finalStatus': 'final_status',
-  
-  // Address and location fields
+
+  // Address and location fields (Common to all forms)
   'addressLocatable': 'address_locatable',
   'addressRating': 'address_rating',
   'locality': 'locality',
@@ -26,28 +27,28 @@ export const PROPERTY_APF_FIELD_MAPPING: DatabaseFieldMapping = {
   'addressFloor': 'address_floor',
   'addressStructureColor': 'address_structure_color',
   'doorColor': 'door_color',
-  
-  // Landmarks
+
+  // Landmarks (Common to all forms, untraceable may have more)
   'landmark1': 'landmark1',
   'landmark2': 'landmark2',
-  'landmark3': 'landmark3',
-  'landmark4': 'landmark4',
-  
-  // Property-specific fields
-  'propertyType': 'property_type',
-  'propertyStatus': 'property_status',
-  'propertyOwnership': 'property_ownership',
-  'propertyAge': 'property_age',
-  'propertyCondition': 'property_condition',
-  'propertyArea': 'property_area',
-  'propertyValue': 'property_value',
-  'marketValue': 'market_value',
-  
-  // APF-specific fields
-  'apfStatus': 'apf_status',
-  'apfNumber': 'apf_number',
-  'apfIssueDate': 'apf_issue_date',
-  'apfExpiryDate': 'apf_expiry_date',
+  'landmark3': 'landmark3', // Used in untraceable forms
+  'landmark4': 'landmark4', // Used in untraceable forms
+
+  // Property-specific fields (Form specific)
+  'propertyType': 'property_type',               // Used in POSITIVE forms
+  'propertyStatus': 'property_status',           // Used in POSITIVE, NSP forms
+  'propertyOwnership': 'property_ownership',     // Used in POSITIVE forms
+  'propertyAge': 'property_age',                 // Used in POSITIVE forms
+  'propertyCondition': 'property_condition',     // Used in POSITIVE forms
+  'propertyArea': 'property_area',               // Used in POSITIVE forms
+  'propertyValue': 'property_value',             // Used in POSITIVE forms
+  'marketValue': 'market_value',                 // Used in POSITIVE forms
+
+  // APF-specific fields (Form specific)
+  'apfStatus': 'apf_status',                     // Used in POSITIVE, NSP forms
+  'apfNumber': 'apf_number',                     // Used in POSITIVE forms
+  'apfIssueDate': 'apf_issue_date',              // Used in POSITIVE forms
+  'apfExpiryDate': 'apf_expiry_date',            // Used in POSITIVE forms
   'apfIssuingAuthority': 'apf_issuing_authority',
   'apfValidityStatus': 'apf_validity_status',
   'apfAmount': 'apf_amount',
@@ -152,31 +153,36 @@ export const PROPERTY_APF_FIELD_MAPPING: DatabaseFieldMapping = {
 };
 
 /**
- * Maps mobile Property APF form data to database field values
- * 
+ * Maps mobile Property APF form data to database field values with comprehensive field coverage
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ *
  * @param formData - Raw form data from mobile app
+ * @param formType - The type of Property APF form (POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE)
  * @returns Object with database column names as keys
  */
-export function mapPropertyApfFormDataToDatabase(formData: any): Record<string, any> {
+export function mapPropertyApfFormDataToDatabase(formData: any, formType?: string): Record<string, any> {
   const mappedData: Record<string, any> = {};
-  
+
   // Process each field in the form data
   for (const [mobileField, value] of Object.entries(formData)) {
     const dbColumn = PROPERTY_APF_FIELD_MAPPING[mobileField];
-    
+
     // Skip fields that should be ignored
     if (dbColumn === null) {
       continue;
     }
-    
+
     // Use the mapped column name or the original field name if no mapping exists
     const columnName = dbColumn || mobileField;
-    
+
     // Process the value based on type
     mappedData[columnName] = processPropertyApfFieldValue(mobileField, value);
   }
-  
-  return mappedData;
+
+  // Ensure all database fields have values based on form type
+  const completeData = ensureAllPropertyApfFieldsPopulated(mappedData, formType || 'POSITIVE');
+
+  return completeData;
 }
 
 /**
@@ -348,4 +354,151 @@ export function validatePropertyApfRequiredFields(formData: any, formType: strin
     missingFields,
     warnings
   };
+}
+
+/**
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ * This function guarantees that every database column has a value, preventing null/undefined issues
+ *
+ * @param mappedData - Already mapped form data
+ * @param formType - Type of Property APF form
+ * @returns Complete data object with all fields populated
+ */
+export function ensureAllPropertyApfFieldsPopulated(mappedData: Record<string, any>, formType: string): Record<string, any> {
+  const completeData = { ...mappedData };
+
+  // Define all possible database fields for Property APF verification
+  const allDatabaseFields = [
+    // Address and location fields
+    'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+    'address_structure_color', 'door_color',
+
+    // Landmarks
+    'landmark1', 'landmark2', 'landmark3', 'landmark4',
+
+    // Property-specific fields
+    'property_type', 'property_status', 'property_ownership', 'property_age',
+    'property_condition', 'property_area', 'property_value', 'market_value',
+    'property_location', 'property_description', 'property_usage',
+    'construction_year', 'renovation_year', 'property_amenities',
+
+    // APF-specific fields
+    'apf_status', 'apf_number', 'apf_issue_date', 'apf_expiry_date',
+    'apf_amount', 'apf_premium', 'apf_coverage', 'apf_policy_type',
+    'apf_insurer', 'apf_agent', 'apf_renewal_date', 'apf_claim_history',
+
+    // Financial details
+    'loan_amount', 'bank_name', 'loan_account_number', 'emi_amount',
+    'outstanding_amount', 'loan_tenure', 'interest_rate', 'loan_type',
+    'loan_status', 'loan_approval_date', 'loan_disbursement_date',
+
+    // Owner/Occupant details
+    'owner_name', 'owner_contact', 'owner_email', 'occupant_name',
+    'occupant_relation', 'occupancy_status', 'tenant_details',
+    'met_person_name', 'designation', 'met_person_relation',
+
+    // Legal and documentation
+    'title_deed_status', 'registration_number', 'survey_number',
+    'khata_number', 'property_tax_status', 'electricity_connection',
+    'water_connection', 'sewage_connection', 'legal_issues',
+    'encumbrance_certificate', 'building_approval', 'occupancy_certificate',
+
+    // Valuation details
+    'valuation_date', 'valuer_name', 'valuation_method', 'comparable_properties',
+    'depreciation_factor', 'appreciation_potential', 'market_trends',
+
+    // Third Party Confirmation
+    'tpc_met_person1', 'name_of_tpc1', 'tpc_confirmation1',
+    'tpc_met_person2', 'name_of_tpc2', 'tpc_confirmation2',
+
+    // Form specific fields
+    'shifted_period', 'current_location', 'name_of_met_person', 'met_person_type',
+    'met_person_confirmation', 'call_remark', 'contact_person',
+
+    // Environment and area details
+    'political_connection', 'dominated_area', 'feedback_from_neighbour',
+    'other_observation', 'hold_reason', 'recommendation_status',
+
+    // Final status
+    'final_status'
+  ];
+
+  // Get fields that are relevant for this form type
+  const relevantFields = getRelevantPropertyApfFieldsForFormType(formType);
+
+  // Populate missing fields with appropriate defaults
+  for (const field of allDatabaseFields) {
+    if (completeData[field] === undefined || completeData[field] === null) {
+      if (relevantFields.includes(field)) {
+        // Field is relevant for this form type but missing - this might indicate an issue
+        console.warn(`⚠️ Missing relevant field for ${formType} Property APF form: ${field}`);
+      }
+
+      // Set default value (NULL for all missing fields)
+      completeData[field] = getDefaultPropertyApfValueForField(field);
+    }
+  }
+
+  return completeData;
+}
+
+/**
+ * Gets relevant database fields for a specific Property APF form type
+ *
+ * @param formType - Type of Property APF form
+ * @returns Array of relevant database field names
+ */
+function getRelevantPropertyApfFieldsForFormType(formType: string): string[] {
+  const fieldsByType: Record<string, string[]> = {
+    'POSITIVE': [
+      'address_locatable', 'address_rating', 'property_type', 'property_status',
+      'property_ownership', 'property_age', 'property_condition', 'property_area',
+      'property_value', 'market_value', 'apf_status', 'apf_number', 'apf_issue_date',
+      'apf_expiry_date', 'apf_amount', 'apf_coverage', 'loan_amount', 'bank_name',
+      'owner_name', 'occupant_name', 'occupancy_status', 'met_person_name',
+      'designation', 'title_deed_status', 'registration_number', 'property_tax_status',
+      'valuation_date', 'valuer_name', 'locality', 'address_structure',
+      'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'landmark1', 'landmark2', 'tpc_met_person1', 'name_of_tpc1',
+      'tpc_confirmation1', 'electricity_connection', 'water_connection'
+    ],
+    'SHIFTED': [
+      'address_locatable', 'address_rating', 'met_person_name', 'designation',
+      'shifted_period', 'current_location', 'locality', 'address_structure',
+      'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'landmark1', 'landmark2'
+    ],
+    'NSP': [
+      'address_locatable', 'address_rating', 'property_status', 'apf_status',
+      'met_person_name', 'designation', 'locality', 'address_structure',
+      'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'landmark1', 'landmark2'
+    ],
+    'ENTRY_RESTRICTED': [
+      'address_locatable', 'address_rating', 'name_of_met_person', 'met_person_type',
+      'met_person_confirmation', 'locality', 'address_structure', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status',
+      'address_floor', 'address_structure_color', 'landmark1', 'landmark2'
+    ],
+    'UNTRACEABLE': [
+      'call_remark', 'contact_person', 'locality', 'landmark1', 'landmark2', 'landmark3', 'landmark4',
+      'dominated_area', 'other_observation', 'final_status'
+    ]
+  };
+
+  return fieldsByType[formType] || fieldsByType['POSITIVE'];
+}
+
+/**
+ * Gets appropriate default value for a Property APF database field
+ *
+ * @param fieldName - Database field name
+ * @returns Default value for the field
+ */
+function getDefaultPropertyApfValueForField(fieldName: string): any {
+  // All fields default to null for missing/irrelevant data
+  return null;
 }
