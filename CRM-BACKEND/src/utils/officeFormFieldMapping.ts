@@ -11,14 +11,15 @@ export interface DatabaseFieldMapping {
 
 /**
  * Complete field mapping from mobile office form fields to database columns
+ * Covers all office verification form types: POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE
  */
 export const OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   // Basic form information
   'outcome': null, // Handled separately as verification_outcome
   'remarks': 'remarks',
   'finalStatus': 'final_status',
-  
-  // Address and location fields
+
+  // Address and location fields (Common to all forms)
   'addressLocatable': 'address_locatable',
   'addressRating': 'address_rating',
   'locality': 'locality',
@@ -29,25 +30,27 @@ export const OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'companyNamePlateStatus': 'company_nameplate_status',
   'nameOnBoard': 'name_on_company_board',
   'nameOnCompanyBoard': 'name_on_company_board',
-  
-  // Landmarks
+
+  // Landmarks (Common to all forms, untraceable may have more)
   'landmark1': 'landmark1',
   'landmark2': 'landmark2',
-  
-  // Office status and details
-  'officeStatus': 'office_status',
-  'officeExistence': 'office_existence',
-  'officeType': 'office_type',
-  'companyNatureOfBusiness': 'company_nature_of_business',
-  'businessPeriod': 'business_period',
-  'establishmentPeriod': 'establishment_period',
-  'officeApproxArea': 'office_approx_area',
-  'staffStrength': 'staff_strength',
-  'staffSeen': 'staff_seen',
-  
-  // Person details
-  'metPerson': 'met_person_name',
-  'metPersonName': 'met_person_name',
+  'landmark3': 'landmark3', // Used in untraceable forms
+  'landmark4': 'landmark4', // Used in untraceable forms
+
+  // Office status and details (Form specific)
+  'officeStatus': 'office_status',           // Used in POSITIVE, SHIFTED, NSP forms
+  'officeExistence': 'office_existence',     // Used in NSP forms
+  'officeType': 'office_type',               // Used in POSITIVE forms
+  'companyNatureOfBusiness': 'company_nature_of_business', // Used in POSITIVE forms
+  'businessPeriod': 'business_period',       // Used in POSITIVE forms
+  'establishmentPeriod': 'establishment_period', // Used in POSITIVE forms
+  'officeApproxArea': 'office_approx_area',  // Used in POSITIVE forms
+  'staffStrength': 'staff_strength',         // Used in POSITIVE forms
+  'staffSeen': 'staff_seen',                 // Used in POSITIVE forms
+
+  // Person details (Form specific)
+  'metPerson': 'met_person_name',            // Used in POSITIVE, SHIFTED, NSP forms
+  'metPersonName': 'met_person_name',        // Alternative field name
   'designation': 'designation',
   'applicantDesignation': 'applicant_designation',
   'workingPeriod': 'working_period',

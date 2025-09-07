@@ -418,17 +418,6 @@ function getRelevantFieldsForFormType(formType: string): string[] {
  * @returns Default value for the field
  */
 function getDefaultValueForField(fieldName: string): any {
-  // Numeric fields default to null
-  const numericFields = ['total_family_members', 'total_earning', 'applicant_age', 'approx_area'];
-  if (numericFields.includes(fieldName)) {
-    return null;
-  }
-
-  // Date fields default to null
-  if (fieldName === 'applicant_dob') {
-    return null;
-  }
-
-  // String fields default to 'na'
-  return 'na';
+  // All fields default to null for missing/irrelevant data
+  return null;
 }

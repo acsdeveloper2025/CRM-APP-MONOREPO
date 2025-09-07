@@ -125,22 +125,22 @@ function testFormType(formType: string, formData: any): void {
     console.log(`📊 Comparison:`, {
       newMethodFields: Object.keys(preparedData).length,
       legacyMethodFields: Object.keys(legacyMappedData).length,
-      newMethodNaFields: Object.values(preparedData).filter(v => v === 'na').length,
-      legacyMethodNaFields: Object.values(legacyMappedData).filter(v => v === 'na').length
+      newMethodNullFields: Object.values(preparedData).filter(v => v === null).length,
+      legacyMethodNullFields: Object.values(legacyMappedData).filter(v => v === null).length
     });
-    
-    // Show sample of fields that are defaulted to 'na'
-    const naFields = Object.entries(preparedData)
-      .filter(([_, value]) => value === 'na')
+
+    // Show sample of fields that are defaulted to null
+    const nullFields = Object.entries(preparedData)
+      .filter(([_, value]) => value === null)
       .slice(0, 10);
-    
-    if (naFields.length > 0) {
-      console.log(`📝 Sample fields defaulted to 'na':`, naFields.map(([key]) => key));
+
+    if (nullFields.length > 0) {
+      console.log(`📝 Sample fields defaulted to null:`, nullFields.map(([key]) => key));
     }
-    
+
     // Show sample of populated fields
     const populatedFields = Object.entries(preparedData)
-      .filter(([_, value]) => value !== null && value !== 'na' && value !== undefined)
+      .filter(([_, value]) => value !== null && value !== undefined)
       .slice(0, 10);
     
     console.log(`✨ Sample populated fields:`, Object.fromEntries(populatedFields));

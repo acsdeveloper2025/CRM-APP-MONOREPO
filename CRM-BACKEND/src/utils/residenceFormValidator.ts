@@ -69,10 +69,10 @@ export function validateAndPrepareResidenceForm(
   
   // Calculate field coverage statistics
   const totalFields = Object.keys(preparedData).length;
-  const populatedFields = Object.values(preparedData).filter(value => 
-    value !== null && value !== undefined && value !== 'na'
+  const populatedFields = Object.values(preparedData).filter(value =>
+    value !== null && value !== undefined
   ).length;
-  const defaultedFields = Object.values(preparedData).filter(value => value === 'na').length;
+  const defaultedFields = Object.values(preparedData).filter(value => value === null).length;
   const coveragePercentage = Math.round((populatedFields / totalFields) * 100);
   
   const validationResult: FormValidationResult = {
@@ -200,23 +200,23 @@ function processFieldValue(fieldName: string, value: any): any {
   if (value === null || value === undefined) {
     return null;
   }
-  
+
   // Handle empty strings
   if (typeof value === 'string' && value.trim() === '') {
     return null;
   }
-  
+
   // Handle numeric fields
   const numericFields = [
-    'totalFamilyMembers', 'totalEarning', 'applicantAge', 'approxArea', 
+    'totalFamilyMembers', 'totalEarning', 'applicantAge', 'approxArea',
     'applicantStayingFloor', 'addressFloor', 'familyMembers', 'addressStructure'
   ];
-  
+
   if (numericFields.includes(fieldName)) {
     const num = Number(value);
     return isNaN(num) ? null : num;
   }
-  
+
   // Handle date fields
   const dateFields = ['applicantDob'];
   if (dateFields.includes(fieldName)) {
@@ -226,31 +226,30 @@ function processFieldValue(fieldName: string, value: any): any {
     }
     return null;
   }
-  
-  // Default: convert to string and trim
-  return String(value).trim() || null;
+
+  // Default: convert to string and trim, return null if empty
+  const trimmedValue = String(value).trim();
+  return trimmedValue === '' ? null : trimmedValue;
 }
 
 /**
  * Generates a comprehensive field coverage report for debugging
  */
 export function generateFieldCoverageReport(
-  formData: any, 
-  preparedData: Record<string, any>, 
+  formData: any,
+  preparedData: Record<string, any>,
   formType: string
 ): string {
   const originalFields = Object.keys(formData).length;
   const finalFields = Object.keys(preparedData).length;
-  const populatedFields = Object.values(preparedData).filter(v => v !== null && v !== 'na').length;
-  const defaultedFields = Object.values(preparedData).filter(v => v === 'na').length;
+  const populatedFields = Object.values(preparedData).filter(v => v !== null && v !== undefined).length;
   const nullFields = Object.values(preparedData).filter(v => v === null).length;
-  
+
   return `
 📊 Field Coverage Report for ${formType} Residence Verification:
    Original form fields: ${originalFields}
    Final database fields: ${finalFields}
    Populated fields: ${populatedFields}
-   Defaulted to 'na': ${defaultedFields}
    Null fields: ${nullFields}
    Coverage: ${Math.round((populatedFields / finalFields) * 100)}%
   `;

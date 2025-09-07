@@ -1121,19 +1121,17 @@ export class MobileFormController {
       };
 
       // Log comprehensive database insert data for debugging
-      const naFields = Object.entries(dbInsertData).filter(([_, value]) => value === 'na');
       const nullFields = Object.entries(dbInsertData).filter(([_, value]) => value === null);
       const populatedFields = Object.entries(dbInsertData).filter(([_, value]) =>
-        value !== null && value !== undefined && value !== 'na' && value !== ''
+        value !== null && value !== undefined && value !== ''
       );
 
       console.log(`📝 Final database insert data for ${formType} residence verification:`, {
         totalFields: Object.keys(dbInsertData).length,
         populatedFields: populatedFields.length,
-        fieldsWithNaValues: naFields.length,
         fieldsWithNullValues: nullFields.length,
         fieldCoveragePercentage: Math.round((populatedFields.length / Object.keys(dbInsertData).length) * 100),
-        naFieldNames: naFields.map(([key]) => key).slice(0, 10), // Show first 10 'na' fields
+        nullFieldNames: nullFields.map(([key]) => key).slice(0, 10), // Show first 10 null fields
         samplePopulatedData: Object.fromEntries(populatedFields.slice(0, 10)) // Show first 10 populated fields
       });
 
