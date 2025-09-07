@@ -11,14 +11,15 @@ export interface DatabaseFieldMapping {
 
 /**
  * Complete field mapping from mobile DSA/DST Connector form fields to database columns
+ * Covers all DSA Connector verification form types: POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE
  */
 export const DSA_CONNECTOR_FIELD_MAPPING: DatabaseFieldMapping = {
   // Basic form information
   'outcome': null, // Handled separately as verification_outcome
   'remarks': 'remarks',
   'finalStatus': 'final_status',
-  
-  // Address and location fields
+
+  // Address and location fields (Common to all forms)
   'addressLocatable': 'address_locatable',
   'addressRating': 'address_rating',
   'locality': 'locality',
@@ -26,28 +27,28 @@ export const DSA_CONNECTOR_FIELD_MAPPING: DatabaseFieldMapping = {
   'addressFloor': 'address_floor',
   'addressStructureColor': 'address_structure_color',
   'doorColor': 'door_color',
-  
-  // Landmarks
+
+  // Landmarks (Common to all forms, untraceable may have more)
   'landmark1': 'landmark1',
   'landmark2': 'landmark2',
-  'landmark3': 'landmark3',
-  'landmark4': 'landmark4',
-  
-  // DSA/DST Connector specific fields
-  'connectorType': 'connector_type',
-  'connectorCode': 'connector_code',
-  'connectorName': 'connector_name',
-  'connectorDesignation': 'connector_designation',
-  'connectorExperience': 'connector_experience',
-  'connectorStatus': 'connector_status',
-  
-  // Business/Office details
-  'businessName': 'business_name',
-  'businessType': 'business_type',
-  'businessRegistrationNumber': 'business_registration_number',
-  'businessEstablishmentYear': 'business_establishment_year',
-  'officeType': 'office_type',
-  'officeArea': 'office_area',
+  'landmark3': 'landmark3', // Used in untraceable forms
+  'landmark4': 'landmark4', // Used in untraceable forms
+
+  // DSA/DST Connector specific fields (Form specific)
+  'connectorType': 'connector_type',                 // Used in POSITIVE forms
+  'connectorCode': 'connector_code',                 // Used in POSITIVE forms
+  'connectorName': 'connector_name',                 // Used in POSITIVE forms
+  'connectorDesignation': 'connector_designation',   // Used in POSITIVE forms
+  'connectorExperience': 'connector_experience',     // Used in POSITIVE forms
+  'connectorStatus': 'connector_status',             // Used in POSITIVE, NSP forms
+
+  // Business/Office details (Form specific)
+  'businessName': 'business_name',                   // Used in POSITIVE forms
+  'businessType': 'business_type',                   // Used in POSITIVE forms
+  'businessRegistrationNumber': 'business_registration_number', // Used in POSITIVE forms
+  'businessEstablishmentYear': 'business_establishment_year',   // Used in POSITIVE forms
+  'officeType': 'office_type',                       // Used in POSITIVE forms
+  'officeArea': 'office_area',                       // Used in POSITIVE forms
   'officeRent': 'office_rent',
   
   // Team and staff details
@@ -155,31 +156,36 @@ export const DSA_CONNECTOR_FIELD_MAPPING: DatabaseFieldMapping = {
 };
 
 /**
- * Maps mobile DSA/DST Connector form data to database field values
- * 
+ * Maps mobile DSA/DST Connector form data to database field values with comprehensive field coverage
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ *
  * @param formData - Raw form data from mobile app
+ * @param formType - The type of DSA Connector form (POSITIVE, SHIFTED, NSP, ENTRY_RESTRICTED, UNTRACEABLE)
  * @returns Object with database column names as keys
  */
-export function mapDsaConnectorFormDataToDatabase(formData: any): Record<string, any> {
+export function mapDsaConnectorFormDataToDatabase(formData: any, formType?: string): Record<string, any> {
   const mappedData: Record<string, any> = {};
-  
+
   // Process each field in the form data
   for (const [mobileField, value] of Object.entries(formData)) {
     const dbColumn = DSA_CONNECTOR_FIELD_MAPPING[mobileField];
-    
+
     // Skip fields that should be ignored
     if (dbColumn === null) {
       continue;
     }
-    
+
     // Use the mapped column name or the original field name if no mapping exists
     const columnName = dbColumn || mobileField;
-    
+
     // Process the value based on type
     mappedData[columnName] = processDsaConnectorFieldValue(mobileField, value);
   }
-  
-  return mappedData;
+
+  // Ensure all database fields have values based on form type
+  const completeData = ensureAllDsaConnectorFieldsPopulated(mappedData, formType || 'POSITIVE');
+
+  return completeData;
 }
 
 /**
@@ -351,4 +357,159 @@ export function validateDsaConnectorRequiredFields(formData: any, formType: stri
     missingFields,
     warnings
   };
+}
+
+/**
+ * Ensures all database fields are populated with appropriate values or NULL defaults
+ * This function guarantees that every database column has a value, preventing null/undefined issues
+ *
+ * @param mappedData - Already mapped form data
+ * @param formType - Type of DSA Connector form
+ * @returns Complete data object with all fields populated
+ */
+export function ensureAllDsaConnectorFieldsPopulated(mappedData: Record<string, any>, formType: string): Record<string, any> {
+  const completeData = { ...mappedData };
+
+  // Define all possible database fields for DSA Connector verification
+  const allDatabaseFields = [
+    // Address and location fields
+    'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
+    'address_structure_color', 'door_color',
+
+    // Landmarks
+    'landmark1', 'landmark2', 'landmark3', 'landmark4',
+
+    // DSA/DST Connector specific fields
+    'connector_type', 'connector_code', 'connector_name', 'connector_designation',
+    'connector_experience', 'connector_status', 'connector_category', 'connector_level',
+    'connector_territory', 'connector_target', 'connector_achievement', 'connector_rating',
+    'connector_training_status', 'connector_certification', 'connector_license_number',
+
+    // Business/Office details
+    'business_name', 'business_type', 'business_registration_number', 'business_establishment_year',
+    'office_type', 'office_area', 'office_status', 'office_ownership', 'office_rent',
+    'office_facilities', 'office_staff_count', 'office_equipment',
+
+    // Financial and performance details
+    'monthly_business_volume', 'annual_turnover', 'commission_structure', 'incentive_details',
+    'payment_terms', 'outstanding_dues', 'credit_limit', 'security_deposit',
+    'bank_account_details', 'pan_number', 'gst_number', 'tax_compliance_status',
+
+    // Team and network details
+    'team_size', 'sub_agents_count', 'network_coverage', 'territory_details',
+    'customer_base', 'active_policies', 'renewal_rate', 'claim_ratio',
+
+    // Training and development
+    'training_completed', 'certification_status', 'skill_assessment', 'product_knowledge',
+    'compliance_training', 'technology_adoption', 'digital_literacy',
+
+    // Contact and communication
+    'contact_number', 'alternate_number', 'email_address', 'communication_preference',
+    'availability_hours', 'response_time', 'customer_feedback_score',
+
+    // Verification details
+    'met_person_name', 'met_person_relation', 'designation', 'met_person_status',
+    'document_shown', 'document_type', 'document_verification_status',
+    'identity_verification', 'address_verification', 'business_verification',
+
+    // Technology and infrastructure
+    'computer_literacy', 'internet_connectivity', 'mobile_app_usage', 'digital_tools',
+    'pos_machine_availability', 'printer_availability', 'scanner_availability',
+
+    // Compliance and regulatory
+    'regulatory_compliance', 'code_of_conduct_adherence', 'ethical_practices',
+    'customer_grievance_handling', 'data_protection_compliance', 'anti_fraud_measures',
+
+    // Third Party Confirmation
+    'tpc_met_person1', 'name_of_tpc1', 'tpc_confirmation1',
+    'tpc_met_person2', 'name_of_tpc2', 'tpc_confirmation2',
+
+    // Form specific fields
+    'shifted_period', 'current_location', 'name_of_met_person', 'met_person_type',
+    'met_person_confirmation', 'call_remark', 'contact_person',
+
+    // Environment and area details
+    'political_connection', 'dominated_area', 'feedback_from_neighbour',
+    'other_observation', 'hold_reason', 'recommendation_status',
+
+    // Final status
+    'final_status'
+  ];
+
+  // Get fields that are relevant for this form type
+  const relevantFields = getRelevantDsaConnectorFieldsForFormType(formType);
+
+  // Populate missing fields with appropriate defaults
+  for (const field of allDatabaseFields) {
+    if (completeData[field] === undefined || completeData[field] === null) {
+      if (relevantFields.includes(field)) {
+        // Field is relevant for this form type but missing - this might indicate an issue
+        console.warn(`⚠️ Missing relevant field for ${formType} DSA Connector form: ${field}`);
+      }
+
+      // Set default value (NULL for all missing fields)
+      completeData[field] = getDefaultDsaConnectorValueForField(field);
+    }
+  }
+
+  return completeData;
+}
+
+/**
+ * Gets relevant database fields for a specific DSA Connector form type
+ *
+ * @param formType - Type of DSA Connector form
+ * @returns Array of relevant database field names
+ */
+function getRelevantDsaConnectorFieldsForFormType(formType: string): string[] {
+  const fieldsByType: Record<string, string[]> = {
+    'POSITIVE': [
+      'address_locatable', 'address_rating', 'connector_type', 'connector_code',
+      'connector_name', 'connector_designation', 'connector_experience', 'connector_status',
+      'business_name', 'business_type', 'business_registration_number', 'office_type',
+      'office_area', 'monthly_business_volume', 'team_size', 'training_completed',
+      'contact_number', 'met_person_name', 'designation', 'document_shown',
+      'document_type', 'locality', 'address_structure', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status',
+      'address_floor', 'address_structure_color', 'door_color', 'landmark1', 'landmark2',
+      'tpc_met_person1', 'name_of_tpc1', 'tpc_confirmation1', 'annual_turnover',
+      'commission_structure', 'bank_account_details', 'pan_number', 'certification_status'
+    ],
+    'SHIFTED': [
+      'address_locatable', 'address_rating', 'met_person_name', 'designation',
+      'shifted_period', 'current_location', 'locality', 'address_structure',
+      'political_connection', 'dominated_area', 'feedback_from_neighbour',
+      'other_observation', 'final_status', 'address_floor', 'address_structure_color',
+      'door_color', 'landmark1', 'landmark2'
+    ],
+    'NSP': [
+      'address_locatable', 'address_rating', 'connector_status', 'met_person_name',
+      'designation', 'locality', 'address_structure', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status',
+      'address_floor', 'address_structure_color', 'door_color', 'landmark1', 'landmark2'
+    ],
+    'ENTRY_RESTRICTED': [
+      'address_locatable', 'address_rating', 'name_of_met_person', 'met_person_type',
+      'met_person_confirmation', 'locality', 'address_structure', 'political_connection',
+      'dominated_area', 'feedback_from_neighbour', 'other_observation', 'final_status',
+      'address_floor', 'address_structure_color', 'landmark1', 'landmark2'
+    ],
+    'UNTRACEABLE': [
+      'call_remark', 'contact_person', 'locality', 'landmark1', 'landmark2', 'landmark3', 'landmark4',
+      'dominated_area', 'other_observation', 'final_status'
+    ]
+  };
+
+  return fieldsByType[formType] || fieldsByType['POSITIVE'];
+}
+
+/**
+ * Gets appropriate default value for a DSA Connector database field
+ *
+ * @param fieldName - Database field name
+ * @returns Default value for the field
+ */
+function getDefaultDsaConnectorValueForField(fieldName: string): any {
+  // All fields default to null for missing/irrelevant data
+  return null;
 }
