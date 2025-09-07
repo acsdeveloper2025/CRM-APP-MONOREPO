@@ -306,7 +306,7 @@ export const EnterpriseRateLimits = {
     },
     FIELD_AGENT: {
       windowMs: 15 * 60 * 1000,
-      maxRequests: 1500, // Optimized for mobile usage
+      maxRequests: 10000, // Increased from 1500 to 10000 for high-volume case processing (100+ cases/day)
     },
     DEFAULT: {
       windowMs: 15 * 60 * 1000,
