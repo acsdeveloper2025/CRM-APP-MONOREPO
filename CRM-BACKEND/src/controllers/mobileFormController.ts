@@ -7,6 +7,7 @@ import { validateAndPrepareResidenceForm, generateFieldCoverageReport } from '..
 import { validateAndPrepareOfficeForm, generateOfficeFieldCoverageReport } from '../utils/officeFormValidator';
 import { validateAndPrepareBusinessForm, generateBusinessFieldCoverageReport } from '../utils/businessFormValidator';
 import { validateAndPrepareResidenceCumOfficeForm, generateResidenceCumOfficeFieldCoverageReport } from '../utils/residenceCumOfficeFormValidator';
+import { validateAndPrepareBuilderForm, generateBuilderFieldCoverageReport } from '../utils/builderFormValidator';
 import { mapOfficeFormDataToDatabase, validateOfficeRequiredFields, getOfficeAvailableDbColumns } from '../utils/officeFormFieldMapping';
 import { mapBusinessFormDataToDatabase, validateBusinessRequiredFields, getBusinessAvailableDbColumns } from '../utils/businessFormFieldMapping';
 import {
@@ -1938,19 +1939,31 @@ export class MobileFormController {
 
       console.log(`🔍 Detected form type: ${formType}, verification outcome: ${verificationOutcome}`);
 
-      // Map form data to database fields using comprehensive field mapping
-      const mappedFormData = mapBuilderFormDataToDatabase(formData);
+      // Use comprehensive validation and preparation for builder form data
+      const { validationResult, preparedData } = validateAndPrepareBuilderForm(formData, formType);
 
-      // Validate required fields for the detected form type
-      const validation = validateBuilderRequiredFields(formData, formType);
-      if (!validation.isValid) {
-        console.warn(`⚠️ Missing required fields for ${formType} builder form:`, validation.missingFields);
-      }
-      if (validation.warnings.length > 0) {
-        console.warn(`⚠️ Builder form validation warnings:`, validation.warnings);
-      }
+      // Log comprehensive validation results
+      console.log(`📊 Comprehensive validation for ${formType} builder verification:`, {
+        isValid: validationResult.isValid,
+        missingFields: validationResult.missingFields,
+        warnings: validationResult.warnings,
+        fieldCoverage: validationResult.fieldCoverage
+      });
 
-      console.log(`📊 Mapped ${Object.keys(mappedFormData).length} builder form fields to database columns`);
+      // Generate and log field coverage report
+      const coverageReport = generateBuilderFieldCoverageReport(formData, preparedData, formType);
+      console.log(coverageReport);
+
+      // Use the prepared data (which includes all fields with proper defaults)
+      const mappedFormData = preparedData;
+
+      // Log warnings if any
+      if (!validationResult.isValid) {
+        console.warn(`⚠️ Missing required fields for ${formType} builder form:`, validationResult.missingFields);
+      }
+      if (validationResult.warnings.length > 0) {
+        console.warn(`⚠️ Validation warnings for ${formType} builder form:`, validationResult.warnings);
+      }
 
       // Validate minimum photo requirement (≥5 geo-tagged photos)
       // Use images array for new submission format
@@ -2088,6 +2101,21 @@ export class MobileFormController {
         INSERT INTO "builderVerificationReports" (${columnNames})
         VALUES (${placeholders})
       `;
+
+      // Log comprehensive database insert data for debugging
+      const nullFields = Object.entries(dbInsertData).filter(([_, value]) => value === null);
+      const populatedFields = Object.entries(dbInsertData).filter(([_, value]) =>
+        value !== null && value !== undefined && value !== ''
+      );
+
+      console.log(`📝 Final database insert data for ${formType} builder verification:`, {
+        totalFields: Object.keys(dbInsertData).length,
+        populatedFields: populatedFields.length,
+        fieldsWithNullValues: nullFields.length,
+        fieldCoveragePercentage: Math.round((populatedFields.length / Object.keys(dbInsertData).length) * 100),
+        nullFieldNames: nullFields.map(([key]) => key).slice(0, 10), // Show first 10 null fields
+        samplePopulatedData: Object.fromEntries(populatedFields.slice(0, 10)) // Show first 10 populated fields
+      });
 
       console.log(`📝 Inserting builder verification with ${columns.length} fields:`, columns);
 
