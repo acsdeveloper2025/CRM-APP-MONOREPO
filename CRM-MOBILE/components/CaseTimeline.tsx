@@ -41,17 +41,17 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseData, compact = false }
       },
       {
         label: 'In Progress',
-        timestamp: caseData.inProgressAt,
+        timestamp: caseData.inProgressAt || (caseData.status === 'IN_PROGRESS' ? caseData.updatedAt : undefined),
         icon: '🚀',
         color: 'text-yellow-400',
         description: 'Case moved to in-progress status'
       },
       {
-        label: 'Last Saved',
-        timestamp: caseData.savedAt,
+        label: 'Last Updated',
+        timestamp: caseData.savedAt || caseData.updatedAt,
         icon: '💾',
         color: 'text-purple-400',
-        description: 'Case data was last saved/updated'
+        description: 'Case data was last updated'
       },
       {
         label: 'Completed',
