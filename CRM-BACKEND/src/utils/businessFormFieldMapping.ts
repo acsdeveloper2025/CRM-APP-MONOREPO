@@ -371,7 +371,7 @@ function getRelevantBusinessFieldsForFormType(formType: string): string[] {
   const fieldsByType: Record<string, string[]> = {
     'POSITIVE': [
       'address_locatable', 'address_rating', 'business_status', 'met_person_name',
-      'designation', 'working_period', 'applicant_designation', 'working_status',
+      'designation',
       'business_type', 'ownership_type', 'company_nature_of_business', 'staff_strength',
       'locality', 'address_structure', 'political_connection', 'dominated_area',
       'feedback_from_neighbour', 'other_observation', 'final_status', 'business_period',

@@ -93,6 +93,11 @@ const ShiftedBuilderForm: React.FC<ShiftedBuilderFormProps> = ({ caseData }) => 
         if (!report.nameOfTpc2 || report.nameOfTpc2.trim() === '' || !report.tpcConfirmation2) return false;
     }
 
+    // Always required Company Name Plate validation (regardless of office status)
+    if (report.companyNamePlateStatus === SightStatus.Sighted) {
+        if (!report.nameOnBoard || report.nameOnBoard.trim() === '') return false;
+    }
+
     // Conditional validation - only when office is open
     if (report.officeStatus === OfficeStatusOffice.Opened) {
         const openedOnlyFields: (keyof ShiftedBuilderReportData)[] = [
@@ -102,10 +107,6 @@ const ShiftedBuilderForm: React.FC<ShiftedBuilderFormProps> = ({ caseData }) => 
 
         if (report.premisesStatus !== PremisesStatusBusiness.Vacant) {
             if (!report.currentCompanyName || !report.currentCompanyPeriod) return false;
-        }
-
-        if (report.companyNamePlateStatus === SightStatus.Sighted) {
-            if (!report.nameOnBoard || report.nameOnBoard.trim() === '') return false;
         }
     }
     
@@ -374,6 +375,7 @@ const ShiftedBuilderForm: React.FC<ShiftedBuilderFormProps> = ({ caseData }) => 
         onImagesChange={handleImagesChange}
         isReadOnly={isReadOnly}
         minImages={MIN_IMAGES}
+        compact={true}
       />
 
       {/* Selfie Capture Section */}

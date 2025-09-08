@@ -1533,6 +1533,18 @@ export interface PositivePropertyApfReportData {
     otherObservation: string;
     finalStatus: FinalStatus | null;
     holdReason: string;
+    // Construction Stop fields
+    activityStopReason?: string;
+    projectName?: string;
+    projectStartedDate?: string;
+    projectCompletionDate?: string;
+    totalWing?: string;
+    totalFlats?: string;
+    totalBuildingsInProject?: string;
+    projectCompletionPercent?: string;
+    staffStrength?: string;
+    staffSeen?: string;
+    nameOnBoard?: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
 }
@@ -1567,6 +1579,18 @@ export interface NspPropertyApfReportData {
     otherObservation: string;
     finalStatus: FinalStatus | null;
     holdReason: string;
+    // Construction Stop fields
+    activityStopReason?: string;
+    projectName?: string;
+    projectStartedDate?: string;
+    projectCompletionDate?: string;
+    totalWing?: string;
+    totalFlats?: string;
+    totalBuildingsInProject?: string;
+    projectCompletionPercent?: string;
+    staffStrength?: string;
+    staffSeen?: string;
+    nameOnBoard?: string;
     images: CapturedImage[];
     selfieImages: CapturedImage[];
 }

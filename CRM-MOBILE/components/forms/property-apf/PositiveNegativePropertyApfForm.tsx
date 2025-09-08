@@ -55,7 +55,7 @@ const PositiveNegativePropertyApfForm: React.FC<PositiveNegativePropertyApfFormP
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(VerificationStatus.Positive);
+  const verificationStatus = VerificationStatus.Positive; // Default to Positive, determined by form outcome
   const [constructionActivity, setConstructionActivity] = useState<ConstructionActivity>(ConstructionActivity.Seen);
   const [companyNameBoard, setCompanyNameBoard] = useState<CompanyNameBoard>(CompanyNameBoard.NotSighted);
 
@@ -186,9 +186,7 @@ const PositiveNegativePropertyApfForm: React.FC<PositiveNegativePropertyApfFormP
     }
   };
 
-  const handleStatusChange = (newStatus: VerificationStatus) => {
-    setVerificationStatus(newStatus);
-  };
+
   
   const handleImagesChange = (images: CapturedImage[]) => {
     const updates = { images };
@@ -282,23 +280,7 @@ const PositiveNegativePropertyApfForm: React.FC<PositiveNegativePropertyApfFormP
         </div>
       </div>
 
-      {/* Status Selection Section */}
-      <div className="p-4 bg-yellow-900/20 rounded-lg space-y-4 border border-yellow-600/30">
-        <h4 className="font-semibold text-yellow-400">Verification Status</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <SelectField 
-            label="Verification Status" 
-            id="verificationStatus" 
-            name="verificationStatus" 
-            value={verificationStatus} 
-            onChange={(e) => handleStatusChange(e.target.value as VerificationStatus)} 
-            disabled={isReadOnly}
-          >
-            <option value={VerificationStatus.Positive}>Positive</option>
-            <option value={VerificationStatus.Negative}>Negative</option>
-          </SelectField>
-        </div>
-      </div>
+
 
       {/* Address Verification Section */}
       <div className="p-4 bg-gray-900/50 rounded-lg space-y-4 border border-dark-border">
@@ -332,20 +314,20 @@ const PositiveNegativePropertyApfForm: React.FC<PositiveNegativePropertyApfFormP
           <h4 className="font-semibold text-red-400">Construction Stop Details</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Building Status" id="buildingStatus" name="buildingStatus" value={report.buildingStatus || ''} onChange={handleChange} disabled={isReadOnly} />
-            <FormField label="Activity Stop Reason" id="activityStopReason" name="activityStopReason" value="" onChange={handleChange} disabled={isReadOnly} />
-            <FormField label="Project Name" id="projectName" name="projectName" value="" onChange={handleChange} disabled={isReadOnly} />
-            <FormField label="Project Started Date" id="projectStartedDate" name="projectStartedDate" type="date" value="" onChange={handleChange} disabled={isReadOnly} />
-            <FormField label="Project Completion Date" id="projectCompletionDate" name="projectCompletionDate" type="date" value="" onChange={handleChange} disabled={isReadOnly} />
-            <FormField label="Total Wing" id="totalWing" name="totalWing" value="" onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Activity Stop Reason" id="activityStopReason" name="activityStopReason" value={report.activityStopReason || ''} onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Project Name" id="projectName" name="projectName" value={report.projectName || ''} onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Project Started Date" id="projectStartedDate" name="projectStartedDate" type="date" value={report.projectStartedDate || ''} onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Project Completion Date" id="projectCompletionDate" name="projectCompletionDate" type="date" value={report.projectCompletionDate || ''} onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Total Wing" id="totalWing" name="totalWing" value={report.totalWing || ''} onChange={handleChange} disabled={isReadOnly} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField label="Total Flats" id="totalFlats" name="totalFlats" value="" onChange={handleChange} disabled={isReadOnly} />
-            <FormField label="Project Completion %" id="projectCompletionPercent" name="projectCompletionPercent" type="number" value="" onChange={handleChange} disabled={isReadOnly} />
-            <FormField label="Staff Strength" id="staffStrength" name="staffStrength" type="number" value="" onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Total Flats" id="totalFlats" name="totalFlats" value={report.totalFlats || ''} onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Project Completion %" id="projectCompletionPercent" name="projectCompletionPercent" type="number" value={report.projectCompletionPercent || ''} onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Staff Strength" id="staffStrength" name="staffStrength" type="number" value={report.staffStrength || ''} onChange={handleChange} disabled={isReadOnly} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Staff Seen" id="staffSeen" name="staffSeen" type="number" value="" onChange={handleChange} disabled={isReadOnly} />
-            <FormField label="Name on Board" id="nameOnBoard" name="nameOnBoard" value="" onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Staff Seen" id="staffSeen" name="staffSeen" type="number" value={report.staffSeen || ''} onChange={handleChange} disabled={isReadOnly} />
+            <FormField label="Name on Board" id="nameOnBoard" name="nameOnBoard" value={report.nameOnBoard || ''} onChange={handleChange} disabled={isReadOnly} />
           </div>
         </div>
       )}
@@ -450,8 +432,51 @@ const PositiveNegativePropertyApfForm: React.FC<PositiveNegativePropertyApfFormP
             {options.companyNameBoard}
           </SelectField>
           {companyNameBoard === CompanyNameBoard.SightedAs && (
-            <FormField label="Name on Board" id="nameOnBoard" name="nameOnBoard" value="" onChange={handleChange} disabled={isReadOnly} className="border-red-500 bg-red-900/20" />
+            <FormField label="Name on Board" id="nameOnBoard" name="nameOnBoard" value={report.nameOnBoard || ''} onChange={handleChange} disabled={isReadOnly} className="border-red-500 bg-red-900/20" />
           )}
+        </div>
+      </div>
+
+      {/* Project Information Section */}
+      <div className="p-4 bg-gray-900/50 rounded-lg space-y-4 border border-dark-border">
+        <h4 className="font-semibold text-brand-primary">Project Information</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            label="Total Buildings in Project"
+            id="totalBuildingsInProject"
+            name="totalBuildingsInProject"
+            type="number"
+            value={report.totalBuildingsInProject || ''}
+            onChange={handleChange}
+            disabled={isReadOnly}
+          />
+          <FormField
+            label="Total Flats in Building"
+            id="totalFlats"
+            name="totalFlats"
+            type="number"
+            value={report.totalFlats || ''}
+            onChange={handleChange}
+            disabled={isReadOnly}
+          />
+          <FormField
+            label="Project Start Date"
+            id="projectStartedDate"
+            name="projectStartedDate"
+            type="date"
+            value={report.projectStartedDate || ''}
+            onChange={handleChange}
+            disabled={isReadOnly}
+          />
+          <FormField
+            label="Project End Date"
+            id="projectCompletionDate"
+            name="projectCompletionDate"
+            type="date"
+            value={report.projectCompletionDate || ''}
+            onChange={handleChange}
+            disabled={isReadOnly}
+          />
         </div>
       </div>
 

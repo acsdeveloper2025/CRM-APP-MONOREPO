@@ -37,6 +37,9 @@ export const PROPERTY_APF_FIELD_MAPPING: DatabaseFieldMapping = {
   // Property-specific fields (Form specific)
   'propertyType': 'property_type',               // Used in POSITIVE forms
   'propertyStatus': 'property_status',           // Used in POSITIVE, NSP forms
+  'buildingStatus': 'building_status',           // Entry Restricted form field
+  'constructionActivity': 'construction_activity', // Construction activity field
+  'activityStopReason': 'activity_stop_reason',   // Activity stop reason field
   'propertyOwnership': 'property_ownership',     // Used in POSITIVE forms
   'propertyAge': 'property_age',                 // Used in POSITIVE forms
   'propertyCondition': 'property_condition',     // Used in POSITIVE forms
@@ -60,11 +63,22 @@ export const PROPERTY_APF_FIELD_MAPPING: DatabaseFieldMapping = {
   'projectStatus': 'project_status',
   'projectApprovalStatus': 'project_approval_status',
   'projectCompletionPercentage': 'project_completion_percentage',
+  'projectCompletionPercent': 'project_completion_percentage', // Alternative field name
+  'projectStartedDate': 'project_started_date',
+  'projectStartDate': 'project_started_date', // Alternative field name
+  'projectCompletionDate': 'project_completion_date',
+  'projectEndDate': 'project_completion_date', // Alternative field name
   'totalUnits': 'total_units',
+  'totalWing': 'total_wing',
+  'totalFlats': 'total_flats',
+  'totalBuildingsInProject': 'total_buildings_in_project',
+  'totalFlatsInBuilding': 'total_flats_in_building',
   'completedUnits': 'completed_units',
   'soldUnits': 'sold_units',
   'availableUnits': 'available_units',
   'possessionStatus': 'possession_status',
+  'staffStrength': 'staff_strength',
+  'staffSeen': 'staff_seen',
   
   // Builder/Developer information
   'builderName': 'builder_name',
@@ -87,6 +101,9 @@ export const PROPERTY_APF_FIELD_MAPPING: DatabaseFieldMapping = {
   'metPersonDesignation': 'met_person_designation',
   'metPersonRelation': 'met_person_relation',
   'metPersonContact': 'met_person_contact',
+  'nameOfMetPerson': 'name_of_met_person', // Entry Restricted form field
+  'metPersonConfirmation': 'met_person_confirmation', // Entry Restricted form field
+  'designation': 'designation', // Alternative field name
   
   // Document verification
   'documentShownStatus': 'document_shown_status',
@@ -138,6 +155,8 @@ export const PROPERTY_APF_FIELD_MAPPING: DatabaseFieldMapping = {
   // Legacy/alternative field names
   'metPerson': 'met_person_name', // Maps to met person name
   'companyName': 'builder_name', // Maps to builder name
+  'companyNameBoard': 'company_name_board', // Company name board field
+  'nameOnBoard': 'name_on_board', // Name on board field
   'projectDetails': 'project_name', // Maps to project name
   'propertyDetails': 'property_type', // Maps to property type
   'verificationMethod': null, // Derived field, ignore
