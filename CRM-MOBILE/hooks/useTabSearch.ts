@@ -48,8 +48,13 @@ export const useTabSearch = ({ cases, tabKey }: UseTabSearchProps): UseTabSearch
     const searchTerm = query.toLowerCase().trim();
 
     return cases.filter(caseItem => {
-      // Search in case ID
+      // Search in case UUID
       if (caseItem.id.toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+
+      // Search in case ID number (the number users see, like #124)
+      if (caseItem.caseId && caseItem.caseId.toString().includes(searchTerm)) {
         return true;
       }
 
@@ -78,9 +83,19 @@ export const useTabSearch = ({ cases, tabKey }: UseTabSearchProps): UseTabSearch
         return true;
       }
 
-      // Search in product
-      if (caseItem.product?.toLowerCase().includes(searchTerm)) {
-        return true;
+      // Search in product (handle both string and object types)
+      if (caseItem.product) {
+        if (typeof caseItem.product === 'string') {
+          if (caseItem.product.toLowerCase().includes(searchTerm)) {
+            return true;
+          }
+        } else if (typeof caseItem.product === 'object') {
+          // Search in product object properties
+          if (caseItem.product.name?.toLowerCase().includes(searchTerm) ||
+              caseItem.product.code?.toLowerCase().includes(searchTerm)) {
+            return true;
+          }
+        }
       }
 
       // Search in trigger
