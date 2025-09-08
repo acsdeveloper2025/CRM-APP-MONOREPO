@@ -71,6 +71,8 @@ export const PROPERTY_INDIVIDUAL_FIELD_MAPPING: DatabaseFieldMapping = {
   'metPersonDesignation': 'met_person_designation',
   'metPersonRelation': 'met_person_relation',
   'metPersonContact': 'met_person_contact',
+  'nameOfMetPerson': 'met_person_name', // Entry Restricted form field
+  'metPersonConfirmation': 'security_confirmation', // Entry Restricted form field
   
   // Neighbors and locality
   'neighbor1Name': 'neighbor1_name',
