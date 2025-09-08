@@ -280,8 +280,8 @@ const NspResiCumOfficeForm: React.FC<NspResiCumOfficeFormProps> = ({ caseData })
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <NumberDropdownField label="Address Structure" id="addressStructure" name="addressStructure" value={report.addressStructure || ''} onChange={handleChange} min={1} max={150} disabled={isReadOnly} />
-        <NumberDropdownField label="Applicant Staying Floor" id="applicantStayingFloor" name="applicantStayingFloor" value={report.applicantStayingFloor || ''} onChange={handleChange} min={1} max={150} disabled={isReadOnly} />
+        <NumberDropdownField label="Address Structure" id="addressStructure" name="addressStructure" value={report.addressStructure || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
+        <NumberDropdownField label="Applicant Staying Floor" id="applicantStayingFloor" name="applicantStayingFloor" value={report.applicantStayingFloor || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
         <FormField label="Address Structure Color" id="addressStructureColor" name="addressStructureColor" value={report.addressStructureColor} onChange={handleChange} disabled={isReadOnly} />
         <FormField label="Door Color" id="doorColor" name="doorColor" value={report.doorColor} onChange={handleChange} disabled={isReadOnly} />
         <SelectField label="Locality" id="locality" name="locality" value={report.locality || ''} onChange={handleChange} disabled={isReadOnly}><option value="">Select...</option>{options.localityType}</SelectField>

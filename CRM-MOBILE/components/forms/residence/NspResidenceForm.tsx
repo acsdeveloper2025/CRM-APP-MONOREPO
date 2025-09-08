@@ -288,8 +288,8 @@ const NspResidenceForm: React.FC<NspResidenceFormProps> = ({ caseData }) => {
             <option value="">Select...</option>
             {options.localityType}
           </SelectField>
-          <NumberDropdownField label="Address Structure" id="addressStructure" name="addressStructure" value={report.addressStructure || ''} onChange={handleChange} min={1} max={150} disabled={isReadOnly} />
-          <NumberDropdownField label="Applicant Staying Floor" id="applicantStayingFloor" name="applicantStayingFloor" value={report.applicantStayingFloor || ''} onChange={handleChange} min={1} max={150} disabled={isReadOnly} />
+          <NumberDropdownField label="Address Structure" id="addressStructure" name="addressStructure" value={report.addressStructure || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
+          <NumberDropdownField label="Applicant Staying Floor" id="applicantStayingFloor" name="applicantStayingFloor" value={report.applicantStayingFloor || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
           <FormField label="Address Structure Color" id="addressStructureColor" name="addressStructureColor" value={report.addressStructureColor} onChange={handleChange} disabled={isReadOnly} />
           <FormField label="Door Color" id="doorColor" name="doorColor" value={report.doorColor} onChange={handleChange} disabled={isReadOnly} />
         </div>

@@ -299,7 +299,7 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
               {options.relation}
             </SelectField>
             <NumberDropdownField label="Total Family Members" id="totalFamilyMembers" name="totalFamilyMembers" value={report.totalFamilyMembers || ''} onChange={handleChange} min={1} max={20} disabled={isReadOnly} />
-            <FormField label="Total Earning (₹)" id="totalEarning" name="totalEarning" type="number" value={report.totalEarning || ''} onChange={handleChange} disabled={isReadOnly} />
+            <NumberDropdownField label="Total Earning (₹)" id="totalEarning" name="totalEarning" value={report.totalEarning || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
             <FormField label="Applicant DOB" id="applicantDob" name="applicantDob" type="date" value={report.applicantDob} onChange={handleChange} disabled={isReadOnly} />
             <FormField label="Applicant Age" id="applicantAge" name="applicantAge" type="number" value={report.applicantAge || ''} onChange={handleChange} disabled={true} />
             <SelectField label="Working Status" id="workingStatus" name="workingStatus" value={report.workingStatus || ''} onChange={handleChange} disabled={isReadOnly}>
@@ -379,8 +379,8 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
             <option value="">Select...</option>
             {options.localityType}
           </SelectField>
-          <NumberDropdownField label="Address Structure" id="addressStructure" name="addressStructure" value={report.addressStructure || ''} onChange={handleChange} min={1} max={150} disabled={isReadOnly} />
-          <NumberDropdownField label="Applicant Staying Floor" id="applicantStayingFloor" name="applicantStayingFloor" value={report.applicantStayingFloor || ''} onChange={handleChange} min={1} max={150} disabled={isReadOnly} />
+          <NumberDropdownField label="Address Structure" id="addressStructure" name="addressStructure" value={report.addressStructure || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
+          <NumberDropdownField label="Applicant Staying Floor" id="applicantStayingFloor" name="applicantStayingFloor" value={report.applicantStayingFloor || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
           <FormField label="Address Structure Color" id="addressStructureColor" name="addressStructureColor" value={report.addressStructureColor} onChange={handleChange} disabled={isReadOnly} />
           <FormField label="Door Color" id="doorColor" name="doorColor" value={report.doorColor} onChange={handleChange} disabled={isReadOnly} />
         </div>

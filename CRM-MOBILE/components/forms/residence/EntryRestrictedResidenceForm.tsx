@@ -238,8 +238,8 @@ const EntryRestrictedResidenceForm: React.FC<EntryRestrictedResidenceFormProps> 
             <option value="">Select...</option>
             {options.localityType}
           </SelectField>
-          <FormField label="Address Structure" id="addressStructure" name="addressStructure" value={report.addressStructure} onChange={handleChange} placeholder="e.g., G+7" disabled={isReadOnly} />
-          <FormField label="Applicant Staying Floor" id="applicantStayingFloor" name="applicantStayingFloor" value={report.applicantStayingFloor} onChange={handleChange} placeholder="e.g., 4" disabled={isReadOnly} />
+          <NumberDropdownField label="Address Structure" id="addressStructure" name="addressStructure" value={report.addressStructure || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
+          <NumberDropdownField label="Applicant Staying Floor" id="applicantStayingFloor" name="applicantStayingFloor" value={report.applicantStayingFloor || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
           <FormField label="Address Structure Color" id="addressStructureColor" name="addressStructureColor" value={report.addressStructureColor} onChange={handleChange} disabled={isReadOnly} />
         </div>
 
