@@ -124,7 +124,6 @@ export enum SightStatus {
 export enum PoliticalConnection {
   Yes = 'Having Political Connection',
   No = 'Not Having Political Connection',
-  NotHavingAny = 'Not Having Any Political Connection',
 }
 
 export enum DominatedArea {
