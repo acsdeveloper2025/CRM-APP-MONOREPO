@@ -52,8 +52,6 @@ export const RESIDENCE_FIELD_MAPPING: DatabaseFieldMapping = {
   'stayingPersonName': 'staying_person_name',   // Used in NSP forms when house is closed
   'totalFamilyMembers': 'total_family_members', // Used in POSITIVE forms
   'totalEarning': 'total_earning',              // Used in POSITIVE forms
-  'applicantDob': 'applicant_dob',              // Used in POSITIVE forms
-  'applicantAge': 'applicant_age',              // Used in POSITIVE forms
   'workingStatus': 'working_status',            // Used in POSITIVE forms
   'companyName': 'company_name',                // Used in POSITIVE forms
   'stayingPeriod': 'staying_period',            // Used in POSITIVE and NSP forms
@@ -170,7 +168,7 @@ function processFieldValue(fieldName: string, value: any): any {
   
   // Handle numeric fields
   const numericFields = [
-    'totalFamilyMembers', 'totalEarning', 'applicantAge', 'approxArea', 
+    'totalFamilyMembers', 'totalEarning', 'approxArea',
     'applicantStayingFloor', 'addressFloor', 'familyMembers'
   ];
   
@@ -180,7 +178,7 @@ function processFieldValue(fieldName: string, value: any): any {
   }
   
   // Handle date fields
-  const dateFields = ['applicantDob'];
+  const dateFields: string[] = [];
   if (dateFields.includes(fieldName)) {
     if (typeof value === 'string' && value.trim() !== '') {
       return value;
@@ -319,7 +317,7 @@ export function ensureAllFieldsPopulated(mappedData: Record<string, any>, formTy
 
     // Person details
     'met_person_name', 'met_person_relation', 'met_person_status', 'staying_person_name',
-    'total_family_members', 'total_earning', 'applicant_dob', 'applicant_age',
+    'total_family_members', 'total_earning',
     'working_status', 'company_name', 'staying_period', 'staying_status', 'approx_area',
 
     // Document verification
@@ -373,7 +371,7 @@ function getRelevantFieldsForFormType(formType: string): string[] {
       'met_person_relation', 'total_family_members', 'working_status', 'staying_period',
       'staying_status', 'document_shown_status', 'tpc_met_person1', 'locality',
       'address_structure', 'political_connection', 'dominated_area', 'feedback_from_neighbour',
-      'other_observation', 'final_status', 'total_earning', 'applicant_age', 'company_name',
+      'other_observation', 'final_status', 'total_earning', 'company_name',
       'approx_area', 'document_type', 'tpc_name1', 'tpc_confirmation1', 'address_floor',
       'address_structure_color', 'door_color', 'door_nameplate_status', 'name_on_door_plate',
       'society_nameplate_status', 'name_on_society_board', 'landmark1', 'landmark2'

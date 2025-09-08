@@ -8,8 +8,6 @@ export const initialResidenceReport: ResidenceReportData = {
   metPersonRelation: null,
   totalFamilyMembers: null,
   totalEarning: null,
-  applicantDob: '',
-  applicantAge: null,
   workingStatus: null,
   companyName: '',
   stayingPeriod: '',

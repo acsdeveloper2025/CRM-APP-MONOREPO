@@ -479,8 +479,6 @@ export interface ResidenceReportData {
   metPersonRelation: Relation | null;
   totalFamilyMembers: number | null;
   totalEarning: number | null;
-  applicantDob: string;
-  applicantAge: number | null;
   workingStatus: WorkingStatus | null;
   companyName: string;
   stayingPeriod: string;

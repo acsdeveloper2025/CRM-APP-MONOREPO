@@ -214,7 +214,7 @@ function processFieldValue(fieldName: string, value: any): any {
   
   // Handle numeric fields
   const numericFields = [
-    'totalFamilyMembers', 'totalEarning', 'applicantAge', 'approxArea',
+    'totalFamilyMembers', 'totalEarning', 'approxArea',
     'staffStrength', 'staffSeen', 'officeApproxArea', 'addressFloor', 'addressStructure'
   ];
   
@@ -224,7 +224,7 @@ function processFieldValue(fieldName: string, value: any): any {
   }
   
   // Handle date fields
-  const dateFields = ['applicantDob', 'establishmentPeriod', 'businessPeriod'];
+  const dateFields = ['establishmentPeriod', 'businessPeriod'];
   if (dateFields.includes(fieldName)) {
     if (typeof value === 'string' && value.trim() !== '') {
       const date = new Date(value);

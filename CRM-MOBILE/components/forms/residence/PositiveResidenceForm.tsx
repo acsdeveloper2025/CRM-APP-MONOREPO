@@ -65,19 +65,6 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
     return <p className="text-medium-text">No residence report data available for this case.</p>;
   }
 
-  // Calculate age based on DOB
-  const calculateAge = (dob: string) => {
-    if (!dob) return null;
-    const today = new Date();
-    const birthDate = new Date(dob);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
   const isFormValid = useMemo(() => {
     if (!report) return false;
 
@@ -113,7 +100,7 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
     if (report.houseStatus === HouseStatus.Opened) {
         const openedFields: (keyof ResidenceReportData)[] = [
             'metPersonName', 'metPersonRelation', 'totalFamilyMembers', 'totalEarning',
-            'applicantDob', 'approxArea', 'documentShownStatus'
+            'approxArea', 'documentShownStatus'
         ];
         if (!checkFields(openedFields)) return false;
 
@@ -155,17 +142,11 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
     }
 
     // Handle number fields
-    if (['totalFamilyMembers', 'totalEarning', 'applicantAge', 'approxArea', 'applicantStayingFloor', 'addressStructure'].includes(name)) {
+    if (['totalFamilyMembers', 'totalEarning', 'approxArea', 'applicantStayingFloor', 'addressStructure'].includes(name)) {
         processedValue = value === '' ? null : Number(value);
     }
 
     const updates: Partial<ResidenceReportData> = { [name]: processedValue };
-
-    // Auto-calculate age when DOB changes
-    if (name === 'applicantDob' && value) {
-        const age = calculateAge(value);
-        updates.applicantAge = age;
-    }
 
     updateResidenceReport(caseData.id, updates);
   };
@@ -300,8 +281,6 @@ const PositiveResidenceForm: React.FC<PositiveResidenceFormProps> = ({ caseData 
             </SelectField>
             <NumberDropdownField label="Total Family Members" id="totalFamilyMembers" name="totalFamilyMembers" value={report.totalFamilyMembers || ''} onChange={handleChange} min={1} max={20} disabled={isReadOnly} />
             <NumberDropdownField label="Total Earning (₹)" id="totalEarning" name="totalEarning" value={report.totalEarning || ''} onChange={handleChange} min={1} max={300} disabled={isReadOnly} />
-            <FormField label="Applicant DOB" id="applicantDob" name="applicantDob" type="date" value={report.applicantDob} onChange={handleChange} disabled={isReadOnly} />
-            <FormField label="Applicant Age" id="applicantAge" name="applicantAge" type="number" value={report.applicantAge || ''} onChange={handleChange} disabled={true} />
             <SelectField label="Working Status" id="workingStatus" name="workingStatus" value={report.workingStatus || ''} onChange={handleChange} disabled={isReadOnly}>
               <option value="">Select...</option>
               {options.workingStatus}

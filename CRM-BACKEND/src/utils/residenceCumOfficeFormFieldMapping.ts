@@ -49,8 +49,6 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   'metPersonRelation': 'met_person_relation',    // Used in POSITIVE forms
   'totalFamilyMembers': 'total_family_members',  // Used in POSITIVE forms
   'totalEarning': 'total_earning',               // Used in POSITIVE forms
-  'applicantDob': 'applicant_dob',               // Used in POSITIVE forms
-  'applicantAge': 'applicant_age',
   'stayingPeriod': 'staying_period',
   'stayingPersonName': 'staying_person_name',    // Maps to staying_person_name column
   'stayingStatus': 'staying_status',
@@ -147,8 +145,6 @@ export const RESIDENCE_CUM_OFFICE_FIELD_MAPPING: DatabaseFieldMapping = {
   // Residence related fields
   'familyMembers': 'total_family_members', // Maps to family members
   'monthlyIncome': 'total_earning', // Maps to total earning
-  'dateOfBirth': 'applicant_dob', // Maps to applicant DOB
-  'age': 'applicant_age', // Maps to applicant age
   'residenceType': 'house_status', // Maps to house status
   'ownershipStatus': 'staying_status', // Maps to staying status
 
@@ -252,7 +248,7 @@ function processResidenceCumOfficeFieldValue(fieldName: string, value: any): any
   
   // Handle numeric fields
   const numericFields = [
-    'totalFamilyMembers', 'totalEarning', 'applicantAge', 'approxArea',
+    'totalFamilyMembers', 'totalEarning', 'approxArea',
     'staffStrength', 'staffSeen', 'totalEmployees'
   ];
   
@@ -262,7 +258,7 @@ function processResidenceCumOfficeFieldValue(fieldName: string, value: any): any
   }
   
   // Handle date fields
-  const dateFields = ['applicantDob'];
+  const dateFields: string[] = [];
   if (dateFields.includes(fieldName)) {
     if (value && typeof value === 'string') {
       const date = new Date(value);
@@ -298,7 +294,7 @@ export function ensureAllResidenceCumOfficeFieldsPopulated(mappedData: Record<st
 
     // Residence-specific fields
     'house_status', 'met_person_name', 'met_person_relation', 'total_family_members',
-    'total_earning', 'applicant_dob', 'applicant_age', 'working_status', 'staying_period',
+    'total_earning', 'working_status', 'staying_period',
     'staying_status', 'approx_area', 'document_shown_status', 'document_type',
 
     // Office-specific fields
@@ -359,7 +355,7 @@ function getRelevantResidenceCumOfficeFieldsForFormType(formType: string): strin
       'landmark1', 'landmark2',
       // Residence fields
       'house_status', 'met_person_name', 'met_person_relation', 'total_family_members',
-      'total_earning', 'applicant_age', 'working_status', 'staying_period', 'staying_status',
+      'total_earning', 'working_status', 'staying_period', 'staying_status',
       'approx_area', 'document_shown_status', 'document_type',
       // Office fields
       'office_status', 'office_type', 'company_nature_of_business', 'business_period',
