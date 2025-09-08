@@ -41,7 +41,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ caseData, compact = false }
       },
       {
         label: 'In Progress',
-        timestamp: caseData.inProgressAt || (caseData.status === 'IN_PROGRESS' ? caseData.updatedAt : undefined),
+        timestamp: caseData.inProgressAt || (caseData.status === 'In Progress' || caseData.status === 'IN_PROGRESS' ? caseData.updatedAt : undefined),
         icon: '🚀',
         color: 'text-yellow-400',
         description: 'Case moved to in-progress status'

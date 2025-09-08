@@ -38,7 +38,6 @@ interface BackendCase {
   address?: string;
   status: string;
   assignedAt: string; // Backend sends this as creation time
-  createdAt: string;
   updatedAt: string;
   completedAt?: string;
   [key: string]: any;
@@ -96,9 +95,9 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
     },
     status: statusMap[backendCase.status] || CaseStatus.Assigned,
     isSaved: false,
-    createdAt: backendCase.assignedAt || backendCase.createdAt, // Backend sends assignedAt as creation time
+    createdAt: backendCase.assignedAt, // Backend sends assignedAt as creation time
     updatedAt: backendCase.updatedAt,
-    inProgressAt: backendCase.status === 'IN_PROGRESS' ? backendCase.updatedAt : undefined, // Use updatedAt when status is IN_PROGRESS
+    inProgressAt: (backendCase.status === 'IN_PROGRESS' || backendCase.status === 'In Progress') ? backendCase.updatedAt : undefined, // Use updatedAt when status is IN_PROGRESS
     savedAt: undefined, // Backend doesn't track save timestamps separately
     completedAt: backendCase.completedAt,
     verificationType: (() => {
