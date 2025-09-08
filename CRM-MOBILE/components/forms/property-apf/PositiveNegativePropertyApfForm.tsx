@@ -437,10 +437,9 @@ const PositiveNegativePropertyApfForm: React.FC<PositiveNegativePropertyApfFormP
         </div>
       </div>
 
-      {/* Project Information Section - Hidden when Construction Activity is Plot is Vacant */}
-      {constructionActivity !== ConstructionActivity.PlotVacant && (
-        <div className="p-4 bg-gray-900/50 rounded-lg space-y-4 border border-dark-border">
-          <h4 className="font-semibold text-brand-primary">Project Information</h4>
+      {/* Project Information Section */}
+      <div className="p-4 bg-gray-900/50 rounded-lg space-y-4 border border-dark-border">
+        <h4 className="font-semibold text-brand-primary">Project Information</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             label="Total Buildings in Project"
@@ -479,8 +478,7 @@ const PositiveNegativePropertyApfForm: React.FC<PositiveNegativePropertyApfFormP
             disabled={isReadOnly}
           />
         </div>
-        </div>
-      )}
+      </div>
 
       {/* Area Assessment Section */}
       <div className="p-4 bg-gray-900/50 rounded-lg space-y-4 border border-dark-border">
