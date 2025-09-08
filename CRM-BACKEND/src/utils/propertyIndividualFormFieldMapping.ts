@@ -358,7 +358,7 @@ export function validatePropertyIndividualRequiredFields(formData: any, formType
 export function ensureAllPropertyIndividualFieldsPopulated(mappedData: Record<string, any>, formType: string): Record<string, any> {
   const completeData = { ...mappedData };
 
-  // Define all possible database fields for Property Individual verification
+  // Define all existing database fields for Property Individual verification (only fields that exist in DB)
   const allDatabaseFields = [
     // Address and location fields
     'address_locatable', 'address_rating', 'locality', 'address_structure', 'address_floor',
@@ -376,7 +376,7 @@ export function ensureAllPropertyIndividualFieldsPopulated(mappedData: Record<st
     // Individual/Personal details
     'individual_name', 'individual_age', 'individual_occupation', 'individual_income',
     'individual_education', 'individual_marital_status', 'family_members',
-    'earning_members', 'dependents', 'individual_experience',
+    'earning_members', 'individual_experience',
 
     // Employment details
     'employment_type', 'employer_name', 'employment_duration', 'monthly_income',
@@ -384,38 +384,45 @@ export function ensureAllPropertyIndividualFieldsPopulated(mappedData: Record<st
     'business_experience', 'business_income',
 
     // Financial details
-    'bank_name', 'account_number', 'account_type', 'bank_branch',
-    'loan_amount', 'loan_purpose', 'loan_tenure', 'emi_amount',
-    'existing_loans', 'credit_score', 'financial_obligations',
-
-    // Contact and communication
-    'contact_number', 'alternate_number', 'email_address', 'permanent_address',
-    'current_address', 'address_proof', 'identity_proof',
+    'bank_name', 'loan_amount', 'emi_amount', 'loan_against_property',
 
     // Verification details
-    'met_person_name', 'met_person_relation', 'designation', 'met_person_status',
-    'document_shown', 'document_type', 'document_verification_status',
-
-    // References and guarantors
-    'reference1_name', 'reference1_contact', 'reference1_relation',
-    'reference2_name', 'reference2_contact', 'reference2_relation',
-    'guarantor_name', 'guarantor_contact', 'guarantor_relation',
+    'met_person_name', 'met_person_relation', 'met_person_contact', 'met_person_designation',
+    'document_verification_status',
 
     // Third Party Confirmation
-    'tpc_met_person1', 'name_of_tpc1', 'tpc_confirmation1',
-    'tpc_met_person2', 'name_of_tpc2', 'tpc_confirmation2',
+    'tpc_met_person1', 'tpc_name1', 'tpc_confirmation1',
+    'tpc_met_person2', 'tpc_name2', 'tpc_confirmation2',
 
     // Form specific fields
-    'shifted_period', 'current_location', 'name_of_met_person', 'met_person_type',
-    'met_person_confirmation', 'call_remark', 'contact_person',
+    'shifted_period', 'current_location', 'call_remark', 'contact_person',
+    'entry_restriction_reason', 'security_person_name', 'security_confirmation',
 
     // Legal and compliance
-    'legal_issues', 'court_cases', 'criminal_background', 'verification_status',
-    'compliance_status', 'risk_assessment', 'credit_history',
+    'legal_issues',
 
     // Environment and area details
     'political_connection', 'dominated_area', 'feedback_from_neighbour',
     'other_observation', 'hold_reason', 'recommendation_status',
+
+    // Owner details
+    'owner_name', 'owner_age', 'owner_income', 'owner_occupation', 'owner_relation',
+    'previous_owner_name',
+
+    // Infrastructure and utilities
+    'infrastructure_status', 'road_connectivity', 'electricity_connection', 'water_connection',
+    'gas_connection', 'internet_connection', 'public_transport', 'safety_security',
+
+    // Property documents and status
+    'property_documents', 'property_concerns', 'title_clear_status', 'mutation_status',
+    'tax_payment_status', 'years_of_residence',
+
+    // Neighbors
+    'neighbor1_name', 'neighbor1_confirmation', 'neighbor2_name', 'neighbor2_confirmation',
+    'locality_reputation',
+
+    // Verification challenges
+    'verification_challenges',
 
     // Final status
     'final_status'
