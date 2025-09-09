@@ -16,7 +16,7 @@ import { CasePagination } from '@/components/cases/CasePagination';
 import { usePendingCases, useUpdateCaseStatus, useAssignCase } from '@/hooks/useCases';
 import { useFieldUsers } from '@/hooks/useUsers';
 import { useClients } from '@/hooks/useClients';
-import { Download, RefreshCw, Search, Filter, X, Clock, AlertTriangle } from 'lucide-react';
+import { Download, RefreshCw, Search, Filter, X, Clock, AlertTriangle, Flag, ArrowUp } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { CaseListQuery } from '@/services/cases';
 
@@ -27,6 +27,8 @@ export const PendingCasesPage: React.FC = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [flagOverdueCases, setFlagOverdueCases] = useState(true);
+  const [reviewUrgentFirst, setReviewUrgentFirst] = useState(true);
 
   // Debounce search term
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -46,16 +48,64 @@ export const PendingCasesPage: React.FC = () => {
   const updateStatusMutation = useUpdateCaseStatus();
   const assignCaseMutation = useAssignCase();
 
-  const cases = casesData?.data || [];
+  const rawCases = casesData?.data || [];
   const fieldUsers = fieldUsersData?.data || [];
   const clients = clientsData?.data || [];
 
+  // Helper function to check if a case is overdue
+  const isOverdue = React.useCallback((assignedAt?: string) => {
+    if (!assignedAt) return false;
+    const assigned = new Date(assignedAt);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - assigned.getTime()) / (1000 * 60 * 60));
+    return diffInHours > 48; // More than 2 days
+  }, []);
+
+  // Sort cases based on auto-highlight options
+  const cases = React.useMemo(() => {
+    let sortedCases = [...rawCases];
+
+    if (reviewUrgentFirst || flagOverdueCases) {
+      sortedCases.sort((a, b) => {
+        // Check if cases are overdue
+        const aOverdue = flagOverdueCases && isOverdue(a.assignedAt);
+        const bOverdue = flagOverdueCases && isOverdue(b.assignedAt);
+
+        // Check if cases are urgent (priority >= 3)
+        const aUrgent = reviewUrgentFirst && Number(a.priority) >= 3;
+        const bUrgent = reviewUrgentFirst && Number(b.priority) >= 3;
+
+        // Priority order: Overdue + Urgent > Overdue > Urgent > Normal
+        const aScore = (aOverdue ? 2 : 0) + (aUrgent ? 1 : 0);
+        const bScore = (bOverdue ? 2 : 0) + (bUrgent ? 1 : 0);
+
+        if (aScore !== bScore) {
+          return bScore - aScore; // Higher score first
+        }
+
+        // If same priority, sort by priority number (higher first)
+        if (reviewUrgentFirst && Number(a.priority) !== Number(b.priority)) {
+          return Number(b.priority) - Number(a.priority);
+        }
+
+        // If same priority, sort by assigned date (older first)
+        if (a.assignedAt && b.assignedAt) {
+          return new Date(a.assignedAt).getTime() - new Date(b.assignedAt).getTime();
+        }
+
+        return 0;
+      });
+    }
+
+    return sortedCases;
+  }, [rawCases, flagOverdueCases, reviewUrgentFirst, isOverdue]);
+
   // Calculate statistics
-  const totalPending = cases.length;
-  const pendingCases = cases.filter(c => c.status === 'PENDING').length;
-  const inProgressCases = cases.filter(c => c.status === 'IN_PROGRESS').length;
-  const urgentCases = cases.filter(c => Number(c.priority) >= 3).length;
-  const oldCases = cases.filter(c => {
+  const totalPending = rawCases.length;
+  const pendingCases = rawCases.filter(c => c.status === 'PENDING').length;
+  const inProgressCases = rawCases.filter(c => c.status === 'IN_PROGRESS').length;
+  const urgentCases = rawCases.filter(c => Number(c.priority) >= 3).length;
+  const oldCases = rawCases.filter(c => {
     if (!c.assignedAt) return false;
     const assigned = new Date(c.assignedAt);
     const now = new Date();
@@ -201,14 +251,35 @@ export const PendingCasesPage: React.FC = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Search & Filters</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </Button>
+            <div className="flex items-center space-x-2">
+              {/* Auto-highlight toggles */}
+              <Button
+                variant={flagOverdueCases ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFlagOverdueCases(!flagOverdueCases)}
+                className={flagOverdueCases ? "bg-red-600 hover:bg-red-700" : ""}
+              >
+                <Flag className="h-4 w-4 mr-2" />
+                Flag Overdue Cases
+              </Button>
+              <Button
+                variant={reviewUrgentFirst ? "default" : "outline"}
+                size="sm"
+                onClick={() => setReviewUrgentFirst(!reviewUrgentFirst)}
+                className={reviewUrgentFirst ? "bg-orange-600 hover:bg-orange-700" : ""}
+              >
+                <ArrowUp className="h-4 w-4 mr-2" />
+                Review Urgent First
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -334,6 +405,8 @@ export const PendingCasesPage: React.FC = () => {
             isLoading={isLoading}
             onUpdateStatus={handleUpdateStatus}
             onAssignCase={handleAssignCase}
+            flagOverdueCases={flagOverdueCases}
+            reviewUrgentFirst={reviewUrgentFirst}
           />
         </CardContent>
       </Card>

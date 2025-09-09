@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Play, UserCheck, Clock, AlertTriangle, Building2, User } from 'lucide-react';
+import { MoreHorizontal, Eye, Play, UserCheck, Clock, AlertTriangle, Building2, User, ArrowUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Case } from '@/types/case';
 import { cn } from '@/utils/cn';
@@ -29,6 +29,8 @@ interface PendingCasesTableProps {
   isLoading?: boolean;
   onUpdateStatus?: (caseId: string, status: string) => void;
   onAssignCase?: (caseId: string, userId: string) => void;
+  flagOverdueCases?: boolean;
+  reviewUrgentFirst?: boolean;
 }
 
 const getStatusColor = (status: string) => {
@@ -81,6 +83,8 @@ export const PendingCasesTable: React.FC<PendingCasesTableProps> = ({
   isLoading,
   onUpdateStatus,
   onAssignCase,
+  flagOverdueCases = true,
+  reviewUrgentFirst = true,
 }) => {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [selectedCaseForAssignment, setSelectedCaseForAssignment] = useState<Case | null>(null);
@@ -184,13 +188,16 @@ export const PendingCasesTable: React.FC<PendingCasesTableProps> = ({
           </TableHeader>
           <TableBody>
             {cases.map((caseItem) => {
-              const overdue = isOverdue(caseItem.assignedAt);
-              
+              const overdue = flagOverdueCases && isOverdue(caseItem.assignedAt);
+              const urgent = reviewUrgentFirst && Number(caseItem.priority) >= 3;
+
               return (
-                <TableRow 
+                <TableRow
                   key={caseItem.id}
                   className={cn(
-                    overdue && 'bg-red-50 border-l-4 border-l-red-500'
+                    overdue && urgent && 'bg-red-100 border-l-4 border-l-red-600',
+                    overdue && !urgent && 'bg-red-50 border-l-4 border-l-red-500',
+                    !overdue && urgent && 'bg-orange-50 border-l-4 border-l-orange-500'
                   )}
                 >
                   <TableCell className="font-medium">
@@ -202,7 +209,14 @@ export const PendingCasesTable: React.FC<PendingCasesTableProps> = ({
                         #{caseItem.caseId || caseItem.id?.slice(-8) || 'N/A'}
                       </Link>
                       {overdue && (
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
+                        <div title="Overdue Case">
+                          <AlertTriangle className="h-4 w-4 text-red-500" />
+                        </div>
+                      )}
+                      {urgent && !overdue && (
+                        <div title="Urgent Case">
+                          <ArrowUp className="h-4 w-4 text-orange-500" />
+                        </div>
                       )}
                     </div>
                   </TableCell>
@@ -273,7 +287,9 @@ export const PendingCasesTable: React.FC<PendingCasesTableProps> = ({
                   <TableCell>
                     <div className={cn(
                       "text-sm",
-                      overdue ? "text-red-600 font-medium" : "text-gray-500"
+                      overdue && urgent ? "text-red-700 font-bold" :
+                      overdue ? "text-red-600 font-medium" :
+                      urgent ? "text-orange-600 font-medium" : "text-gray-500"
                     )}>
                       {getTimeElapsed(caseItem.assignedAt)}
                     </div>

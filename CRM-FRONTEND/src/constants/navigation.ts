@@ -74,13 +74,6 @@ export const navigationItems: NavigationItem[] = [
         icon: Clock,
         permission: { resource: 'cases', action: 'read' },
       },
-      {
-        id: 'cases-pending-review',
-        label: 'Pending Review',
-        href: '/cases/pending-review',
-        icon: CheckSquare,
-        permission: { resource: 'cases', action: 'read' },
-      },
     ],
   },
   {
