@@ -15,7 +15,7 @@ export const CasesPage: React.FC = () => {
     page: 1,
     limit: 20,
     sortBy: 'caseId',
-    sortOrder: 'asc',
+    sortOrder: 'desc', // Changed to desc for newest cases first
   });
 
   // Add error handling

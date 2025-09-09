@@ -57,6 +57,8 @@ export interface Case {
   deduplicationChecked?: boolean;
   deduplicationDecision?: string;
   deduplicationRationale?: string;
+  // Sorting and duration fields
+  pendingDurationSeconds?: number;
   // Legacy nested objects (for backward compatibility)
   client?: {
     id: string;

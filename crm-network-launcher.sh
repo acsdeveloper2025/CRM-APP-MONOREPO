@@ -248,18 +248,33 @@ force_free_port() {
     local port=$1
     local service_name=$2
 
-    local pid=$(lsof -ti:$port 2>/dev/null)
-    if [ -n "$pid" ]; then
-        print_warning "Port $port is occupied by PID $pid. Freeing port for $service_name..."
+    # Get all PIDs using the port (can be multiple)
+    local pids=$(lsof -ti:$port 2>/dev/null)
+    if [ -n "$pids" ]; then
+        print_warning "Port $port is occupied by PID(s) $pids. Freeing port for $service_name..."
 
-        # First try graceful kill
-        kill "$pid" 2>/dev/null || true
+        # Kill all processes using the port
+        for pid in $pids; do
+            if [ -n "$pid" ]; then
+                print_info "  Killing process $pid..."
+                # First try graceful kill
+                kill "$pid" 2>/dev/null || true
+            fi
+        done
+
+        # Wait a moment for graceful shutdown
         sleep 2
 
-        # Check if still running and force kill if necessary
-        if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
-            print_info "Force killing process on port $port..."
-            kill -9 "$pid" 2>/dev/null || true
+        # Check if any processes are still running and force kill if necessary
+        local remaining_pids=$(lsof -ti:$port 2>/dev/null)
+        if [ -n "$remaining_pids" ]; then
+            print_info "Force killing remaining processes on port $port..."
+            for pid in $remaining_pids; do
+                if [ -n "$pid" ]; then
+                    print_info "  Force killing process $pid..."
+                    kill -9 "$pid" 2>/dev/null || true
+                fi
+            done
             sleep 1
         fi
 
@@ -292,6 +307,27 @@ ensure_ports_available() {
     force_free_port $backend_port "Backend API" || return 1
     force_free_port $frontend_port "Frontend Web" || return 1
     force_free_port $mobile_port "Mobile Web" || return 1
+
+    # Additional cleanup for stubborn npm/node processes
+    print_info "Performing additional cleanup for npm/node processes..."
+    pkill -f "npm run dev" 2>/dev/null || true
+    pkill -f "vite.*--host" 2>/dev/null || true
+    pkill -f "nodemon.*src/index.ts" 2>/dev/null || true
+    sleep 1
+
+    # Final verification that all ports are truly free
+    local final_check_failed=false
+    for port in $backend_port $frontend_port $mobile_port; do
+        if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+            print_error "Port $port is still occupied after cleanup"
+            final_check_failed=true
+        fi
+    done
+
+    if [ "$final_check_failed" = true ]; then
+        print_error "Some ports are still occupied. Please manually stop conflicting services."
+        return 1
+    fi
 
     print_status "All required ports are now available"
     return 0
@@ -429,13 +465,18 @@ update_all_env_files() {
                 print_info "    Backup created: ${env_file}.backup.$(date +%Y%m%d)"
             fi
 
-            # Update any hardcoded IPs in environment variables
+            # Update any hardcoded IPs in environment variables (more comprehensive patterns)
             sed -i.tmp -E "s|=http://192\.168\.[0-9]+\.[0-9]+:([0-9]+)|=http://$NETWORK_IP:\1|g" "$env_file"
             sed -i.tmp -E "s|=http://172\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|=http://$NETWORK_IP:\1|g" "$env_file"
             sed -i.tmp -E "s|=http://10\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|=http://$NETWORK_IP:\1|g" "$env_file"
             sed -i.tmp -E "s|=ws://192\.168\.[0-9]+\.[0-9]+:([0-9]+)|=ws://$NETWORK_IP:\1|g" "$env_file"
             sed -i.tmp -E "s|=ws://172\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|=ws://$NETWORK_IP:\1|g" "$env_file"
             sed -i.tmp -E "s|=ws://10\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)|=ws://$NETWORK_IP:\1|g" "$env_file"
+
+            # Also update URLs with /api suffix
+            sed -i.tmp -E "s|=http://192\.168\.[0-9]+\.[0-9]+:([0-9]+)/api|=http://$NETWORK_IP:\1/api|g" "$env_file"
+            sed -i.tmp -E "s|=http://172\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)/api|=http://$NETWORK_IP:\1/api|g" "$env_file"
+            sed -i.tmp -E "s|=http://10\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+)/api|=http://$NETWORK_IP:\1/api|g" "$env_file"
 
             rm -f "$env_file.tmp"
         fi
@@ -569,6 +610,16 @@ update_hardcoded_ips() {
                 sed -i.tmp -E "s|http://172\.[0-9]+\.[0-9]+\.[0-9]+:3000/api|http://$NETWORK_IP:3000/api|g" "$file"
                 sed -i.tmp -E "s|http://10\.[0-9]+\.[0-9]+\.[0-9]+:3000/api|http://$NETWORK_IP:3000/api|g" "$file"
 
+                # Update fallback URLs in quotes (for authentication and API services)
+                sed -i.tmp -E "s|'http://192\.168\.[0-9]+\.[0-9]+:3000/api'|'http://$NETWORK_IP:3000/api'|g" "$file"
+                sed -i.tmp -E "s|'http://172\.[0-9]+\.[0-9]+\.[0-9]+:3000/api'|'http://$NETWORK_IP:3000/api'|g" "$file"
+                sed -i.tmp -E "s|'http://10\.[0-9]+\.[0-9]+\.[0-9]+:3000/api'|'http://$NETWORK_IP:3000/api'|g" "$file"
+
+                # Update fallback URLs in double quotes
+                sed -i.tmp -E "s|\"http://192\.168\.[0-9]+\.[0-9]+:3000/api\"|\"http://$NETWORK_IP:3000/api\"|g" "$file"
+                sed -i.tmp -E "s|\"http://172\.[0-9]+\.[0-9]+\.[0-9]+:3000/api\"|\"http://$NETWORK_IP:3000/api\"|g" "$file"
+                sed -i.tmp -E "s|\"http://10\.[0-9]+\.[0-9]+\.[0-9]+:3000/api\"|\"http://$NETWORK_IP:3000/api\"|g" "$file"
+
                 rm -f "$file.tmp"
                 updated_count=$((updated_count + 1))
                 print_info "  Updated: $(basename "$file")"
@@ -583,13 +634,126 @@ update_hardcoded_ips() {
     fi
 }
 
+# Function to update critical authentication and API service files
+update_critical_files() {
+    print_info "Updating critical authentication and API service files..."
+
+    # Critical files that often contain hardcoded fallback URLs
+    local critical_files=(
+        "CRM-MOBILE/context/AuthContext.tsx"
+        "CRM-MOBILE/services/apiService.ts"
+        "CRM-MOBILE/services/networkService.ts"
+        "CRM-MOBILE/services/tokenRefreshService.ts"
+        "CRM-FRONTEND/src/services/api.ts"
+        "CRM-FRONTEND/src/services/auth.ts"
+    )
+
+    local updated_count=0
+
+    for file in "${critical_files[@]}"; do
+        if [ -f "$file" ]; then
+            # Check if file contains any hardcoded IP patterns
+            if grep -q -E "(192\.168\.[0-9]+\.[0-9]+|172\.[0-9]+\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+)" "$file"; then
+                print_info "  Processing critical file: $file"
+
+                # Create smart backup
+                if create_smart_backup "$file"; then
+                    print_info "    Backup created: ${file}.backup.$(date +%Y%m%d)"
+                fi
+
+                # Update all IP patterns in critical files
+                sed -i.tmp -E "s|http://192\.168\.[0-9]+\.[0-9]+:3000/api|http://$NETWORK_IP:3000/api|g" "$file"
+                sed -i.tmp -E "s|http://172\.[0-9]+\.[0-9]+\.[0-9]+:3000/api|http://$NETWORK_IP:3000/api|g" "$file"
+                sed -i.tmp -E "s|http://10\.[0-9]+\.[0-9]+\.[0-9]+:3000/api|http://$NETWORK_IP:3000/api|g" "$file"
+
+                # Update quoted fallback URLs
+                sed -i.tmp -E "s|'http://192\.168\.[0-9]+\.[0-9]+:3000/api'|'http://$NETWORK_IP:3000/api'|g" "$file"
+                sed -i.tmp -E "s|'http://172\.[0-9]+\.[0-9]+\.[0-9]+:3000/api'|'http://$NETWORK_IP:3000/api'|g" "$file"
+                sed -i.tmp -E "s|'http://10\.[0-9]+\.[0-9]+\.[0-9]+:3000/api'|'http://$NETWORK_IP:3000/api'|g" "$file"
+
+                sed -i.tmp -E "s|\"http://192\.168\.[0-9]+\.[0-9]+:3000/api\"|\"http://$NETWORK_IP:3000/api\"|g" "$file"
+                sed -i.tmp -E "s|\"http://172\.[0-9]+\.[0-9]+\.[0-9]+:3000/api\"|\"http://$NETWORK_IP:3000/api\"|g" "$file"
+                sed -i.tmp -E "s|\"http://10\.[0-9]+\.[0-9]+\.[0-9]+:3000/api\"|\"http://$NETWORK_IP:3000/api\"|g" "$file"
+
+                rm -f "$file.tmp"
+                updated_count=$((updated_count + 1))
+                print_info "    ✓ Updated: $(basename "$file")"
+            fi
+        else
+            print_warning "  Critical file not found: $file"
+        fi
+    done
+
+    if [ $updated_count -gt 0 ]; then
+        print_status "Updated $updated_count critical authentication/API files"
+    else
+        print_info "No critical files needed IP updates"
+    fi
+}
+
 # Update hardcoded IPs in all projects
 print_header "🔄 Updating Hardcoded IP Addresses"
+update_critical_files
 update_hardcoded_ips "CRM-BACKEND" "Backend"
 update_hardcoded_ips "CRM-FRONTEND" "Frontend"
 update_hardcoded_ips "CRM-MOBILE" "Mobile"
 
 echo ""
+
+# Function to validate all IP updates were successful
+validate_ip_updates() {
+    print_info "Validating IP address updates..."
+
+    local validation_failed=false
+
+    # Check .env files for old IPs
+    local env_files=$(find . -name ".env" -not -path "./node_modules/*" -not -path "*/.git/*" 2>/dev/null)
+    for env_file in $env_files; do
+        if [ -f "$env_file" ]; then
+            # Check for any remaining old IP patterns (excluding localhost)
+            local old_ips=$(grep -E "(192\.168\.[0-9]+\.[0-9]+|172\.[0-9]+\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+)" "$env_file" | grep -v "$NETWORK_IP" | grep -v "localhost" | grep -v "127.0.0.1" || true)
+            if [ -n "$old_ips" ]; then
+                print_warning "  Found old IPs in $env_file:"
+                echo "$old_ips" | sed 's/^/    /'
+                validation_failed=true
+            else
+                print_info "  ✓ $env_file - All IPs updated correctly"
+            fi
+        fi
+    done
+
+    # Check critical source files
+    local critical_files=(
+        "CRM-MOBILE/context/AuthContext.tsx"
+        "CRM-MOBILE/services/apiService.ts"
+        "CRM-MOBILE/services/networkService.ts"
+        "CRM-MOBILE/services/tokenRefreshService.ts"
+        "CRM-FRONTEND/src/services/api.ts"
+        "CRM-FRONTEND/src/services/auth.ts"
+    )
+
+    for file in "${critical_files[@]}"; do
+        if [ -f "$file" ]; then
+            local old_ips=$(grep -E "(192\.168\.[0-9]+\.[0-9]+|172\.[0-9]+\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+)" "$file" | grep -v "$NETWORK_IP" | grep -v "localhost" | grep -v "127.0.0.1" || true)
+            if [ -n "$old_ips" ]; then
+                print_warning "  Found old IPs in $file:"
+                echo "$old_ips" | sed 's/^/    /'
+                validation_failed=true
+            else
+                print_info "  ✓ $(basename "$file") - All IPs updated correctly"
+            fi
+        fi
+    done
+
+    if [ "$validation_failed" = true ]; then
+        print_error "⚠️  Some IP addresses were not updated correctly!"
+        print_info "Please check the files listed above and update them manually if needed."
+        return 1
+    else
+        print_status "✅ All IP address updates validated successfully!"
+        return 0
+    fi
+}
 
 # Verify network configuration
 print_header "🔍 Verifying Network Configuration"
@@ -602,6 +766,10 @@ else
     print_warning "Network IP $NETWORK_IP may not be reachable"
     print_info "This might affect network access from other devices"
 fi
+
+# Validate all IP updates
+echo ""
+validate_ip_updates
 
 # Display configuration summary
 print_info "Configuration Summary:"

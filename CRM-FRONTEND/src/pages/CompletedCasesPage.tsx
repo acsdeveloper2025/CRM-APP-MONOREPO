@@ -25,6 +25,8 @@ export const CompletedCasesPage: React.FC = () => {
     status: 'COMPLETED',
     page: 1,
     limit: 20,
+    sortBy: 'completedAt',
+    sortOrder: 'desc', // Most recently completed first
   });
 
   // Local state for search input to prevent focus loss

@@ -170,10 +170,25 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
     // Build WHERE clause
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Validate sort column
-    const allowedSortColumns = ['createdAt', 'updatedAt', 'customerName', 'priority', 'status', 'caseId'];
-    const safeSortBy = allowedSortColumns.includes(sortBy as string) ? sortBy : 'caseId';
-    const safeSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    // Validate sort column and implement custom sorting logic
+    const allowedSortColumns = ['createdAt', 'updatedAt', 'customerName', 'priority', 'status', 'caseId', 'completedAt', 'pendingDuration'];
+    let safeSortBy = allowedSortColumns.includes(sortBy as string) ? sortBy : 'caseId';
+    let safeSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+
+    // Custom sorting logic based on status filter
+    if (status === 'COMPLETED' && !sortBy) {
+      // For completed cases: sort by completion time descending (most recently completed first)
+      safeSortBy = 'completedAt';
+      safeSortOrder = 'DESC';
+    } else if ((status === 'PENDING' || status === 'IN_PROGRESS') && !sortBy) {
+      // For pending cases: sort by pending duration descending (longest pending first)
+      safeSortBy = 'pendingDuration';
+      safeSortOrder = 'DESC';
+    } else if (!sortBy) {
+      // For all cases: sort by case ID descending (newest cases first)
+      safeSortBy = 'caseId';
+      safeSortOrder = 'DESC';
+    }
 
     // Calculate offset
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
@@ -188,7 +203,29 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
     const countResult = await pool.query(countQuery, params);
     const total = parseInt(countResult.rows[0].total);
 
-    // Enhanced query with all 13 required fields for mobile app
+    // Enhanced query with all 13 required fields for mobile app and custom sorting
+    let orderByClause;
+    if (safeSortBy === 'pendingDuration') {
+      // Calculate pending duration for sorting (time since creation or last assignment)
+      orderByClause = `
+        ORDER BY
+          CASE
+            WHEN c.status IN ('PENDING', 'IN_PROGRESS') THEN
+              COALESCE(
+                EXTRACT(EPOCH FROM (NOW() - (
+                  SELECT MAX(cah."assignedAt")
+                  FROM case_assignment_history cah
+                  WHERE cah.case_id = c.id
+                ))),
+                EXTRACT(EPOCH FROM (NOW() - c."createdAt"))
+              )
+            ELSE 0
+          END ${safeSortOrder}
+      `;
+    } else {
+      orderByClause = `ORDER BY c."${safeSortBy}" ${safeSortOrder}`;
+    }
+
     const casesQuery = `
       SELECT
         c.*,
@@ -206,7 +243,20 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
         vt.code as "verificationTypeCode",
         -- Created by backend user information (Field 7: Created By Backend User)
         created_user.name as "createdByBackendUserName",
-        created_user.email as "createdByBackendUserEmail"
+        created_user.email as "createdByBackendUserEmail",
+        -- Calculate pending duration for frontend display
+        CASE
+          WHEN c.status IN ('PENDING', 'IN_PROGRESS') THEN
+            COALESCE(
+              EXTRACT(EPOCH FROM (NOW() - (
+                SELECT MAX(cah."assignedAt")
+                FROM case_assignment_history cah
+                WHERE cah.case_id = c.id
+              ))),
+              EXTRACT(EPOCH FROM (NOW() - c."createdAt"))
+            )
+          ELSE NULL
+        END as "pendingDurationSeconds"
       FROM cases c
       LEFT JOIN clients cl ON c."clientId" = cl.id
       LEFT JOIN users assigned_user ON c."assignedTo" = assigned_user.id
@@ -214,7 +264,7 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
       LEFT JOIN products p ON c."productId" = p.id
       LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
       ${whereClause}
-      ORDER BY c."${safeSortBy}" ${safeSortOrder}
+      ${orderByClause}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 

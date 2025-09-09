@@ -24,6 +24,8 @@ export const PendingCasesPage: React.FC = () => {
   const [filters, setFilters] = useState<CaseListQuery>({
     page: 1,
     limit: 20,
+    sortBy: 'pendingDuration',
+    sortOrder: 'desc', // Longest pending first
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);

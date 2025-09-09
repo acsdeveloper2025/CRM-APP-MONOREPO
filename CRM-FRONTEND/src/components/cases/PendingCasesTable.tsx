@@ -61,7 +61,24 @@ const getPriorityLabel = (priority: number | string) => {
   return 'Low';
 };
 
-const getTimeElapsed = (dateString?: string) => {
+const getTimeElapsed = (dateString?: string, pendingDurationSeconds?: number) => {
+  // Use pendingDurationSeconds if available (from backend calculation)
+  if (pendingDurationSeconds !== undefined && pendingDurationSeconds !== null) {
+    const hours = Math.floor(pendingDurationSeconds / 3600);
+    const minutes = Math.floor((pendingDurationSeconds % 3600) / 60);
+
+    if (hours < 1) {
+      return `${minutes}m pending`;
+    } else if (hours < 24) {
+      return `${hours}h pending`;
+    } else {
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return remainingHours > 0 ? `${days}d ${remainingHours}h pending` : `${days}d pending`;
+    }
+  }
+
+  // Fallback to original date calculation
   if (!dateString) return 'N/A';
   try {
     return formatDistanceToNow(new Date(dateString), { addSuffix: true });
@@ -277,7 +294,7 @@ export const PendingCasesTable: React.FC<PendingCasesTableProps> = ({
                         </div>
                         {caseItem.assignedAt && (
                           <div className="text-sm text-gray-500">
-                            Assigned {getTimeElapsed(caseItem.assignedAt)}
+                            Assigned {getTimeElapsed(caseItem.assignedAt, (caseItem as any).pendingDurationSeconds)}
                           </div>
                         )}
                       </div>
@@ -291,7 +308,7 @@ export const PendingCasesTable: React.FC<PendingCasesTableProps> = ({
                       overdue ? "text-red-600 font-medium" :
                       urgent ? "text-orange-600 font-medium" : "text-gray-500"
                     )}>
-                      {getTimeElapsed(caseItem.assignedAt)}
+                      {getTimeElapsed(caseItem.assignedAt, (caseItem as any).pendingDurationSeconds)}
                     </div>
                   </TableCell>
                   

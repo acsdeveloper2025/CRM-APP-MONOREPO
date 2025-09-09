@@ -143,16 +143,31 @@ export class CasesService {
   }
 
   async getPendingCases(): Promise<ApiResponse<Case[]>> {
-    // Fetch cases with PENDING and IN_PROGRESS status
+    // Fetch cases with PENDING and IN_PROGRESS status using custom pending duration sorting
     const [pendingResponse, inProgressResponse] = await Promise.all([
-      this.getCases({ status: 'PENDING' }),
-      this.getCases({ status: 'IN_PROGRESS' })
+      this.getCases({
+        status: 'PENDING',
+        sortBy: 'pendingDuration',
+        sortOrder: 'desc'
+      }),
+      this.getCases({
+        status: 'IN_PROGRESS',
+        sortBy: 'pendingDuration',
+        sortOrder: 'desc'
+      })
     ]);
 
-    // Combine the results
+    // Combine the results and sort by pending duration
     const pendingCases = pendingResponse.data || [];
     const inProgressCases = inProgressResponse.data || [];
     const allCases = [...pendingCases, ...inProgressCases];
+
+    // Sort combined cases by pending duration (longest pending first)
+    allCases.sort((a, b) => {
+      const aPendingDuration = (a as any).pendingDurationSeconds || 0;
+      const bPendingDuration = (b as any).pendingDurationSeconds || 0;
+      return bPendingDuration - aPendingDuration;
+    });
 
     return {
       success: true,
