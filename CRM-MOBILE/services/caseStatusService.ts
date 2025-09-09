@@ -163,12 +163,12 @@ class CaseStatusService {
    */
   private static mapMobileStatusToBackend(status: CaseStatus): string {
     const statusMap: Record<CaseStatus, string> = {
-      [CaseStatus.Assigned]: 'ASSIGNED',
+      [CaseStatus.Assigned]: 'PENDING',
       [CaseStatus.InProgress]: 'IN_PROGRESS',
       [CaseStatus.Completed]: 'COMPLETED',
     };
 
-    return statusMap[status] || 'ASSIGNED';
+    return statusMap[status] || 'PENDING';
   }
 
 

@@ -58,6 +58,166 @@ export interface BulkAssignmentResult {
 }
 
 /**
+ * Process case reassignment (resets status to PENDING)
+ */
+async function processCaseReassignment(
+  caseId: string,
+  fromUserId: string,
+  toUserId: string,
+  assignedById: string,
+  reason: string
+): Promise<AssignmentResult> {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Get current case details
+    const caseQuery = `
+      SELECT
+        id,
+        "caseId",
+        "customerName",
+        "assignedTo",
+        status
+      FROM cases
+      WHERE id = $1 AND "assignedTo" = $2
+      FOR UPDATE
+    `;
+
+    const caseResult = await client.query(caseQuery, [caseId, fromUserId]);
+
+    if (caseResult.rows.length === 0) {
+      throw new Error(`Case ${caseId} not found or not assigned to user ${fromUserId}`);
+    }
+
+    const caseData = caseResult.rows[0];
+
+    // Get previous assignee details
+    const prevUserQuery = `
+      SELECT name, email
+      FROM users
+      WHERE id = $1
+    `;
+    const prevUserResult = await client.query(prevUserQuery, [fromUserId]);
+    const previousAssigneeName = prevUserResult.rows[0]?.name || 'Unknown';
+
+    // Get new assignee details
+    const userQuery = `
+      SELECT id, name, email, role
+      FROM users
+      WHERE id = $1 AND role = 'FIELD_AGENT' AND "isActive" = true
+    `;
+
+    const userResult = await client.query(userQuery, [toUserId]);
+
+    if (userResult.rows.length === 0) {
+      throw new Error(`Field agent ${toUserId} not found or inactive`);
+    }
+
+    const newAssignee = userResult.rows[0];
+
+    // Update case assignment and RESET status to PENDING for reassignments
+    const updateQuery = `
+      UPDATE cases
+      SET
+        "assignedTo" = $1,
+        status = 'PENDING',
+        "assignedAt" = NOW(),
+        "updatedAt" = NOW()
+      WHERE id = $2
+      RETURNING *
+    `;
+
+    const updateResult = await client.query(updateQuery, [toUserId, caseId]);
+
+    // Create audit log
+    await createAuditLog({
+      userId: assignedById,
+      action: 'CASE_REASSIGNED',
+      entityType: 'CASE',
+      entityId: caseId,
+      details: {
+        caseId: caseData.caseId,
+        customerName: caseData.customerName,
+        previousAssignee: previousAssigneeName,
+        newAssignee: newAssignee.name,
+        previousStatus: caseData.status,
+        newStatus: 'PENDING',
+        reason: reason,
+      },
+    });
+
+    // Insert assignment history record
+    const historyQuery = `
+      INSERT INTO case_assignment_history (
+        "caseUUID", "case_id", "fromUserId", "toUserId", "assignedById", "assignedBy",
+        "previousAssignee", "newAssignee", reason, "assignedAt", "batchId"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10)
+    `;
+
+    await client.query(historyQuery, [
+      caseId,
+      caseId,
+      fromUserId,
+      toUserId,
+      assignedById,
+      assignedById,
+      fromUserId,
+      toUserId,
+      reason,
+      null, // No batch ID for reassignment
+    ]);
+
+    await client.query('COMMIT');
+
+    // Queue notification for the new assigned user
+    await notificationQueue.add('case-assigned', {
+      userId: toUserId,
+      caseId: caseId,
+      caseNumber: caseData.caseId,
+      customerName: caseData.customerName,
+      type: 'reassignment',
+    });
+
+    logger.info('Case reassignment completed', {
+      caseId,
+      fromUserId,
+      toUserId,
+      previousStatus: caseData.status,
+      newStatus: 'PENDING',
+      assignedBy: assignedById,
+    });
+
+    return {
+      success: true,
+      caseId,
+      previousAssignee: previousAssigneeName,
+      newAssignee: newAssignee.name,
+    };
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Case reassignment failed', {
+      caseId,
+      fromUserId,
+      toUserId,
+      error: errorMessage,
+    });
+
+    return {
+      success: false,
+      caseId,
+      error: errorMessage,
+    };
+  } finally {
+    client.release();
+  }
+}
+
+/**
  * Process single case assignment
  */
 async function processSingleAssignment(
@@ -127,13 +287,15 @@ async function processSingleAssignment(
 
     // Update case assignment
     const updateQuery = `
-      UPDATE cases 
-      SET 
+      UPDATE cases
+      SET
         "assignedTo" = $1,
-        status = CASE 
-          WHEN status = 'PENDING' THEN 'ASSIGNED'
+        status = CASE
+          WHEN status IS NULL OR status = '' THEN 'PENDING'
+          WHEN status = 'PENDING' THEN 'PENDING'
           ELSE status
         END,
+        "assignedAt" = NOW(),
         "updatedAt" = NOW()
       WHERE id = $2
       RETURNING *
@@ -414,8 +576,9 @@ export const caseAssignmentWorker = new Worker(
           break;
 
         case 'reassign':
-          result = await processSingleAssignment(
+          result = await processCaseReassignment(
             data.caseId,
+            data.fromUserId,
             data.toUserId,
             data.assignedById,
             data.reason

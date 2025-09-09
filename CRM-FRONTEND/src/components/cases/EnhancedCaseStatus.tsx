@@ -92,7 +92,7 @@ export const EnhancedCaseStatus: React.FC<EnhancedCaseStatusProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ASSIGNED':
+      case 'PENDING':
         return 'bg-blue-100 text-blue-800';
       case 'IN_PROGRESS':
         return 'bg-yellow-100 text-yellow-800';

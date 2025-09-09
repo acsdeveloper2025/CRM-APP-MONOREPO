@@ -55,7 +55,7 @@ const mapBackendCaseToMobile = (backendCase: BackendCase): Case => {
 
   // Map backend status to mobile CaseStatus
   const statusMap: { [key: string]: CaseStatus } = {
-    'ASSIGNED': CaseStatus.Assigned,
+    'PENDING': CaseStatus.Assigned,
     'IN_PROGRESS': CaseStatus.InProgress,
     'COMPLETED': CaseStatus.Completed
   };
