@@ -240,7 +240,7 @@ export const CaseTable: React.FC<CaseTableProps> = ({
               </TableCell>
               <TableCell>
                 <div className="text-sm">
-                  {caseItem.assignedToName || 'Unassigned'}
+                  {caseItem.assignedToName || caseItem.assignedTo?.name || 'Unassigned'}
                 </div>
               </TableCell>
               <TableCell>

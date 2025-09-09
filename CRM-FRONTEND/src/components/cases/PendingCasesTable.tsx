@@ -330,7 +330,7 @@ export const PendingCasesTable: React.FC<PendingCasesTableProps> = ({
                       <User className="h-4 w-4 text-gray-400" />
                       <div>
                         <div className="font-medium text-gray-900">
-                          {caseItem.assignedToName || 'Unassigned'}
+                          {caseItem.assignedToName || caseItem.assignedTo?.name || 'Unassigned'}
                         </div>
                         {caseItem.assignedAt && (
                           <div className="text-sm text-gray-600">
