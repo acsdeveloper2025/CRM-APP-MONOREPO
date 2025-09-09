@@ -180,7 +180,11 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
       // For completed cases: sort by completion time descending (most recently completed first)
       safeSortBy = 'completedAt';
       safeSortOrder = 'DESC';
-    } else if ((status === 'PENDING' || status === 'IN_PROGRESS') && !sortBy) {
+    } else if (status === 'IN_PROGRESS' && !sortBy) {
+      // For in progress cases: sort by in progress duration descending (longest in progress first)
+      safeSortBy = 'pendingDuration';
+      safeSortOrder = 'DESC';
+    } else if (status === 'PENDING' && !sortBy) {
       // For pending cases: sort by pending duration descending (longest pending first)
       safeSortBy = 'pendingDuration';
       safeSortOrder = 'DESC';
@@ -244,7 +248,7 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
         -- Created by backend user information (Field 7: Created By Backend User)
         created_user.name as "createdByBackendUserName",
         created_user.email as "createdByBackendUserEmail",
-        -- Calculate pending duration for frontend display
+        -- Calculate pending/in-progress duration for frontend display
         CASE
           WHEN c.status IN ('PENDING', 'IN_PROGRESS') THEN
             COALESCE(

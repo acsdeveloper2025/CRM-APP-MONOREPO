@@ -15,7 +15,8 @@ import {
   Plus,
   CheckCircle,
   Clock,
-  DollarSign
+  DollarSign,
+  PlayCircle
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -59,6 +60,13 @@ export const navigationItems: NavigationItem[] = [
         href: '/cases/new',
         icon: Plus,
         permission: { resource: 'cases', action: 'create' },
+      },
+      {
+        id: 'cases-in-progress',
+        label: 'In Progress Cases',
+        href: '/cases/in-progress',
+        icon: PlayCircle,
+        permission: { resource: 'cases', action: 'read' },
       },
       {
         id: 'cases-completed',
