@@ -197,7 +197,7 @@ export class CasesService {
     priority?: string;
     dateFrom?: string;
     dateTo?: string;
-  } = {}): Promise<Blob> {
+  } = {}): Promise<{ blob: Blob; filename: string }> {
     const queryParams = new URLSearchParams();
 
     Object.entries(params).forEach(([key, value]) => {
@@ -217,7 +217,19 @@ export class CasesService {
       throw new Error('Failed to export cases');
     }
 
-    return response.blob();
+    // Extract filename from Content-Disposition header
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'cases_export.xlsx'; // fallback filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+      if (filenameMatch) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    const blob = await response.blob();
+    return { blob, filename };
   }
 }
 

@@ -102,7 +102,7 @@ export const CompletedCasesPage: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      const blob = await casesService.exportCases({
+      const { blob, filename } = await casesService.exportCases({
         exportType: 'completed',
         search: filters.search,
         assignedTo: filters.assignedTo,
@@ -115,7 +115,7 @@ export const CompletedCasesPage: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `completed_cases_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = filename;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (error) {

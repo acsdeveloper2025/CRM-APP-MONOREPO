@@ -89,6 +89,11 @@ app.use(cors({
     'X-Real-IP',
     'X-Forwarded-Proto',
   ],
+  exposedHeaders: [
+    'Content-Disposition',
+    'Content-Type',
+    'Content-Length',
+  ],
 }));
 
 // Request logging

@@ -156,7 +156,7 @@ export const PendingCasesPage: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      const blob = await casesService.exportCases({
+      const { blob, filename } = await casesService.exportCases({
         exportType: 'pending',
         search: filters.search,
         assignedTo: filters.assignedTo,
@@ -169,7 +169,7 @@ export const PendingCasesPage: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `pending_cases_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = filename;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (error) {

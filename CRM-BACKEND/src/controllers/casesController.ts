@@ -1275,9 +1275,21 @@ export const exportCases = async (req: AuthenticatedRequest, res: Response) => {
       }
     });
 
-    // Generate filename
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-    const filename = `cases_export_${exportType || 'all'}_${timestamp}.xlsx`;
+    // Generate filename with tab name and timestamp
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+
+    // Map export type to readable tab name
+    const tabNameMap: { [key: string]: string } = {
+      'all': 'All_Cases',
+      'pending': 'Pending_Cases',
+      'in-progress': 'In_Progress_Cases',
+      'completed': 'Completed_Cases'
+    };
+
+    const tabName = tabNameMap[exportType as string] || 'All_Cases';
+    const filename = `${tabName}_Export_${dateStr}_${timeStr}.xlsx`;
 
     // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
