@@ -63,7 +63,14 @@ export class ErrorBoundary extends Component<Props, State> {
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       url: window.location.href,
-      userId: localStorage.getItem('authUser') ? JSON.parse(localStorage.getItem('authUser')!).id : null,
+      userId: (() => {
+        try {
+          const authUser = localStorage.getItem('authUser');
+          return authUser ? JSON.parse(authUser).id : null;
+        } catch {
+          return null;
+        }
+      })(),
     };
 
     console.error('Error logged:', errorData);

@@ -140,12 +140,17 @@ export const NewCasePage: React.FC = () => {
       <div className="space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-red-600">Edit Mode - No Data</h1>
-          <p className="text-muted-foreground">
-            Edit Case ID: {editCaseId}<br/>
-            Loading: {loadingCase ? 'Yes' : 'No'}<br/>
-            Has Case Data: {caseData?.data ? 'Yes' : 'No'}<br/>
-            Case Data: {JSON.stringify(caseData, null, 2)}
-          </p>
+          <div className="text-muted-foreground space-y-2">
+            <p>Edit Case ID: {editCaseId}</p>
+            <p>Loading: {loadingCase ? 'Yes' : 'No'}</p>
+            <p>Has Case Data: {caseData?.data ? 'Yes' : 'No'}</p>
+            <div>
+              <p>Case Data:</p>
+              <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-40 text-left">
+                {JSON.stringify(caseData, null, 2) || 'null'}
+              </pre>
+            </div>
+          </div>
           <Button onClick={() => navigate('/cases')} className="mt-4">
             Back to Cases
           </Button>
