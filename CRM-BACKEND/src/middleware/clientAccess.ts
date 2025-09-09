@@ -162,10 +162,14 @@ export const validateCaseAccess = async (req: AuthenticatedRequest, res: Respons
     }
 
     // Get the client ID for the case
-    const caseResult = await query(
-      'SELECT "clientId" FROM cases WHERE id = $1',
-      [caseId]
-    );
+    // Handle both numeric case IDs and UUID case IDs
+    const isNumeric = /^\d+$/.test(caseId);
+    const caseQuery = isNumeric
+      ? 'SELECT "clientId" FROM cases WHERE "caseId" = $1'
+      : 'SELECT "clientId" FROM cases WHERE id = $1';
+    const queryParam = isNumeric ? parseInt(caseId) : caseId;
+
+    const caseResult = await query(caseQuery, [queryParam]);
 
     if (caseResult.rows.length === 0) {
       return res.status(404).json({

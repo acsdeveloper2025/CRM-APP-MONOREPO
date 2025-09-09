@@ -37,7 +37,7 @@ export const navigationItems: NavigationItem[] = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['ADMIN', 'BACKEND', 'BANK'], // Keep for backward compatibility
+    permission: { resource: 'cases', action: 'read' }, // Using cases permission for dashboard access
   },
   {
     id: 'cases',

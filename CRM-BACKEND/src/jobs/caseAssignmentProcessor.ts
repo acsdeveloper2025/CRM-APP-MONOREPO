@@ -123,7 +123,6 @@ async function processCaseReassignment(
       SET
         "assignedTo" = $1,
         status = 'PENDING',
-        "assignedAt" = NOW(),
         "updatedAt" = NOW()
       WHERE id = $2
       RETURNING *
@@ -295,7 +294,6 @@ async function processSingleAssignment(
           WHEN status = 'PENDING' THEN 'PENDING'
           ELSE status
         END,
-        "assignedAt" = NOW(),
         "updatedAt" = NOW()
       WHERE id = $2
       RETURNING *

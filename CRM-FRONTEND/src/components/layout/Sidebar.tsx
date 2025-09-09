@@ -136,7 +136,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-center h-16 px-4 border-b border-border bg-primary/5">
-            <h1 className="text-xl font-bold text-foreground">CRM Admin</h1>
+            <Link
+              to="/dashboard"
+              className="text-xl font-bold text-foreground hover:text-primary transition-colors duration-200"
+              onClick={onClose}
+            >
+              CRM Admin
+            </Link>
           </div>
 
           {/* Navigation */}
