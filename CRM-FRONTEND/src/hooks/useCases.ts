@@ -54,6 +54,13 @@ export const usePendingReviewCases = () => {
   });
 };
 
+export const usePendingCases = () => {
+  return useQuery({
+    queryKey: [...caseKeys.all, 'pending'] as const,
+    queryFn: () => casesService.getPendingCases(),
+  });
+};
+
 // Mutations
 export const useUpdateCaseStatus = () => {
   const queryClient = useQueryClient();

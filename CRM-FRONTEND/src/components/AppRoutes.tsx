@@ -13,6 +13,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { CasesPage } from '@/pages/CasesPage';
 import { CaseDetailPage } from '@/pages/CaseDetailPage';
 import { PendingReviewPage } from '@/pages/PendingReviewPage';
+import { PendingCasesPage } from '@/pages/PendingCasesPage';
 import { CompletedCasesPage } from '@/pages/CompletedCasesPage';
 import { NewCasePage } from '@/pages/NewCasePage';
 import { ClientsPage } from '@/pages/ClientsPage';
@@ -108,6 +109,16 @@ export const AppRoutes: React.FC = () => {
       />
       <Route
         path="/cases/pending"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
+            <Layout>
+              <PendingCasesPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cases/pending-review"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>

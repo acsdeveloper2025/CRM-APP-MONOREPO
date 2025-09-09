@@ -142,6 +142,25 @@ export class CasesService {
     return this.getCases({ status: 'COMPLETED' });
   }
 
+  async getPendingCases(): Promise<ApiResponse<Case[]>> {
+    // Fetch cases with PENDING and IN_PROGRESS status
+    const [pendingResponse, inProgressResponse] = await Promise.all([
+      this.getCases({ status: 'PENDING' }),
+      this.getCases({ status: 'IN_PROGRESS' })
+    ]);
+
+    // Combine the results
+    const pendingCases = pendingResponse.data || [];
+    const inProgressCases = inProgressResponse.data || [];
+    const allCases = [...pendingCases, ...inProgressCases];
+
+    return {
+      success: true,
+      data: allCases,
+      message: 'Pending cases retrieved successfully'
+    };
+  }
+
   async approveCase(id: string, feedback?: string): Promise<ApiResponse<Case>> {
     return apiService.post(`/cases/${id}/approve`, { feedback });
   }

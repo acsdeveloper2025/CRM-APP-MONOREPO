@@ -14,7 +14,7 @@ import {
   Shield,
   Plus,
   CheckCircle,
-
+  Clock,
   DollarSign
 } from 'lucide-react';
 
@@ -69,8 +69,15 @@ export const navigationItems: NavigationItem[] = [
       },
       {
         id: 'cases-pending',
-        label: 'Pending Review',
+        label: 'Pending Cases',
         href: '/cases/pending',
+        icon: Clock,
+        permission: { resource: 'cases', action: 'read' },
+      },
+      {
+        id: 'cases-pending-review',
+        label: 'Pending Review',
+        href: '/cases/pending-review',
         icon: CheckSquare,
         permission: { resource: 'cases', action: 'read' },
       },

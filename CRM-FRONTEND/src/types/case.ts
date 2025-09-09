@@ -1,4 +1,4 @@
-export type CaseStatus = 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED';
+export type CaseStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'APPROVED' | 'REJECTED' | 'REWORK_REQUIRED';
 
 export interface Case {
   id: string;
