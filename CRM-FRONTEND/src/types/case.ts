@@ -29,18 +29,38 @@ export interface Case {
   notes?: string;
   trigger?: string;
   assignedToId?: string;
-  assignedTo?: string; // UUID of assigned user
+  assignedTo?: {
+    id: string;
+    name: string;
+    username?: string;
+    employeeId?: string;
+  };
   assignedToName?: string; // Name of assigned user
   clientId: string | number;
+  client?: {
+    id: string | number;
+    name: string;
+    code?: string;
+  };
   clientName?: string;
   clientCode?: string;
   productId?: string | number;
+  product?: {
+    id: string | number;
+    name: string;
+    code?: string;
+  };
   productName?: string;
   productCode?: string;
   verificationTypeId?: string | number;
   verificationTypeName?: string;
   verificationTypeCode?: string;
   createdBy?: string;
+  createdByBackendUser?: {
+    id: string;
+    name: string;
+    employeeId?: string;
+  };
   updatedBy?: string;
   // Applicant information
   applicantName?: string;

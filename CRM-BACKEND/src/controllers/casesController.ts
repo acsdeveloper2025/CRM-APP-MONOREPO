@@ -1167,6 +1167,9 @@ export const exportCases = async (req: AuthenticatedRequest, res: Response) => {
         c.trigger,
         u.name as assigned_to_name,
         u."employeeId" as assigned_to_employee_id,
+        bu.name as created_by_backend_user_name,
+        bu."employeeId" as created_by_backend_user_employee_id,
+        c."verificationOutcome" as verification_outcome,
         c."createdAt" as created_at,
         c."updatedAt" as updated_at,
         c."completedAt" as completed_at,
@@ -1180,6 +1183,7 @@ export const exportCases = async (req: AuthenticatedRequest, res: Response) => {
       LEFT JOIN products p ON c."productId" = p.id
       LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
       LEFT JOIN users u ON c."assignedTo" = u.id
+      LEFT JOIN users bu ON c."createdByBackendUser" = bu.id
       ${whereClause}
       ORDER BY c."caseId" DESC
     `;
@@ -1214,16 +1218,23 @@ export const exportCases = async (req: AuthenticatedRequest, res: Response) => {
 
     // Add specific columns based on export type
     if (exportType === 'completed') {
-      baseColumns.push({ header: 'Completed At', key: 'completed_at', width: 20 });
+      baseColumns.push(
+        { header: 'Completed At', key: 'completed_at', width: 20 },
+        { header: 'Verification Outcome', key: 'verification_outcome', width: 20 },
+        { header: 'Assigned By Backend User', key: 'created_by_backend_user_name', width: 25 }
+      );
     } else if (exportType === 'pending' || exportType === 'in-progress') {
       baseColumns.push(
-        { header: 'Pending Duration (Hours)', key: 'pending_duration_hours', width: 20 }
+        { header: 'Pending Duration (Hours)', key: 'pending_duration_hours', width: 20 },
+        { header: 'Assigned By Backend User', key: 'created_by_backend_user_name', width: 25 }
       );
     } else {
       // For 'all' cases, include all columns
       baseColumns.push(
         { header: 'Completed At', key: 'completed_at', width: 20 },
-        { header: 'Pending Duration (Hours)', key: 'pending_duration_hours', width: 20 }
+        { header: 'Verification Outcome', key: 'verification_outcome', width: 20 },
+        { header: 'Pending Duration (Hours)', key: 'pending_duration_hours', width: 20 },
+        { header: 'Assigned By Backend User', key: 'created_by_backend_user_name', width: 25 }
       );
     }
 
@@ -1248,12 +1259,14 @@ export const exportCases = async (req: AuthenticatedRequest, res: Response) => {
         verification_type_name: caseItem.verification_type_name,
         status: caseItem.status,
         priority: caseItem.priority,
-        assigned_to_name: caseItem.assigned_to_name,
+        assigned_to_name: caseItem.assigned_to_name || 'Unassigned',
         address: caseItem.address,
         pincode: caseItem.pincode,
         created_at: caseItem.created_at ? new Date(caseItem.created_at).toLocaleString() : '',
         updated_at: caseItem.updated_at ? new Date(caseItem.updated_at).toLocaleString() : '',
         completed_at: caseItem.completed_at ? new Date(caseItem.completed_at).toLocaleString() : '',
+        verification_outcome: caseItem.verification_outcome || '',
+        created_by_backend_user_name: caseItem.created_by_backend_user_name || 'Unknown',
         pending_duration_hours: caseItem.pending_duration_seconds ?
           Math.round(caseItem.pending_duration_seconds / 3600 * 100) / 100 : ''
       };

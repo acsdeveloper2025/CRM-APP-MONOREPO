@@ -91,6 +91,8 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
               <TableHead>Priority</TableHead>
               <TableHead>Assigned To</TableHead>
               <TableHead>Client</TableHead>
+              <TableHead>Product</TableHead>
+              <TableHead>Assigned By</TableHead>
               <TableHead>Completed Date</TableHead>
               <TableHead>Outcome</TableHead>
               <TableHead className="w-[70px]"></TableHead>
@@ -99,7 +101,7 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
           <TableBody>
             {[1, 2, 3, 4, 5].map((item) => (
               <TableRow key={item}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((cell) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((cell) => (
                   <TableCell key={cell}>
                     <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                   </TableCell>
@@ -135,6 +137,8 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
             <TableHead>Priority</TableHead>
             <TableHead>Assigned To</TableHead>
             <TableHead>Client</TableHead>
+            <TableHead>Product</TableHead>
+            <TableHead>Assigned By</TableHead>
             <TableHead>Completed Date</TableHead>
             <TableHead>Outcome</TableHead>
             <TableHead className="w-[70px]"></TableHead>
@@ -191,9 +195,21 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
               </TableCell>
               <TableCell>
                 <div>
+                  <div className="font-medium">{caseItem.product?.name || 'Not specified'}</div>
+                  <div className="text-sm text-gray-500">{caseItem.product?.code}</div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{caseItem.createdByBackendUser?.name || 'Unknown'}</div>
+                  <div className="text-sm text-gray-500">{caseItem.createdByBackendUser?.employeeId}</div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div>
                   <div className="font-medium flex items-center">
                     <Calendar className="h-3 w-3 mr-1" />
-                    {caseItem.completedAt 
+                    {caseItem.completedAt
                       ? format(new Date(caseItem.completedAt), 'MMM dd, yyyy')
                       : format(new Date(caseItem.updatedAt), 'MMM dd, yyyy')
                     }
