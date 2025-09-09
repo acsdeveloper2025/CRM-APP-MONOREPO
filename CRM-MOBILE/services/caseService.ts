@@ -6,7 +6,7 @@ import { apiService } from './apiService';
 const LOCAL_STORAGE_KEY = 'caseflow_cases';
 
 // Backend API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.36:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://172.20.10.8:3000/api';
 
 // Backend case interface for API responses
 interface BackendCase {
