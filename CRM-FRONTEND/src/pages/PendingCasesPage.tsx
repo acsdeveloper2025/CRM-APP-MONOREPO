@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { PendingCasesTable } from '@/components/cases/PendingCasesTable';
 import { CasePagination } from '@/components/cases/CasePagination';
-import { usePendingCases, useUpdateCaseStatus, useAssignCase } from '@/hooks/useCases';
+import { usePendingCases, useUpdateCaseStatus, useAssignCase, useRefreshCases } from '@/hooks/useCases';
 import { useFieldUsers } from '@/hooks/useUsers';
 import { useClients } from '@/hooks/useClients';
 import { Download, RefreshCw, Search, Filter, X, Clock, AlertTriangle, Flag, ArrowUp } from 'lucide-react';
@@ -50,6 +50,7 @@ export const PendingCasesPage: React.FC = () => {
   const { data: clientsData } = useClients();
   const updateStatusMutation = useUpdateCaseStatus();
   const assignCaseMutation = useAssignCase();
+  const { refreshCases } = useRefreshCases();
 
   const rawCases = casesData?.data || [];
   const fieldUsers = fieldUsersData?.data || [];
@@ -150,8 +151,12 @@ export const PendingCasesPage: React.FC = () => {
     refetch();
   };
 
-  const handleRefresh = () => {
-    refetch();
+  const handleRefresh = async () => {
+    await refreshCases({
+      clearCache: true,
+      preserveFilters: true,
+      showToast: true
+    });
   };
 
   const handleExport = async () => {

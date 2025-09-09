@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CaseFilters } from '@/components/cases/CaseFilters';
 import { CaseTable } from '@/components/cases/CaseTable';
 import { CasePagination } from '@/components/cases/CasePagination';
-import { useCases, useUpdateCaseStatus, useAssignCase } from '@/hooks/useCases';
+import { useCases, useUpdateCaseStatus, useAssignCase, useRefreshCases } from '@/hooks/useCases';
 import { Download, Plus, RefreshCw } from 'lucide-react';
 import type { CaseListQuery } from '@/services/cases';
 import { casesService } from '@/services/cases';
@@ -23,6 +23,7 @@ export const CasesPage: React.FC = () => {
   const { data: casesData, isLoading, error, refetch } = useCases(filters);
   const updateStatusMutation = useUpdateCaseStatus();
   const assignCaseMutation = useAssignCase();
+  const { refreshCases } = useRefreshCases();
 
   const cases = casesData?.data || [];
   const pagination = casesData?.pagination || {
@@ -98,8 +99,12 @@ export const CasesPage: React.FC = () => {
     }
   };
 
-  const handleRefresh = () => {
-    refetch();
+  const handleRefresh = async () => {
+    await refreshCases({
+      clearCache: true,
+      preserveFilters: true,
+      showToast: true
+    });
   };
 
   const handleNewCase = () => {

@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { CompletedCaseTable } from '@/components/cases/CompletedCaseTable';
 import { CasePagination } from '@/components/cases/CasePagination';
-import { useCases } from '@/hooks/useCases';
+import { useCases, useRefreshCases } from '@/hooks/useCases';
 import { useFieldUsers } from '@/hooks/useUsers';
 import { useClients } from '@/hooks/useClients';
 import { Download, RefreshCw, Search, Filter, X, CheckCircle } from 'lucide-react';
@@ -40,6 +40,7 @@ export const CompletedCasesPage: React.FC = () => {
   const { data: casesData, isLoading, refetch } = useCases(filters);
   const { data: fieldUsers } = useFieldUsers();
   const { data: clientsData } = useClients();
+  const { refreshCases } = useRefreshCases();
 
   const cases = casesData?.data || [];
   const pagination = casesData?.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 };
@@ -138,7 +139,13 @@ export const CompletedCasesPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+          <Button variant="outline" onClick={async () => {
+            await refreshCases({
+              clearCache: true,
+              preserveFilters: true,
+              showToast: true
+            });
+          }} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { casesService } from '@/services/cases';
 import type { CaseListQuery, CaseUpdateData, CreateCaseData } from '@/services/cases';
 import toast from 'react-hot-toast';
+import { useCallback } from 'react';
 
 // Query keys
 export const caseKeys = {
@@ -187,4 +188,72 @@ export const useRequestRework = () => {
       toast.error(error.response?.data?.message || 'Failed to request rework');
     },
   });
+};
+
+// Enhanced refresh hook for comprehensive cache clearing and data refresh
+export const useRefreshCases = () => {
+  const queryClient = useQueryClient();
+
+  const refreshCases = useCallback(async (options?: {
+    clearCache?: boolean;
+    preserveFilters?: boolean;
+    showToast?: boolean;
+  }) => {
+    const {
+      clearCache = true,
+      preserveFilters = true,
+      showToast = true
+    } = options || {};
+
+    try {
+      if (showToast) {
+        toast.loading('Refreshing cases...', { id: 'refresh-cases' });
+      }
+
+      if (clearCache) {
+        // Clear all case-related cache entries
+        queryClient.removeQueries({ queryKey: caseKeys.all });
+
+        // Clear browser storage for cases (if any)
+        try {
+          const cacheKeys = Object.keys(localStorage).filter(key =>
+            key.includes('case') || key.includes('Case')
+          );
+          cacheKeys.forEach(key => localStorage.removeItem(key));
+        } catch (error) {
+          console.warn('Failed to clear localStorage:', error);
+        }
+
+        // Clear session storage for cases (if any)
+        try {
+          const sessionKeys = Object.keys(sessionStorage).filter(key =>
+            key.includes('case') || key.includes('Case')
+          );
+          sessionKeys.forEach(key => sessionStorage.removeItem(key));
+        } catch (error) {
+          console.warn('Failed to clear sessionStorage:', error);
+        }
+      }
+
+      // Invalidate and refetch all case queries
+      await queryClient.invalidateQueries({ queryKey: caseKeys.all });
+
+      // Force refetch of all active case queries
+      await queryClient.refetchQueries({ queryKey: caseKeys.all });
+
+      if (showToast) {
+        toast.success('Cases refreshed successfully', { id: 'refresh-cases' });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Failed to refresh cases:', error);
+      if (showToast) {
+        toast.error('Failed to refresh cases', { id: 'refresh-cases' });
+      }
+      return false;
+    }
+  }, [queryClient]);
+
+  return { refreshCases };
 };
