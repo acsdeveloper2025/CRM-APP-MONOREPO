@@ -19,6 +19,7 @@ import { useClients } from '@/hooks/useClients';
 import { Download, RefreshCw, Search, Filter, X, CheckCircle } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { CaseListQuery } from '@/services/cases';
+import { casesService } from '@/services/cases';
 
 export const CompletedCasesPage: React.FC = () => {
   const [filters, setFilters] = useState<CaseListQuery>({
@@ -99,9 +100,27 @@ export const CompletedCasesPage: React.FC = () => {
     setFilters(prev => ({ ...prev, limit, page: 1 }));
   };
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log('Export completed cases');
+  const handleExport = async () => {
+    try {
+      const blob = await casesService.exportCases({
+        exportType: 'completed',
+        search: filters.search,
+        assignedTo: filters.assignedTo,
+        clientId: filters.clientId,
+        priority: filters.priority,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `completed_cases_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export completed cases:', error);
+    }
   };
 
   const hasActiveFilters = Object.entries(filters).some(([key, value]) => 

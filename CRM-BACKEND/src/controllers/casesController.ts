@@ -6,6 +6,7 @@ import { EnterpriseCacheService, CacheKeys } from '../services/enterpriseCacheSe
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import ExcelJS from 'exceljs';
 
 // Mock data removed - using database operations only
 
@@ -1066,3 +1067,234 @@ export const createCaseWithAttachments = async (req: AuthenticatedRequest, res: 
     }
   });
 };
+
+// Export cases to Excel
+export const exportCases = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const {
+      status,
+      search,
+      assignedTo,
+      clientId,
+      priority,
+      dateFrom,
+      dateTo,
+      exportType = 'all' // 'all', 'pending', 'in-progress', 'completed'
+    } = req.query;
+
+    // Build the query based on filters
+    let whereConditions: string[] = [];
+    let queryParams: any[] = [];
+    let paramIndex = 1;
+
+    // Filter by export type (status)
+    if (exportType && exportType !== 'all') {
+      if (exportType === 'pending') {
+        whereConditions.push(`c.status IN ('PENDING', 'IN_PROGRESS')`);
+      } else if (exportType === 'in-progress') {
+        whereConditions.push(`c.status = 'IN_PROGRESS'`);
+      } else if (exportType === 'completed') {
+        whereConditions.push(`c.status = 'COMPLETED'`);
+      }
+    }
+
+    // Additional filters
+    if (status && status !== 'all') {
+      whereConditions.push(`c.status = $${paramIndex}`);
+      queryParams.push(status);
+      paramIndex++;
+    }
+
+    if (search) {
+      whereConditions.push(`(
+        c."customerName" ILIKE $${paramIndex} OR
+        c."customerPhone" ILIKE $${paramIndex} OR
+        c."caseId"::text ILIKE $${paramIndex}
+      )`);
+      queryParams.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    if (assignedTo) {
+      whereConditions.push(`c."assignedToId" = $${paramIndex}`);
+      queryParams.push(assignedTo);
+      paramIndex++;
+    }
+
+    if (clientId) {
+      whereConditions.push(`c."clientId" = $${paramIndex}`);
+      queryParams.push(clientId);
+      paramIndex++;
+    }
+
+    if (priority) {
+      whereConditions.push(`c.priority = $${paramIndex}`);
+      queryParams.push(priority);
+      paramIndex++;
+    }
+
+    if (dateFrom) {
+      whereConditions.push(`c."createdAt" >= $${paramIndex}`);
+      queryParams.push(dateFrom);
+      paramIndex++;
+    }
+
+    if (dateTo) {
+      whereConditions.push(`c."createdAt" <= $${paramIndex}`);
+      queryParams.push(dateTo + ' 23:59:59');
+      paramIndex++;
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // Query to get cases data
+    const query = `
+      SELECT
+        c."caseId" as case_id,
+        c."customerName" as customer_name,
+        c."customerPhone" as customer_phone,
+        c."customerCallingCode" as customer_calling_code,
+        c.address,
+        c.pincode,
+        cl.name as client_name,
+        cl.code as client_code,
+        p.name as product_name,
+        vt.name as verification_type_name,
+        c.status,
+        c.priority,
+        c."applicantType" as applicant_type,
+        c."backendContactNumber" as backend_contact_number,
+        c.trigger,
+        u.name as assigned_to_name,
+        u."employeeId" as assigned_to_employee_id,
+        c."createdAt" as created_at,
+        c."updatedAt" as updated_at,
+        c."completedAt" as completed_at,
+        CASE
+          WHEN c.status = 'PENDING' OR c.status = 'IN_PROGRESS' THEN
+            EXTRACT(EPOCH FROM (NOW() - c."createdAt"))
+          ELSE NULL
+        END as pending_duration_seconds
+      FROM cases c
+      LEFT JOIN clients cl ON c."clientId" = cl.id
+      LEFT JOIN products p ON c."productId" = p.id
+      LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
+      LEFT JOIN users u ON c."assignedTo" = u.id
+      ${whereClause}
+      ORDER BY c."caseId" DESC
+    `;
+
+    const result = await pool.query(query, queryParams);
+    const cases = result.rows;
+
+    // Create Excel workbook
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'CRM System';
+    workbook.created = new Date();
+
+    // Create worksheet
+    const worksheet = workbook.addWorksheet(`Cases Export - ${exportType || 'All'}`);
+
+    // Define columns based on export type
+    const baseColumns = [
+      { header: 'Case ID', key: 'case_id', width: 12 },
+      { header: 'Customer Name', key: 'customer_name', width: 25 },
+      { header: 'Customer Phone', key: 'customer_phone', width: 15 },
+      { header: 'Client', key: 'client_name', width: 20 },
+      { header: 'Product', key: 'product_name', width: 20 },
+      { header: 'Verification Type', key: 'verification_type_name', width: 25 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Priority', key: 'priority', width: 12 },
+      { header: 'Assigned To', key: 'assigned_to_name', width: 20 },
+      { header: 'Address', key: 'address', width: 30 },
+      { header: 'Pincode', key: 'pincode', width: 10 },
+      { header: 'Created At', key: 'created_at', width: 20 },
+      { header: 'Updated At', key: 'updated_at', width: 20 }
+    ];
+
+    // Add specific columns based on export type
+    if (exportType === 'completed') {
+      baseColumns.push({ header: 'Completed At', key: 'completed_at', width: 20 });
+    } else if (exportType === 'pending' || exportType === 'in-progress') {
+      baseColumns.push(
+        { header: 'Pending Duration (Hours)', key: 'pending_duration_hours', width: 20 }
+      );
+    } else {
+      // For 'all' cases, include all columns
+      baseColumns.push(
+        { header: 'Completed At', key: 'completed_at', width: 20 },
+        { header: 'Pending Duration (Hours)', key: 'pending_duration_hours', width: 20 }
+      );
+    }
+
+    worksheet.columns = baseColumns;
+
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE6E6FA' }
+    };
+
+    // Add data rows
+    cases.forEach((caseItem: any) => {
+      const rowData: any = {
+        case_id: caseItem.case_id,
+        customer_name: caseItem.customer_name,
+        customer_phone: caseItem.customer_phone,
+        client_name: caseItem.client_name,
+        product_name: caseItem.product_name,
+        verification_type_name: caseItem.verification_type_name,
+        status: caseItem.status,
+        priority: caseItem.priority,
+        assigned_to_name: caseItem.assigned_to_name,
+        address: caseItem.address,
+        pincode: caseItem.pincode,
+        created_at: caseItem.created_at ? new Date(caseItem.created_at).toLocaleString() : '',
+        updated_at: caseItem.updated_at ? new Date(caseItem.updated_at).toLocaleString() : '',
+        completed_at: caseItem.completed_at ? new Date(caseItem.completed_at).toLocaleString() : '',
+        pending_duration_hours: caseItem.pending_duration_seconds ?
+          Math.round(caseItem.pending_duration_seconds / 3600 * 100) / 100 : ''
+      };
+
+      worksheet.addRow(rowData);
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      if (column.eachCell) {
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const columnLength = cell.value ? cell.value.toString().length : 10;
+          if (columnLength > maxLength) {
+            maxLength = columnLength;
+          }
+        });
+        column.width = maxLength < 10 ? 10 : maxLength;
+      }
+    });
+
+    // Generate filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const filename = `cases_export_${exportType || 'all'}_${timestamp}.xlsx`;
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    // Write to response
+    await workbook.xlsx.write(res);
+    res.end();
+
+    logger.info(`Cases exported successfully: ${filename}, ${cases.length} records`);
+
+  } catch (error) {
+    logger.error('Error exporting cases:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export cases',
+      error: process.env.NODE_ENV === 'development' ? error : undefined
+    });
+  }
+};;

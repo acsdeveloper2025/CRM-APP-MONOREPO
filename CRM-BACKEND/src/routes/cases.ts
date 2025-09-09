@@ -17,7 +17,8 @@ import {
   getBulkAssignmentStatus,
   reassignCase,
   getCaseAssignmentHistory,
-  getFieldAgentWorkload
+  getFieldAgentWorkload,
+  exportCases
 } from '@/controllers/casesController';
 import { VerificationAttachmentController } from '@/controllers/verificationAttachmentController';
 
@@ -298,6 +299,23 @@ router.post('/',
 // Note: No validation middleware here as multer handles form data parsing
 router.post('/with-attachments',
   createCaseWithAttachments
+);
+
+// Export cases to Excel - MUST be before /:id route
+router.get('/export',
+  EnterpriseRateLimit.roleBasedLimiter(EnterpriseRateLimits.byRole),
+  [
+    query('exportType').optional().isIn(['all', 'pending', 'in-progress', 'completed']).withMessage('Invalid export type'),
+    query('status').optional().isString(),
+    query('search').optional().isString(),
+    query('assignedTo').optional().isUUID().withMessage('Invalid assigned to ID'),
+    query('clientId').optional().isUUID().withMessage('Invalid client ID'),
+    query('priority').optional().isString(),
+    query('dateFrom').optional().isISO8601().withMessage('Invalid date format'),
+    query('dateTo').optional().isISO8601().withMessage('Invalid date format')
+  ],
+  validate,
+  exportCases
 );
 
 router.get('/:id',

@@ -187,6 +187,38 @@ export class CasesService {
   async requestRework(id: string, feedback: string): Promise<ApiResponse<Case>> {
     return apiService.post(`/cases/${id}/rework`, { feedback });
   }
+
+  async exportCases(params: {
+    exportType?: 'all' | 'pending' | 'in-progress' | 'completed';
+    status?: string;
+    search?: string;
+    assignedTo?: string;
+    clientId?: string;
+    priority?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  } = {}): Promise<Blob> {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, String(value));
+      }
+    });
+
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cases/export?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to export cases');
+    }
+
+    return response.blob();
+  }
 }
 
 export const casesService = new CasesService();

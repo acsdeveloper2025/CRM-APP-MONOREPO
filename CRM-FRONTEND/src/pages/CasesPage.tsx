@@ -8,6 +8,7 @@ import { CasePagination } from '@/components/cases/CasePagination';
 import { useCases, useUpdateCaseStatus, useAssignCase } from '@/hooks/useCases';
 import { Download, Plus, RefreshCw } from 'lucide-react';
 import type { CaseListQuery } from '@/services/cases';
+import { casesService } from '@/services/cases';
 
 export const CasesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -73,8 +74,28 @@ export const CasesPage: React.FC = () => {
     }
   };
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
+  const handleExport = async () => {
+    try {
+      const blob = await casesService.exportCases({
+        exportType: 'all',
+        status: filters.status !== 'all' ? filters.status : undefined,
+        search: filters.search,
+        assignedTo: filters.assignedTo,
+        clientId: filters.clientId,
+        priority: filters.priority,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `all_cases_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export cases:', error);
+    }
   };
 
   const handleRefresh = () => {

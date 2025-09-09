@@ -19,6 +19,7 @@ import { useClients } from '@/hooks/useClients';
 import { Download, RefreshCw, Search, Filter, X, Clock, AlertTriangle, Flag, ArrowUp } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { CaseListQuery } from '@/services/cases';
+import { casesService } from '@/services/cases';
 
 export const PendingCasesPage: React.FC = () => {
   const [filters, setFilters] = useState<CaseListQuery>({
@@ -153,9 +154,27 @@ export const PendingCasesPage: React.FC = () => {
     refetch();
   };
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log('Export pending cases');
+  const handleExport = async () => {
+    try {
+      const blob = await casesService.exportCases({
+        exportType: 'pending',
+        search: filters.search,
+        assignedTo: filters.assignedTo,
+        clientId: filters.clientId,
+        priority: filters.priority,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pending_cases_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export pending cases:', error);
+    }
   };
 
   return (
