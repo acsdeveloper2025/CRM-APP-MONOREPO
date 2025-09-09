@@ -50,7 +50,67 @@ const notificationIdValidation = [
   param('notificationId').isUUID().withMessage('Notification ID must be a valid UUID'),
 ];
 
+const getNotificationsValidation = [
+  body('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+  body('offset').optional().isInt({ min: 0 }).withMessage('Offset must be a non-negative integer'),
+  body('unreadOnly').optional().isBoolean().withMessage('Unread only must be a boolean'),
+];
+
 // Routes
+
+/**
+ * @route GET /api/notifications
+ * @desc Get user's notifications
+ * @access Private
+ */
+router.get('/',
+  authenticateToken,
+  NotificationController.getNotifications
+);
+
+/**
+ * @route PUT /api/notifications/:notificationId/read
+ * @desc Mark notification as read
+ * @access Private
+ */
+router.put('/:notificationId/read',
+  authenticateToken,
+  notificationIdValidation,
+  validate,
+  NotificationController.markNotificationAsRead
+);
+
+/**
+ * @route PUT /api/notifications/mark-all-read
+ * @desc Mark all notifications as read
+ * @access Private
+ */
+router.put('/mark-all-read',
+  authenticateToken,
+  NotificationController.markAllNotificationsAsRead
+);
+
+/**
+ * @route DELETE /api/notifications/:notificationId
+ * @desc Delete a notification
+ * @access Private
+ */
+router.delete('/:notificationId',
+  authenticateToken,
+  notificationIdValidation,
+  validate,
+  NotificationController.deleteNotification
+);
+
+/**
+ * @route DELETE /api/notifications
+ * @desc Clear all notifications
+ * @access Private
+ */
+router.delete('/',
+  authenticateToken,
+  NotificationController.clearAllNotifications
+);
 
 /**
  * @route GET /api/notifications/preferences

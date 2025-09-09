@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { webSocketService } from '@/services/websocket';
 import { authService } from '@/services/auth';
+import { apiService } from '@/services/api';
 import type {
   WebSocketEventHandlers,
   ConnectionStatus,
@@ -32,11 +33,53 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   );
   const [notifications, setNotifications] = useState<NotificationEvent[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const handlersRef = useRef<WebSocketEventHandlers>({});
 
   // Update connection status
   const updateConnectionStatus = useCallback(() => {
     setConnectionStatus(webSocketService.getConnectionStatus());
+  }, []);
+
+  // Fetch existing notifications from API
+  const fetchNotifications = useCallback(async () => {
+    if (!authService.isAuthenticated()) {
+      return;
+    }
+
+    try {
+      setIsLoadingNotifications(true);
+      const response = await apiService.get<any[]>('/notifications?limit=50');
+
+      if (response.success && response.data && Array.isArray(response.data)) {
+        // Convert API notifications to NotificationEvent format
+        const apiNotifications: NotificationEvent[] = response.data.map((notification: any) => ({
+          id: notification.id,
+          type: notification.type === 'CASE_ASSIGNED' ? 'info' :
+                notification.type === 'CASE_COMPLETED' ? 'success' :
+                notification.type === 'SYSTEM_MAINTENANCE' ? 'warning' :
+                notification.priority === 'HIGH' || notification.priority === 'URGENT' ? 'error' : 'info',
+          title: notification.title,
+          message: notification.message,
+          timestamp: notification.createdAt,
+          read: notification.read,
+          data: {
+            ...notification.data,
+            caseId: notification.caseId,
+            caseNumber: notification.caseNumber,
+            actionUrl: notification.actionUrl,
+            actionType: notification.actionType,
+            priority: notification.priority,
+          },
+        }));
+
+        setNotifications(apiNotifications);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
   }, []);
 
   // Handle notifications
@@ -118,20 +161,46 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   }, []);
 
   // Mark notification as read
-  const markNotificationAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
+  const markNotificationAsRead = useCallback(async (notificationId: string) => {
+    try {
+      // Update local state immediately for better UX
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === notificationId
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+
+      // Update on server
+      await apiService.put(`/notifications/${notificationId}/read`);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+      // Revert local state on error
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === notificationId
+            ? { ...notification, read: false }
+            : notification
+        )
+      );
+    }
   }, []);
 
   // Clear all notifications
-  const clearNotifications = useCallback(() => {
-    setNotifications([]);
-  }, []);
+  const clearNotifications = useCallback(async () => {
+    try {
+      // Update local state immediately
+      setNotifications([]);
+
+      // Clear on server
+      await apiService.delete('/notifications');
+    } catch (error) {
+      console.error('Failed to clear notifications:', error);
+      // Refetch notifications on error
+      fetchNotifications();
+    }
+  }, [fetchNotifications]);
 
   // Get unread notification count
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -157,13 +226,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     handleBroadcast,
   ]);
 
-  // Auto-connect on mount
+  // Auto-connect and fetch notifications on mount
   useEffect(() => {
     if (autoConnect && !isInitialized && authService.isAuthenticated()) {
       connect();
+      fetchNotifications(); // Fetch existing notifications
       setIsInitialized(true);
     }
-  }, [autoConnect, connect, isInitialized]);
+  }, [autoConnect, connect, fetchNotifications, isInitialized]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -220,6 +290,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     unreadCount,
     markNotificationAsRead,
     clearNotifications,
+    fetchNotifications,
+    isLoadingNotifications,
 
     // WebSocket service instance for advanced usage
     webSocketService,

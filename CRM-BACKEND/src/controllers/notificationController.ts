@@ -13,6 +13,268 @@ interface AuthenticatedRequest extends Request {
 
 export class NotificationController {
   /**
+   * Get user's notifications
+   */
+  static async getNotifications(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const { limit = 50, offset = 0, unreadOnly = false } = req.query;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+          error: { code: 'UNAUTHORIZED' },
+        });
+      }
+
+      let whereClause = 'WHERE user_id = $1';
+      const queryParams: any[] = [userId];
+
+      if (unreadOnly === 'true') {
+        whereClause += ' AND is_read = false';
+      }
+
+      const notificationsQuery = `
+        SELECT
+          id,
+          title,
+          message,
+          type,
+          case_id as "caseId",
+          case_number as "caseNumber",
+          data,
+          action_url as "actionUrl",
+          action_type as "actionType",
+          is_read as "read",
+          read_at as "readAt",
+          priority,
+          expires_at as "expiresAt",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM notifications
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
+      `;
+
+      queryParams.push(limit, offset);
+
+      const result = await query(notificationsQuery, queryParams);
+
+      // Get total count
+      const countQuery = `
+        SELECT COUNT(*) as total
+        FROM notifications
+        ${whereClause}
+      `;
+
+      const countResult = await query(countQuery, [userId]);
+      const total = parseInt(countResult.rows[0].total);
+
+      // Get unread count
+      const unreadCountQuery = `
+        SELECT COUNT(*) as unread_count
+        FROM notifications
+        WHERE user_id = $1 AND is_read = false
+      `;
+
+      const unreadResult = await query(unreadCountQuery, [userId]);
+      const unreadCount = parseInt(unreadResult.rows[0].unread_count);
+
+      res.json({
+        success: true,
+        data: result.rows,
+        pagination: {
+          total,
+          limit: parseInt(limit as string),
+          offset: parseInt(offset as string),
+          hasMore: total > parseInt(offset as string) + parseInt(limit as string)
+        },
+        unreadCount,
+        message: 'Notifications retrieved successfully',
+      });
+    } catch (error) {
+      logger.error('Get notifications error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  }
+
+  /**
+   * Mark notification as read
+   */
+  static async markNotificationAsRead(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const { notificationId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+          error: { code: 'UNAUTHORIZED' },
+        });
+      }
+
+      const updateQuery = `
+        UPDATE notifications
+        SET is_read = true, read_at = NOW(), updated_at = NOW()
+        WHERE id = $1 AND user_id = $2
+        RETURNING id
+      `;
+
+      const result = await query(updateQuery, [notificationId, userId]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Notification not found',
+          error: { code: 'NOT_FOUND' },
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Notification marked as read',
+      });
+    } catch (error) {
+      logger.error('Mark notification as read error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  }
+
+  /**
+   * Mark all notifications as read
+   */
+  static async markAllNotificationsAsRead(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+          error: { code: 'UNAUTHORIZED' },
+        });
+      }
+
+      const updateQuery = `
+        UPDATE notifications
+        SET is_read = true, read_at = NOW(), updated_at = NOW()
+        WHERE user_id = $1 AND is_read = false
+        RETURNING id
+      `;
+
+      const result = await query(updateQuery, [userId]);
+
+      res.json({
+        success: true,
+        data: { updatedCount: result.rows.length },
+        message: `${result.rows.length} notifications marked as read`,
+      });
+    } catch (error) {
+      logger.error('Mark all notifications as read error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  }
+
+  /**
+   * Delete a notification
+   */
+  static async deleteNotification(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const { notificationId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+          error: { code: 'UNAUTHORIZED' },
+        });
+      }
+
+      const deleteQuery = `
+        DELETE FROM notifications
+        WHERE id = $1 AND user_id = $2
+        RETURNING id
+      `;
+
+      const result = await query(deleteQuery, [notificationId, userId]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Notification not found',
+          error: { code: 'NOT_FOUND' },
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Notification deleted successfully',
+      });
+    } catch (error) {
+      logger.error('Delete notification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  }
+
+  /**
+   * Clear all notifications
+   */
+  static async clearAllNotifications(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+          error: { code: 'UNAUTHORIZED' },
+        });
+      }
+
+      const deleteQuery = `
+        DELETE FROM notifications
+        WHERE user_id = $1
+        RETURNING id
+      `;
+
+      const result = await query(deleteQuery, [userId]);
+
+      res.json({
+        success: true,
+        data: { deletedCount: result.rows.length },
+        message: `${result.rows.length} notifications cleared`,
+      });
+    } catch (error) {
+      logger.error('Clear all notifications error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: { code: 'INTERNAL_ERROR' },
+      });
+    }
+  }
+
+  /**
    * Get user's notification preferences
    */
   static async getNotificationPreferences(req: AuthenticatedRequest, res: Response) {
