@@ -128,6 +128,164 @@ export class MobileWebSocketEvents {
     logger.info(`Case review notification sent for case ${caseId}: ${outcome}`);
   }
 
+  // Notify about case assignment to field user
+  notifyCaseAssignment(userId: string, caseData: any, assignmentType: 'assignment' | 'reassignment') {
+    const notificationId = `case_${assignmentType}_${caseData.id || caseData.caseId}_${Date.now()}`;
+    const timestamp = new Date().toISOString();
+
+    const notificationData = {
+      type: assignmentType === 'assignment' ? 'CASE_ASSIGNED' : 'CASE_REASSIGNED',
+      id: notificationId,
+      title: assignmentType === 'assignment' ? 'New Case Assigned' : 'Case Reassigned',
+      message: assignmentType === 'assignment'
+        ? `You have been assigned case ${caseData.caseId} for ${caseData.customerName}`
+        : `Case ${caseData.caseId} has been reassigned to you`,
+      caseId: caseData.id,
+      caseNumber: caseData.caseId,
+      customerName: caseData.customerName,
+      verificationType: caseData.verificationType,
+      priority: caseData.priority || 'MEDIUM',
+      timestamp,
+      actionUrl: `/mobile/cases/${caseData.id}`,
+      actionType: 'OPEN_CASE',
+      data: {
+        assignmentType,
+        assignedBy: caseData.assignedBy,
+        reason: caseData.reason,
+      }
+    };
+
+    // Send WebSocket notification to user
+    this.io.to(`user:${userId}`).emit('notification', notificationData);
+
+    // Also send to mobile-specific room for backwards compatibility
+    this.io.to(`user:${userId}`).emit('mobile:case:assigned', notificationData);
+
+    logger.info(`Case ${assignmentType} notification sent to user ${userId}`, {
+      notificationId,
+      caseId: caseData.id,
+      caseNumber: caseData.caseId,
+      assignmentType,
+    });
+  }
+
+  // Notify about case removal/reassignment to previous field user
+  notifyCaseRemoval(userId: string, caseData: any, reason: string) {
+    const notificationId = `case_removed_${caseData.id || caseData.caseId}_${Date.now()}`;
+    const timestamp = new Date().toISOString();
+
+    const notificationData = {
+      type: 'CASE_REMOVED',
+      id: notificationId,
+      title: 'Case Removed',
+      message: `Case ${caseData.caseId} has been removed from your assignment`,
+      caseId: caseData.id,
+      caseNumber: caseData.caseId,
+      customerName: caseData.customerName,
+      timestamp,
+      actionUrl: `/mobile/cases`,
+      actionType: 'NAVIGATE',
+      data: {
+        reason: reason,
+        removedBy: caseData.removedBy,
+      }
+    };
+
+    // Send WebSocket notification to user
+    this.io.to(`user:${userId}`).emit('notification', notificationData);
+
+    // Also send to mobile-specific room
+    this.io.to(`user:${userId}`).emit('mobile:case:removed', notificationData);
+
+    logger.info(`Case removal notification sent to user ${userId}`, {
+      notificationId,
+      caseId: caseData.id,
+      caseNumber: caseData.caseId,
+      reason,
+    });
+  }
+
+  // Notify backend users about case completion
+  notifyCaseCompletion(userIds: string[], caseData: any, fieldUserData: any) {
+    const notificationId = `case_completed_${caseData.id || caseData.caseId}_${Date.now()}`;
+    const timestamp = new Date().toISOString();
+
+    const notificationData = {
+      type: 'CASE_COMPLETED',
+      id: notificationId,
+      title: 'Case Completed',
+      message: `Case ${caseData.caseNumber} has been completed by ${fieldUserData.name}`,
+      caseId: caseData.id,
+      caseNumber: caseData.caseNumber,
+      customerName: caseData.customerName,
+      timestamp,
+      actionUrl: `/cases/${caseData.id}`,
+      actionType: 'OPEN_CASE',
+      data: {
+        fieldUserId: fieldUserData.id,
+        fieldUserName: fieldUserData.name,
+        completionStatus: caseData.completionStatus,
+        outcome: caseData.outcome,
+      }
+    };
+
+    // Send to all backend users
+    userIds.forEach(userId => {
+      this.io.to(`user:${userId}`).emit('notification', notificationData);
+    });
+
+    // Also send to backend role room
+    this.io.to('role:BACKEND_USER').emit('notification', notificationData);
+
+    logger.info(`Case completion notification sent to ${userIds.length} backend users`, {
+      notificationId,
+      caseId: caseData.id,
+      caseNumber: caseData.caseNumber,
+      fieldUser: fieldUserData.name,
+    });
+  }
+
+  // Notify backend users about case revocation
+  notifyCaseRevocation(userIds: string[], caseData: any, fieldUserData: any) {
+    const notificationId = `case_revoked_${caseData.id || caseData.caseId}_${Date.now()}`;
+    const timestamp = new Date().toISOString();
+
+    const notificationData = {
+      type: 'CASE_REVOKED',
+      id: notificationId,
+      title: 'Case Revoked',
+      message: `Case ${caseData.caseNumber} has been revoked by ${fieldUserData.name}`,
+      caseId: caseData.id,
+      caseNumber: caseData.caseNumber,
+      customerName: caseData.customerName,
+      timestamp,
+      actionUrl: `/cases/${caseData.id}`,
+      actionType: 'OPEN_CASE',
+      priority: 'HIGH',
+      data: {
+        fieldUserId: fieldUserData.id,
+        fieldUserName: fieldUserData.name,
+        revocationReason: caseData.revocationReason,
+      }
+    };
+
+    // Send to all backend users
+    userIds.forEach(userId => {
+      this.io.to(`user:${userId}`).emit('notification', notificationData);
+    });
+
+    // Also send to backend role room
+    this.io.to('role:BACKEND_USER').emit('notification', notificationData);
+
+    logger.info(`Case revocation notification sent to ${userIds.length} backend users`, {
+      notificationId,
+      caseId: caseData.id,
+      caseNumber: caseData.caseNumber,
+      fieldUser: fieldUserData.name,
+      reason: caseData.revocationReason,
+    });
+  }
+
   // Notify mobile app about new messages/comments
   notifyNewMessage(caseId: string, message: any, senderId: string) {
     this.io.to(`case:${caseId}`).emit('mobile:case:message:new', {

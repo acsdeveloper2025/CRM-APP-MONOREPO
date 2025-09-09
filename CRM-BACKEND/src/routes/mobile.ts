@@ -32,6 +32,7 @@ router.get('/cases', authenticateToken, validateMobileVersion, MobileCaseControl
 router.get('/cases/:caseId', authenticateToken, validateMobileVersion, MobileCaseController.getMobileCase);
 router.put('/cases/:caseId/status', authenticateToken, validateMobileVersion, MobileCaseController.updateCaseStatus);
 router.put('/cases/:caseId/priority', authenticateToken, validateMobileVersion, MobileCaseController.updateCasePriority);
+router.post('/cases/:caseId/revoke', authenticateToken, validateMobileVersion, MobileCaseController.revokeCase);
 
 // Mobile Auto-save Routes
 router.post('/cases/:caseId/auto-save', authenticateToken, validateMobileVersion, MobileCaseController.autoSaveForm);

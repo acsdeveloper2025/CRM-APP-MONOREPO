@@ -4,6 +4,7 @@ import { logger } from '../config/logger';
 import { query, pool } from '../config/database';
 import { notificationQueue } from '../config/queue';
 import { createAuditLog } from '../utils/auditLogger';
+import { queueCaseAssignmentNotification } from '../queues/notificationQueue';
 
 // Parse Redis URL to get connection details
 const redisUrl = new URL(config.redisUrl);
@@ -170,14 +171,41 @@ async function processCaseReassignment(
 
     await client.query('COMMIT');
 
-    // Queue notification for the new assigned user
-    await notificationQueue.add('case-assigned', {
+    // Get verification type for notification
+    const verificationTypeQuery = `
+      SELECT vt.name as verification_type_name
+      FROM cases c
+      LEFT JOIN verification_types vt ON c."verificationTypeId" = vt.id
+      WHERE c.id = $1
+    `;
+    const verificationResult = await client.query(verificationTypeQuery, [caseId]);
+    const verificationType = verificationResult.rows[0]?.verification_type_name || 'Unknown';
+
+    // Queue notification for the new assigned user (reassignment)
+    await queueCaseAssignmentNotification({
       userId: toUserId,
       caseId: caseId,
       caseNumber: caseData.caseId,
       customerName: caseData.customerName,
-      type: 'reassignment',
+      verificationType: verificationType,
+      assignmentType: 'reassignment',
+      assignedBy: assignedById,
+      reason: reason,
     });
+
+    // Queue notification for the previous user (case removed)
+    if (fromUserId && fromUserId !== toUserId) {
+      await queueCaseAssignmentNotification({
+        userId: fromUserId,
+        caseId: caseId,
+        caseNumber: caseData.caseId,
+        customerName: caseData.customerName,
+        verificationType: verificationType,
+        assignmentType: 'reassignment', // This will be handled as case removal in the notification
+        assignedBy: assignedById,
+        reason: reason,
+      });
+    }
 
     logger.info('Case reassignment completed', {
       caseId,
@@ -339,13 +367,26 @@ async function processSingleAssignment(
 
     await client.query('COMMIT');
 
+    // Get verification type for notification
+    const verificationTypeQuery = `
+      SELECT vt.name as verification_type_name
+      FROM cases c
+      LEFT JOIN verification_types vt ON c."verificationTypeId" = vt.id
+      WHERE c.id = $1
+    `;
+    const verificationResult = await client.query(verificationTypeQuery, [caseId]);
+    const verificationType = verificationResult.rows[0]?.verification_type_name || 'Unknown';
+
     // Queue notification for the assigned user
-    await notificationQueue.add('case-assigned', {
+    await queueCaseAssignmentNotification({
       userId: assignedToId,
       caseId: caseId,
       caseNumber: caseData.caseId,
       customerName: caseData.customerName,
-      type: previousAssignee ? 'reassignment' : 'assignment',
+      verificationType: verificationType,
+      assignmentType: previousAssignee ? 'reassignment' : 'assignment',
+      assignedBy: assignedById,
+      reason: reason,
     });
 
     logger.info('Case assignment completed', {

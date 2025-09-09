@@ -31,9 +31,63 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import sharp from 'sharp';
+import { queueCaseCompletionNotification } from '../queues/notificationQueue';
+import { logger } from '../utils/logger';
 // Enhanced services temporarily disabled for debugging
 
 export class MobileFormController {
+  /**
+   * Helper function to send case completion notifications to backend users
+   */
+  private static async sendCaseCompletionNotification(
+    caseId: string,
+    caseNumber: string,
+    customerName: string,
+    fieldUserId: string,
+    completionStatus: string,
+    outcome: string
+  ): Promise<void> {
+    try {
+      // Get field user information
+      const fieldUserQuery = `
+        SELECT name, "employeeId" FROM users WHERE id = $1
+      `;
+      const fieldUserResult = await query(fieldUserQuery, [fieldUserId]);
+      const fieldUserName = fieldUserResult.rows[0]?.name || 'Unknown User';
+
+      // Get backend users (users with BACKEND_USER role)
+      const backendUsersQuery = `
+        SELECT id FROM users WHERE role = 'BACKEND_USER' AND "isActive" = true
+      `;
+      const backendUsersResult = await query(backendUsersQuery);
+      const backendUserIds = backendUsersResult.rows.map(row => row.id);
+
+      if (backendUserIds.length > 0) {
+        // Queue case completion notification
+        await queueCaseCompletionNotification({
+          caseId,
+          caseNumber,
+          customerName,
+          fieldUserId,
+          fieldUserName,
+          completionStatus,
+          outcome,
+          backendUserIds,
+        });
+
+        logger.info('Case completion notification queued', {
+          caseId,
+          caseNumber,
+          fieldUserId,
+          fieldUserName,
+          backendUserCount: backendUserIds.length,
+        });
+      }
+    } catch (error) {
+      logger.error('Failed to send case completion notification:', error);
+      // Don't throw error to avoid breaking the main form submission flow
+    }
+  }
 
   /**
    * Process and store verification images separately from case attachments
@@ -1185,6 +1239,16 @@ export class MobileFormController {
         verificationOutcome,
         imageCount: uploadedImages.length
       });
+
+      // Send case completion notification to backend users
+      await this.sendCaseCompletionNotification(
+        actualCaseId,
+        updatedCase.caseId,
+        updatedCase.customerName || 'Unknown Customer',
+        userId,
+        'COMPLETED',
+        verificationOutcome
+      );
 
       res.json({
         success: true,

@@ -35,6 +35,20 @@ export const config = {
   // Redis
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   redisPassword: process.env.REDIS_PASSWORD || '',
+
+  // Firebase Cloud Messaging (FCM)
+  firebase: {
+    serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+  },
+
+  // Apple Push Notification Service (APNS)
+  apns: {
+    keyPath: process.env.APNS_KEY_PATH,
+    keyId: process.env.APNS_KEY_ID,
+    teamId: process.env.APNS_TEAM_ID,
+    bundleId: process.env.APNS_BUNDLE_ID || 'com.example.crm',
+  },
   
   // CORS - Support both web app (5173) and mobile app (5174)
   corsOrigin: process.env.CORS_ORIGIN

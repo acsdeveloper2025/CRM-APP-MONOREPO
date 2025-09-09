@@ -8,6 +8,7 @@ import {
 import { createAuditLog } from '../utils/auditLogger';
 import { config } from '../config';
 import { query } from '@/config/database';
+import { queueCaseRevocationNotification } from '../queues/notificationQueue';
 
 export class MobileCaseController {
   // Get cases for mobile app with optimized response
@@ -720,6 +721,153 @@ export class MobileCaseController {
         message: 'Internal server error',
         error: {
           code: 'AUTO_SAVE_FETCH_FAILED',
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+  }
+
+  // Revoke case from mobile app
+  static async revokeCase(req: Request, res: Response) {
+    try {
+      const { caseId } = req.params;
+      const { reason } = req.body;
+      const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+
+      console.log(`📱 Mobile case revocation request:`, {
+        caseId,
+        reason,
+        userId,
+        userRole
+      });
+
+      if (!reason) {
+        return res.status(400).json({
+          success: false,
+          message: 'Revocation reason is required',
+          error: {
+            code: 'REASON_REQUIRED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Validate case exists and user has access
+      const caseQuery = await query(`
+        SELECT id, "caseId", "customerName", "assignedTo", status, "createdByBackendUser"
+        FROM cases
+        WHERE id = $1
+      `, [caseId]);
+
+      if (caseQuery.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: {
+            code: 'CASE_NOT_FOUND',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      const caseData = caseQuery.rows[0];
+
+      // Check if user is assigned to this case
+      if (userRole === 'FIELD_AGENT' && caseData.assignedTo !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only revoke cases assigned to you',
+          error: {
+            code: 'INSUFFICIENT_PERMISSIONS',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Check if case can be revoked (not already completed)
+      if (caseData.status === 'COMPLETED') {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot revoke a completed case',
+          error: {
+            code: 'CASE_ALREADY_COMPLETED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Update case status to revoked
+      await query(`
+        UPDATE cases
+        SET status = 'REVOKED',
+            "revokedAt" = CURRENT_TIMESTAMP,
+            "revokedBy" = $1,
+            "revocationReason" = $2,
+            "updatedAt" = CURRENT_TIMESTAMP
+        WHERE id = $3
+      `, [userId, reason, caseId]);
+
+      // Get field user information
+      const fieldUserQuery = await query(`
+        SELECT name, "employeeId" FROM users WHERE id = $1
+      `, [userId]);
+      const fieldUserName = fieldUserQuery.rows[0]?.name || 'Unknown User';
+
+      // Get backend users to notify
+      const backendUsersQuery = await query(`
+        SELECT id FROM users WHERE role = 'BACKEND_USER' AND "isActive" = true
+      `);
+      const backendUserIds = backendUsersQuery.rows.map(row => row.id);
+
+      // Send revocation notification to backend users
+      if (backendUserIds.length > 0) {
+        await queueCaseRevocationNotification({
+          caseId: caseData.id,
+          caseNumber: caseData.caseId,
+          customerName: caseData.customerName || 'Unknown Customer',
+          fieldUserId: userId,
+          fieldUserName: fieldUserName,
+          revocationReason: reason,
+          backendUserIds: backendUserIds,
+        });
+      }
+
+      // Create audit log
+      await createAuditLog({
+        userId: userId,
+        action: 'CASE_REVOKED',
+        entityType: 'CASE',
+        entityId: caseId,
+        details: {
+          caseId: caseData.caseId,
+          customerName: caseData.customerName,
+          reason: reason,
+          previousStatus: caseData.status,
+          newStatus: 'REVOKED',
+        },
+      });
+
+      console.log(`✅ Case ${caseData.caseId} revoked successfully by ${fieldUserName}`);
+
+      res.json({
+        success: true,
+        message: 'Case revoked successfully',
+        data: {
+          caseId: caseData.id,
+          caseNumber: caseData.caseId,
+          status: 'REVOKED',
+          revokedAt: new Date().toISOString(),
+          reason: reason,
+        },
+      });
+    } catch (error) {
+      console.error('Revoke case error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: {
+          code: 'CASE_REVOCATION_FAILED',
           timestamp: new Date().toISOString(),
         },
       });
