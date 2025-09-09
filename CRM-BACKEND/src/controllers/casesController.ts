@@ -283,9 +283,48 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
     // Calculate pagination info
     const totalPages = Math.ceil(total / parseInt(limit as string));
 
+    // Transform data to match frontend expectations
+    const transformedData = casesResult.rows.map((row: any) => ({
+      ...row,
+      // Transform client data to nested object
+      client: row.clientName ? {
+        id: row.clientId,
+        name: row.clientName,
+        code: row.clientCode
+      } : null,
+      // Transform assigned user data to nested object
+      assignedTo: row.assignedToName ? {
+        id: row.assignedTo,
+        name: row.assignedToName,
+        username: row.assignedToEmail,
+        employeeId: row.assignedToEmail
+      } : null,
+      // Transform product data to nested object
+      product: row.productName ? {
+        id: row.productId,
+        name: row.productName,
+        code: row.productCode
+      } : null,
+      // Transform created by backend user data to nested object
+      createdByBackendUser: row.createdByBackendUserName ? {
+        id: row.createdByBackendUser,
+        name: row.createdByBackendUserName,
+        employeeId: row.createdByBackendUserEmail
+      } : null,
+      // Clean up flat fields to avoid confusion
+      clientName: undefined,
+      clientCode: undefined,
+      assignedToName: undefined,
+      assignedToEmail: undefined,
+      productName: undefined,
+      productCode: undefined,
+      createdByBackendUserName: undefined,
+      createdByBackendUserEmail: undefined
+    }));
+
     const response = {
       success: true,
-      data: casesResult.rows,
+      data: transformedData,
       pagination: {
         page: parseInt(page as string),
         limit: parseInt(limit as string),
@@ -398,6 +437,46 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
+    // Transform data to match frontend expectations
+    const row = result.rows[0];
+    const transformedData = {
+      ...row,
+      // Transform client data to nested object
+      client: row.clientName ? {
+        id: row.clientId,
+        name: row.clientName,
+        code: row.clientCode
+      } : null,
+      // Transform assigned user data to nested object
+      assignedTo: row.assignedToName ? {
+        id: row.assignedTo,
+        name: row.assignedToName,
+        username: row.assignedToEmail,
+        employeeId: row.assignedToEmail
+      } : null,
+      // Transform product data to nested object
+      product: row.productName ? {
+        id: row.productId,
+        name: row.productName,
+        code: row.productCode
+      } : null,
+      // Transform created by backend user data to nested object
+      createdByBackendUser: row.createdByBackendUserName ? {
+        id: row.createdByBackendUser,
+        name: row.createdByBackendUserName,
+        employeeId: row.createdByBackendUserEmail
+      } : null,
+      // Clean up flat fields to avoid confusion
+      clientName: undefined,
+      clientCode: undefined,
+      assignedToName: undefined,
+      assignedToEmail: undefined,
+      productName: undefined,
+      productCode: undefined,
+      createdByBackendUserName: undefined,
+      createdByBackendUserEmail: undefined
+    };
+
     logger.info('Case retrieved', {
       userId: req.user?.id,
       caseId: id,
@@ -405,7 +484,7 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({
       success: true,
-      data: result.rows[0],
+      data: transformedData,
       message: 'Case retrieved successfully',
     });
   } catch (error) {
