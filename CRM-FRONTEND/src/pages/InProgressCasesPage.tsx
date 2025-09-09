@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { InProgressCaseTable } from '@/components/cases/InProgressCaseTable';
+import { CaseTable } from '@/components/cases/CaseTable';
 import { CasePagination } from '@/components/cases/CasePagination';
 import { useCases } from '@/hooks/useCases';
 import { useFieldUsers } from '@/hooks/useUsers';
@@ -106,27 +106,9 @@ export const InProgressCasesPage: React.FC = () => {
     console.log('Export in progress cases');
   };
 
-  const hasActiveFilters = Object.entries(filters).some(([key, value]) => 
+  const hasActiveFilters = Object.entries(filters).some(([key, value]) =>
     key !== 'status' && key !== 'page' && key !== 'limit' && key !== 'sortBy' && key !== 'sortOrder' && value !== undefined && value !== ''
   );
-
-  // Helper function to format in progress duration
-  const formatInProgressDuration = (pendingDurationSeconds?: number) => {
-    if (!pendingDurationSeconds) return 'N/A';
-    
-    const hours = Math.floor(pendingDurationSeconds / 3600);
-    const minutes = Math.floor((pendingDurationSeconds % 3600) / 60);
-    
-    if (hours < 1) {
-      return `${minutes}m in progress`;
-    } else if (hours < 24) {
-      return `${hours}h in progress`;
-    } else {
-      const days = Math.floor(hours / 24);
-      const remainingHours = hours % 24;
-      return remainingHours > 0 ? `${days}d ${remainingHours}h in progress` : `${days}d in progress`;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -338,7 +320,7 @@ export const InProgressCasesPage: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <InProgressCaseTable
+          <CaseTable
             cases={cases}
             isLoading={isLoading}
           />
