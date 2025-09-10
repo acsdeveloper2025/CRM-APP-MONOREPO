@@ -867,29 +867,83 @@ export class MobileFormController {
       formData.recommendationStatus = report.recommendation_status;
       formData.remarks = report.remarks;
     } else if (verificationType === 'BUILDER') {
-      // Builder specific fields
-      formData.builderName = report.builder_name;
-      formData.builderStatus = report.builder_status;
-      formData.builderType = report.builder_type;
-      formData.builderRegistrationNumber = report.builder_registration_number;
-      formData.reraRegistrationNumber = report.rera_registration_number;
-      formData.establishmentYear = report.establishment_year;
-      formData.businessPeriod = report.business_period;
-      formData.staffStrength = report.staff_strength;
-      formData.projectsCompleted = report.projects_completed;
-      formData.projectsOngoing = report.projects_ongoing;
-      formData.officeType = report.office_type;
-      formData.officeStatus = report.office_status;
-      formData.companyNamePlateStatus = report.company_nameplate_status;
-      formData.nameOnCompanyBoard = report.name_on_company_board;
-      formData.metPersonDesignation = report.met_person_designation;
-      formData.metPersonRelation = report.met_person_relation;
-      formData.metPersonContact = report.met_person_contact;
-      formData.documentShownStatus = report.document_shown_status;
-      formData.documentType = report.document_type;
-      formData.documentVerificationStatus = report.document_verification_status;
+      // Basic Information
+      formData.customerName = report.customer_name;
+      formData.metPersonName = report.met_person_name;
+      formData.designation = report.designation;
+      formData.applicantDesignation = report.applicant_designation;
+
+      // Address Information
+      formData.fullAddress = report.full_address;
+      formData.locality = report.locality;
+      formData.addressLocatable = report.address_locatable;
+      formData.addressRating = report.address_rating;
+      formData.addressStructure = report.address_structure;
+      formData.addressStructureColor = report.address_structure_color;
+      formData.addressFloor = report.address_floor;
       formData.doorColor = report.door_color;
+      formData.landmark1 = report.landmark1;
+      formData.landmark2 = report.landmark2;
+      formData.landmark3 = report.landmark3;
+      formData.landmark4 = report.landmark4;
+
+      // Builder Information
+      formData.builderName = report.builder_name;
+      formData.builderOwnerName = report.builder_owner_name;
+      formData.builderType = report.builder_type;
+      formData.companyNatureOfBusiness = report.company_nature_of_business;
+      formData.businessPeriod = report.business_period;
+      formData.establishmentPeriod = report.establishment_period;
+      formData.workingPeriod = report.working_period;
+      formData.workingStatus = report.working_status;
+      formData.applicantWorkingStatus = report.applicant_working_status;
+
+      // Office Information
+      formData.officeStatus = report.office_status;
+      formData.officeExistence = report.office_existence;
+      formData.officeApproxArea = report.office_approx_area;
+      formData.companyNameplateStatus = report.company_nameplate_status;
+      formData.nameOnCompanyBoard = report.name_on_company_board;
+
+      // Staff Information
+      formData.staffStrength = report.staff_strength;
+      formData.staffSeen = report.staff_seen;
+
+      // Document Verification
+      formData.documentShown = report.document_shown;
+
+      // Third Party Confirmation
+      formData.tpcMetPerson1 = report.tpc_met_person1;
+      formData.tpcName1 = report.tpc_name1;
+      formData.tpcConfirmation1 = report.tpc_confirmation1;
+      formData.tpcMetPerson2 = report.tpc_met_person2;
+      formData.tpcName2 = report.tpc_name2;
+      formData.tpcConfirmation2 = report.tpc_confirmation2;
+      formData.nameOfMetPerson = report.name_of_met_person;
+      formData.metPersonType = report.met_person_type;
+      formData.metPersonConfirmation = report.met_person_confirmation;
+
+      // Shifting & Contact Details
+      formData.shiftedPeriod = report.shifted_period;
+      formData.oldOfficeShiftedPeriod = report.old_office_shifted_period;
+      formData.currentCompanyName = report.current_company_name;
+      formData.currentCompanyPeriod = report.current_company_period;
+      formData.premisesStatus = report.premises_status;
+      formData.contactPerson = report.contact_person;
+      formData.callRemark = report.call_remark;
+
+      // Assessment & Feedback
+      formData.politicalConnection = report.political_connection;
+      formData.dominatedArea = report.dominated_area;
+      formData.feedbackFromNeighbour = report.feedback_from_neighbour;
+      formData.otherObservation = report.other_observation;
+      formData.otherExtraRemark = report.other_extra_remark;
+
+      // Final Status & Recommendations
+      formData.finalStatus = report.final_status;
       formData.holdReason = report.hold_reason;
+      formData.recommendationStatus = report.recommendation_status;
+      formData.remarks = report.remarks;
     } else if (verificationType === 'DSA_CONNECTOR' || verificationType === 'CONNECTOR') {
       // Basic Information
       formData.customerName = report.customer_name;
