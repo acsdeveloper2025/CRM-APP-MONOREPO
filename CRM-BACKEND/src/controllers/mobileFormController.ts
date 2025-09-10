@@ -334,6 +334,7 @@ export class MobileFormController {
 
   // Convert database report to form data format
   private static convertReportToFormData(report: any, verificationType: string): any {
+    console.log(`Converting report to form data for ${verificationType}:`, Object.keys(report));
     const formData: any = {};
 
     // Map common fields
@@ -373,8 +374,262 @@ export class MobileFormController {
       formData.doorColor = report.door_color;
       formData.doorNamePlateStatus = report.door_nameplate_status;
       formData.nameOnDoorPlate = report.name_on_door_plate;
+      formData.societyNamePlateStatus = report.society_nameplate_status;
+      formData.nameOnSocietyBoard = report.name_on_society_board;
 
       // Form type specific fields
+      formData.shiftedPeriod = report.shifted_period;
+      formData.currentLocation = report.current_location;
+      formData.premisesStatus = report.premises_status;
+      formData.roomStatus = report.room_status;
+      formData.stayingPersonName = report.staying_person_name;
+      formData.entryRestrictionReason = report.entry_restriction_reason;
+      formData.securityPersonName = report.security_person_name;
+      formData.accessDenied = report.access_denied;
+      formData.nameOfMetPerson = report.name_of_met_person;
+      formData.metPersonType = report.met_person_type;
+      formData.applicantStayingStatus = report.applicant_staying_status;
+      formData.contactPerson = report.contact_person;
+      formData.alternateContact = report.alternate_contact;
+    } else if (verificationType === 'OFFICE') {
+      formData.designation = report.designation;
+      formData.applicantDesignation = report.applicant_designation;
+      formData.officeStatus = report.office_status;
+      formData.officeType = report.office_type;
+      formData.companyNatureOfBusiness = report.company_nature_of_business;
+      formData.businessPeriod = report.business_period;
+      formData.establishmentPeriod = report.establishment_period;
+      formData.staffStrength = report.staff_strength;
+      formData.staffSeen = report.staff_seen;
+      formData.workingPeriod = report.working_period;
+      formData.workingStatus = report.working_status;
+      formData.officeApproxArea = report.office_approx_area;
+      formData.documentShown = report.document_shown;
+      formData.documentType = report.document_type;
+      formData.addressFloor = report.address_floor;
+      formData.companyNamePlateStatus = report.company_nameplate_status;
+      formData.nameOnCompanyBoard = report.name_on_company_board;
+      formData.tpcMetPerson1 = report.tpc_met_person1;
+      formData.tpcName1 = report.tpc_name1;
+      formData.tpcConfirmation1 = report.tpc_confirmation1;
+      formData.tpcMetPerson2 = report.tpc_met_person2;
+      formData.tpcName2 = report.tpc_name2;
+      formData.tpcConfirmation2 = report.tpc_confirmation2;
+    } else if (verificationType === 'BUSINESS') {
+      formData.businessName = report.business_name;
+      formData.businessStatus = report.business_status;
+      formData.businessType = report.business_type;
+      formData.businessNatureOfBusiness = report.business_nature_of_business;
+      formData.businessPeriod = report.business_period;
+      formData.staffStrength = report.staff_strength;
+      formData.businessExistence = report.business_existence;
+      formData.applicantExistence = report.applicant_existence;
+      formData.premisesStatus = report.premises_status;
+    } else if (verificationType === 'PROPERTY_APF') {
+      // Property APF specific fields
+      formData.propertyType = report.property_type;
+      formData.propertyStatus = report.property_status;
+      formData.propertyOwnership = report.property_ownership;
+      formData.propertyAge = report.property_age;
+      formData.propertyCondition = report.property_condition;
+      formData.propertyArea = report.property_area;
+      formData.propertyValue = report.property_value;
+      formData.marketValue = report.market_value;
+      formData.apfStatus = report.apf_status;
+      formData.apfNumber = report.apf_number;
+      formData.apfIssueDate = report.apf_issue_date;
+      formData.apfExpiryDate = report.apf_expiry_date;
+      formData.apfIssuingAuthority = report.apf_issuing_authority;
+      formData.apfValidityStatus = report.apf_validity_status;
+      formData.apfAmount = report.apf_amount;
+      formData.apfUtilizedAmount = report.apf_utilized_amount;
+      formData.apfBalanceAmount = report.apf_balance_amount;
+      formData.projectName = report.project_name;
+      formData.projectStatus = report.project_status;
+      formData.projectApprovalStatus = report.project_approval_status;
+      formData.projectCompletionPercentage = report.project_completion_percentage;
+      formData.totalUnits = report.total_units;
+      formData.completedUnits = report.completed_units;
+      formData.soldUnits = report.sold_units;
+      formData.availableUnits = report.available_units;
+      formData.possessionStatus = report.possession_status;
+      formData.builderName = report.builder_name;
+      formData.builderContact = report.builder_contact;
+      formData.developerName = report.developer_name;
+      formData.developerContact = report.developer_contact;
+      formData.builderRegistrationNumber = report.builder_registration_number;
+      formData.reraRegistrationNumber = report.rera_registration_number;
+      formData.loanAmount = report.loan_amount;
+      formData.loanPurpose = report.loan_purpose;
+      formData.loanStatus = report.loan_status;
+      formData.bankName = report.bank_name;
+      formData.loanAccountNumber = report.loan_account_number;
+      formData.emiAmount = report.emi_amount;
+      formData.metPersonDesignation = report.met_person_designation;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonContact = report.met_person_contact;
+      formData.documentShownStatus = report.document_shown_status;
+      formData.documentType = report.document_type;
+      formData.documentVerificationStatus = report.document_verification_status;
+      formData.tpcMetPerson1 = report.tpc_met_person1;
+      formData.tpcName1 = report.tpc_name1;
+      formData.tpcConfirmation1 = report.tpc_confirmation1;
+      formData.tpcMetPerson2 = report.tpc_met_person2;
+      formData.tpcName2 = report.tpc_name2;
+      formData.tpcConfirmation2 = report.tpc_confirmation2;
+      formData.shiftedPeriod = report.shifted_period;
+      formData.currentLocation = report.current_location;
+      formData.premisesStatus = report.premises_status;
+      formData.entryRestrictionReason = report.entry_restriction_reason;
+      formData.securityPersonName = report.security_person_name;
+      formData.securityConfirmation = report.security_confirmation;
+      formData.contactPerson = report.contact_person;
+      formData.callRemark = report.call_remark;
+      formData.legalClearance = report.legal_clearance;
+      formData.titleClearance = report.title_clearance;
+      formData.encumbranceStatus = report.encumbrance_status;
+      formData.litigationStatus = report.litigation_status;
+      formData.infrastructureStatus = report.infrastructure_status;
+      formData.roadConnectivity = report.road_connectivity;
+      formData.propertyConcerns = report.property_concerns;
+      formData.financialConcerns = report.financial_concerns;
+      formData.recommendationStatus = report.recommendation_status;
+      formData.doorColor = report.door_color;
+      formData.holdReason = report.hold_reason;
+    } else if (verificationType === 'PROPERTY_INDIVIDUAL') {
+      // Property Individual specific fields
+      formData.propertyType = report.property_type;
+      formData.propertyStatus = report.property_status;
+      formData.propertyOwnership = report.property_ownership;
+      formData.propertyAge = report.property_age;
+      formData.propertyCondition = report.property_condition;
+      formData.propertyArea = report.property_area;
+      formData.propertyValue = report.property_value;
+      formData.marketValue = report.market_value;
+      formData.propertyLocation = report.property_location;
+      formData.propertyDescription = report.property_description;
+      formData.propertyUsage = report.property_usage;
+      formData.constructionYear = report.construction_year;
+      formData.renovationYear = report.renovation_year;
+      formData.propertyAmenities = report.property_amenities;
+      formData.ownerName = report.owner_name;
+      formData.ownerContact = report.owner_contact;
+      formData.ownerAddress = report.owner_address;
+      formData.tenantName = report.tenant_name;
+      formData.tenantContact = report.tenant_contact;
+      formData.rentAmount = report.rent_amount;
+      formData.securityDeposit = report.security_deposit;
+      formData.leasePeriod = report.lease_period;
+      formData.leaseStartDate = report.lease_start_date;
+      formData.leaseEndDate = report.lease_end_date;
+      formData.metPersonDesignation = report.met_person_designation;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonContact = report.met_person_contact;
+      formData.documentShownStatus = report.document_shown_status;
+      formData.documentType = report.document_type;
+      formData.documentVerificationStatus = report.document_verification_status;
+      formData.tpcMetPerson1 = report.tpc_met_person1;
+      formData.tpcName1 = report.tpc_name1;
+      formData.tpcConfirmation1 = report.tpc_confirmation1;
+      formData.tpcMetPerson2 = report.tpc_met_person2;
+      formData.tpcName2 = report.tpc_name2;
+      formData.tpcConfirmation2 = report.tpc_confirmation2;
+      formData.doorColor = report.door_color;
+      formData.holdReason = report.hold_reason;
+    } else if (verificationType === 'NOC') {
+      // NOC specific fields
+      formData.nocType = report.noc_type;
+      formData.nocStatus = report.noc_status;
+      formData.nocNumber = report.noc_number;
+      formData.nocIssueDate = report.noc_issue_date;
+      formData.nocExpiryDate = report.noc_expiry_date;
+      formData.nocIssuingAuthority = report.noc_issuing_authority;
+      formData.nocValidityStatus = report.noc_validity_status;
+      formData.authorityName = report.authority_name;
+      formData.authorityContact = report.authority_contact;
+      formData.authorityAddress = report.authority_address;
+      formData.officerName = report.officer_name;
+      formData.officerDesignation = report.officer_designation;
+      formData.officerContact = report.officer_contact;
+      formData.metPersonDesignation = report.met_person_designation;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonContact = report.met_person_contact;
+      formData.documentShownStatus = report.document_shown_status;
+      formData.documentType = report.document_type;
+      formData.documentVerificationStatus = report.document_verification_status;
+      formData.doorColor = report.door_color;
+      formData.holdReason = report.hold_reason;
+    } else if (verificationType === 'BUILDER') {
+      // Builder specific fields
+      formData.builderName = report.builder_name;
+      formData.builderStatus = report.builder_status;
+      formData.builderType = report.builder_type;
+      formData.builderRegistrationNumber = report.builder_registration_number;
+      formData.reraRegistrationNumber = report.rera_registration_number;
+      formData.establishmentYear = report.establishment_year;
+      formData.businessPeriod = report.business_period;
+      formData.staffStrength = report.staff_strength;
+      formData.projectsCompleted = report.projects_completed;
+      formData.projectsOngoing = report.projects_ongoing;
+      formData.officeType = report.office_type;
+      formData.officeStatus = report.office_status;
+      formData.companyNamePlateStatus = report.company_nameplate_status;
+      formData.nameOnCompanyBoard = report.name_on_company_board;
+      formData.metPersonDesignation = report.met_person_designation;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonContact = report.met_person_contact;
+      formData.documentShownStatus = report.document_shown_status;
+      formData.documentType = report.document_type;
+      formData.documentVerificationStatus = report.document_verification_status;
+      formData.doorColor = report.door_color;
+      formData.holdReason = report.hold_reason;
+    } else if (verificationType === 'DSA_CONNECTOR' || verificationType === 'CONNECTOR') {
+      // DSA/Connector specific fields
+      formData.dsaName = report.dsa_name;
+      formData.dsaStatus = report.dsa_status;
+      formData.dsaType = report.dsa_type;
+      formData.dsaCode = report.dsa_code;
+      formData.dsaRegistrationNumber = report.dsa_registration_number;
+      formData.establishmentYear = report.establishment_year;
+      formData.businessPeriod = report.business_period;
+      formData.staffStrength = report.staff_strength;
+      formData.officeType = report.office_type;
+      formData.officeStatus = report.office_status;
+      formData.companyNamePlateStatus = report.company_nameplate_status;
+      formData.nameOnCompanyBoard = report.name_on_company_board;
+      formData.metPersonDesignation = report.met_person_designation;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonContact = report.met_person_contact;
+      formData.documentShownStatus = report.document_shown_status;
+      formData.documentType = report.document_type;
+      formData.documentVerificationStatus = report.document_verification_status;
+      formData.doorColor = report.door_color;
+      formData.holdReason = report.hold_reason;
+    } else if (verificationType === 'RESIDENCE_CUM_OFFICE' || verificationType === 'Residence-cum-office') {
+      // Residence-cum-office specific fields (combines residence and office fields)
+      formData.houseStatus = report.house_status;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonStatus = report.met_person_status;
+      formData.totalFamilyMembers = report.total_family_members;
+      formData.workingStatus = report.working_status;
+      formData.stayingPeriod = report.staying_period;
+      formData.stayingStatus = report.staying_status;
+      formData.documentShownStatus = report.document_shown_status;
+      formData.documentType = report.document_type;
+      formData.doorColor = report.door_color;
+      formData.doorNamePlateStatus = report.door_nameplate_status;
+      formData.nameOnDoorPlate = report.name_on_door_plate;
+      formData.designation = report.designation;
+      formData.officeStatus = report.office_status;
+      formData.officeType = report.office_type;
+      formData.companyNatureOfBusiness = report.company_nature_of_business;
+      formData.businessPeriod = report.business_period;
+      formData.staffStrength = report.staff_strength;
+      formData.workingPeriod = report.working_period;
+      formData.companyNamePlateStatus = report.company_nameplate_status;
+      formData.nameOnCompanyBoard = report.name_on_company_board;
+      formData.societyNamePlateStatus = report.society_nameplate_status;
+      formData.nameOnSocietyBoard = report.name_on_society_board;
       formData.shiftedPeriod = report.shifted_period;
       formData.currentLocation = report.current_location;
       formData.premisesStatus = report.premises_status;
@@ -389,26 +644,7 @@ export class MobileFormController {
       formData.applicantStayingStatus = report.applicant_staying_status;
       formData.contactPerson = report.contact_person;
       formData.alternateContact = report.alternate_contact;
-    } else if (verificationType === 'OFFICE') {
-      formData.designation = report.designation;
-      formData.officeStatus = report.office_status;
-      formData.officeType = report.office_type;
-      formData.companyNatureOfBusiness = report.company_nature_of_business;
-      formData.businessPeriod = report.business_period;
-      formData.staffStrength = report.staff_strength;
-      formData.workingPeriod = report.working_period;
-      formData.companyNamePlateStatus = report.company_nameplate_status;
-      formData.nameOnCompanyBoard = report.name_on_company_board;
-    } else if (verificationType === 'BUSINESS') {
-      formData.businessName = report.business_name;
-      formData.businessStatus = report.business_status;
-      formData.businessType = report.business_type;
-      formData.businessNatureOfBusiness = report.business_nature_of_business;
-      formData.businessPeriod = report.business_period;
-      formData.staffStrength = report.staff_strength;
-      formData.businessExistence = report.business_existence;
-      formData.applicantExistence = report.applicant_existence;
-      formData.premisesStatus = report.premises_status;
+      formData.holdReason = report.hold_reason;
     }
 
     return formData;
@@ -856,6 +1092,36 @@ export class MobileFormController {
         const businessReportSql = `SELECT * FROM "businessVerificationReports" WHERE case_id = $1`;
         const businessRes = await query(businessReportSql, [caseData.id]);
         reportData = businessRes.rows[0];
+      } else if (verificationType === 'PROPERTY_APF') {
+        reportTableName = 'propertyApfVerificationReports';
+        const propertyApfReportSql = `SELECT * FROM "propertyApfVerificationReports" WHERE case_id = $1`;
+        const propertyApfRes = await query(propertyApfReportSql, [caseData.id]);
+        reportData = propertyApfRes.rows[0];
+      } else if (verificationType === 'PROPERTY_INDIVIDUAL') {
+        reportTableName = 'propertyIndividualVerificationReports';
+        const propertyIndividualReportSql = `SELECT * FROM "propertyIndividualVerificationReports" WHERE case_id = $1`;
+        const propertyIndividualRes = await query(propertyIndividualReportSql, [caseData.id]);
+        reportData = propertyIndividualRes.rows[0];
+      } else if (verificationType === 'DSA/DST & Connector' || verificationType === 'CONNECTOR' || verificationType === 'DSA_CONNECTOR') {
+        reportTableName = 'dsaConnectorVerificationReports';
+        const dsaConnectorReportSql = `SELECT * FROM "dsaConnectorVerificationReports" WHERE case_id = $1`;
+        const dsaConnectorRes = await query(dsaConnectorReportSql, [caseData.id]);
+        reportData = dsaConnectorRes.rows[0];
+      } else if (verificationType === 'NOC') {
+        reportTableName = 'nocVerificationReports';
+        const nocReportSql = `SELECT * FROM "nocVerificationReports" WHERE case_id = $1`;
+        const nocRes = await query(nocReportSql, [caseData.id]);
+        reportData = nocRes.rows[0];
+      } else if (verificationType === 'BUILDER') {
+        reportTableName = 'builderVerificationReports';
+        const builderReportSql = `SELECT * FROM "builderVerificationReports" WHERE case_id = $1`;
+        const builderRes = await query(builderReportSql, [caseData.id]);
+        reportData = builderRes.rows[0];
+      } else if (verificationType === 'Residence-cum-office' || verificationType === 'RESIDENCE_CUM_OFFICE') {
+        reportTableName = 'residenceCumOfficeVerificationReports';
+        const residenceCumOfficeReportSql = `SELECT * FROM "residenceCumOfficeVerificationReports" WHERE case_id = $1`;
+        const residenceCumOfficeRes = await query(residenceCumOfficeReportSql, [caseData.id]);
+        reportData = residenceCumOfficeRes.rows[0];
       } else {
         // Fallback to residence for unknown types
         reportTableName = 'residenceVerificationReports';

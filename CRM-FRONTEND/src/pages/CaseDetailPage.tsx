@@ -258,7 +258,7 @@ export const CaseDetailPage: React.FC = () => {
                       <span className="font-medium">Created By Backend User</span>
                     </div>
                     <p className="mt-1 text-sm text-gray-600">
-                      {caseItem.createdByBackendUser || 'System'}
+                      {caseItem.createdByBackendUser?.name || 'System'}
                     </p>
                   </div>
 
@@ -369,7 +369,7 @@ export const CaseDetailPage: React.FC = () => {
                   <span className="font-medium">Assigned To</span>
                 </div>
                 <p className="mt-1 text-sm text-gray-600">
-                  {caseItem.assignedToName || 'Not assigned'}
+                  {caseItem.assignedTo?.name || 'Not assigned'}
                 </p>
               </div>
 
