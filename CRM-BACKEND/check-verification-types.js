@@ -7,10 +7,10 @@ const pool = new Pool({
 
 async function checkVerificationTypes() {
   try {
-    // Check OFFICE verification cases
-    console.log('\n=== OFFICE VERIFICATION AUDIT ===');
+    // Check BUSINESS verification cases
+    console.log('\n=== BUSINESS VERIFICATION AUDIT ===');
 
-    const officeCasesQuery = `
+    const businessCasesQuery = `
       SELECT
         "caseId",
         "customerName",
@@ -18,15 +18,15 @@ async function checkVerificationTypes() {
         "verificationData"->>'formType' as form_type,
         "status"
       FROM cases
-      WHERE "verificationType" = 'OFFICE'
+      WHERE "verificationType" = 'BUSINESS'
       AND "verificationData" IS NOT NULL
       AND "verificationData"::text != '{}'
       ORDER BY "caseId"
     `;
 
-    const officeCases = await pool.query(officeCasesQuery);
-    console.log('OFFICE Cases with Form Submissions:');
-    officeCases.rows.forEach(row => {
+    const businessCases = await pool.query(businessCasesQuery);
+    console.log('BUSINESS Cases with Form Submissions:');
+    businessCases.rows.forEach(row => {
       console.log(`Case ${row.caseId}: ${row.customerName}`);
       console.log(`  - Outcome: ${row.verificationOutcome}`);
       console.log(`  - Form Type: ${row.form_type}`);
@@ -34,45 +34,45 @@ async function checkVerificationTypes() {
       console.log('');
     });
 
-    // Check what data is in officeVerificationReports table
-    if (officeCases.rows.length > 0) {
-      const firstOfficeCase = officeCases.rows[0];
-      console.log(`\n=== DETAILED AUDIT FOR OFFICE CASE ${firstOfficeCase.caseId} ===`);
+    // Check what data is in businessVerificationReports table
+    if (businessCases.rows.length > 0) {
+      const firstBusinessCase = businessCases.rows[0];
+      console.log(`\n=== DETAILED AUDIT FOR BUSINESS CASE ${firstBusinessCase.caseId} ===`);
 
-      const officeReportQuery = `
+      const businessReportQuery = `
         SELECT
           r.*
-        FROM "officeVerificationReports" r
+        FROM "businessVerificationReports" r
         JOIN cases c ON r.case_id = c.id
-        WHERE c."caseId" = '${firstOfficeCase.caseId}'
+        WHERE c."caseId" = '${firstBusinessCase.caseId}'
         LIMIT 1
       `;
 
-      const officeReport = await pool.query(officeReportQuery);
-      if (officeReport.rows.length > 0) {
-        const row = officeReport.rows[0];
-        console.log(`OFFICE Case ${firstOfficeCase.caseId} - ALL DATABASE FIELDS:`);
+      const businessReport = await pool.query(businessReportQuery);
+      if (businessReport.rows.length > 0) {
+        const row = businessReport.rows[0];
+        console.log(`BUSINESS Case ${firstBusinessCase.caseId} - ALL DATABASE FIELDS:`);
         Object.keys(row).forEach(key => {
           console.log(`  ${key}: ${row[key]}`);
         });
       } else {
-        console.log(`No data found in officeVerificationReports for case ${firstOfficeCase.caseId}`);
+        console.log(`No data found in businessVerificationReports for case ${firstBusinessCase.caseId}`);
       }
     }
 
-    // Check database schema for office reports
-    console.log('\n=== OFFICE DATABASE SCHEMA CHECK ===');
+    // Check database schema for business reports
+    console.log('\n=== BUSINESS DATABASE SCHEMA CHECK ===');
 
-    const officeSchemaQuery = `
+    const businessSchemaQuery = `
       SELECT column_name, data_type
       FROM information_schema.columns
-      WHERE table_name = 'officeVerificationReports'
+      WHERE table_name = 'businessVerificationReports'
       ORDER BY column_name
     `;
 
-    const officeSchemaResult = await pool.query(officeSchemaQuery);
-    console.log('All columns in officeVerificationReports:');
-    officeSchemaResult.rows.forEach(row => {
+    const businessSchemaResult = await pool.query(businessSchemaQuery);
+    console.log('All columns in businessVerificationReports:');
+    businessSchemaResult.rows.forEach(row => {
       console.log(`  ${row.column_name}: ${row.data_type}`);
     });
 

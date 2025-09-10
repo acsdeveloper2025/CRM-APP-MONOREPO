@@ -416,15 +416,71 @@ export class MobileFormController {
       formData.tpcName2 = report.tpc_name2;
       formData.tpcConfirmation2 = report.tpc_confirmation2;
     } else if (verificationType === 'BUSINESS') {
-      formData.businessName = report.business_name;
+      // Basic Information
+      formData.designation = report.designation;
+      formData.applicantDesignation = report.applicant_designation;
+
+      // Business Details
       formData.businessStatus = report.business_status;
       formData.businessType = report.business_type;
-      formData.businessNatureOfBusiness = report.business_nature_of_business;
+      formData.companyNatureOfBusiness = report.company_nature_of_business;
       formData.businessPeriod = report.business_period;
-      formData.staffStrength = report.staff_strength;
+      formData.establishmentPeriod = report.establishment_period;
       formData.businessExistence = report.business_existence;
-      formData.applicantExistence = report.applicant_existence;
+      formData.businessActivity = report.business_activity;
+      formData.businessSetup = report.business_setup;
+      formData.businessApproxArea = report.business_approx_area;
+      formData.staffStrength = report.staff_strength;
+      formData.staffSeen = report.staff_seen;
+      formData.ownershipType = report.ownership_type;
+      formData.ownerName = report.owner_name;
+      formData.businessOwnerName = report.business_owner_name;
+      formData.nameOfCompanyOwners = report.name_of_company_owners;
+
+      // Working Details
+      formData.workingPeriod = report.working_period;
+      formData.workingStatus = report.working_status;
+      formData.applicantWorkingPremises = report.applicant_working_premises;
+      formData.applicantWorkingStatus = report.applicant_working_status;
+
+      // Document Verification
+      formData.documentShown = report.document_shown;
+      formData.documentType = report.document_type;
+
+      // Location Details
+      formData.addressFloor = report.address_floor;
+      formData.addressStatus = report.address_status;
       formData.premisesStatus = report.premises_status;
+      formData.companyNamePlateStatus = report.company_nameplate_status;
+      formData.nameOnCompanyBoard = report.name_on_company_board;
+
+      // TPC Details
+      formData.tpcMetPerson1 = report.tpc_met_person1;
+      formData.tpcName1 = report.tpc_name1;
+      formData.tpcConfirmation1 = report.tpc_confirmation1;
+      formData.tpcMetPerson2 = report.tpc_met_person2;
+      formData.tpcName2 = report.tpc_name2;
+      formData.tpcConfirmation2 = report.tpc_confirmation2;
+      formData.nameOfTpc1 = report.name_of_tpc1;
+      formData.nameOfTpc2 = report.name_of_tpc2;
+
+      // Shifting Details
+      formData.shiftedPeriod = report.shifted_period;
+      formData.oldBusinessShiftedPeriod = report.old_business_shifted_period;
+      formData.currentCompanyName = report.current_company_name;
+      formData.currentCompanyPeriod = report.current_company_period;
+
+      // Contact & Communication
+      formData.contactPerson = report.contact_person;
+      formData.callRemark = report.call_remark;
+      formData.nameOfMetPerson = report.name_of_met_person;
+      formData.metPersonType = report.met_person_type;
+      formData.metPersonConfirmation = report.met_person_confirmation;
+
+      // Area Assessment
+      formData.otherExtraRemark = report.other_extra_remark;
+      formData.holdReason = report.hold_reason;
+      formData.recommendationStatus = report.recommendation_status;
     } else if (verificationType === 'PROPERTY_APF') {
       // Property APF specific fields
       formData.propertyType = report.property_type;

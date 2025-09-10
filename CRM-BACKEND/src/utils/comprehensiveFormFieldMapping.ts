@@ -148,30 +148,81 @@ export const BUSINESS_FORM_FIELDS: FormFieldDefinition[] = [
   { id: 'customerName', name: 'customerName', label: 'Customer Name', type: 'text', isRequired: true, section: 'Basic Information', order: 1 },
   { id: 'outcome', name: 'outcome', label: 'Verification Outcome', type: 'select', isRequired: true, section: 'Basic Information', order: 2 },
   { id: 'metPersonName', name: 'metPersonName', label: 'Met Person Name', type: 'text', isRequired: false, section: 'Basic Information', order: 3 },
-  { id: 'businessName', name: 'businessName', label: 'Business Name', type: 'text', isRequired: false, section: 'Basic Information', order: 4 },
-  
+  { id: 'designation', name: 'designation', label: 'Designation', type: 'text', isRequired: false, section: 'Basic Information', order: 4 },
+  { id: 'applicantDesignation', name: 'applicantDesignation', label: 'Applicant Designation', type: 'text', isRequired: false, section: 'Basic Information', order: 5 },
+
   // Business Details Section
   { id: 'businessStatus', name: 'businessStatus', label: 'Business Status', type: 'select', isRequired: false, section: 'Business Details', order: 1 },
   { id: 'businessType', name: 'businessType', label: 'Business Type', type: 'select', isRequired: false, section: 'Business Details', order: 2 },
-  { id: 'businessNatureOfBusiness', name: 'businessNatureOfBusiness', label: 'Nature of Business', type: 'text', isRequired: false, section: 'Business Details', order: 3 },
+  { id: 'companyNatureOfBusiness', name: 'companyNatureOfBusiness', label: 'Nature of Business', type: 'text', isRequired: false, section: 'Business Details', order: 3 },
   { id: 'businessPeriod', name: 'businessPeriod', label: 'Business Period', type: 'text', isRequired: false, section: 'Business Details', order: 4 },
-  { id: 'staffStrength', name: 'staffStrength', label: 'Staff Strength', type: 'number', isRequired: false, section: 'Business Details', order: 5 },
+  { id: 'establishmentPeriod', name: 'establishmentPeriod', label: 'Establishment Period', type: 'text', isRequired: false, section: 'Business Details', order: 5 },
   { id: 'businessExistence', name: 'businessExistence', label: 'Business Existence', type: 'select', isRequired: false, section: 'Business Details', order: 6 },
-  { id: 'applicantExistence', name: 'applicantExistence', label: 'Applicant Existence', type: 'select', isRequired: false, section: 'Business Details', order: 7 },
-  
-  // Address & Location Section
+  { id: 'businessActivity', name: 'businessActivity', label: 'Business Activity', type: 'text', isRequired: false, section: 'Business Details', order: 7 },
+  { id: 'businessSetup', name: 'businessSetup', label: 'Business Setup', type: 'text', isRequired: false, section: 'Business Details', order: 8 },
+  { id: 'businessApproxArea', name: 'businessApproxArea', label: 'Business Approximate Area', type: 'number', isRequired: false, section: 'Business Details', order: 9 },
+  { id: 'staffStrength', name: 'staffStrength', label: 'Staff Strength', type: 'number', isRequired: false, section: 'Business Details', order: 10 },
+  { id: 'staffSeen', name: 'staffSeen', label: 'Staff Seen', type: 'number', isRequired: false, section: 'Business Details', order: 11 },
+  { id: 'ownershipType', name: 'ownershipType', label: 'Ownership Type', type: 'select', isRequired: false, section: 'Business Details', order: 12 },
+  { id: 'ownerName', name: 'ownerName', label: 'Owner Name', type: 'text', isRequired: false, section: 'Business Details', order: 13 },
+  { id: 'businessOwnerName', name: 'businessOwnerName', label: 'Business Owner Name', type: 'text', isRequired: false, section: 'Business Details', order: 14 },
+  { id: 'nameOfCompanyOwners', name: 'nameOfCompanyOwners', label: 'Name of Company Owners', type: 'text', isRequired: false, section: 'Business Details', order: 15 },
+
+  // Working Details Section
+  { id: 'workingPeriod', name: 'workingPeriod', label: 'Working Period', type: 'text', isRequired: false, section: 'Working Details', order: 1 },
+  { id: 'workingStatus', name: 'workingStatus', label: 'Working Status', type: 'select', isRequired: false, section: 'Working Details', order: 2 },
+  { id: 'applicantWorkingPremises', name: 'applicantWorkingPremises', label: 'Applicant Working Premises', type: 'text', isRequired: false, section: 'Working Details', order: 3 },
+  { id: 'applicantWorkingStatus', name: 'applicantWorkingStatus', label: 'Applicant Working Status', type: 'select', isRequired: false, section: 'Working Details', order: 4 },
+
+  // Document Verification Section
+  { id: 'documentShown', name: 'documentShown', label: 'Document Shown', type: 'text', isRequired: false, section: 'Document Verification', order: 1 },
+  { id: 'documentType', name: 'documentType', label: 'Document Type', type: 'text', isRequired: false, section: 'Document Verification', order: 2 },
+
+  // Location Details Section
   { id: 'addressLocatable', name: 'addressLocatable', label: 'Address Locatable', type: 'select', isRequired: true, section: 'Location Details', order: 1 },
   { id: 'addressRating', name: 'addressRating', label: 'Address Rating', type: 'select', isRequired: true, section: 'Location Details', order: 2 },
   { id: 'locality', name: 'locality', label: 'Locality Type', type: 'select', isRequired: false, section: 'Location Details', order: 3 },
   { id: 'addressStructure', name: 'addressStructure', label: 'Address Structure', type: 'select', isRequired: false, section: 'Location Details', order: 4 },
-  { id: 'premisesStatus', name: 'premisesStatus', label: 'Premises Status', type: 'select', isRequired: false, section: 'Location Details', order: 5 },
-  
+  { id: 'addressFloor', name: 'addressFloor', label: 'Address Floor', type: 'text', isRequired: false, section: 'Location Details', order: 5 },
+  { id: 'addressStatus', name: 'addressStatus', label: 'Address Status', type: 'select', isRequired: false, section: 'Location Details', order: 6 },
+  { id: 'premisesStatus', name: 'premisesStatus', label: 'Premises Status', type: 'select', isRequired: false, section: 'Location Details', order: 7 },
+  { id: 'companyNamePlateStatus', name: 'companyNamePlateStatus', label: 'Company Name Plate Status', type: 'select', isRequired: false, section: 'Location Details', order: 8 },
+  { id: 'nameOnCompanyBoard', name: 'nameOnCompanyBoard', label: 'Name on Company Board', type: 'text', isRequired: false, section: 'Location Details', order: 9 },
+  { id: 'landmark1', name: 'landmark1', label: 'Landmark 1', type: 'text', isRequired: false, section: 'Location Details', order: 10 },
+  { id: 'landmark2', name: 'landmark2', label: 'Landmark 2', type: 'text', isRequired: false, section: 'Location Details', order: 11 },
+
+  // TPC Details Section
+  { id: 'tpcMetPerson1', name: 'tpcMetPerson1', label: 'TPC Met Person 1', type: 'select', isRequired: false, section: 'TPC Details', order: 1 },
+  { id: 'tpcName1', name: 'tpcName1', label: 'TPC Name 1', type: 'text', isRequired: false, section: 'TPC Details', order: 2 },
+  { id: 'tpcConfirmation1', name: 'tpcConfirmation1', label: 'TPC Confirmation 1', type: 'select', isRequired: false, section: 'TPC Details', order: 3 },
+  { id: 'tpcMetPerson2', name: 'tpcMetPerson2', label: 'TPC Met Person 2', type: 'select', isRequired: false, section: 'TPC Details', order: 4 },
+  { id: 'tpcName2', name: 'tpcName2', label: 'TPC Name 2', type: 'text', isRequired: false, section: 'TPC Details', order: 5 },
+  { id: 'tpcConfirmation2', name: 'tpcConfirmation2', label: 'TPC Confirmation 2', type: 'select', isRequired: false, section: 'TPC Details', order: 6 },
+  { id: 'nameOfTpc1', name: 'nameOfTpc1', label: 'Name of TPC 1', type: 'text', isRequired: false, section: 'TPC Details', order: 7 },
+  { id: 'nameOfTpc2', name: 'nameOfTpc2', label: 'Name of TPC 2', type: 'text', isRequired: false, section: 'TPC Details', order: 8 },
+
+  // Shifting Details Section (for shifted cases)
+  { id: 'shiftedPeriod', name: 'shiftedPeriod', label: 'Shifted Period', type: 'text', isRequired: false, section: 'Shifting Details', order: 1 },
+  { id: 'oldBusinessShiftedPeriod', name: 'oldBusinessShiftedPeriod', label: 'Old Business Shifted Period', type: 'text', isRequired: false, section: 'Shifting Details', order: 2 },
+  { id: 'currentCompanyName', name: 'currentCompanyName', label: 'Current Company Name', type: 'text', isRequired: false, section: 'Shifting Details', order: 3 },
+  { id: 'currentCompanyPeriod', name: 'currentCompanyPeriod', label: 'Current Company Period', type: 'text', isRequired: false, section: 'Shifting Details', order: 4 },
+
+  // Contact & Communication Section
+  { id: 'contactPerson', name: 'contactPerson', label: 'Contact Person', type: 'text', isRequired: false, section: 'Contact & Communication', order: 1 },
+  { id: 'callRemark', name: 'callRemark', label: 'Call Remark', type: 'text', isRequired: false, section: 'Contact & Communication', order: 2 },
+  { id: 'nameOfMetPerson', name: 'nameOfMetPerson', label: 'Name of Met Person', type: 'text', isRequired: false, section: 'Contact & Communication', order: 3 },
+  { id: 'metPersonType', name: 'metPersonType', label: 'Met Person Type', type: 'select', isRequired: false, section: 'Contact & Communication', order: 4 },
+  { id: 'metPersonConfirmation', name: 'metPersonConfirmation', label: 'Met Person Confirmation', type: 'select', isRequired: false, section: 'Contact & Communication', order: 5 },
+
   // Area Assessment Section
   { id: 'politicalConnection', name: 'politicalConnection', label: 'Political Connection', type: 'select', isRequired: false, section: 'Area Assessment', order: 1 },
   { id: 'dominatedArea', name: 'dominatedArea', label: 'Dominated Area', type: 'select', isRequired: false, section: 'Area Assessment', order: 2 },
   { id: 'feedbackFromNeighbour', name: 'feedbackFromNeighbour', label: 'Feedback From Neighbour', type: 'select', isRequired: false, section: 'Area Assessment', order: 3 },
   { id: 'otherObservation', name: 'otherObservation', label: 'Other Observations', type: 'textarea', isRequired: false, section: 'Area Assessment', order: 4 },
-  { id: 'finalStatus', name: 'finalStatus', label: 'Final Status', type: 'select', isRequired: true, section: 'Area Assessment', order: 5 },
+  { id: 'otherExtraRemark', name: 'otherExtraRemark', label: 'Other Extra Remarks', type: 'textarea', isRequired: false, section: 'Area Assessment', order: 5 },
+  { id: 'finalStatus', name: 'finalStatus', label: 'Final Status', type: 'select', isRequired: true, section: 'Area Assessment', order: 6 },
+  { id: 'holdReason', name: 'holdReason', label: 'Hold Reason', type: 'textarea', isRequired: false, section: 'Area Assessment', order: 7 },
+  { id: 'recommendationStatus', name: 'recommendationStatus', label: 'Recommendation Status', type: 'select', isRequired: false, section: 'Area Assessment', order: 8 },
 ];
 
 // Property APF form field definitions (based on actual database fields)
