@@ -7,10 +7,10 @@ const pool = new Pool({
 
 async function checkVerificationTypes() {
   try {
-    // Check DSA_CONNECTOR verification cases
-    console.log('\n=== DSA_CONNECTOR VERIFICATION AUDIT ===');
+    // Check NOC verification cases
+    console.log('\n=== NOC VERIFICATION AUDIT ===');
 
-    const dsaConnectorCasesQuery = `
+    const nocCasesQuery = `
       SELECT
         "caseId",
         "customerName",
@@ -18,15 +18,15 @@ async function checkVerificationTypes() {
         "verificationData"->>'formType' as form_type,
         "status"
       FROM cases
-      WHERE "verificationType" IN ('DSA_CONNECTOR', 'DSA/DST & Connector', 'CONNECTOR')
+      WHERE "verificationType" = 'NOC'
       AND "verificationData" IS NOT NULL
       AND "verificationData"::text != '{}'
       ORDER BY "caseId"
     `;
 
-    const dsaConnectorCases = await pool.query(dsaConnectorCasesQuery);
-    console.log('DSA_CONNECTOR Cases with Form Submissions:');
-    dsaConnectorCases.rows.forEach(row => {
+    const nocCases = await pool.query(nocCasesQuery);
+    console.log('NOC Cases with Form Submissions:');
+    nocCases.rows.forEach(row => {
       console.log(`Case ${row.caseId}: ${row.customerName}`);
       console.log(`  - Outcome: ${row.verificationOutcome}`);
       console.log(`  - Form Type: ${row.form_type}`);
@@ -34,58 +34,58 @@ async function checkVerificationTypes() {
       console.log('');
     });
 
-    // Check what data is in dsaConnectorVerificationReports table
-    console.log('\n=== CHECKING ALL DSA_CONNECTOR REPORTS ===');
-    const allDsaConnectorReportsQuery = `
+    // Check what data is in nocVerificationReports table
+    console.log('\n=== CHECKING ALL NOC REPORTS ===');
+    const allNocReportsQuery = `
       SELECT case_id, "caseId", customer_name, verification_outcome
-      FROM "dsaConnectorVerificationReports"
+      FROM "nocVerificationReports"
       LIMIT 10
     `;
 
-    const allDsaConnectorReports = await pool.query(allDsaConnectorReportsQuery);
-    console.log(`Found ${allDsaConnectorReports.rows.length} DSA_CONNECTOR reports in database:`);
-    allDsaConnectorReports.rows.forEach(row => {
+    const allNocReports = await pool.query(allNocReportsQuery);
+    console.log(`Found ${allNocReports.rows.length} NOC reports in database:`);
+    allNocReports.rows.forEach(row => {
       console.log(`  Case ${row.caseId}: ${row.customer_name} - ${row.verification_outcome}`);
     });
 
-    if (dsaConnectorCases.rows.length > 0) {
-      const firstDsaConnectorCase = dsaConnectorCases.rows[0];
-      console.log(`\n=== DETAILED AUDIT FOR DSA_CONNECTOR CASE ${firstDsaConnectorCase.caseId} ===`);
+    if (nocCases.rows.length > 0) {
+      const firstNocCase = nocCases.rows[0];
+      console.log(`\n=== DETAILED AUDIT FOR NOC CASE ${firstNocCase.caseId} ===`);
 
-      const dsaConnectorReportQuery = `
+      const nocReportQuery = `
         SELECT
           r.*
-        FROM "dsaConnectorVerificationReports" r
+        FROM "nocVerificationReports" r
         JOIN cases c ON r.case_id = c.id
-        WHERE c."caseId" = '${firstDsaConnectorCase.caseId}'
+        WHERE c."caseId" = '${firstNocCase.caseId}'
         LIMIT 1
       `;
 
-      const dsaConnectorReport = await pool.query(dsaConnectorReportQuery);
-      if (dsaConnectorReport.rows.length > 0) {
-        const row = dsaConnectorReport.rows[0];
-        console.log(`DSA_CONNECTOR Case ${firstDsaConnectorCase.caseId} - ALL DATABASE FIELDS:`);
+      const nocReport = await pool.query(nocReportQuery);
+      if (nocReport.rows.length > 0) {
+        const row = nocReport.rows[0];
+        console.log(`NOC Case ${firstNocCase.caseId} - ALL DATABASE FIELDS:`);
         Object.keys(row).forEach(key => {
           console.log(`  ${key}: ${row[key]}`);
         });
       } else {
-        console.log(`No data found in dsaConnectorVerificationReports for case ${firstDsaConnectorCase.caseId}`);
+        console.log(`No data found in nocVerificationReports for case ${firstNocCase.caseId}`);
       }
     }
 
-    // Check database schema for DSA connector reports
-    console.log('\n=== DSA_CONNECTOR DATABASE SCHEMA CHECK ===');
+    // Check database schema for NOC reports
+    console.log('\n=== NOC DATABASE SCHEMA CHECK ===');
 
-    const dsaConnectorSchemaQuery = `
+    const nocSchemaQuery = `
       SELECT column_name, data_type
       FROM information_schema.columns
-      WHERE table_name = 'dsaConnectorVerificationReports'
+      WHERE table_name = 'nocVerificationReports'
       ORDER BY column_name
     `;
 
-    const dsaConnectorSchemaResult = await pool.query(dsaConnectorSchemaQuery);
-    console.log('All columns in dsaConnectorVerificationReports:');
-    dsaConnectorSchemaResult.rows.forEach(row => {
+    const nocSchemaResult = await pool.query(nocSchemaQuery);
+    console.log('All columns in nocVerificationReports:');
+    nocSchemaResult.rows.forEach(row => {
       console.log(`  ${row.column_name}: ${row.data_type}`);
     });
 

@@ -773,7 +773,28 @@ export class MobileFormController {
       formData.recommendationStatus = report.recommendation_status;
       formData.remarks = report.remarks;
     } else if (verificationType === 'NOC') {
-      // NOC specific fields
+      // Basic Information
+      formData.customerName = report.customer_name;
+      formData.metPersonName = report.met_person_name;
+      formData.metPersonDesignation = report.met_person_designation;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonContact = report.met_person_contact;
+
+      // Address Information
+      formData.fullAddress = report.full_address;
+      formData.locality = report.locality;
+      formData.addressLocatable = report.address_locatable;
+      formData.addressRating = report.address_rating;
+      formData.addressStructure = report.address_structure;
+      formData.addressStructureColor = report.address_structure_color;
+      formData.addressFloor = report.address_floor;
+      formData.doorColor = report.door_color;
+      formData.landmark1 = report.landmark1;
+      formData.landmark2 = report.landmark2;
+      formData.landmark3 = report.landmark3;
+      formData.landmark4 = report.landmark4;
+
+      // NOC Information
       formData.nocType = report.noc_type;
       formData.nocStatus = report.noc_status;
       formData.nocNumber = report.noc_number;
@@ -781,20 +802,70 @@ export class MobileFormController {
       formData.nocExpiryDate = report.noc_expiry_date;
       formData.nocIssuingAuthority = report.noc_issuing_authority;
       formData.nocValidityStatus = report.noc_validity_status;
-      formData.authorityName = report.authority_name;
-      formData.authorityContact = report.authority_contact;
-      formData.authorityAddress = report.authority_address;
-      formData.officerName = report.officer_name;
-      formData.officerDesignation = report.officer_designation;
-      formData.officerContact = report.officer_contact;
-      formData.metPersonDesignation = report.met_person_designation;
-      formData.metPersonRelation = report.met_person_relation;
-      formData.metPersonContact = report.met_person_contact;
+
+      // Property & Project Information
+      formData.propertyType = report.property_type;
+      formData.projectName = report.project_name;
+      formData.projectStatus = report.project_status;
+      formData.constructionStatus = report.construction_status;
+      formData.projectApprovalStatus = report.project_approval_status;
+      formData.totalUnits = report.total_units;
+      formData.completedUnits = report.completed_units;
+      formData.soldUnits = report.sold_units;
+      formData.possessionStatus = report.possession_status;
+
+      // Builder & Developer Information
+      formData.builderName = report.builder_name;
+      formData.builderContact = report.builder_contact;
+      formData.developerName = report.developer_name;
+      formData.developerContact = report.developer_contact;
+      formData.builderRegistrationNumber = report.builder_registration_number;
+
+      // Document Verification
       formData.documentShownStatus = report.document_shown_status;
       formData.documentType = report.document_type;
       formData.documentVerificationStatus = report.document_verification_status;
-      formData.doorColor = report.door_color;
+
+      // Third Party Confirmation
+      formData.tpcMetPerson1 = report.tpc_met_person1;
+      formData.tpcName1 = report.tpc_name1;
+      formData.tpcConfirmation1 = report.tpc_confirmation1;
+      formData.tpcMetPerson2 = report.tpc_met_person2;
+      formData.tpcName2 = report.tpc_name2;
+      formData.tpcConfirmation2 = report.tpc_confirmation2;
+
+      // Shifting & Contact Details
+      formData.shiftedPeriod = report.shifted_period;
+      formData.currentLocation = report.current_location;
+      formData.premisesStatus = report.premises_status;
+      formData.entryRestrictionReason = report.entry_restriction_reason;
+      formData.securityPersonName = report.security_person_name;
+      formData.securityConfirmation = report.security_confirmation;
+      formData.contactPerson = report.contact_person;
+      formData.callRemark = report.call_remark;
+
+      // Clearances & Compliance
+      formData.environmentalClearance = report.environmental_clearance;
+      formData.fireSafetyClearance = report.fire_safety_clearance;
+      formData.pollutionClearance = report.pollution_clearance;
+      formData.waterConnectionStatus = report.water_connection_status;
+      formData.electricityConnectionStatus = report.electricity_connection_status;
+      formData.complianceIssues = report.compliance_issues;
+      formData.regulatoryConcerns = report.regulatory_concerns;
+
+      // Infrastructure & Assessment
+      formData.infrastructureStatus = report.infrastructure_status;
+      formData.roadConnectivity = report.road_connectivity;
+      formData.politicalConnection = report.political_connection;
+      formData.dominatedArea = report.dominated_area;
+      formData.feedbackFromNeighbour = report.feedback_from_neighbour;
+      formData.otherObservation = report.other_observation;
+
+      // Final Status & Recommendations
+      formData.finalStatus = report.final_status;
       formData.holdReason = report.hold_reason;
+      formData.recommendationStatus = report.recommendation_status;
+      formData.remarks = report.remarks;
     } else if (verificationType === 'BUILDER') {
       // Builder specific fields
       formData.builderName = report.builder_name;

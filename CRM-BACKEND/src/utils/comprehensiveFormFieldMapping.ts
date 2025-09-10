@@ -496,32 +496,99 @@ const PROPERTY_INDIVIDUAL_FORM_FIELDS: FormFieldDefinition[] = [
 // NOC form field definitions
 const NOC_FORM_FIELDS: FormFieldDefinition[] = [
   // Basic Information
-  { id: 'customerName', name: 'customerName', label: 'Customer Name', type: 'text', isRequired: true, section: 'Basic Information', order: 1 },
-  { id: 'outcome', name: 'outcome', label: 'Verification Outcome', type: 'select', isRequired: true, section: 'Basic Information', order: 2 },
+  { id: 'outcome', name: 'outcome', label: 'Verification Outcome', type: 'select', isRequired: true, section: 'Basic Information', order: 1 },
+  { id: 'customerName', name: 'customerName', label: 'Customer Name', type: 'text', isRequired: false, section: 'Basic Information', order: 2 },
   { id: 'metPersonName', name: 'metPersonName', label: 'Met Person Name', type: 'text', isRequired: false, section: 'Basic Information', order: 3 },
+  { id: 'metPersonDesignation', name: 'metPersonDesignation', label: 'Met Person Designation', type: 'text', isRequired: false, section: 'Basic Information', order: 4 },
+  { id: 'metPersonRelation', name: 'metPersonRelation', label: 'Met Person Relation', type: 'text', isRequired: false, section: 'Basic Information', order: 5 },
+  { id: 'metPersonContact', name: 'metPersonContact', label: 'Met Person Contact', type: 'text', isRequired: false, section: 'Basic Information', order: 6 },
+
+  // Address Information
+  { id: 'fullAddress', name: 'fullAddress', label: 'Full Address', type: 'textarea', isRequired: false, section: 'Address Information', order: 1 },
+  { id: 'locality', name: 'locality', label: 'Locality', type: 'text', isRequired: false, section: 'Address Information', order: 2 },
+  { id: 'addressLocatable', name: 'addressLocatable', label: 'Address Locatable', type: 'select', isRequired: false, section: 'Address Information', order: 3 },
+  { id: 'addressRating', name: 'addressRating', label: 'Address Rating', type: 'select', isRequired: false, section: 'Address Information', order: 4 },
+  { id: 'addressStructure', name: 'addressStructure', label: 'Address Structure', type: 'text', isRequired: false, section: 'Address Information', order: 5 },
+  { id: 'addressStructureColor', name: 'addressStructureColor', label: 'Address Structure Color', type: 'text', isRequired: false, section: 'Address Information', order: 6 },
+  { id: 'addressFloor', name: 'addressFloor', label: 'Address Floor', type: 'text', isRequired: false, section: 'Address Information', order: 7 },
+  { id: 'doorColor', name: 'doorColor', label: 'Door Color', type: 'text', isRequired: false, section: 'Address Information', order: 8 },
+  { id: 'landmark1', name: 'landmark1', label: 'Landmark 1', type: 'text', isRequired: false, section: 'Address Information', order: 9 },
+  { id: 'landmark2', name: 'landmark2', label: 'Landmark 2', type: 'text', isRequired: false, section: 'Address Information', order: 10 },
+  { id: 'landmark3', name: 'landmark3', label: 'Landmark 3', type: 'text', isRequired: false, section: 'Address Information', order: 11 },
+  { id: 'landmark4', name: 'landmark4', label: 'Landmark 4', type: 'text', isRequired: false, section: 'Address Information', order: 12 },
 
   // NOC Information
   { id: 'nocType', name: 'nocType', label: 'NOC Type', type: 'text', isRequired: false, section: 'NOC Information', order: 1 },
   { id: 'nocStatus', name: 'nocStatus', label: 'NOC Status', type: 'text', isRequired: false, section: 'NOC Information', order: 2 },
   { id: 'nocNumber', name: 'nocNumber', label: 'NOC Number', type: 'text', isRequired: false, section: 'NOC Information', order: 3 },
-  { id: 'nocValidityStatus', name: 'nocValidityStatus', label: 'NOC Validity Status', type: 'text', isRequired: false, section: 'NOC Information', order: 4 },
+  { id: 'nocIssueDate', name: 'nocIssueDate', label: 'NOC Issue Date', type: 'date', isRequired: false, section: 'NOC Information', order: 4 },
+  { id: 'nocExpiryDate', name: 'nocExpiryDate', label: 'NOC Expiry Date', type: 'date', isRequired: false, section: 'NOC Information', order: 5 },
+  { id: 'nocIssuingAuthority', name: 'nocIssuingAuthority', label: 'NOC Issuing Authority', type: 'text', isRequired: false, section: 'NOC Information', order: 6 },
+  { id: 'nocValidityStatus', name: 'nocValidityStatus', label: 'NOC Validity Status', type: 'text', isRequired: false, section: 'NOC Information', order: 7 },
 
-  // Authority Information
-  { id: 'authorityName', name: 'authorityName', label: 'Authority Name', type: 'text', isRequired: false, section: 'Authority Information', order: 1 },
-  { id: 'authorityContact', name: 'authorityContact', label: 'Authority Contact', type: 'text', isRequired: false, section: 'Authority Information', order: 2 },
-  { id: 'officerName', name: 'officerName', label: 'Officer Name', type: 'text', isRequired: false, section: 'Authority Information', order: 3 },
-  { id: 'officerDesignation', name: 'officerDesignation', label: 'Officer Designation', type: 'text', isRequired: false, section: 'Authority Information', order: 4 },
+  // Property & Project Information
+  { id: 'propertyType', name: 'propertyType', label: 'Property Type', type: 'text', isRequired: false, section: 'Property & Project Information', order: 1 },
+  { id: 'projectName', name: 'projectName', label: 'Project Name', type: 'text', isRequired: false, section: 'Property & Project Information', order: 2 },
+  { id: 'projectStatus', name: 'projectStatus', label: 'Project Status', type: 'text', isRequired: false, section: 'Property & Project Information', order: 3 },
+  { id: 'constructionStatus', name: 'constructionStatus', label: 'Construction Status', type: 'text', isRequired: false, section: 'Property & Project Information', order: 4 },
+  { id: 'projectApprovalStatus', name: 'projectApprovalStatus', label: 'Project Approval Status', type: 'text', isRequired: false, section: 'Property & Project Information', order: 5 },
+  { id: 'totalUnits', name: 'totalUnits', label: 'Total Units', type: 'number', isRequired: false, section: 'Property & Project Information', order: 6 },
+  { id: 'completedUnits', name: 'completedUnits', label: 'Completed Units', type: 'number', isRequired: false, section: 'Property & Project Information', order: 7 },
+  { id: 'soldUnits', name: 'soldUnits', label: 'Sold Units', type: 'number', isRequired: false, section: 'Property & Project Information', order: 8 },
+  { id: 'possessionStatus', name: 'possessionStatus', label: 'Possession Status', type: 'text', isRequired: false, section: 'Property & Project Information', order: 9 },
 
-  // Address Information
-  { id: 'addressLocatable', name: 'addressLocatable', label: 'Address Locatable', type: 'select', isRequired: false, section: 'Address Information', order: 1 },
-  { id: 'addressRating', name: 'addressRating', label: 'Address Rating', type: 'select', isRequired: false, section: 'Address Information', order: 2 },
-  { id: 'locality', name: 'locality', label: 'Locality', type: 'text', isRequired: false, section: 'Address Information', order: 3 },
-  { id: 'landmark1', name: 'landmark1', label: 'Landmark 1', type: 'text', isRequired: false, section: 'Address Information', order: 4 },
-  { id: 'landmark2', name: 'landmark2', label: 'Landmark 2', type: 'text', isRequired: false, section: 'Address Information', order: 5 },
+  // Builder & Developer Information
+  { id: 'builderName', name: 'builderName', label: 'Builder Name', type: 'text', isRequired: false, section: 'Builder & Developer Information', order: 1 },
+  { id: 'builderContact', name: 'builderContact', label: 'Builder Contact', type: 'text', isRequired: false, section: 'Builder & Developer Information', order: 2 },
+  { id: 'developerName', name: 'developerName', label: 'Developer Name', type: 'text', isRequired: false, section: 'Builder & Developer Information', order: 3 },
+  { id: 'developerContact', name: 'developerContact', label: 'Developer Contact', type: 'text', isRequired: false, section: 'Builder & Developer Information', order: 4 },
+  { id: 'builderRegistrationNumber', name: 'builderRegistrationNumber', label: 'Builder Registration Number', type: 'text', isRequired: false, section: 'Builder & Developer Information', order: 5 },
 
-  // Final Assessment
-  { id: 'otherObservation', name: 'otherObservation', label: 'Other Observations', type: 'textarea', isRequired: false, section: 'Final Assessment', order: 1 },
-  { id: 'finalStatus', name: 'finalStatus', label: 'Final Status', type: 'select', isRequired: true, section: 'Final Assessment', order: 2 },
+  // Document Verification
+  { id: 'documentShownStatus', name: 'documentShownStatus', label: 'Document Shown Status', type: 'text', isRequired: false, section: 'Document Verification', order: 1 },
+  { id: 'documentType', name: 'documentType', label: 'Document Type', type: 'text', isRequired: false, section: 'Document Verification', order: 2 },
+  { id: 'documentVerificationStatus', name: 'documentVerificationStatus', label: 'Document Verification Status', type: 'text', isRequired: false, section: 'Document Verification', order: 3 },
+
+  // Third Party Confirmation
+  { id: 'tpcMetPerson1', name: 'tpcMetPerson1', label: 'TPC Met Person 1', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 1 },
+  { id: 'tpcName1', name: 'tpcName1', label: 'TPC Name 1', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 2 },
+  { id: 'tpcConfirmation1', name: 'tpcConfirmation1', label: 'TPC Confirmation 1', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 3 },
+  { id: 'tpcMetPerson2', name: 'tpcMetPerson2', label: 'TPC Met Person 2', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 4 },
+  { id: 'tpcName2', name: 'tpcName2', label: 'TPC Name 2', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 5 },
+  { id: 'tpcConfirmation2', name: 'tpcConfirmation2', label: 'TPC Confirmation 2', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 6 },
+
+  // Shifting & Contact Details
+  { id: 'shiftedPeriod', name: 'shiftedPeriod', label: 'Shifted Period', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 1 },
+  { id: 'currentLocation', name: 'currentLocation', label: 'Current Location', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 2 },
+  { id: 'premisesStatus', name: 'premisesStatus', label: 'Premises Status', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 3 },
+  { id: 'entryRestrictionReason', name: 'entryRestrictionReason', label: 'Entry Restriction Reason', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 4 },
+  { id: 'securityPersonName', name: 'securityPersonName', label: 'Security Person Name', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 5 },
+  { id: 'securityConfirmation', name: 'securityConfirmation', label: 'Security Confirmation', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 6 },
+  { id: 'contactPerson', name: 'contactPerson', label: 'Contact Person', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 7 },
+  { id: 'callRemark', name: 'callRemark', label: 'Call Remark', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 8 },
+
+  // Clearances & Compliance
+  { id: 'environmentalClearance', name: 'environmentalClearance', label: 'Environmental Clearance', type: 'text', isRequired: false, section: 'Clearances & Compliance', order: 1 },
+  { id: 'fireSafetyClearance', name: 'fireSafetyClearance', label: 'Fire Safety Clearance', type: 'text', isRequired: false, section: 'Clearances & Compliance', order: 2 },
+  { id: 'pollutionClearance', name: 'pollutionClearance', label: 'Pollution Clearance', type: 'text', isRequired: false, section: 'Clearances & Compliance', order: 3 },
+  { id: 'waterConnectionStatus', name: 'waterConnectionStatus', label: 'Water Connection Status', type: 'text', isRequired: false, section: 'Clearances & Compliance', order: 4 },
+  { id: 'electricityConnectionStatus', name: 'electricityConnectionStatus', label: 'Electricity Connection Status', type: 'text', isRequired: false, section: 'Clearances & Compliance', order: 5 },
+  { id: 'complianceIssues', name: 'complianceIssues', label: 'Compliance Issues', type: 'textarea', isRequired: false, section: 'Clearances & Compliance', order: 6 },
+  { id: 'regulatoryConcerns', name: 'regulatoryConcerns', label: 'Regulatory Concerns', type: 'textarea', isRequired: false, section: 'Clearances & Compliance', order: 7 },
+
+  // Infrastructure & Assessment
+  { id: 'infrastructureStatus', name: 'infrastructureStatus', label: 'Infrastructure Status', type: 'text', isRequired: false, section: 'Infrastructure & Assessment', order: 1 },
+  { id: 'roadConnectivity', name: 'roadConnectivity', label: 'Road Connectivity', type: 'text', isRequired: false, section: 'Infrastructure & Assessment', order: 2 },
+  { id: 'politicalConnection', name: 'politicalConnection', label: 'Political Connection', type: 'text', isRequired: false, section: 'Infrastructure & Assessment', order: 3 },
+  { id: 'dominatedArea', name: 'dominatedArea', label: 'Dominated Area', type: 'text', isRequired: false, section: 'Infrastructure & Assessment', order: 4 },
+  { id: 'feedbackFromNeighbour', name: 'feedbackFromNeighbour', label: 'Feedback from Neighbour', type: 'text', isRequired: false, section: 'Infrastructure & Assessment', order: 5 },
+  { id: 'otherObservation', name: 'otherObservation', label: 'Other Observation', type: 'textarea', isRequired: false, section: 'Infrastructure & Assessment', order: 6 },
+
+  // Final Status & Recommendations
+  { id: 'finalStatus', name: 'finalStatus', label: 'Final Status', type: 'text', isRequired: false, section: 'Final Status & Recommendations', order: 1 },
+  { id: 'holdReason', name: 'holdReason', label: 'Hold Reason', type: 'textarea', isRequired: false, section: 'Final Status & Recommendations', order: 2 },
+  { id: 'recommendationStatus', name: 'recommendationStatus', label: 'Recommendation Status', type: 'text', isRequired: false, section: 'Final Status & Recommendations', order: 3 },
+  { id: 'remarks', name: 'remarks', label: 'Remarks', type: 'textarea', isRequired: false, section: 'Final Status & Recommendations', order: 4 },
 ];
 
 // Builder form field definitions
