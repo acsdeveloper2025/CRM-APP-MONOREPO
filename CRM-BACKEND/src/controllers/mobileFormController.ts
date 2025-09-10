@@ -482,7 +482,28 @@ export class MobileFormController {
       formData.holdReason = report.hold_reason;
       formData.recommendationStatus = report.recommendation_status;
     } else if (verificationType === 'PROPERTY_APF') {
-      // Property APF specific fields
+      // Basic Information
+      formData.customerName = report.customer_name;
+      formData.metPersonName = report.met_person_name;
+      formData.metPersonDesignation = report.met_person_designation;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonContact = report.met_person_contact;
+
+      // Address Information
+      formData.fullAddress = report.full_address;
+      formData.locality = report.locality;
+      formData.addressLocatable = report.address_locatable;
+      formData.addressRating = report.address_rating;
+      formData.addressStructure = report.address_structure;
+      formData.addressStructureColor = report.address_structure_color;
+      formData.addressFloor = report.address_floor;
+      formData.doorColor = report.door_color;
+      formData.landmark1 = report.landmark1;
+      formData.landmark2 = report.landmark2;
+      formData.landmark3 = report.landmark3;
+      formData.landmark4 = report.landmark4;
+
+      // Property Details
       formData.propertyType = report.property_type;
       formData.propertyStatus = report.property_status;
       formData.propertyOwnership = report.property_ownership;
@@ -491,6 +512,10 @@ export class MobileFormController {
       formData.propertyArea = report.property_area;
       formData.propertyValue = report.property_value;
       formData.marketValue = report.market_value;
+      formData.buildingStatus = report.building_status;
+      formData.constructionActivity = report.construction_activity;
+
+      // APF Details
       formData.apfStatus = report.apf_status;
       formData.apfNumber = report.apf_number;
       formData.apfIssueDate = report.apf_issue_date;
@@ -500,27 +525,92 @@ export class MobileFormController {
       formData.apfAmount = report.apf_amount;
       formData.apfUtilizedAmount = report.apf_utilized_amount;
       formData.apfBalanceAmount = report.apf_balance_amount;
+
+      // Project Information
       formData.projectName = report.project_name;
       formData.projectStatus = report.project_status;
       formData.projectApprovalStatus = report.project_approval_status;
       formData.projectCompletionPercentage = report.project_completion_percentage;
+      formData.projectStartDate = report.project_start_date;
+      formData.projectEndDate = report.project_end_date;
+      formData.projectStartedDate = report.project_started_date;
+      formData.projectCompletionDate = report.project_completion_date;
       formData.totalUnits = report.total_units;
       formData.completedUnits = report.completed_units;
       formData.soldUnits = report.sold_units;
       formData.availableUnits = report.available_units;
       formData.possessionStatus = report.possession_status;
+      formData.totalBuildingsInProject = report.total_buildings_in_project;
+      formData.totalFlats = report.total_flats;
+      formData.totalFlatsInBuilding = report.total_flats_in_building;
+      formData.totalWing = report.total_wing;
+
+      // Staff Information
+      formData.staffSeen = report.staff_seen;
+      formData.staffStrength = report.staff_strength;
+
+      // Name Plates & Boards
+      formData.companyNameBoard = report.company_name_board;
+      formData.nameOnBoard = report.name_on_board;
+
+      // Document Verification
+      formData.documentShownStatus = report.document_shown_status;
+      formData.documentType = report.document_type;
+      formData.documentVerificationStatus = report.document_verification_status;
+
+      // Third Party Confirmation
+      formData.tpcMetPerson1 = report.tpc_met_person1;
+      formData.tpcName1 = report.tpc_name1;
+      formData.tpcConfirmation1 = report.tpc_confirmation1;
+      formData.tpcMetPerson2 = report.tpc_met_person2;
+      formData.tpcName2 = report.tpc_name2;
+      formData.tpcConfirmation2 = report.tpc_confirmation2;
+
+      // Builder Information
       formData.builderName = report.builder_name;
       formData.builderContact = report.builder_contact;
       formData.developerName = report.developer_name;
       formData.developerContact = report.developer_contact;
       formData.builderRegistrationNumber = report.builder_registration_number;
       formData.reraRegistrationNumber = report.rera_registration_number;
+
+      // Loan Information
       formData.loanAmount = report.loan_amount;
       formData.loanPurpose = report.loan_purpose;
       formData.loanStatus = report.loan_status;
       formData.bankName = report.bank_name;
       formData.loanAccountNumber = report.loan_account_number;
       formData.emiAmount = report.emi_amount;
+
+      // Legal & Clearance
+      formData.legalClearance = report.legal_clearance;
+      formData.titleClearance = report.title_clearance;
+      formData.encumbranceStatus = report.encumbrance_status;
+      formData.litigationStatus = report.litigation_status;
+
+      // Shifting & Contact Details
+      formData.shiftedPeriod = report.shifted_period;
+      formData.currentLocation = report.current_location;
+      formData.premisesStatus = report.premises_status;
+      formData.entryRestrictionReason = report.entry_restriction_reason;
+      formData.securityPersonName = report.security_person_name;
+      formData.securityConfirmation = report.security_confirmation;
+      formData.contactPerson = report.contact_person;
+      formData.callRemark = report.call_remark;
+
+      // Infrastructure & Area Assessment
+      formData.infrastructureStatus = report.infrastructure_status;
+      formData.roadConnectivity = report.road_connectivity;
+      formData.politicalConnection = report.political_connection;
+      formData.dominatedArea = report.dominated_area;
+      formData.feedbackFromNeighbour = report.feedback_from_neighbour;
+      formData.otherObservation = report.other_observation;
+      formData.propertyConcerns = report.property_concerns;
+      formData.financialConcerns = report.financial_concerns;
+      formData.finalStatus = report.final_status;
+      formData.holdReason = report.hold_reason;
+      formData.recommendationStatus = report.recommendation_status;
+      formData.remarks = report.remarks;
       formData.metPersonDesignation = report.met_person_designation;
       formData.metPersonRelation = report.met_person_relation;
       formData.metPersonContact = report.met_person_contact;
