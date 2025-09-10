@@ -795,50 +795,98 @@ const DSA_CONNECTOR_FORM_FIELDS: FormFieldDefinition[] = [
 // Residence-cum-Office form field definitions (combines residence and office fields)
 const RESIDENCE_CUM_OFFICE_FORM_FIELDS: FormFieldDefinition[] = [
   // Basic Information
-  { id: 'customerName', name: 'customerName', label: 'Customer Name', type: 'text', isRequired: true, section: 'Basic Information', order: 1 },
-  { id: 'outcome', name: 'outcome', label: 'Verification Outcome', type: 'select', isRequired: true, section: 'Basic Information', order: 2 },
+  { id: 'outcome', name: 'outcome', label: 'Verification Outcome', type: 'select', isRequired: true, section: 'Basic Information', order: 1 },
+  { id: 'customerName', name: 'customerName', label: 'Customer Name', type: 'text', isRequired: false, section: 'Basic Information', order: 2 },
   { id: 'metPersonName', name: 'metPersonName', label: 'Met Person Name', type: 'text', isRequired: false, section: 'Basic Information', order: 3 },
   { id: 'metPersonRelation', name: 'metPersonRelation', label: 'Met Person Relation', type: 'text', isRequired: false, section: 'Basic Information', order: 4 },
+  { id: 'designation', name: 'designation', label: 'Designation', type: 'text', isRequired: false, section: 'Basic Information', order: 5 },
+  { id: 'applicantDesignation', name: 'applicantDesignation', label: 'Applicant Designation', type: 'text', isRequired: false, section: 'Basic Information', order: 6 },
+
+  // Address Information
+  { id: 'fullAddress', name: 'fullAddress', label: 'Full Address', type: 'textarea', isRequired: false, section: 'Address Information', order: 1 },
+  { id: 'locality', name: 'locality', label: 'Locality', type: 'text', isRequired: false, section: 'Address Information', order: 2 },
+  { id: 'addressLocatable', name: 'addressLocatable', label: 'Address Locatable', type: 'select', isRequired: false, section: 'Address Information', order: 3 },
+  { id: 'addressRating', name: 'addressRating', label: 'Address Rating', type: 'select', isRequired: false, section: 'Address Information', order: 4 },
+  { id: 'addressStructure', name: 'addressStructure', label: 'Address Structure', type: 'text', isRequired: false, section: 'Address Information', order: 5 },
+  { id: 'addressStructureColor', name: 'addressStructureColor', label: 'Address Structure Color', type: 'text', isRequired: false, section: 'Address Information', order: 6 },
+  { id: 'addressFloor', name: 'addressFloor', label: 'Address Floor', type: 'text', isRequired: false, section: 'Address Information', order: 7 },
+  { id: 'doorColor', name: 'doorColor', label: 'Door Color', type: 'text', isRequired: false, section: 'Address Information', order: 8 },
+  { id: 'landmark1', name: 'landmark1', label: 'Landmark 1', type: 'text', isRequired: false, section: 'Address Information', order: 9 },
+  { id: 'landmark2', name: 'landmark2', label: 'Landmark 2', type: 'text', isRequired: false, section: 'Address Information', order: 10 },
+  { id: 'landmark3', name: 'landmark3', label: 'Landmark 3', type: 'text', isRequired: false, section: 'Address Information', order: 11 },
+  { id: 'landmark4', name: 'landmark4', label: 'Landmark 4', type: 'text', isRequired: false, section: 'Address Information', order: 12 },
 
   // Residence Information
   { id: 'houseStatus', name: 'houseStatus', label: 'House Status', type: 'text', isRequired: false, section: 'Residence Information', order: 1 },
   { id: 'totalFamilyMembers', name: 'totalFamilyMembers', label: 'Total Family Members', type: 'number', isRequired: false, section: 'Residence Information', order: 2 },
-  { id: 'workingStatus', name: 'workingStatus', label: 'Working Status', type: 'text', isRequired: false, section: 'Residence Information', order: 3 },
+  { id: 'totalEarning', name: 'totalEarning', label: 'Total Earning', type: 'number', isRequired: false, section: 'Residence Information', order: 3 },
   { id: 'stayingPeriod', name: 'stayingPeriod', label: 'Staying Period', type: 'text', isRequired: false, section: 'Residence Information', order: 4 },
   { id: 'stayingStatus', name: 'stayingStatus', label: 'Staying Status', type: 'text', isRequired: false, section: 'Residence Information', order: 5 },
-  { id: 'doorNamePlateStatus', name: 'doorNamePlateStatus', label: 'Door Name Plate Status', type: 'text', isRequired: false, section: 'Residence Information', order: 6 },
-  { id: 'nameOnDoorPlate', name: 'nameOnDoorPlate', label: 'Name on Door Plate', type: 'text', isRequired: false, section: 'Residence Information', order: 7 },
+  { id: 'stayingPersonName', name: 'stayingPersonName', label: 'Staying Person Name', type: 'text', isRequired: false, section: 'Residence Information', order: 6 },
+  { id: 'doorNameplateStatus', name: 'doorNameplateStatus', label: 'Door Nameplate Status', type: 'text', isRequired: false, section: 'Residence Information', order: 7 },
+  { id: 'nameOnDoorPlate', name: 'nameOnDoorPlate', label: 'Name on Door Plate', type: 'text', isRequired: false, section: 'Residence Information', order: 8 },
+  { id: 'societyNameplateStatus', name: 'societyNameplateStatus', label: 'Society Nameplate Status', type: 'text', isRequired: false, section: 'Residence Information', order: 9 },
+  { id: 'nameOnSocietyBoard', name: 'nameOnSocietyBoard', label: 'Name on Society Board', type: 'text', isRequired: false, section: 'Residence Information', order: 10 },
+
+  // Applicant Information
+  { id: 'applicantAge', name: 'applicantAge', label: 'Applicant Age', type: 'number', isRequired: false, section: 'Applicant Information', order: 1 },
+  { id: 'applicantDob', name: 'applicantDob', label: 'Applicant Date of Birth', type: 'date', isRequired: false, section: 'Applicant Information', order: 2 },
+  { id: 'applicantStayingStatus', name: 'applicantStayingStatus', label: 'Applicant Staying Status', type: 'text', isRequired: false, section: 'Applicant Information', order: 3 },
+  { id: 'applicantWorkingStatus', name: 'applicantWorkingStatus', label: 'Applicant Working Status', type: 'text', isRequired: false, section: 'Applicant Information', order: 4 },
+  { id: 'applicantWorkingPremises', name: 'applicantWorkingPremises', label: 'Applicant Working Premises', type: 'text', isRequired: false, section: 'Applicant Information', order: 5 },
 
   // Office Information
-  { id: 'designation', name: 'designation', label: 'Designation', type: 'text', isRequired: false, section: 'Office Information', order: 1 },
-  { id: 'officeStatus', name: 'officeStatus', label: 'Office Status', type: 'text', isRequired: false, section: 'Office Information', order: 2 },
+  { id: 'officeStatus', name: 'officeStatus', label: 'Office Status', type: 'text', isRequired: false, section: 'Office Information', order: 1 },
+  { id: 'officeExistence', name: 'officeExistence', label: 'Office Existence', type: 'text', isRequired: false, section: 'Office Information', order: 2 },
   { id: 'officeType', name: 'officeType', label: 'Office Type', type: 'text', isRequired: false, section: 'Office Information', order: 3 },
   { id: 'companyNatureOfBusiness', name: 'companyNatureOfBusiness', label: 'Company Nature of Business', type: 'text', isRequired: false, section: 'Office Information', order: 4 },
   { id: 'businessPeriod', name: 'businessPeriod', label: 'Business Period', type: 'text', isRequired: false, section: 'Office Information', order: 5 },
-  { id: 'staffStrength', name: 'staffStrength', label: 'Staff Strength', type: 'number', isRequired: false, section: 'Office Information', order: 6 },
+  { id: 'establishmentPeriod', name: 'establishmentPeriod', label: 'Establishment Period', type: 'text', isRequired: false, section: 'Office Information', order: 6 },
   { id: 'workingPeriod', name: 'workingPeriod', label: 'Working Period', type: 'text', isRequired: false, section: 'Office Information', order: 7 },
-  { id: 'companyNamePlateStatus', name: 'companyNamePlateStatus', label: 'Company Name Plate Status', type: 'text', isRequired: false, section: 'Office Information', order: 8 },
-  { id: 'nameOnCompanyBoard', name: 'nameOnCompanyBoard', label: 'Name on Company Board', type: 'text', isRequired: false, section: 'Office Information', order: 9 },
-  { id: 'societyNamePlateStatus', name: 'societyNamePlateStatus', label: 'Society Name Plate Status', type: 'text', isRequired: false, section: 'Office Information', order: 10 },
-  { id: 'nameOnSocietyBoard', name: 'nameOnSocietyBoard', label: 'Name on Society Board', type: 'text', isRequired: false, section: 'Office Information', order: 11 },
+  { id: 'workingStatus', name: 'workingStatus', label: 'Working Status', type: 'text', isRequired: false, section: 'Office Information', order: 8 },
+  { id: 'approxArea', name: 'approxArea', label: 'Approximate Area', type: 'number', isRequired: false, section: 'Office Information', order: 9 },
+  { id: 'sittingLocation', name: 'sittingLocation', label: 'Sitting Location', type: 'text', isRequired: false, section: 'Office Information', order: 10 },
+  { id: 'companyNameplateStatus', name: 'companyNameplateStatus', label: 'Company Nameplate Status', type: 'text', isRequired: false, section: 'Office Information', order: 11 },
+  { id: 'nameOnCompanyBoard', name: 'nameOnCompanyBoard', label: 'Name on Company Board', type: 'text', isRequired: false, section: 'Office Information', order: 12 },
 
-  // Address Information
-  { id: 'addressLocatable', name: 'addressLocatable', label: 'Address Locatable', type: 'select', isRequired: false, section: 'Address Information', order: 1 },
-  { id: 'addressRating', name: 'addressRating', label: 'Address Rating', type: 'select', isRequired: false, section: 'Address Information', order: 2 },
-  { id: 'locality', name: 'locality', label: 'Locality', type: 'text', isRequired: false, section: 'Address Information', order: 3 },
-  { id: 'addressStructure', name: 'addressStructure', label: 'Address Structure', type: 'text', isRequired: false, section: 'Address Information', order: 4 },
-  { id: 'doorColor', name: 'doorColor', label: 'Door Color', type: 'text', isRequired: false, section: 'Address Information', order: 5 },
-  { id: 'landmark1', name: 'landmark1', label: 'Landmark 1', type: 'text', isRequired: false, section: 'Address Information', order: 6 },
-  { id: 'landmark2', name: 'landmark2', label: 'Landmark 2', type: 'text', isRequired: false, section: 'Address Information', order: 7 },
-  { id: 'landmark3', name: 'landmark3', label: 'Landmark 3', type: 'text', isRequired: false, section: 'Address Information', order: 8 },
-  { id: 'landmark4', name: 'landmark4', label: 'Landmark 4', type: 'text', isRequired: false, section: 'Address Information', order: 9 },
+  // Staff Information
+  { id: 'staffStrength', name: 'staffStrength', label: 'Staff Strength', type: 'number', isRequired: false, section: 'Staff Information', order: 1 },
+  { id: 'staffSeen', name: 'staffSeen', label: 'Staff Seen', type: 'number', isRequired: false, section: 'Staff Information', order: 2 },
 
-  // Area Assessment
-  { id: 'politicalConnection', name: 'politicalConnection', label: 'Political Connection', type: 'select', isRequired: false, section: 'Area Assessment', order: 1 },
-  { id: 'dominatedArea', name: 'dominatedArea', label: 'Dominated Area', type: 'select', isRequired: false, section: 'Area Assessment', order: 2 },
-  { id: 'feedbackFromNeighbour', name: 'feedbackFromNeighbour', label: 'Feedback from Neighbour', type: 'select', isRequired: false, section: 'Area Assessment', order: 3 },
-  { id: 'otherObservation', name: 'otherObservation', label: 'Other Observations', type: 'textarea', isRequired: false, section: 'Area Assessment', order: 4 },
-  { id: 'finalStatus', name: 'finalStatus', label: 'Final Status', type: 'select', isRequired: true, section: 'Area Assessment', order: 5 },
+  // Document Verification
+  { id: 'documentShownStatus', name: 'documentShownStatus', label: 'Document Shown Status', type: 'text', isRequired: false, section: 'Document Verification', order: 1 },
+  { id: 'documentType', name: 'documentType', label: 'Document Type', type: 'text', isRequired: false, section: 'Document Verification', order: 2 },
+
+  // Third Party Confirmation
+  { id: 'tpcMetPerson1', name: 'tpcMetPerson1', label: 'TPC Met Person 1', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 1 },
+  { id: 'tpcName1', name: 'tpcName1', label: 'TPC Name 1', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 2 },
+  { id: 'tpcConfirmation1', name: 'tpcConfirmation1', label: 'TPC Confirmation 1', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 3 },
+  { id: 'tpcMetPerson2', name: 'tpcMetPerson2', label: 'TPC Met Person 2', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 4 },
+  { id: 'tpcName2', name: 'tpcName2', label: 'TPC Name 2', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 5 },
+  { id: 'tpcConfirmation2', name: 'tpcConfirmation2', label: 'TPC Confirmation 2', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 6 },
+  { id: 'nameOfMetPerson', name: 'nameOfMetPerson', label: 'Name of Met Person', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 7 },
+  { id: 'metPersonType', name: 'metPersonType', label: 'Met Person Type', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 8 },
+  { id: 'metPersonConfirmation', name: 'metPersonConfirmation', label: 'Met Person Confirmation', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 9 },
+
+  // Shifting & Contact Details
+  { id: 'shiftedPeriod', name: 'shiftedPeriod', label: 'Shifted Period', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 1 },
+  { id: 'oldOfficeShiftedPeriod', name: 'oldOfficeShiftedPeriod', label: 'Old Office Shifted Period', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 2 },
+  { id: 'currentCompanyName', name: 'currentCompanyName', label: 'Current Company Name', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 3 },
+  { id: 'currentCompanyPeriod', name: 'currentCompanyPeriod', label: 'Current Company Period', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 4 },
+  { id: 'premisesStatus', name: 'premisesStatus', label: 'Premises Status', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 5 },
+  { id: 'contactPerson', name: 'contactPerson', label: 'Contact Person', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 6 },
+  { id: 'callRemark', name: 'callRemark', label: 'Call Remark', type: 'text', isRequired: false, section: 'Shifting & Contact Details', order: 7 },
+
+  // Area Assessment & Final Status
+  { id: 'politicalConnection', name: 'politicalConnection', label: 'Political Connection', type: 'text', isRequired: false, section: 'Area Assessment & Final Status', order: 1 },
+  { id: 'dominatedArea', name: 'dominatedArea', label: 'Dominated Area', type: 'text', isRequired: false, section: 'Area Assessment & Final Status', order: 2 },
+  { id: 'feedbackFromNeighbour', name: 'feedbackFromNeighbour', label: 'Feedback from Neighbour', type: 'text', isRequired: false, section: 'Area Assessment & Final Status', order: 3 },
+  { id: 'otherObservation', name: 'otherObservation', label: 'Other Observation', type: 'textarea', isRequired: false, section: 'Area Assessment & Final Status', order: 4 },
+  { id: 'otherExtraRemark', name: 'otherExtraRemark', label: 'Other Extra Remark', type: 'textarea', isRequired: false, section: 'Area Assessment & Final Status', order: 5 },
+  { id: 'finalStatus', name: 'finalStatus', label: 'Final Status', type: 'text', isRequired: false, section: 'Area Assessment & Final Status', order: 6 },
+  { id: 'holdReason', name: 'holdReason', label: 'Hold Reason', type: 'textarea', isRequired: false, section: 'Area Assessment & Final Status', order: 7 },
+  { id: 'recommendationStatus', name: 'recommendationStatus', label: 'Recommendation Status', type: 'text', isRequired: false, section: 'Area Assessment & Final Status', order: 8 },
+  { id: 'remarks', name: 'remarks', label: 'Remarks', type: 'textarea', isRequired: false, section: 'Area Assessment & Final Status', order: 9 },
 ];
 
 // Field definitions mapping by verification type

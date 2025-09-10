@@ -1060,36 +1060,98 @@ export class MobileFormController {
       formData.recommendationStatus = report.recommendation_status;
       formData.remarks = report.remarks;
     } else if (verificationType === 'RESIDENCE_CUM_OFFICE' || verificationType === 'Residence-cum-office') {
-      // Residence-cum-office specific fields (combines residence and office fields)
-      formData.houseStatus = report.house_status;
+      // Basic Information
+      formData.customerName = report.customer_name;
+      formData.metPersonName = report.met_person_name;
       formData.metPersonRelation = report.met_person_relation;
-      formData.metPersonStatus = report.met_person_status;
+      formData.designation = report.designation;
+      formData.applicantDesignation = report.applicant_designation;
+
+      // Address Information
+      formData.fullAddress = report.full_address;
+      formData.locality = report.locality;
+      formData.addressLocatable = report.address_locatable;
+      formData.addressRating = report.address_rating;
+      formData.addressStructure = report.address_structure;
+      formData.addressStructureColor = report.address_structure_color;
+      formData.addressFloor = report.address_floor;
+      formData.doorColor = report.door_color;
+      formData.landmark1 = report.landmark1;
+      formData.landmark2 = report.landmark2;
+      formData.landmark3 = report.landmark3;
+      formData.landmark4 = report.landmark4;
+
+      // Residence Information
+      formData.houseStatus = report.house_status;
       formData.totalFamilyMembers = report.total_family_members;
-      formData.workingStatus = report.working_status;
+      formData.totalEarning = report.total_earning;
       formData.stayingPeriod = report.staying_period;
       formData.stayingStatus = report.staying_status;
-      formData.documentShownStatus = report.document_shown_status;
-      formData.documentType = report.document_type;
-      formData.doorColor = report.door_color;
-      formData.doorNamePlateStatus = report.door_nameplate_status;
+      formData.stayingPersonName = report.staying_person_name;
+      formData.doorNameplateStatus = report.door_nameplate_status;
       formData.nameOnDoorPlate = report.name_on_door_plate;
-      formData.designation = report.designation;
+      formData.societyNameplateStatus = report.society_nameplate_status;
+      formData.nameOnSocietyBoard = report.name_on_society_board;
+
+      // Applicant Information
+      formData.applicantAge = report.applicant_age;
+      formData.applicantDob = report.applicant_dob;
+      formData.applicantStayingStatus = report.applicant_staying_status;
+      formData.applicantWorkingStatus = report.applicant_working_status;
+      formData.applicantWorkingPremises = report.applicant_working_premises;
+
+      // Office Information
       formData.officeStatus = report.office_status;
+      formData.officeExistence = report.office_existence;
       formData.officeType = report.office_type;
       formData.companyNatureOfBusiness = report.company_nature_of_business;
       formData.businessPeriod = report.business_period;
-      formData.staffStrength = report.staff_strength;
+      formData.establishmentPeriod = report.establishment_period;
       formData.workingPeriod = report.working_period;
-      formData.companyNamePlateStatus = report.company_nameplate_status;
+      formData.workingStatus = report.working_status;
+      formData.approxArea = report.approx_area;
+      formData.sittingLocation = report.sitting_location;
+      formData.companyNameplateStatus = report.company_nameplate_status;
       formData.nameOnCompanyBoard = report.name_on_company_board;
-      formData.societyNamePlateStatus = report.society_nameplate_status;
-      formData.nameOnSocietyBoard = report.name_on_society_board;
+
+      // Staff Information
+      formData.staffStrength = report.staff_strength;
+      formData.staffSeen = report.staff_seen;
+
+      // Document Verification
+      formData.documentShownStatus = report.document_shown_status;
+      formData.documentType = report.document_type;
+
+      // Third Party Confirmation
+      formData.tpcMetPerson1 = report.tpc_met_person1;
+      formData.tpcName1 = report.tpc_name1;
+      formData.tpcConfirmation1 = report.tpc_confirmation1;
+      formData.tpcMetPerson2 = report.tpc_met_person2;
+      formData.tpcName2 = report.tpc_name2;
+      formData.tpcConfirmation2 = report.tpc_confirmation2;
+      formData.nameOfMetPerson = report.name_of_met_person;
+      formData.metPersonType = report.met_person_type;
+      formData.metPersonConfirmation = report.met_person_confirmation;
+
+      // Shifting & Contact Details
       formData.shiftedPeriod = report.shifted_period;
-      formData.currentLocation = report.current_location;
+      formData.oldOfficeShiftedPeriod = report.old_office_shifted_period;
+      formData.currentCompanyName = report.current_company_name;
+      formData.currentCompanyPeriod = report.current_company_period;
       formData.premisesStatus = report.premises_status;
-      formData.roomStatus = report.room_status;
-      formData.stayingPersonName = report.staying_person_name;
-      formData.temporaryStay = report.temporary_stay;
+      formData.contactPerson = report.contact_person;
+      formData.callRemark = report.call_remark;
+
+      // Area Assessment & Final Status
+      formData.politicalConnection = report.political_connection;
+      formData.dominatedArea = report.dominated_area;
+      formData.feedbackFromNeighbour = report.feedback_from_neighbour;
+      formData.otherObservation = report.other_observation;
+      formData.otherExtraRemark = report.other_extra_remark;
+      formData.finalStatus = report.final_status;
+      formData.holdReason = report.hold_reason;
+      formData.recommendationStatus = report.recommendation_status;
+      formData.remarks = report.remarks;
       formData.entryRestrictionReason = report.entry_restriction_reason;
       formData.securityPersonName = report.security_person_name;
       formData.accessDenied = report.access_denied;

@@ -7,10 +7,10 @@ const pool = new Pool({
 
 async function checkVerificationTypes() {
   try {
-    // Check BUILDER verification cases
-    console.log('\n=== BUILDER VERIFICATION AUDIT ===');
+    // Check RESIDENCE_CUM_OFFICE verification cases
+    console.log('\n=== RESIDENCE_CUM_OFFICE VERIFICATION AUDIT ===');
 
-    const builderCasesQuery = `
+    const residenceCumOfficeCasesQuery = `
       SELECT
         "caseId",
         "customerName",
@@ -18,15 +18,15 @@ async function checkVerificationTypes() {
         "verificationData"->>'formType' as form_type,
         "status"
       FROM cases
-      WHERE "verificationType" = 'BUILDER'
+      WHERE "verificationType" IN ('RESIDENCE_CUM_OFFICE', 'Residence-cum-office')
       AND "verificationData" IS NOT NULL
       AND "verificationData"::text != '{}'
       ORDER BY "caseId"
     `;
 
-    const builderCases = await pool.query(builderCasesQuery);
-    console.log('BUILDER Cases with Form Submissions:');
-    builderCases.rows.forEach(row => {
+    const residenceCumOfficeCases = await pool.query(residenceCumOfficeCasesQuery);
+    console.log('RESIDENCE_CUM_OFFICE Cases with Form Submissions:');
+    residenceCumOfficeCases.rows.forEach(row => {
       console.log(`Case ${row.caseId}: ${row.customerName}`);
       console.log(`  - Outcome: ${row.verificationOutcome}`);
       console.log(`  - Form Type: ${row.form_type}`);
@@ -34,58 +34,58 @@ async function checkVerificationTypes() {
       console.log('');
     });
 
-    // Check what data is in builderVerificationReports table
-    console.log('\n=== CHECKING ALL BUILDER REPORTS ===');
-    const allBuilderReportsQuery = `
+    // Check what data is in residenceCumOfficeVerificationReports table
+    console.log('\n=== CHECKING ALL RESIDENCE_CUM_OFFICE REPORTS ===');
+    const allResidenceCumOfficeReportsQuery = `
       SELECT case_id, "caseId", customer_name, verification_outcome
-      FROM "builderVerificationReports"
+      FROM "residenceCumOfficeVerificationReports"
       LIMIT 10
     `;
 
-    const allBuilderReports = await pool.query(allBuilderReportsQuery);
-    console.log(`Found ${allBuilderReports.rows.length} BUILDER reports in database:`);
-    allBuilderReports.rows.forEach(row => {
+    const allResidenceCumOfficeReports = await pool.query(allResidenceCumOfficeReportsQuery);
+    console.log(`Found ${allResidenceCumOfficeReports.rows.length} RESIDENCE_CUM_OFFICE reports in database:`);
+    allResidenceCumOfficeReports.rows.forEach(row => {
       console.log(`  Case ${row.caseId}: ${row.customer_name} - ${row.verification_outcome}`);
     });
 
-    if (builderCases.rows.length > 0) {
-      const firstBuilderCase = builderCases.rows[0];
-      console.log(`\n=== DETAILED AUDIT FOR BUILDER CASE ${firstBuilderCase.caseId} ===`);
+    if (residenceCumOfficeCases.rows.length > 0) {
+      const firstResidenceCumOfficeCase = residenceCumOfficeCases.rows[0];
+      console.log(`\n=== DETAILED AUDIT FOR RESIDENCE_CUM_OFFICE CASE ${firstResidenceCumOfficeCase.caseId} ===`);
 
-      const builderReportQuery = `
+      const residenceCumOfficeReportQuery = `
         SELECT
           r.*
-        FROM "builderVerificationReports" r
+        FROM "residenceCumOfficeVerificationReports" r
         JOIN cases c ON r.case_id = c.id
-        WHERE c."caseId" = '${firstBuilderCase.caseId}'
+        WHERE c."caseId" = '${firstResidenceCumOfficeCase.caseId}'
         LIMIT 1
       `;
 
-      const builderReport = await pool.query(builderReportQuery);
-      if (builderReport.rows.length > 0) {
-        const row = builderReport.rows[0];
-        console.log(`BUILDER Case ${firstBuilderCase.caseId} - ALL DATABASE FIELDS:`);
+      const residenceCumOfficeReport = await pool.query(residenceCumOfficeReportQuery);
+      if (residenceCumOfficeReport.rows.length > 0) {
+        const row = residenceCumOfficeReport.rows[0];
+        console.log(`RESIDENCE_CUM_OFFICE Case ${firstResidenceCumOfficeCase.caseId} - ALL DATABASE FIELDS:`);
         Object.keys(row).forEach(key => {
           console.log(`  ${key}: ${row[key]}`);
         });
       } else {
-        console.log(`No data found in builderVerificationReports for case ${firstBuilderCase.caseId}`);
+        console.log(`No data found in residenceCumOfficeVerificationReports for case ${firstResidenceCumOfficeCase.caseId}`);
       }
     }
 
-    // Check database schema for BUILDER reports
-    console.log('\n=== BUILDER DATABASE SCHEMA CHECK ===');
+    // Check database schema for RESIDENCE_CUM_OFFICE reports
+    console.log('\n=== RESIDENCE_CUM_OFFICE DATABASE SCHEMA CHECK ===');
 
-    const builderSchemaQuery = `
+    const residenceCumOfficeSchemaQuery = `
       SELECT column_name, data_type
       FROM information_schema.columns
-      WHERE table_name = 'builderVerificationReports'
+      WHERE table_name = 'residenceCumOfficeVerificationReports'
       ORDER BY column_name
     `;
 
-    const builderSchemaResult = await pool.query(builderSchemaQuery);
-    console.log('All columns in builderVerificationReports:');
-    builderSchemaResult.rows.forEach(row => {
+    const residenceCumOfficeSchemaResult = await pool.query(residenceCumOfficeSchemaQuery);
+    console.log('All columns in residenceCumOfficeVerificationReports:');
+    residenceCumOfficeSchemaResult.rows.forEach(row => {
       console.log(`  ${row.column_name}: ${row.data_type}`);
     });
 
