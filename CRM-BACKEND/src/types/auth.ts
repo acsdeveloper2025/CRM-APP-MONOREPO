@@ -4,7 +4,8 @@ export enum Role {
   ADMIN = 'ADMIN',
   BACKEND_USER = 'BACKEND_USER',
   FIELD_AGENT = 'FIELD_AGENT',
-  MANAGER = 'MANAGER'
+  MANAGER = 'MANAGER',
+  REPORT_PERSON = 'REPORT_PERSON'
 }
 
 export interface LoginRequest {

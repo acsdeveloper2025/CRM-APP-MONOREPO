@@ -55,14 +55,17 @@ export class MobileFormController {
       const fieldUserResult = await query(fieldUserQuery, [fieldUserId]);
       const fieldUserName = fieldUserResult.rows[0]?.name || 'Unknown User';
 
-      // Get backend users (users with BACKEND_USER role)
-      const backendUsersQuery = `
-        SELECT id FROM users WHERE role = 'BACKEND_USER' AND "isActive" = true
+      // Get users who should receive case completion notifications
+      // BACKEND_USER, REPORT_PERSON, and SUPER_ADMIN roles
+      const notificationUsersQuery = `
+        SELECT id FROM users
+        WHERE role IN ('BACKEND_USER', 'REPORT_PERSON', 'SUPER_ADMIN')
+        AND "isActive" = true
       `;
-      const backendUsersResult = await query(backendUsersQuery);
-      const backendUserIds = backendUsersResult.rows.map(row => row.id);
+      const notificationUsersResult = await query(notificationUsersQuery);
+      const notificationUserIds = notificationUsersResult.rows.map(row => row.id);
 
-      if (backendUserIds.length > 0) {
+      if (notificationUserIds.length > 0) {
         // Queue case completion notification
         await queueCaseCompletionNotification({
           caseId,
@@ -72,7 +75,7 @@ export class MobileFormController {
           fieldUserName,
           completionStatus,
           outcome,
-          backendUserIds,
+          backendUserIds: notificationUserIds, // Keep the same parameter name for compatibility
         });
 
         logger.info('Case completion notification queued', {
@@ -80,7 +83,7 @@ export class MobileFormController {
           caseNumber,
           fieldUserId,
           fieldUserName,
-          backendUserCount: backendUserIds.length,
+          backendUserCount: notificationUserIds.length,
         });
       }
     } catch (error) {
@@ -1241,7 +1244,7 @@ export class MobileFormController {
       });
 
       // Send case completion notification to backend users
-      await this.sendCaseCompletionNotification(
+      await MobileFormController.sendCaseCompletionNotification(
         actualCaseId,
         updatedCase.caseId,
         updatedCase.customerName || 'Unknown Customer',
@@ -1559,6 +1562,16 @@ export class MobileFormController {
         verificationOutcome,
         imageCount: uploadedImages.length
       });
+
+      // Send case completion notification to backend users
+      await MobileFormController.sendCaseCompletionNotification(
+        actualCaseId,
+        updatedCase.caseId,
+        updatedCase.customerName || 'Unknown Customer',
+        userId,
+        'COMPLETED',
+        verificationOutcome
+      );
 
       res.json({
         success: true,
@@ -1897,6 +1910,16 @@ export class MobileFormController {
         imageCount: uploadedImages.length
       });
 
+      // Send case completion notification to backend users
+      await MobileFormController.sendCaseCompletionNotification(
+        actualCaseId,
+        updatedCase.caseId,
+        updatedCase.customerName || 'Unknown Customer',
+        userId,
+        'COMPLETED',
+        verificationOutcome
+      );
+
       res.json({
         success: true,
         message: `${formType} business verification submitted successfully`,
@@ -2215,6 +2238,16 @@ export class MobileFormController {
         imageCount: uploadedImages.length
       });
 
+      // Send case completion notification to backend users
+      await MobileFormController.sendCaseCompletionNotification(
+        actualCaseId,
+        updatedCase.caseId,
+        updatedCase.customerName || 'Unknown Customer',
+        userId,
+        'COMPLETED',
+        verificationOutcome
+      );
+
       res.json({
         success: true,
         message: `${formType} builder verification submitted successfully`,
@@ -2513,6 +2546,16 @@ export class MobileFormController {
         verificationOutcome,
         imageCount: uploadedImages.length
       });
+
+      // Send case completion notification to backend users
+      await MobileFormController.sendCaseCompletionNotification(
+        actualCaseId,
+        updatedCase.caseId,
+        updatedCase.customerName || 'Unknown Customer',
+        userId,
+        'COMPLETED',
+        verificationOutcome
+      );
 
       res.json({
         success: true,
@@ -2832,6 +2875,16 @@ export class MobileFormController {
         imageCount: uploadedImages.length
       });
 
+      // Send case completion notification to backend users
+      await MobileFormController.sendCaseCompletionNotification(
+        actualCaseId,
+        updatedCase.caseId,
+        updatedCase.customerName || 'Unknown Customer',
+        userId,
+        'COMPLETED',
+        verificationOutcome
+      );
+
       res.json({
         success: true,
         message: `${formType} DSA/DST Connector verification submitted successfully`,
@@ -3130,6 +3183,16 @@ export class MobileFormController {
         verificationOutcome,
         imageCount: uploadedImages.length
       });
+
+      // Send case completion notification to backend users
+      await MobileFormController.sendCaseCompletionNotification(
+        actualCaseId,
+        updatedCase.caseId,
+        updatedCase.customerName || 'Unknown Customer',
+        userId,
+        'COMPLETED',
+        verificationOutcome
+      );
 
       res.json({
         success: true,
@@ -3449,6 +3512,16 @@ export class MobileFormController {
         imageCount: uploadedImages.length
       });
 
+      // Send case completion notification to backend users
+      await MobileFormController.sendCaseCompletionNotification(
+        actualCaseId,
+        updatedCase.caseId,
+        updatedCase.customerName || 'Unknown Customer',
+        userId,
+        'COMPLETED',
+        verificationOutcome
+      );
+
       res.json({
         success: true,
         message: `${formType} Property APF verification submitted successfully`,
@@ -3766,6 +3839,16 @@ export class MobileFormController {
         verificationOutcome,
         imageCount: uploadedImages.length
       });
+
+      // Send case completion notification to backend users
+      await MobileFormController.sendCaseCompletionNotification(
+        actualCaseId,
+        updatedCase.caseId,
+        updatedCase.customerName || 'Unknown Customer',
+        userId,
+        'COMPLETED',
+        verificationOutcome
+      );
 
       res.json({
         success: true,

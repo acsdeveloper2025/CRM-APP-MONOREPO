@@ -66,8 +66,8 @@ const createUserValidation = [
     }),
   body('role')
     .optional()
-    .isIn(['SUPER_ADMIN', 'ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER'])
-    .withMessage('Role must be one of: SUPER_ADMIN, ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER'),
+    .isIn(['SUPER_ADMIN', 'ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER', 'REPORT_PERSON'])
+    .withMessage('Role must be one of: SUPER_ADMIN, ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER, REPORT_PERSON'),
   body('departmentId')
     .optional()
     .custom((value) => {
@@ -149,8 +149,8 @@ const updateUserValidation = [
     .normalizeEmail(),
   body('role')
     .optional()
-    .isIn(['SUPER_ADMIN', 'ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER'])
-    .withMessage('Role must be one of: SUPER_ADMIN, ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER'),
+    .isIn(['SUPER_ADMIN', 'ADMIN', 'BACKEND_USER', 'FIELD_AGENT', 'MANAGER', 'REPORT_PERSON'])
+    .withMessage('Role must be one of: SUPER_ADMIN, ADMIN, BACKEND_USER, FIELD_AGENT, MANAGER, REPORT_PERSON'),
   body('department')
     .optional()
     .trim()

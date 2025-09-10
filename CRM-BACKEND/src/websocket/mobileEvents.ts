@@ -229,15 +229,17 @@ export class MobileWebSocketEvents {
       }
     };
 
-    // Send to all backend users
+    // Send to all notification recipient users
     userIds.forEach(userId => {
       this.io.to(`user:${userId}`).emit('notification', notificationData);
     });
 
-    // Also send to backend role room
+    // Also send to role rooms for case completion notifications
     this.io.to('role:BACKEND_USER').emit('notification', notificationData);
+    this.io.to('role:REPORT_PERSON').emit('notification', notificationData);
+    this.io.to('role:SUPER_ADMIN').emit('notification', notificationData);
 
-    logger.info(`Case completion notification sent to ${userIds.length} backend users`, {
+    logger.info(`Case completion notification sent to ${userIds.length} users (BACKEND_USER, REPORT_PERSON, SUPER_ADMIN)`, {
       notificationId,
       caseId: caseData.id,
       caseNumber: caseData.caseNumber,

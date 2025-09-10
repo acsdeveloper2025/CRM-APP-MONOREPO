@@ -48,6 +48,12 @@ export const roleConfigs: Record<string, RoleConfig> = {
     variant: 'outline',
     label: 'Manager',
     color: 'text-orange-600'
+  },
+  REPORT_PERSON: {
+    icon: UserCog,
+    variant: 'outline',
+    label: 'Report Person',
+    color: 'text-green-600'
   }
 };
 

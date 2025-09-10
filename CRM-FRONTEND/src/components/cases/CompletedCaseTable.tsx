@@ -28,7 +28,25 @@ interface CompletedCaseTableProps {
   isLoading?: boolean;
 }
 
-const getPriorityColor = (priority: number) => {
+const getPriorityColor = (priority: number | string) => {
+  // Handle string priorities
+  if (typeof priority === 'string') {
+    switch (priority.toUpperCase()) {
+      case 'LOW':
+        return 'bg-gray-100 text-gray-800';
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'HIGH':
+        return 'bg-orange-100 text-orange-800';
+      case 'URGENT':
+      case 'CRITICAL':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  // Handle numeric priorities
   switch (priority) {
     case 1:
       return 'bg-gray-100 text-gray-800';
@@ -45,7 +63,26 @@ const getPriorityColor = (priority: number) => {
   }
 };
 
-const getPriorityLabel = (priority: number) => {
+const getPriorityLabel = (priority: number | string) => {
+  // Handle string priorities
+  if (typeof priority === 'string') {
+    switch (priority.toUpperCase()) {
+      case 'LOW':
+        return 'Low';
+      case 'MEDIUM':
+        return 'Medium';
+      case 'HIGH':
+        return 'High';
+      case 'URGENT':
+        return 'Urgent';
+      case 'CRITICAL':
+        return 'Critical';
+      default:
+        return priority; // Return the original string if not recognized
+    }
+  }
+
+  // Handle numeric priorities
   switch (priority) {
     case 1:
       return 'Low';

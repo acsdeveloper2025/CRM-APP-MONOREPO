@@ -240,7 +240,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (isPhysicalDevice) {
           // Use your Mac's IP for physical device
-          return import.meta.env.VITE_API_BASE_URL_DEVICE || 'http://172.20.10.8:3000/api';
+          return import.meta.env.VITE_API_BASE_URL_DEVICE || 'http://192.168.1.36:3000/api';
         }
         // Use localhost for simulator/web
         return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
