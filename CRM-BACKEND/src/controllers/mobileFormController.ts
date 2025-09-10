@@ -643,7 +643,28 @@ export class MobileFormController {
       formData.doorColor = report.door_color;
       formData.holdReason = report.hold_reason;
     } else if (verificationType === 'PROPERTY_INDIVIDUAL') {
-      // Property Individual specific fields
+      // Basic Information
+      formData.customerName = report.customer_name;
+      formData.metPersonName = report.met_person_name;
+      formData.metPersonDesignation = report.met_person_designation;
+      formData.metPersonRelation = report.met_person_relation;
+      formData.metPersonContact = report.met_person_contact;
+
+      // Address Information
+      formData.fullAddress = report.full_address;
+      formData.locality = report.locality;
+      formData.addressLocatable = report.address_locatable;
+      formData.addressRating = report.address_rating;
+      formData.addressStructure = report.address_structure;
+      formData.addressStructureColor = report.address_structure_color;
+      formData.addressFloor = report.address_floor;
+      formData.doorColor = report.door_color;
+      formData.landmark1 = report.landmark1;
+      formData.landmark2 = report.landmark2;
+      formData.landmark3 = report.landmark3;
+      formData.landmark4 = report.landmark4;
+
+      // Property Details
       formData.propertyType = report.property_type;
       formData.propertyStatus = report.property_status;
       formData.propertyOwnership = report.property_ownership;
@@ -654,34 +675,103 @@ export class MobileFormController {
       formData.marketValue = report.market_value;
       formData.propertyLocation = report.property_location;
       formData.propertyDescription = report.property_description;
-      formData.propertyUsage = report.property_usage;
+      formData.propertyAmenities = report.property_amenities;
+      formData.constructionType = report.construction_type;
       formData.constructionYear = report.construction_year;
       formData.renovationYear = report.renovation_year;
-      formData.propertyAmenities = report.property_amenities;
+
+      // Owner Information
       formData.ownerName = report.owner_name;
-      formData.ownerContact = report.owner_contact;
-      formData.ownerAddress = report.owner_address;
-      formData.tenantName = report.tenant_name;
-      formData.tenantContact = report.tenant_contact;
-      formData.rentAmount = report.rent_amount;
-      formData.securityDeposit = report.security_deposit;
-      formData.leasePeriod = report.lease_period;
-      formData.leaseStartDate = report.lease_start_date;
-      formData.leaseEndDate = report.lease_end_date;
-      formData.metPersonDesignation = report.met_person_designation;
-      formData.metPersonRelation = report.met_person_relation;
-      formData.metPersonContact = report.met_person_contact;
-      formData.documentShownStatus = report.document_shown_status;
-      formData.documentType = report.document_type;
+      formData.ownerAge = report.owner_age;
+      formData.ownerOccupation = report.owner_occupation;
+      formData.ownerIncome = report.owner_income;
+      formData.ownerRelation = report.owner_relation;
+      formData.previousOwnerName = report.previous_owner_name;
+
+      // Individual Information
+      formData.individualName = report.individual_name;
+      formData.individualAge = report.individual_age;
+      formData.individualOccupation = report.individual_occupation;
+      formData.individualEducation = report.individual_education;
+      formData.individualMaritalStatus = report.individual_marital_status;
+      formData.individualExperience = report.individual_experience;
+      formData.individualIncome = report.individual_income;
+      formData.yearsOfResidence = report.years_of_residence;
+
+      // Family & Employment
+      formData.familyMembers = report.family_members;
+      formData.earningMembers = report.earning_members;
+      formData.employmentType = report.employment_type;
+      formData.employerName = report.employer_name;
+      formData.employmentDuration = report.employment_duration;
+      formData.incomeSource = report.income_source;
+      formData.monthlyIncome = report.monthly_income;
+      formData.annualIncome = report.annual_income;
+
+      // Business Information
+      formData.businessName = report.business_name;
+      formData.businessType = report.business_type;
+      formData.businessIncome = report.business_income;
+      formData.businessExperience = report.business_experience;
+
+      // Financial Information
+      formData.loanAmount = report.loan_amount;
+      formData.emiAmount = report.emi_amount;
+      formData.bankName = report.bank_name;
+      formData.loanAgainstProperty = report.loan_against_property;
+
+      // Legal & Documentation
+      formData.propertyDocuments = report.property_documents;
       formData.documentVerificationStatus = report.document_verification_status;
+      formData.titleClearStatus = report.title_clear_status;
+      formData.mutationStatus = report.mutation_status;
+      formData.taxPaymentStatus = report.tax_payment_status;
+      formData.legalIssues = report.legal_issues;
+
+      // Utilities & Amenities
+      formData.electricityConnection = report.electricity_connection;
+      formData.waterConnection = report.water_connection;
+      formData.gasConnection = report.gas_connection;
+      formData.internetConnection = report.internet_connection;
+      formData.publicTransport = report.public_transport;
+      formData.roadConnectivity = report.road_connectivity;
+      formData.safetySecurity = report.safety_security;
+
+      // Third Party Confirmation
       formData.tpcMetPerson1 = report.tpc_met_person1;
       formData.tpcName1 = report.tpc_name1;
       formData.tpcConfirmation1 = report.tpc_confirmation1;
       formData.tpcMetPerson2 = report.tpc_met_person2;
       formData.tpcName2 = report.tpc_name2;
       formData.tpcConfirmation2 = report.tpc_confirmation2;
-      formData.doorColor = report.door_color;
+      formData.neighbor1Name = report.neighbor1_name;
+      formData.neighbor1Confirmation = report.neighbor1_confirmation;
+      formData.neighbor2Name = report.neighbor2_name;
+      formData.neighbor2Confirmation = report.neighbor2_confirmation;
+
+      // Shifting & Contact Details
+      formData.shiftedPeriod = report.shifted_period;
+      formData.currentLocation = report.current_location;
+      formData.premisesStatus = report.premises_status;
+      formData.entryRestrictionReason = report.entry_restriction_reason;
+      formData.securityPersonName = report.security_person_name;
+      formData.securityConfirmation = report.security_confirmation;
+      formData.contactPerson = report.contact_person;
+      formData.callRemark = report.call_remark;
+
+      // Area Assessment & Reputation
+      formData.localityReputation = report.locality_reputation;
+      formData.infrastructureStatus = report.infrastructure_status;
+      formData.politicalConnection = report.political_connection;
+      formData.dominatedArea = report.dominated_area;
+      formData.feedbackFromNeighbour = report.feedback_from_neighbour;
+      formData.otherObservation = report.other_observation;
+      formData.propertyConcerns = report.property_concerns;
+      formData.verificationChallenges = report.verification_challenges;
+      formData.finalStatus = report.final_status;
       formData.holdReason = report.hold_reason;
+      formData.recommendationStatus = report.recommendation_status;
+      formData.remarks = report.remarks;
     } else if (verificationType === 'NOC') {
       // NOC specific fields
       formData.nocType = report.noc_type;

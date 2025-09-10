@@ -7,10 +7,10 @@ const pool = new Pool({
 
 async function checkVerificationTypes() {
   try {
-    // Check PROPERTY_APF verification cases
-    console.log('\n=== PROPERTY_APF VERIFICATION AUDIT ===');
+    // Check PROPERTY_INDIVIDUAL verification cases
+    console.log('\n=== PROPERTY_INDIVIDUAL VERIFICATION AUDIT ===');
 
-    const propertyApfCasesQuery = `
+    const propertyIndividualCasesQuery = `
       SELECT
         "caseId",
         "customerName",
@@ -18,15 +18,15 @@ async function checkVerificationTypes() {
         "verificationData"->>'formType' as form_type,
         "status"
       FROM cases
-      WHERE "verificationType" = 'PROPERTY_APF'
+      WHERE "verificationType" = 'PROPERTY_INDIVIDUAL'
       AND "verificationData" IS NOT NULL
       AND "verificationData"::text != '{}'
       ORDER BY "caseId"
     `;
 
-    const propertyApfCases = await pool.query(propertyApfCasesQuery);
-    console.log('PROPERTY_APF Cases with Form Submissions:');
-    propertyApfCases.rows.forEach(row => {
+    const propertyIndividualCases = await pool.query(propertyIndividualCasesQuery);
+    console.log('PROPERTY_INDIVIDUAL Cases with Form Submissions:');
+    propertyIndividualCases.rows.forEach(row => {
       console.log(`Case ${row.caseId}: ${row.customerName}`);
       console.log(`  - Outcome: ${row.verificationOutcome}`);
       console.log(`  - Form Type: ${row.form_type}`);
@@ -34,45 +34,58 @@ async function checkVerificationTypes() {
       console.log('');
     });
 
-    // Check what data is in propertyApfVerificationReports table
-    if (propertyApfCases.rows.length > 0) {
-      const firstPropertyApfCase = propertyApfCases.rows[0];
-      console.log(`\n=== DETAILED AUDIT FOR PROPERTY_APF CASE ${firstPropertyApfCase.caseId} ===`);
+    // Check what data is in propertyIndividualVerificationReports table
+    console.log('\n=== CHECKING ALL PROPERTY_INDIVIDUAL REPORTS ===');
+    const allPropertyIndividualReportsQuery = `
+      SELECT case_id, "caseId", customer_name, verification_outcome
+      FROM "propertyIndividualVerificationReports"
+      LIMIT 10
+    `;
 
-      const propertyApfReportQuery = `
+    const allPropertyIndividualReports = await pool.query(allPropertyIndividualReportsQuery);
+    console.log(`Found ${allPropertyIndividualReports.rows.length} PROPERTY_INDIVIDUAL reports in database:`);
+    allPropertyIndividualReports.rows.forEach(row => {
+      console.log(`  Case ${row.caseId}: ${row.customer_name} - ${row.verification_outcome}`);
+    });
+
+    if (propertyIndividualCases.rows.length > 0) {
+      const firstPropertyIndividualCase = propertyIndividualCases.rows[0];
+      console.log(`\n=== DETAILED AUDIT FOR PROPERTY_INDIVIDUAL CASE ${firstPropertyIndividualCase.caseId} ===`);
+
+      const propertyIndividualReportQuery = `
         SELECT
           r.*
-        FROM "propertyApfVerificationReports" r
+        FROM "propertyIndividualVerificationReports" r
         JOIN cases c ON r.case_id = c.id
-        WHERE c."caseId" = '${firstPropertyApfCase.caseId}'
+        WHERE c."caseId" = '${firstPropertyIndividualCase.caseId}'
         LIMIT 1
       `;
 
-      const propertyApfReport = await pool.query(propertyApfReportQuery);
-      if (propertyApfReport.rows.length > 0) {
-        const row = propertyApfReport.rows[0];
-        console.log(`PROPERTY_APF Case ${firstPropertyApfCase.caseId} - ALL DATABASE FIELDS:`);
+      const propertyIndividualReport = await pool.query(propertyIndividualReportQuery);
+      if (propertyIndividualReport.rows.length > 0) {
+        const row = propertyIndividualReport.rows[0];
+        console.log(`PROPERTY_INDIVIDUAL Case ${firstPropertyIndividualCase.caseId} - ALL DATABASE FIELDS:`);
         Object.keys(row).forEach(key => {
           console.log(`  ${key}: ${row[key]}`);
         });
       } else {
-        console.log(`No data found in propertyApfVerificationReports for case ${firstPropertyApfCase.caseId}`);
+        console.log(`No data found in propertyIndividualVerificationReports for case ${firstPropertyIndividualCase.caseId}`);
       }
     }
 
-    // Check database schema for property APF reports
-    console.log('\n=== PROPERTY_APF DATABASE SCHEMA CHECK ===');
+    // Check database schema for property individual reports
+    console.log('\n=== PROPERTY_INDIVIDUAL DATABASE SCHEMA CHECK ===');
 
-    const propertyApfSchemaQuery = `
+    const propertyIndividualSchemaQuery = `
       SELECT column_name, data_type
       FROM information_schema.columns
-      WHERE table_name = 'propertyApfVerificationReports'
+      WHERE table_name = 'propertyIndividualVerificationReports'
       ORDER BY column_name
     `;
 
-    const propertyApfSchemaResult = await pool.query(propertyApfSchemaQuery);
-    console.log('All columns in propertyApfVerificationReports:');
-    propertyApfSchemaResult.rows.forEach(row => {
+    const propertyIndividualSchemaResult = await pool.query(propertyIndividualSchemaQuery);
+    console.log('All columns in propertyIndividualVerificationReports:');
+    propertyIndividualSchemaResult.rows.forEach(row => {
       console.log(`  ${row.column_name}: ${row.data_type}`);
     });
 
