@@ -7,10 +7,10 @@ const pool = new Pool({
 
 async function checkVerificationTypes() {
   try {
-    // Check PROPERTY_INDIVIDUAL verification cases
-    console.log('\n=== PROPERTY_INDIVIDUAL VERIFICATION AUDIT ===');
+    // Check DSA_CONNECTOR verification cases
+    console.log('\n=== DSA_CONNECTOR VERIFICATION AUDIT ===');
 
-    const propertyIndividualCasesQuery = `
+    const dsaConnectorCasesQuery = `
       SELECT
         "caseId",
         "customerName",
@@ -18,15 +18,15 @@ async function checkVerificationTypes() {
         "verificationData"->>'formType' as form_type,
         "status"
       FROM cases
-      WHERE "verificationType" = 'PROPERTY_INDIVIDUAL'
+      WHERE "verificationType" IN ('DSA_CONNECTOR', 'DSA/DST & Connector', 'CONNECTOR')
       AND "verificationData" IS NOT NULL
       AND "verificationData"::text != '{}'
       ORDER BY "caseId"
     `;
 
-    const propertyIndividualCases = await pool.query(propertyIndividualCasesQuery);
-    console.log('PROPERTY_INDIVIDUAL Cases with Form Submissions:');
-    propertyIndividualCases.rows.forEach(row => {
+    const dsaConnectorCases = await pool.query(dsaConnectorCasesQuery);
+    console.log('DSA_CONNECTOR Cases with Form Submissions:');
+    dsaConnectorCases.rows.forEach(row => {
       console.log(`Case ${row.caseId}: ${row.customerName}`);
       console.log(`  - Outcome: ${row.verificationOutcome}`);
       console.log(`  - Form Type: ${row.form_type}`);
@@ -34,58 +34,58 @@ async function checkVerificationTypes() {
       console.log('');
     });
 
-    // Check what data is in propertyIndividualVerificationReports table
-    console.log('\n=== CHECKING ALL PROPERTY_INDIVIDUAL REPORTS ===');
-    const allPropertyIndividualReportsQuery = `
+    // Check what data is in dsaConnectorVerificationReports table
+    console.log('\n=== CHECKING ALL DSA_CONNECTOR REPORTS ===');
+    const allDsaConnectorReportsQuery = `
       SELECT case_id, "caseId", customer_name, verification_outcome
-      FROM "propertyIndividualVerificationReports"
+      FROM "dsaConnectorVerificationReports"
       LIMIT 10
     `;
 
-    const allPropertyIndividualReports = await pool.query(allPropertyIndividualReportsQuery);
-    console.log(`Found ${allPropertyIndividualReports.rows.length} PROPERTY_INDIVIDUAL reports in database:`);
-    allPropertyIndividualReports.rows.forEach(row => {
+    const allDsaConnectorReports = await pool.query(allDsaConnectorReportsQuery);
+    console.log(`Found ${allDsaConnectorReports.rows.length} DSA_CONNECTOR reports in database:`);
+    allDsaConnectorReports.rows.forEach(row => {
       console.log(`  Case ${row.caseId}: ${row.customer_name} - ${row.verification_outcome}`);
     });
 
-    if (propertyIndividualCases.rows.length > 0) {
-      const firstPropertyIndividualCase = propertyIndividualCases.rows[0];
-      console.log(`\n=== DETAILED AUDIT FOR PROPERTY_INDIVIDUAL CASE ${firstPropertyIndividualCase.caseId} ===`);
+    if (dsaConnectorCases.rows.length > 0) {
+      const firstDsaConnectorCase = dsaConnectorCases.rows[0];
+      console.log(`\n=== DETAILED AUDIT FOR DSA_CONNECTOR CASE ${firstDsaConnectorCase.caseId} ===`);
 
-      const propertyIndividualReportQuery = `
+      const dsaConnectorReportQuery = `
         SELECT
           r.*
-        FROM "propertyIndividualVerificationReports" r
+        FROM "dsaConnectorVerificationReports" r
         JOIN cases c ON r.case_id = c.id
-        WHERE c."caseId" = '${firstPropertyIndividualCase.caseId}'
+        WHERE c."caseId" = '${firstDsaConnectorCase.caseId}'
         LIMIT 1
       `;
 
-      const propertyIndividualReport = await pool.query(propertyIndividualReportQuery);
-      if (propertyIndividualReport.rows.length > 0) {
-        const row = propertyIndividualReport.rows[0];
-        console.log(`PROPERTY_INDIVIDUAL Case ${firstPropertyIndividualCase.caseId} - ALL DATABASE FIELDS:`);
+      const dsaConnectorReport = await pool.query(dsaConnectorReportQuery);
+      if (dsaConnectorReport.rows.length > 0) {
+        const row = dsaConnectorReport.rows[0];
+        console.log(`DSA_CONNECTOR Case ${firstDsaConnectorCase.caseId} - ALL DATABASE FIELDS:`);
         Object.keys(row).forEach(key => {
           console.log(`  ${key}: ${row[key]}`);
         });
       } else {
-        console.log(`No data found in propertyIndividualVerificationReports for case ${firstPropertyIndividualCase.caseId}`);
+        console.log(`No data found in dsaConnectorVerificationReports for case ${firstDsaConnectorCase.caseId}`);
       }
     }
 
-    // Check database schema for property individual reports
-    console.log('\n=== PROPERTY_INDIVIDUAL DATABASE SCHEMA CHECK ===');
+    // Check database schema for DSA connector reports
+    console.log('\n=== DSA_CONNECTOR DATABASE SCHEMA CHECK ===');
 
-    const propertyIndividualSchemaQuery = `
+    const dsaConnectorSchemaQuery = `
       SELECT column_name, data_type
       FROM information_schema.columns
-      WHERE table_name = 'propertyIndividualVerificationReports'
+      WHERE table_name = 'dsaConnectorVerificationReports'
       ORDER BY column_name
     `;
 
-    const propertyIndividualSchemaResult = await pool.query(propertyIndividualSchemaQuery);
-    console.log('All columns in propertyIndividualVerificationReports:');
-    propertyIndividualSchemaResult.rows.forEach(row => {
+    const dsaConnectorSchemaResult = await pool.query(dsaConnectorSchemaQuery);
+    console.log('All columns in dsaConnectorVerificationReports:');
+    dsaConnectorSchemaResult.rows.forEach(row => {
       console.log(`  ${row.column_name}: ${row.data_type}`);
     });
 
