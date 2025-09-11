@@ -27,6 +27,7 @@ interface AIReport {
   recommendations: string[];
   conclusion: string;
   confidence: number;
+  templateReport?: string; // Template-based report for residence verification
   templateInsights?: {
     verificationType: string;
     statusCategory: string;
@@ -302,6 +303,25 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
             {report.conclusion}
           </p>
         </div>
+
+        {/* Template Report for Residence Verification */}
+        {report.templateReport && (
+          <>
+            <Separator />
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="h-4 w-4 text-blue-600" />
+                <h3 className="font-semibold text-gray-900">Residence Verification Report</h3>
+                <Badge variant="outline" className="text-xs">Template-Based</Badge>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
+                  {report.templateReport}
+                </pre>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Metadata */}
         {report.metadata && (

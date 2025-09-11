@@ -271,14 +271,21 @@ export const STATUS_CATEGORIES = {
  */
 export function getReportTemplate(verificationType: string, statusCategory: string): ReportTemplate {
   const verificationConfig = VERIFICATION_TYPES[verificationType.toUpperCase()];
-  const statusConfig = STATUS_CATEGORIES[statusCategory.toUpperCase().replace(/\s+/g, '_')];
+
+  // Normalize status category key by removing special characters and replacing spaces with underscores
+  const normalizedStatusKey = statusCategory.toUpperCase()
+    .replace(/[&]/g, '') // Remove ampersand
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/_+/g, '_'); // Replace multiple underscores with single underscore
+
+  const statusConfig = STATUS_CATEGORIES[normalizedStatusKey];
 
   if (!verificationConfig) {
     throw new Error(`Unknown verification type: ${verificationType}`);
   }
 
   if (!statusConfig) {
-    throw new Error(`Unknown status category: ${statusCategory}`);
+    throw new Error(`Unknown status category: ${statusCategory} (normalized: ${normalizedStatusKey})`);
   }
 
   return {
@@ -342,7 +349,12 @@ export function getRiskAssessment(verificationType: string, statusCategory: stri
   factors: string[];
   mitigation: string[];
 } {
-  const statusKey = statusCategory.toUpperCase().replace(/\s+/g, '_');
+  // Normalize status category key by removing special characters and replacing spaces with underscores
+  const statusKey = statusCategory.toUpperCase()
+    .replace(/[&]/g, '') // Remove ampersand
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/_+/g, '_'); // Replace multiple underscores with single underscore
+
   const statusConfig = STATUS_CATEGORIES[statusKey];
   
   const riskLevel = statusConfig?.riskLevel as 'LOW' | 'MEDIUM' | 'HIGH' || 'MEDIUM';
