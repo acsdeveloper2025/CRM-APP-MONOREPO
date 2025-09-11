@@ -6,7 +6,7 @@ import {
 } from '../../../types';
 import { InfoIcon } from 'lucide-react';
 import { useCases } from '../../../context/CaseContext';
-import { FormField, SelectField, TextAreaField } from '../../FormControls';
+import { FormField, SelectField, TextAreaField, NumberDropdownField } from '../../FormControls';
 import ConfirmationModal from '../../ConfirmationModal';
 import ImageCapture from '../../ImageCapture';
 import SelfieCapture from '../../SelfieCapture';
