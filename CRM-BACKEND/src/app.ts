@@ -47,6 +47,7 @@ import ratesRoutes from '@/routes/rates';
 import territoryAssignmentsRoutes from '@/routes/territoryAssignments';
 import healthRoutes from '@/routes/health';
 import aiReportsRoutes from '@/routes/aiReports';
+import templateReportsRoutes from '@/routes/templateReports';
 
 
 const app = express();
@@ -170,6 +171,7 @@ app.use('/api/rate-type-assignments', rateTypeAssignmentsRoutes);
 app.use('/api/rates', ratesRoutes);
 app.use('/api/territory-assignments', territoryAssignmentsRoutes);
 app.use('/api/ai-reports', aiReportsRoutes);
+app.use('/api/template-reports', templateReportsRoutes);
 
 // Temporary AI test endpoint
 app.get('/api/ai-test', async (req, res) => {
