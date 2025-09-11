@@ -62,7 +62,12 @@ Landmarks: {Landmark_1} and {Landmark_2}.
 {Feedback_from_Neighbour} feedback received from met person.
 Also executive confirmed about customer {Feedback_from_Neighbour}.
 Field Executive Observation :- {Other_Observation}
-Hence the profile is marked as {Final_Status}`
+Hence the profile is marked as {Final_Status}`,
+
+    'UNTRACEABLE': `Residence Untraceable Remark (UT):-
+Visited at the given address {ADDRESS}. The given address is incorrect and untraceable. At the time of visit met with {Met_Person_Name}, Met person informed that provided address is short. We called {Customer_Name} but {Customer_Name} {Call_Remark}. We required proper guidance to trace the address. Type of Locality is {Locality_Type}. Field executive reached up to {Landmark_1}, {Landmark_2}, {Landmark_3}, {Landmark_4}. It's a {Dominated_Area} area.
+Field Executive Observation :- {Other_Observation}.
+Hence the profile is marked as {Final_Status}.`
   };
 
   /**
@@ -152,6 +157,11 @@ Hence the profile is marked as {Final_Status}`
         return 'ERT';
       }
 
+      // Handle Untraceable scenarios
+      if (outcomeNormalized.includes('untraceable') || outcomeNormalized === 'untraceable') {
+        return 'UNTRACEABLE';
+      }
+
       // Handle Positive scenarios
       if (outcomeNormalized.includes('positive')) {
         if (outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
@@ -224,6 +234,8 @@ Hence the profile is marked as {Final_Status}`
       // Landmarks
       Landmark_1: safeGet(formData, 'landmark1') || safeGet(formData, 'nearbyLandmark1'),
       Landmark_2: safeGet(formData, 'landmark2') || safeGet(formData, 'nearbyLandmark2'),
+      Landmark_3: safeGet(formData, 'landmark3') || safeGet(formData, 'nearbyLandmark3') || 'Not provided',
+      Landmark_4: safeGet(formData, 'landmark4') || safeGet(formData, 'nearbyLandmark4') || 'Not provided',
       
       // Area assessment
       Dominated_Area: safeGet(formData, 'dominatedArea'),
@@ -231,6 +243,9 @@ Hence the profile is marked as {Final_Status}`
       Political_Connection: safeGet(formData, 'politicalConnection'),
       Other_Observation: safeGet(formData, 'otherObservation') || safeGet(formData, 'remarks') || safeGet(formData, 'verifierComments'),
       Final_Status: safeGet(formData, 'finalStatus') || safeGet(formData, 'verificationOutcome') || 'Positive',
+
+      // Call-related fields for Untraceable template
+      Call_Remark: safeGet(formData, 'callRemark') || safeGet(formData, 'phoneCallRemark') || 'did not respond',
 
       // Additional variables for shifted templates
       Customer_Name: caseDetails.customerName || safeGet(formData, 'customerName') || 'Customer',
