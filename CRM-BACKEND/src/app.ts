@@ -46,6 +46,7 @@ import rateTypeAssignmentsRoutes from '@/routes/rate-type-assignments';
 import ratesRoutes from '@/routes/rates';
 import territoryAssignmentsRoutes from '@/routes/territoryAssignments';
 import healthRoutes from '@/routes/health';
+import aiReportsRoutes from '@/routes/aiReports';
 
 
 const app = express();
@@ -168,6 +169,34 @@ app.use('/api/rate-types', rateTypesRoutes);
 app.use('/api/rate-type-assignments', rateTypeAssignmentsRoutes);
 app.use('/api/rates', ratesRoutes);
 app.use('/api/territory-assignments', territoryAssignmentsRoutes);
+app.use('/api/ai-reports', aiReportsRoutes);
+
+// Temporary AI test endpoint
+app.get('/api/ai-test', async (req, res) => {
+  try {
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt = "Generate a brief test response to verify the AI integration is working in the CRM system.";
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    res.json({
+      success: true,
+      message: 'AI integration working',
+      data: { response: text }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'AI integration failed',
+      error: error.message
+    });
+  }
+});
 
 
 // Mobile API routes

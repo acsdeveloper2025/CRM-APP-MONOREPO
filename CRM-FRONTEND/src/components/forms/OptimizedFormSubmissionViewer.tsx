@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormSubmission } from '@/types/form';
 import VerificationImages from '@/components/VerificationImages';
+import { AIReportCard } from '@/components/forms/AIReportCard';
 
 import {
   FileText,
@@ -273,8 +274,12 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
             </Card>
           </div>
 
-
-
+          {/* AI-Generated Report */}
+          <AIReportCard
+            caseId={caseId}
+            submissionId={submission.id}
+            className="mt-6"
+          />
 
         </div>
       )}
