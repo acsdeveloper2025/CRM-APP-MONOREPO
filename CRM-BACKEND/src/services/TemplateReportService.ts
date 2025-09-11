@@ -67,6 +67,31 @@ Hence the profile is marked as {Final_Status}`,
     'UNTRACEABLE': `Residence Untraceable Remark (UT):-
 Visited at the given address {ADDRESS}. The given address is incorrect and untraceable. At the time of visit met with {Met_Person_Name}, Met person informed that provided address is short. We called {Customer_Name} but {Customer_Name} {Call_Remark}. We required proper guidance to trace the address. Type of Locality is {Locality_Type}. Field executive reached up to {Landmark_1}, {Landmark_2}, {Landmark_3}, {Landmark_4}. It's a {Dominated_Area} area.
 Field Executive Observation :- {Other_Observation}.
+Hence the profile is marked as {Final_Status}.`,
+
+    'NSP': `Residence No Such Person Remark (NSP):-
+Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}.
+Met with {Met_Person_Name} {Met_Person_Status} informed that there is no such person staying at given address. Met person staying at given address from last {Staying_Period}. The door name plate is {Door_Name_Plate_Status} {Name_on_Door_Plate} and Society board is {Society_Name_Plate_Status} {Name_on_Society_Board}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they have informed there is no such person staying at given address.
+Locality is Residential & type of locality is {Locality_Type}. {Locality_Type} is of {Address_Structure} and address is on {Applicant_Staying_Floor} floor.
+{Locality_Type} color is {Address_Structure_Color}.
+The Door color is {Door_Color}.
+Landmarks: {Landmark_1} and {Landmark_2}.
+It's a {Dominated_Area} area.
+Applicant's stability is not confirmed from our executive's observation as well as from TPC.
+Field Executive Observation :- {Other_Observation}.
+Hence the profile is marked as {Final_Status}.`,
+
+    'NSP_DOOR_LOCKED': `Residence No Such Person Door Locked Remark (NSP-DL):-
+Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}.
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they have informed that there is no such person staying at given address.
+As per TPC confirmation {Staying_Person_Name} is staying at given address.
+The door name plate is {Door_Name_Plate_Status} {Name_on_Door_Plate} and a Society board is {Society_Name_Plate_Status} {Name_on_Society_Board}. Locality is Residential & type of locality is {Locality_Type}. {Locality_Type} is of {Address_Structure} and the address is on {Applicant_Staying_Floor} floor.
+{Locality_Type} color is {Address_Structure_Color}.
+The Door color is {Door_Color}.
+Landmarks: {Landmark_1} and {Landmark_2}.
+It's a {Dominated_Area} area.
+Applicant's stability is not confirmed from our executive's observation as well as from TPC.
+Field Executive Observation: - {Other_Observation}.
 Hence the profile is marked as {Final_Status}.`
   };
 
@@ -162,6 +187,15 @@ Hence the profile is marked as {Final_Status}.`
         return 'UNTRACEABLE';
       }
 
+      // Handle NSP scenarios
+      if (outcomeNormalized.includes('nsp')) {
+        if (outcomeNormalized.includes('door lock') || outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
+          return 'NSP_DOOR_LOCKED';
+        } else {
+          return 'NSP';
+        }
+      }
+
       // Handle Positive scenarios
       if (outcomeNormalized.includes('positive')) {
         if (outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
@@ -246,6 +280,9 @@ Hence the profile is marked as {Final_Status}.`
 
       // Call-related fields for Untraceable template
       Call_Remark: safeGet(formData, 'callRemark') || safeGet(formData, 'phoneCallRemark') || 'did not respond',
+
+      // NSP-specific fields
+      Staying_Person_Name: safeGet(formData, 'stayingPersonName') || safeGet(formData, 'actualResidentName') || 'Not provided',
 
       // Additional variables for shifted templates
       Customer_Name: caseDetails.customerName || safeGet(formData, 'customerName') || 'Customer',
