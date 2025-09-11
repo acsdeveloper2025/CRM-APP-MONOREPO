@@ -95,6 +95,28 @@ Field Executive Observation: - {Other_Observation}.
 Hence the profile is marked as {Final_Status}.`
   };
 
+  private readonly OFFICE_TEMPLATES = {
+    'POSITIVE': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}. Met with {Met_Person_Name} {Designation}, confirmed {Applicant_Status} is working in given office since last {Working_Period} as {Applicant_Designation}. {Applicant_Status} working on {Applicant_Designation} & sitting at {Applicant_Working_Premises} {Sitting_Location}. It's a {Office_Type} and nature of business is {Company_Nature_Of_Business}. Total strength of the staff is {Staff_Strength} & seen {Staff_Seen}. Office area approx. {Office_Approx_Area} Sq. feet. Company Name board {Company_Name_Plate} {Name_On_Board}.
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Applicant_Status} & office existence.
+It is {Dominated_Area} area.
+Landmarks: {Landmark_1} and {Landmark_2}.
+{Feedback_From_Neighbour} feedback found against {Applicant_Status} & his firm.
+Field executive also confirmed {Applicant_Status} is {Political_Connection}.
+{Applicant_Status} stability is confirmed by our executive's observation as well as from TPC.
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'POSITIVE_DOOR_LOCKED': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Applicant_Status} & office existence.
+They informed that given office at given address since last {Address_Structure}. Company Name board {Company_Name_Plate} {Name_On_Board}. Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+It is {Dominated_Area} area.
+Landmark: {Landmark_1} and {Landmark_2}.
+{Feedback_From_Neighbour} feedback received from neighbors.
+Field executive also confirmed {Applicant_Status} is {Political_Connection}.
+Field Executive Observation: {Other_Observation}.
+Hence the profile is marked as {Final_Status}.`
+  };
+
   /**
    * Generate template-based report for verification form submission
    */
@@ -107,7 +129,7 @@ Hence the profile is marked as {Final_Status}.`
       });
 
       // Get appropriate template
-      const template = this.getTemplate(data.verificationType, data.outcome);
+      const template = this.getTemplate(data.verificationType, data.outcome, data.formData);
       if (!template) {
         throw new Error(`No template found for ${data.verificationType} - ${data.outcome}`);
       }
@@ -124,7 +146,7 @@ Hence the profile is marked as {Final_Status}.`
 
       logger.info('Template-based report generated successfully', {
         caseId: data.caseDetails.caseId,
-        templateUsed: this.getTemplateKey(data.verificationType, data.outcome)
+        templateUsed: this.getTemplateKey(data.verificationType, data.outcome, data.formData)
       });
 
       return {
@@ -134,7 +156,7 @@ Hence the profile is marked as {Final_Status}.`
           verificationType: data.verificationType,
           outcome: data.outcome,
           generatedAt: new Date().toISOString(),
-          templateUsed: this.getTemplateKey(data.verificationType, data.outcome)
+          templateUsed: this.getTemplateKey(data.verificationType, data.outcome, data.formData)
         }
       };
 
@@ -150,13 +172,17 @@ Hence the profile is marked as {Final_Status}.`
   /**
    * Get template for specific verification type and outcome
    */
-  private getTemplate(verificationType: string, outcome: string): string | null {
-    const templateKey = this.getTemplateKey(verificationType, outcome);
-    
+  private getTemplate(verificationType: string, outcome: string, formData?: any): string | null {
+    const templateKey = this.getTemplateKey(verificationType, outcome, formData);
+
     if (verificationType.toUpperCase() === 'RESIDENCE') {
       return this.RESIDENCE_TEMPLATES[templateKey] || null;
     }
-    
+
+    if (verificationType.toUpperCase() === 'OFFICE') {
+      return this.OFFICE_TEMPLATES[templateKey] || null;
+    }
+
     // Add other verification types here as needed
     return null;
   }
@@ -164,10 +190,10 @@ Hence the profile is marked as {Final_Status}.`
   /**
    * Get template key based on verification type and outcome
    */
-  private getTemplateKey(verificationType: string, outcome: string): string {
-    if (verificationType.toUpperCase() === 'RESIDENCE') {
-      const outcomeNormalized = outcome.toLowerCase();
+  private getTemplateKey(verificationType: string, outcome: string, formData?: any): string {
+    const outcomeNormalized = outcome.toLowerCase();
 
+    if (verificationType.toUpperCase() === 'RESIDENCE') {
       // Handle Shifted scenarios
       if (outcomeNormalized.includes('shifted')) {
         if (outcomeNormalized.includes('door lock') || outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
@@ -206,11 +232,52 @@ Hence the profile is marked as {Final_Status}.`
       }
     }
 
+    if (verificationType.toUpperCase() === 'OFFICE') {
+      // Handle Shifted scenarios
+      if (outcomeNormalized.includes('shifted')) {
+        if (outcomeNormalized.includes('door lock') || outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
+          return 'SHIFTED_DOOR_LOCKED';
+        } else {
+          return 'SHIFTED';
+        }
+      }
+
+      // Handle ERT scenarios
+      if (outcomeNormalized.includes('ert') || outcomeNormalized === 'ert') {
+        return 'ERT';
+      }
+
+      // Handle Untraceable scenarios
+      if (outcomeNormalized.includes('untraceable') || outcomeNormalized === 'untraceable') {
+        return 'UNTRACEABLE';
+      }
+
+      // Handle NSP scenarios
+      if (outcomeNormalized.includes('nsp')) {
+        if (outcomeNormalized.includes('door lock') || outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
+          return 'NSP_DOOR_LOCKED';
+        } else {
+          return 'NSP';
+        }
+      }
+
+      // Handle Positive scenarios - use office status to determine template
+      if (outcomeNormalized.includes('positive')) {
+        // Check office status to determine if person was met or only TPC was done
+        const officeStatus = formData?.officeStatus || formData?.office_status;
+        if (officeStatus && officeStatus.toLowerCase() === 'opened') {
+          return 'POSITIVE'; // Office was open, person was met
+        } else {
+          return 'POSITIVE_DOOR_LOCKED'; // Office was closed, only TPC
+        }
+      }
+    }
+
     return 'DEFAULT';
   }
 
   /**
-   * Map form data to template variables for residence verification
+   * Map form data to template variables for verification reports
    */
   private mapFormDataToTemplateVariables(formData: any, caseDetails: any): Record<string, string> {
     const safeGet = (obj: any, key: string, defaultValue: string = 'Not provided') => {
@@ -224,8 +291,8 @@ Hence the profile is marked as {Final_Status}.`
       Address_Rating: safeGet(formData, 'addressRating'),
       
       // Person details
-      Met_Person_Name: safeGet(formData, 'metPersonName') || safeGet(formData, 'personMet'),
-      Applicant_Status: safeGet(formData, 'applicantStatus') || 'Applicant',
+      Met_Person_Name: safeGet(formData, 'metPersonName') || safeGet(formData, 'personMet') || safeGet(formData, 'met_person_name'),
+      Applicant_Status: caseDetails.customerName || safeGet(formData, 'customerName') || safeGet(formData, 'applicantStatus') || 'Applicant',
       Met_Person_Relation: safeGet(formData, 'metPersonRelation') || safeGet(formData, 'relation'),
       
       // Staying details
@@ -294,7 +361,22 @@ Hence the profile is marked as {Final_Status}.`
       Address_Structure: safeGet(formData, 'addressStructure'),
       Address_Floor: safeGet(formData, 'addressFloor') || safeGet(formData, 'floor'),
       Feedback_From_Neighbour: safeGet(formData, 'feedbackFromNeighbour') || safeGet(formData, 'neighborFeedback'),
-      Premises_Status: safeGet(formData, 'premisesStatus') || safeGet(formData, 'currentPremisesStatus')
+      Premises_Status: safeGet(formData, 'premisesStatus') || safeGet(formData, 'currentPremisesStatus'),
+
+      // Office-specific variables
+      Office_Status: safeGet(formData, 'officeStatus') || safeGet(formData, 'office_status'),
+      Designation: safeGet(formData, 'designation') || safeGet(formData, 'metPersonDesignation'),
+      Working_Period: safeGet(formData, 'workingPeriod') || safeGet(formData, 'working_period'),
+      Applicant_Designation: safeGet(formData, 'applicantDesignation') || safeGet(formData, 'applicant_designation'),
+      Applicant_Working_Premises: safeGet(formData, 'applicantWorkingPremises') || safeGet(formData, 'applicant_working_premises'),
+      Sitting_Location: safeGet(formData, 'sittingLocation') || safeGet(formData, 'sitting_location'),
+      Office_Type: safeGet(formData, 'officeType') || safeGet(formData, 'office_type'),
+      Company_Nature_Of_Business: safeGet(formData, 'companyNatureOfBusiness') || safeGet(formData, 'company_nature_of_business'),
+      Staff_Strength: safeGet(formData, 'staffStrength') || safeGet(formData, 'staff_strength'),
+      Staff_Seen: safeGet(formData, 'staffSeen') || safeGet(formData, 'staff_seen'),
+      Office_Approx_Area: safeGet(formData, 'officeApproxArea') || safeGet(formData, 'office_approx_area'),
+      Company_Name_Plate: safeGet(formData, 'companyNamePlateStatus') || safeGet(formData, 'company_nameplate_status'),
+      Name_On_Board: safeGet(formData, 'nameOnCompanyBoard') || safeGet(formData, 'name_on_company_board')
     };
   }
 }

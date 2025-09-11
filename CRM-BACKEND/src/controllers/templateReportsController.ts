@@ -40,7 +40,7 @@ export async function generateTemplateReport(req: AuthenticatedRequest, res: Res
     let outcome = caseData.verificationOutcome;
     let formData = caseData.verificationData?.formData || caseData.verificationData?.verification || {};
 
-    // Get residence verification report data if it exists
+    // Get verification report data based on verification type
     if (verificationType === 'RESIDENCE') {
       const residenceQuery = `
         SELECT * FROM "residenceVerificationReports"
@@ -95,6 +95,58 @@ export async function generateTemplateReport(req: AuthenticatedRequest, res: Res
           finalStatus: residenceData.final_status,
           shiftedPeriod: residenceData.shifted_period,
           premisesStatus: residenceData.premises_status
+        };
+      }
+    } else if (verificationType === 'OFFICE') {
+      const officeQuery = `
+        SELECT * FROM "officeVerificationReports"
+        WHERE "caseId" = $1
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+
+      const officeResult = await pool.query(officeQuery, [parseInt(caseId)]);
+
+      if (officeResult.rows.length > 0) {
+        const officeData = officeResult.rows[0];
+        outcome = officeData.verification_outcome;
+
+        // Map office verification data to form data structure
+        formData = {
+          customerName: officeData.customer_name,
+          addressLocatable: officeData.address_locatable,
+          addressRating: officeData.address_rating,
+          officeStatus: officeData.office_status,
+          metPersonName: officeData.met_person_name,
+          designation: officeData.designation,
+          workingPeriod: officeData.working_period,
+          applicantDesignation: officeData.applicant_designation,
+          applicantWorkingPremises: officeData.applicant_working_premises,
+          sittingLocation: officeData.sitting_location,
+          officeType: officeData.office_type,
+          companyNatureOfBusiness: officeData.company_nature_of_business,
+          staffStrength: officeData.staff_strength,
+          staffSeen: officeData.staff_seen,
+          officeApproxArea: officeData.office_approx_area,
+          companyNamePlateStatus: officeData.company_nameplate_status,
+          nameOnCompanyBoard: officeData.name_on_company_board,
+          locality: officeData.locality,
+          addressStructure: officeData.address_structure,
+          addressStructureColor: officeData.address_structure_color,
+          doorColor: officeData.door_color,
+          tpcMetPerson1: officeData.tpc_met_person1,
+          nameOfTpc1: officeData.tpc_name1,
+          tpcConfirmation1: officeData.tpc_confirmation1,
+          tpcMetPerson2: officeData.tpc_met_person2,
+          nameOfTpc2: officeData.tpc_name2,
+          tpcConfirmation2: officeData.tpc_confirmation2,
+          landmark1: officeData.landmark1,
+          landmark2: officeData.landmark2,
+          dominatedArea: officeData.dominated_area,
+          feedbackFromNeighbour: officeData.feedback_from_neighbour,
+          politicalConnection: officeData.political_connection,
+          otherObservation: officeData.other_observation,
+          finalStatus: officeData.final_status
         };
       }
     }
