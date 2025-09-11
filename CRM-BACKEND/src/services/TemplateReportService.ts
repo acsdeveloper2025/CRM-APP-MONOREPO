@@ -34,7 +34,24 @@ export class TemplateReportService {
 Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit met with {Met_Person_Name} {Met_Person_Relation} {Applicant_Status}, confirmed {Met_Person_Name} stay and provide the details and also confirmed {Met_Person_Name} is staying at given address since {Staying_Period} {Staying_Status}. The area of premises is approx. {Approx_Area_Sq_Feet}. Total family members are {Total_Family_Members} and earning members are {Total_Earning}. {Met_Person_Name} is {Working_Status} {Company_Name}. The door name plate is {Door_Name_Plate} {Name_on_Door_Plate} and also name on Society board is {Society_Name_Plate} {Name_on_Society_Board}. Locality is Residential & type of locality is {Locality}. {Locality} is of {Address_Structure_G_Plus} and {Met_Person_Name} is staying on {Applicant_Staying_Floor} floor. {Locality} color is {Address_Structure_Color}. The Door color is {Door_Color}. Residence set up is sighted at the time of visit. During visit met person shown {Document_Type}. TPC {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} {Met_Person_Name} name and stay. TPC {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Met_Person_Name} name and stay. Landmarks: {Landmark_1} and {Landmark_2}. It is {Dominated_Area} area. {Feedback_from_Neighbour} feedback received from neighbors. Field executive also confirmed {Met_Person_Name} is {Political_Connection}. {Met_Person_Name} stay is confirmed by our executive's observation as well as from TPC. Field Executive Observation: {Other_Observation} Hence the profile is marked as {Final_Status}.`,
 
     'POSITIVE_DOOR_ACCESSIBLE': `Residence Remark: POSITIVE.
-Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit met with {Met_Person_Name} {Met_Person_Relation} {Applicant_Status}, confirmed {Met_Person_Name} stay and provide the details and also confirmed {Met_Person_Name} is staying at given address since {Staying_Period} {Staying_Status}. The area of premises is approx. {Approx_Area_Sq_Feet}. Total family members are {Total_Family_Members} and earning members are {Total_Earning}. {Met_Person_Name} is {Working_Status} {Company_Name}. The door name plate is {Door_Name_Plate} {Name_on_Door_Plate} and also name on Society board is {Society_Name_Plate} {Name_on_Society_Board}. Locality is Residential & type of locality is {Locality}. {Locality} is of {Address_Structure_G_Plus} and {Met_Person_Name} is staying on {Applicant_Staying_Floor} floor. {Locality} color is {Address_Structure_Color}. The Door color is {Door_Color}. Residence set up is sighted at the time of visit. During visit met person shown {Document_Type}. TPC {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} {Met_Person_Name} name and stay. TPC {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Met_Person_Name} name and stay. Landmarks: {Landmark_1} and {Landmark_2}. It is {Dominated_Area} area. {Feedback_from_Neighbour} feedback received from neighbors. Field executive also confirmed {Met_Person_Name} is {Political_Connection}. {Met_Person_Name} stay is confirmed by our executive's observation as well as from TPC. Field Executive Observation: {Other_Observation} Hence the profile is marked as {Final_Status}.`
+Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit met with {Met_Person_Name} {Met_Person_Relation} {Applicant_Status}, confirmed {Met_Person_Name} stay and provide the details and also confirmed {Met_Person_Name} is staying at given address since {Staying_Period} {Staying_Status}. The area of premises is approx. {Approx_Area_Sq_Feet}. Total family members are {Total_Family_Members} and earning members are {Total_Earning}. {Met_Person_Name} is {Working_Status} {Company_Name}. The door name plate is {Door_Name_Plate} {Name_on_Door_Plate} and also name on Society board is {Society_Name_Plate} {Name_on_Society_Board}. Locality is Residential & type of locality is {Locality}. {Locality} is of {Address_Structure_G_Plus} and {Met_Person_Name} is staying on {Applicant_Staying_Floor} floor. {Locality} color is {Address_Structure_Color}. The Door color is {Door_Color}. Residence set up is sighted at the time of visit. During visit met person shown {Document_Type}. TPC {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} {Met_Person_Name} name and stay. TPC {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Met_Person_Name} name and stay. Landmarks: {Landmark_1} and {Landmark_2}. It is {Dominated_Area} area. {Feedback_from_Neighbour} feedback received from neighbors. Field executive also confirmed {Met_Person_Name} is {Political_Connection}. {Met_Person_Name} stay is confirmed by our executive's observation as well as from TPC. Field Executive Observation: {Other_Observation} Hence the profile is marked as {Final_Status}.`,
+
+    'SHIFTED': `Residence Remark: (Shifted) :-
+Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}. Met with {Met_Person_Name} {Met_Person_Relation} informed that {Customer_Name} is shifted to another address since last {Shifted_Period}. The door name plate is {Door_Name_Plate_Status} {Name_on_Door_Plate} and also name on Society board is {Society_Name_Plate_Status} {Name_on_Society_Board}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they have informed that {Customer_Name} is shifted from the given address. Locality is Residential & type of locality is {Locality_Type}. {Locality_Type} is of {Address_Structure} and address located on {Address_Floor} floor. {Locality_Type} color is {Address_Structure_Color}. The Door color is {Door_Color}. It's a {Dominated_Area} area.
+Landmarks: {Landmark_1} and {Landmark_2}.
+{Feedback_From_Neighbour} feedback received from neighbors.
+Field executive also confirmed {Customer_Name} is {Political_Connection}.
+Field Executive Observation :- {Other_Observation}.
+Hence the profile is marked as {Final_Status}.`,
+
+    'SHIFTED_DOOR_LOCKED': `Residence Remark: (Door Lock & Shifted) :-
+Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they have informed that {Customer_Name} is shifted from the given address from last {Shifted_Period}. At present given premises is {Premises_Status}. The door name plate is {Door_Name_Plate_Status} {Name_on_Door_Plate} and also Society board is {Society_Name_Plate_Status} {Name_on_Society_Board}. Locality is Residential & type of locality is {Locality_Type}. {Locality_Type} is of {Address_Structure} and address located on {Address_Floor} floor.
+{Locality_Type} color is {Address_Structure_Color}. The Door color is {Door_Color}.
+It's a {Dominated_Area} area.
+Landmarks: {Landmark_1} and {Landmark_2}.
+{Feedback_From_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
+Field Executive Observation :- {Other_Observation}.
+Hence the profile is marked as {Final_Status}.`
   };
 
   /**
@@ -108,16 +125,27 @@ Visited at the given address {ADDRESS}. The given address is traceable and {Addr
    */
   private getTemplateKey(verificationType: string, outcome: string): string {
     if (verificationType.toUpperCase() === 'RESIDENCE') {
-      // Determine template based on outcome and door status
-      if (outcome.toLowerCase().includes('positive')) {
-        if (outcome.toLowerCase().includes('door locked') || outcome.toLowerCase().includes('locked')) {
+      const outcomeNormalized = outcome.toLowerCase();
+
+      // Handle Shifted scenarios
+      if (outcomeNormalized.includes('shifted')) {
+        if (outcomeNormalized.includes('door lock') || outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
+          return 'SHIFTED_DOOR_LOCKED';
+        } else {
+          return 'SHIFTED';
+        }
+      }
+
+      // Handle Positive scenarios
+      if (outcomeNormalized.includes('positive')) {
+        if (outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
           return 'POSITIVE_DOOR_LOCKED';
         } else {
           return 'POSITIVE_DOOR_ACCESSIBLE';
         }
       }
     }
-    
+
     return 'DEFAULT';
   }
 
@@ -186,7 +214,19 @@ Visited at the given address {ADDRESS}. The given address is traceable and {Addr
       Feedback_from_Neighbour: safeGet(formData, 'feedbackFromNeighbour') || safeGet(formData, 'neighborFeedback'),
       Political_Connection: safeGet(formData, 'politicalConnection'),
       Other_Observation: safeGet(formData, 'otherObservation') || safeGet(formData, 'remarks') || safeGet(formData, 'verifierComments'),
-      Final_Status: safeGet(formData, 'finalStatus') || safeGet(formData, 'verificationOutcome') || 'Positive'
+      Final_Status: safeGet(formData, 'finalStatus') || safeGet(formData, 'verificationOutcome') || 'Positive',
+
+      // Additional variables for shifted templates
+      Customer_Name: caseDetails.customerName || safeGet(formData, 'customerName') || 'Customer',
+      House_Status: safeGet(formData, 'houseStatus') || safeGet(formData, 'doorStatus'),
+      Shifted_Period: safeGet(formData, 'shiftedPeriod') || safeGet(formData, 'shiftingSince'),
+      Door_Name_Plate_Status: safeGet(formData, 'doorNamePlateStatus'),
+      Society_Name_Plate_Status: safeGet(formData, 'societyNamePlateStatus'),
+      Locality_Type: safeGet(formData, 'localityType') || safeGet(formData, 'locality'),
+      Address_Structure: safeGet(formData, 'addressStructure'),
+      Address_Floor: safeGet(formData, 'addressFloor') || safeGet(formData, 'floor'),
+      Feedback_From_Neighbour: safeGet(formData, 'feedbackFromNeighbour') || safeGet(formData, 'neighborFeedback'),
+      Premises_Status: safeGet(formData, 'premisesStatus') || safeGet(formData, 'currentPremisesStatus')
     };
   }
 }

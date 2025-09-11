@@ -49,7 +49,7 @@ export const TemplateReportCard: React.FC<TemplateReportCardProps> = ({
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(
         `http://192.168.1.36:3000/api/template-reports/cases/${caseId}/submissions/${submissionId}`,
         {
@@ -82,7 +82,7 @@ export const TemplateReportCard: React.FC<TemplateReportCardProps> = ({
       setGenerating(true);
       setError(null);
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(
         `http://192.168.1.36:3000/api/template-reports/cases/${caseId}/submissions/${submissionId}/generate`,
         {

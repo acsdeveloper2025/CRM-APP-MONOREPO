@@ -37,10 +37,67 @@ export async function generateTemplateReport(req: AuthenticatedRequest, res: Res
 
     const caseData = caseResult.rows[0];
     const verificationType = caseData.verificationType;
-    const outcome = caseData.verificationOutcome;
+    let outcome = caseData.verificationOutcome;
+    let formData = caseData.verificationData?.formData || caseData.verificationData?.verification || {};
 
-    // Extract form data from verification data
-    const formData = caseData.verificationData?.formData || caseData.verificationData?.verification || {};
+    // Get residence verification report data if it exists
+    if (verificationType === 'RESIDENCE') {
+      const residenceQuery = `
+        SELECT * FROM "residenceVerificationReports"
+        WHERE "caseId" = $1
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+
+      const residenceResult = await pool.query(residenceQuery, [parseInt(caseId)]);
+
+      if (residenceResult.rows.length > 0) {
+        const residenceData = residenceResult.rows[0];
+        outcome = residenceData.verification_outcome;
+
+        // Map residence verification data to form data structure
+        formData = {
+          customerName: residenceData.customer_name,
+          addressLocatable: residenceData.address_locatable,
+          addressRating: residenceData.address_rating,
+          houseStatus: residenceData.house_status,
+          metPersonName: residenceData.met_person_name,
+          metPersonRelation: residenceData.met_person_relation,
+          metPersonStatus: residenceData.met_person_status,
+          stayingPeriod: residenceData.staying_period,
+          stayingStatus: residenceData.staying_status,
+          totalFamilyMembers: residenceData.total_family_members,
+          totalEarning: residenceData.total_earning,
+          workingStatus: residenceData.working_status,
+          companyName: residenceData.company_name,
+          doorNamePlateStatus: residenceData.door_nameplate_status,
+          nameOnDoorPlate: residenceData.name_on_door_plate,
+          societyNamePlateStatus: residenceData.society_nameplate_status,
+          nameOnSocietyBoard: residenceData.name_on_society_board,
+          localityType: residenceData.locality,
+          addressStructure: residenceData.address_structure,
+          addressFloor: residenceData.address_floor,
+          addressStructureColor: residenceData.address_structure_color,
+          doorColor: residenceData.door_color,
+          documentType: residenceData.document_type,
+          tpcMetPerson1: residenceData.tpc_met_person1,
+          nameOfTpc1: residenceData.tpc_name1,
+          tpcConfirmation1: residenceData.tpc_confirmation1,
+          tpcMetPerson2: residenceData.tpc_met_person2,
+          nameOfTpc2: residenceData.tpc_name2,
+          tpcConfirmation2: residenceData.tpc_confirmation2,
+          landmark1: residenceData.landmark1,
+          landmark2: residenceData.landmark2,
+          dominatedArea: residenceData.dominated_area,
+          feedbackFromNeighbour: residenceData.feedback_from_neighbour,
+          politicalConnection: residenceData.political_connection,
+          otherObservation: residenceData.other_observation,
+          finalStatus: residenceData.final_status,
+          shiftedPeriod: residenceData.shifted_period,
+          premisesStatus: residenceData.premises_status
+        };
+      }
+    }
 
     // Prepare data for template generation
     const reportData = {
