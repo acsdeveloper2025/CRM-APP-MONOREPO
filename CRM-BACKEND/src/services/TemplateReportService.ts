@@ -51,7 +51,18 @@ It's a {Dominated_Area} area.
 Landmarks: {Landmark_1} and {Landmark_2}.
 {Feedback_From_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
 Field Executive Observation :- {Other_Observation}.
-Hence the profile is marked as {Final_Status}.`
+Hence the profile is marked as {Final_Status}.`,
+
+    'ERT': `Residence Entry Restricted Remark (ERT):-
+Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. It is {Customer_Name} address. At the time of visit met with {Met_Person_Name} {Name_of_Met_Person} informed that in given premises entry is not allowed. {Met_Person_Name} {Met_Person_Confirmation} {Applicant_Staying_Status} given address. Society board is {Society_Name_Plate_Status} {Name_on_Society_Board}. Locality is Residential & type of locality is {Locality_Type}.
+{Locality_Type} is of {Address_Structure} and address located on {Applicant_Staying_Floor}.
+{Locality_Type} color is {Address_Structure_Color}.
+It's a {Address_Structure_Color} area.
+Landmarks: {Landmark_1} and {Landmark_2}.
+{Feedback_from_Neighbour} feedback received from met person.
+Also executive confirmed about customer {Feedback_from_Neighbour}.
+Field Executive Observation :- {Other_Observation}
+Hence the profile is marked as {Final_Status}`
   };
 
   /**
@@ -134,6 +145,11 @@ Hence the profile is marked as {Final_Status}.`
         } else {
           return 'SHIFTED';
         }
+      }
+
+      // Handle ERT scenarios
+      if (outcomeNormalized.includes('ert') || outcomeNormalized === 'ert') {
+        return 'ERT';
       }
 
       // Handle Positive scenarios
