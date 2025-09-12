@@ -69,9 +69,13 @@ export const TemplateReportCard: React.FC<TemplateReportCardProps> = ({
         // 404 is expected if no report exists yet
         throw new Error('Failed to load existing report');
       }
+      // 404 is expected when no report exists yet - don't treat as error
     } catch (err) {
-      console.error('Error loading existing report:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load report');
+      // Only log and show error if it's not a 404 (report not found)
+      if (err instanceof Error && !err.message.includes('404')) {
+        console.error('Error loading existing report:', err);
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
