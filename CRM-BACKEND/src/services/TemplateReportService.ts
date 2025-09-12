@@ -31,10 +31,46 @@ export interface VerificationReportData {
 export class TemplateReportService {
   private readonly RESIDENCE_TEMPLATES = {
     'POSITIVE_DOOR_LOCKED': `Residence Remark: POSITIVE.
-Visited at the given address for {Customer_Name}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} who {TPC_Confirmation_1} {Customer_Name} name and stay. TPC {TPC_Met_Person_2} {Name_of_TPC_2} also {TPC_Confirmation_2} {Customer_Name} name and stay. Confirmed {Customer_Name} is staying at given address since {Staying_Period} {Staying_Status}. The area of premises is approx. {Approx_Area_Sq_Feet}. Total family members are {Total_Family_Members} and earning members are {Total_Earning}. {Customer_Name} works as {Working_Status} at {Company_Name}. The door name plate is {Door_Name_Plate} {Name_on_Door_Plate} and also name on Society board is {Society_Name_Plate} {Name_on_Society_Board}. Locality is Residential & type of locality is {Locality}. {Locality} is of {Address_Structure_G_Plus} and {Customer_Name} is staying on {Applicant_Staying_Floor} floor. {Locality} color is {Address_Structure_Color}. The Door color is {Door_Color}. Residence set up is sighted at the time of visit. During visit met person shown {Document_Type}. Landmarks: {Landmark_1} and {Landmark_2}. It is {Dominated_Area} area. {Feedback_from_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}. {Customer_Name} stay is confirmed by our executive's observation as well as from TPC. Field Executive Observation: {Other_Observation} Hence the profile is marked as {Final_Status}.`,
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} who {TPC_Confirmation_1} {Customer_Name} name and stay. TPC {TPC_Met_Person_2} {Name_of_TPC_2} also {TPC_Confirmation_2} {Customer_Name} name and stay. Confirmed {Customer_Name} is staying at given address since {Staying_Period} {Staying_Status}.
+
+PROPERTY & PERSONAL DETAILS:
+The area of premises is approx. {Approx_Area_Sq_Feet}. Total family members are {Total_Family_Members} and earning members are {Total_Earning}. {Customer_Name} works as {Working_Status} at {Company_Name}. The door name plate is {Door_Name_Plate} {Name_on_Door_Plate} and also name on Society board is {Society_Name_Plate} {Name_on_Society_Board}.
+
+LOCALITY INFORMATION:
+Locality is Residential & type of locality is {Locality}. {Locality} is of {Address_Structure_G_Plus} and {Customer_Name} is staying on {Applicant_Staying_Floor} floor. {Locality} color is {Address_Structure_Color}. The Door color is {Door_Color}. Residence set up is sighted at the time of visit. During visit met person shown {Document_Type}.
+
+AREA ASSESSMENT:
+Landmarks: {Landmark_1} and {Landmark_2}. It is {Dominated_Area} area. {Feedback_from_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}. {Customer_Name} stay is confirmed by our executive's observation as well as from TPC.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
 
     'POSITIVE_DOOR_ACCESSIBLE': `Residence Remark: POSITIVE.
-Visited at the given address for {Customer_Name}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit met with {Met_Person_Name} ({Met_Person_Relation}), confirmed {Customer_Name} stay and provide the details and also confirmed {Customer_Name} is staying at given address since {Staying_Period} {Staying_Status}. The area of premises is approx. {Approx_Area_Sq_Feet}. Total family members are {Total_Family_Members} and earning members are {Total_Earning}. {Customer_Name} works as {Working_Status} at {Company_Name}. The door name plate is {Door_Name_Plate} {Name_on_Door_Plate} and also name on Society board is {Society_Name_Plate} {Name_on_Society_Board}. Locality is Residential & type of locality is {Locality}. {Locality} is of {Address_Structure_G_Plus} and {Customer_Name} is staying on {Applicant_Staying_Floor} floor. {Locality} color is {Address_Structure_Color}. The Door color is {Door_Color}. Residence set up is sighted at the time of visit. During visit met person shown {Document_Type}. TPC {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} {Customer_Name} name and stay. TPC {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Customer_Name} name and stay. Landmarks: {Landmark_1} and {Landmark_2}. It is {Dominated_Area} area. {Feedback_from_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}. {Customer_Name} stay is confirmed by our executive's observation as well as from TPC. Field Executive Observation: {Other_Observation} Hence the profile is marked as {Final_Status}.`,
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit met with {Met_Person_Name} ({Met_Person_Relation}), confirmed {Customer_Name} stay and provide the details and also confirmed {Customer_Name} is staying at given address since {Staying_Period} {Staying_Status}.
+
+PROPERTY & PERSONAL DETAILS:
+The area of premises is approx. {Approx_Area_Sq_Feet}. Total family members are {Total_Family_Members} and earning members are {Total_Earning}. {Customer_Name} works as {Working_Status} at {Company_Name}. The door name plate is {Door_Name_Plate} {Name_on_Door_Plate} and also name on Society board is {Society_Name_Plate} {Name_on_Society_Board}.
+
+LOCALITY INFORMATION:
+Locality is Residential & type of locality is {Locality}. {Locality} is of {Address_Structure_G_Plus} and {Customer_Name} is staying on {Applicant_Staying_Floor} floor. {Locality} color is {Address_Structure_Color}. The Door color is {Door_Color}. Residence set up is sighted at the time of visit. During visit met person shown {Document_Type}.
+
+THIRD PARTY CONFIRMATION:
+TPC {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} {Customer_Name} name and stay. TPC {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Customer_Name} name and stay.
+
+AREA ASSESSMENT:
+Landmarks: {Landmark_1} and {Landmark_2}. It is {Dominated_Area} area. {Feedback_from_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}. {Customer_Name} stay is confirmed by our executive's observation as well as from TPC.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
 
     'SHIFTED': `Residence Remark: (Shifted) :-
 Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}. Met with {Met_Person_Name} {Met_Person_Relation} informed that {Customer_Name} is shifted to another address since last {Shifted_Period}. The door name plate is {Door_Name_Plate_Status} {Name_on_Door_Plate} and also name on Society board is {Society_Name_Plate_Status} {Name_on_Society_Board}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they have informed that {Customer_Name} is shifted from the given address. Locality is Residential & type of locality is {Locality_Type}. {Locality_Type} is of {Address_Structure} and address located on {Address_Floor} floor. {Locality_Type} color is {Address_Structure_Color}. The Door color is {Door_Color}. It's a {Dominated_Area} area.
@@ -347,6 +383,19 @@ Hence the profile is marked as {Final_Status}.`
   }
 
   /**
+   * Format area in square feet with proper units
+   */
+  private formatAreaSqFeet(formData: any): string {
+    const area = formData?.approxArea || formData?.approx_area || formData?.approximateArea || formData?.approxAreaSqFeet;
+
+    if (area && !isNaN(area) && area > 0) {
+      return `${area} sq. feet`;
+    }
+
+    return 'Not provided';
+  }
+
+  /**
    * Map form data to template variables for verification reports
    */
   private mapFormDataToTemplateVariables(formData: any, caseDetails: any): Record<string, string> {
@@ -363,15 +412,16 @@ Hence the profile is marked as {Final_Status}.`
       // Person details
       Met_Person_Name: safeGet(formData, 'metPersonName') || safeGet(formData, 'personMet') || safeGet(formData, 'met_person_name'),
       Customer_Name: this.getCustomerName(formData, caseDetails),
+      Applicant_Type: caseDetails.applicantType || 'APPLICANT',
       Applicant_Status: caseDetails.customerName || safeGet(formData, 'customerName') || safeGet(formData, 'applicantStatus') || 'Applicant',
       Met_Person_Relation: safeGet(formData, 'metPersonRelation') || safeGet(formData, 'relation'),
-      
+
       // Staying details
       Staying_Period: safeGet(formData, 'stayingPeriod') || safeGet(formData, 'stayingSince'),
       Staying_Status: safeGet(formData, 'stayingStatus'),
-      
+
       // Property details
-      Approx_Area_Sq_Feet: safeGet(formData, 'approxAreaSqFeet') || safeGet(formData, 'approximateArea'),
+      Approx_Area_Sq_Feet: this.formatAreaSqFeet(formData),
       Total_Family_Members: safeGet(formData, 'totalFamilyMembers') || safeGet(formData, 'familyMembers'),
       Total_Earning: safeGet(formData, 'totalEarning') || safeGet(formData, 'earningMembers'),
       

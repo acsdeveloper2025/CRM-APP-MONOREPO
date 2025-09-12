@@ -70,6 +70,7 @@ export async function generateTemplateReport(req: AuthenticatedRequest, res: Res
           totalEarning: residenceData.total_earning,
           workingStatus: residenceData.working_status,
           companyName: residenceData.company_name,
+          approxArea: residenceData.approx_area,
           doorNamePlateStatus: residenceData.door_nameplate_status,
           nameOnDoorPlate: residenceData.name_on_door_plate,
           societyNamePlateStatus: residenceData.society_nameplate_status,
