@@ -366,7 +366,9 @@ export class MobileFormController {
       formData.metPersonRelation = report.met_person_relation;
       formData.metPersonStatus = report.met_person_status;
       formData.totalFamilyMembers = report.total_family_members;
+      formData.totalEarning = report.total_earning;
       formData.workingStatus = report.working_status;
+      formData.companyName = report.company_name;
       formData.stayingPeriod = report.staying_period;
       formData.stayingStatus = report.staying_status;
       formData.documentShownStatus = report.document_shown_status;
@@ -376,6 +378,16 @@ export class MobileFormController {
       formData.nameOnDoorPlate = report.name_on_door_plate;
       formData.societyNamePlateStatus = report.society_nameplate_status;
       formData.nameOnSocietyBoard = report.name_on_society_board;
+      formData.addressStructureColor = report.address_structure_color;
+      formData.addressFloor = report.address_floor;
+
+      // TPC (Third Party Confirmation) fields
+      formData.tpcMetPerson1 = report.tpc_met_person1;
+      formData.tpcName1 = report.tpc_name1;
+      formData.tpcConfirmation1 = report.tpc_confirmation1;
+      formData.tpcMetPerson2 = report.tpc_met_person2;
+      formData.tpcName2 = report.tpc_name2;
+      formData.tpcConfirmation2 = report.tpc_confirmation2;
 
       // Form type specific fields
       formData.shiftedPeriod = report.shifted_period;

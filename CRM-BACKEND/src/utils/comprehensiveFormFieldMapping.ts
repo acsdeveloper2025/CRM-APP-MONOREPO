@@ -41,9 +41,11 @@ export const RESIDENCE_FORM_FIELDS: FormFieldDefinition[] = [
   { id: 'metPersonRelation', name: 'metPersonRelation', label: 'Met Person Relation', type: 'select', isRequired: false, section: 'Personal Details', order: 1, formTypes: ['POSITIVE'] },
   { id: 'metPersonStatus', name: 'metPersonStatus', label: 'Met Person Status', type: 'select', isRequired: false, section: 'Personal Details', order: 2, formTypes: ['POSITIVE', 'NSP', 'SHIFTED', 'ENTRY_RESTRICTED'] },
   { id: 'totalFamilyMembers', name: 'totalFamilyMembers', label: 'Total Family Members', type: 'number', isRequired: false, section: 'Personal Details', order: 3, formTypes: ['POSITIVE'] },
-  { id: 'workingStatus', name: 'workingStatus', label: 'Working Status', type: 'select', isRequired: false, section: 'Personal Details', order: 4, formTypes: ['POSITIVE'] },
-  { id: 'stayingPeriod', name: 'stayingPeriod', label: 'Staying Period', type: 'text', isRequired: false, section: 'Personal Details', order: 5, formTypes: ['POSITIVE', 'NSP'] },
-  { id: 'stayingStatus', name: 'stayingStatus', label: 'Staying Status', type: 'select', isRequired: false, section: 'Personal Details', order: 6, formTypes: ['POSITIVE'] },
+  { id: 'totalEarning', name: 'totalEarning', label: 'Total Earning Members', type: 'number', isRequired: false, section: 'Personal Details', order: 4, formTypes: ['POSITIVE'] },
+  { id: 'workingStatus', name: 'workingStatus', label: 'Working Status', type: 'select', isRequired: false, section: 'Personal Details', order: 5, formTypes: ['POSITIVE'] },
+  { id: 'companyName', name: 'companyName', label: 'Company Name', type: 'text', isRequired: false, section: 'Personal Details', order: 6, formTypes: ['POSITIVE'] },
+  { id: 'stayingPeriod', name: 'stayingPeriod', label: 'Staying Period', type: 'text', isRequired: false, section: 'Personal Details', order: 7, formTypes: ['POSITIVE', 'NSP'] },
+  { id: 'stayingStatus', name: 'stayingStatus', label: 'Staying Status', type: 'select', isRequired: false, section: 'Personal Details', order: 8, formTypes: ['POSITIVE'] },
   
   // Document Verification (POSITIVE specific)
   { id: 'documentShownStatus', name: 'documentShownStatus', label: 'Document Shown Status', type: 'select', isRequired: false, section: 'Document Verification', order: 1, formTypes: ['POSITIVE'] },
@@ -57,6 +59,8 @@ export const RESIDENCE_FORM_FIELDS: FormFieldDefinition[] = [
   { id: 'nameOnDoorPlate', name: 'nameOnDoorPlate', label: 'Name on Door Plate', type: 'text', isRequired: false, section: 'Property Details', order: 5, formTypes: ['POSITIVE', 'NSP'] },
   { id: 'societyNamePlateStatus', name: 'societyNamePlateStatus', label: 'Society Name Plate Status', type: 'select', isRequired: false, section: 'Property Details', order: 6, formTypes: ['POSITIVE', 'NSP'] },
   { id: 'nameOnSocietyBoard', name: 'nameOnSocietyBoard', label: 'Name on Society Board', type: 'text', isRequired: false, section: 'Property Details', order: 7, formTypes: ['POSITIVE', 'NSP'] },
+  { id: 'addressStructureColor', name: 'addressStructureColor', label: 'Address Structure Color', type: 'text', isRequired: false, section: 'Property Details', order: 8, formTypes: ['POSITIVE', 'NSP'] },
+  { id: 'addressFloor', name: 'addressFloor', label: 'Address Floor', type: 'text', isRequired: false, section: 'Property Details', order: 9, formTypes: ['POSITIVE', 'NSP'] },
   
   // Shifting Details (SHIFTED specific)
   { id: 'shiftedPeriod', name: 'shiftedPeriod', label: 'Shifted Period', type: 'text', isRequired: false, section: 'Shifting Details', order: 1, formTypes: ['SHIFTED'] },
@@ -79,7 +83,15 @@ export const RESIDENCE_FORM_FIELDS: FormFieldDefinition[] = [
   // Contact & Inquiry Details (UNTRACEABLE specific)
   { id: 'contactPerson', name: 'contactPerson', label: 'Contact Person', type: 'text', isRequired: false, section: 'Contact Details', order: 1, formTypes: ['UNTRACEABLE'] },
   { id: 'alternateContact', name: 'alternateContact', label: 'Alternate Contact', type: 'text', isRequired: false, section: 'Contact Details', order: 2, formTypes: ['UNTRACEABLE'] },
-  
+
+  // Third Party Confirmation (TPC) Section
+  { id: 'tpcMetPerson1', name: 'tpcMetPerson1', label: 'TPC Met Person 1', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 1, formTypes: ['POSITIVE', 'NSP'] },
+  { id: 'tpcName1', name: 'tpcName1', label: 'TPC Name 1', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 2, formTypes: ['POSITIVE', 'NSP'] },
+  { id: 'tpcConfirmation1', name: 'tpcConfirmation1', label: 'TPC Confirmation 1', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 3, formTypes: ['POSITIVE', 'NSP'] },
+  { id: 'tpcMetPerson2', name: 'tpcMetPerson2', label: 'TPC Met Person 2', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 4, formTypes: ['POSITIVE', 'NSP'] },
+  { id: 'tpcName2', name: 'tpcName2', label: 'TPC Name 2', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 5, formTypes: ['POSITIVE', 'NSP'] },
+  { id: 'tpcConfirmation2', name: 'tpcConfirmation2', label: 'TPC Confirmation 2', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 6, formTypes: ['POSITIVE', 'NSP'] },
+
   // Area Assessment Section (Common to all)
   { id: 'politicalConnection', name: 'politicalConnection', label: 'Political Connection', type: 'select', isRequired: false, section: 'Area Assessment', order: 1 },
   { id: 'dominatedArea', name: 'dominatedArea', label: 'Dominated Area', type: 'select', isRequired: false, section: 'Area Assessment', order: 2 },
