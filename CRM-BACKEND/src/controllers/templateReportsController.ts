@@ -157,7 +157,12 @@ export async function generateTemplateReport(req: AuthenticatedRequest, res: Res
           // SHIFTED-specific fields
           oldOfficeShiftedPeriod: officeData.old_office_shifted_period,
           currentCompanyName: officeData.current_company_name,
-          currentCompanyPeriod: officeData.current_company_period
+          currentCompanyPeriod: officeData.current_company_period,
+
+          // UNTRACEABLE-specific fields
+          callRemark: officeData.call_remark,
+          landmark3: officeData.landmark3,
+          landmark4: officeData.landmark4
         };
       }
     }

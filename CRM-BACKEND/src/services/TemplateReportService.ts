@@ -139,6 +139,14 @@ Landmark: {Landmark_1} and {Landmark_2}.
 {Feedback_From_Neighbour} feedback received from neighbors.
 Field executive also confirmed {Applicant_Status} is {Political_Connection}.
 Field Executive Observation: {Other_Observation}.
+Hence the profile is marked as {Final_Status}.`,
+
+    'UNTRACEABLE': `Visited at the given address {ADDRESS}. The given address is incorrect and untraceable. At the time of visit met with {Met_Person_Name}, Met person's informed that provided address is short. We called {Applicant_Status} but {Applicant_Status} {Call_Remark}.
+We required proper guidance to trace the address.
+Type of Locality is {Locality}.
+Field executive reached up to {Landmark_1}, {Landmark_2}, {Landmark_3}, {Landmark_4}.
+It's a {Dominated_Area} area.
+Field Executive Observation: {Other_Observation}.
 Hence the profile is marked as {Final_Status}.`
   };
 
