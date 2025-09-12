@@ -114,6 +114,22 @@ Landmark: {Landmark_1} and {Landmark_2}.
 {Feedback_From_Neighbour} feedback received from neighbors.
 Field executive also confirmed {Applicant_Status} is {Political_Connection}.
 Field Executive Observation: {Other_Observation}.
+Hence the profile is marked as {Final_Status}.`,
+
+    'SHIFTED': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {Office_Status}. Met with {Met_Person_Name} {Designation} confirmed that company shifted from the given address {Old_Office_Shifted_Period} ago. {Current_Company_Name} Company operating business at given address from last {Current_Company_Period}. Company name board is {Company_Name_Plate} {Name_On_Board}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they confirmed that company is shifted from the given address on {Old_Office_Shifted_Period} ago. Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+It is {Dominated_Area} area.
+Landmark: {Landmark_1} and {Landmark_2}.
+{Feedback_From_Neighbour} feedback received from neighbors.
+Field executive also confirmed {Applicant_Status} is {Political_Connection}.
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'SHIFTED_DOOR_LOCKED': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {Office_Status}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they confirmed that company shifted from the given address {Old_Office_Shifted_Period} ago. {Current_Company_Name} Company operating business at given address. Company name board is {Company_Name_Plate} {Name_On_Board}. Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+It is {Dominated_Area} area.
+Landmarks: {Landmark_1} and {Landmark_2}.
+{Feedback_From_Neighbour} feedback from neighbors.
+Field executive also confirmed {Applicant_Status} is {Political_Connection}.
+Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`
   };
 
@@ -233,12 +249,13 @@ Hence the profile is marked as {Final_Status}.`
     }
 
     if (verificationType.toUpperCase() === 'OFFICE') {
-      // Handle Shifted scenarios
+      // Handle Shifted scenarios - use office status to determine template
       if (outcomeNormalized.includes('shifted')) {
-        if (outcomeNormalized.includes('door lock') || outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
-          return 'SHIFTED_DOOR_LOCKED';
+        const officeStatus = formData?.officeStatus || formData?.office_status;
+        if (officeStatus && officeStatus.toLowerCase() === 'opened') {
+          return 'SHIFTED'; // Office was open, person was met
         } else {
-          return 'SHIFTED';
+          return 'SHIFTED_DOOR_LOCKED'; // Office was closed, only TPC
         }
       }
 
@@ -376,7 +393,12 @@ Hence the profile is marked as {Final_Status}.`
       Staff_Seen: safeGet(formData, 'staffSeen') || safeGet(formData, 'staff_seen'),
       Office_Approx_Area: safeGet(formData, 'officeApproxArea') || safeGet(formData, 'office_approx_area'),
       Company_Name_Plate: safeGet(formData, 'companyNamePlateStatus') || safeGet(formData, 'company_nameplate_status'),
-      Name_On_Board: safeGet(formData, 'nameOnCompanyBoard') || safeGet(formData, 'name_on_company_board')
+      Name_On_Board: safeGet(formData, 'nameOnCompanyBoard') || safeGet(formData, 'name_on_company_board'),
+
+      // Office SHIFTED-specific variables
+      Old_Office_Shifted_Period: safeGet(formData, 'oldOfficeShiftedPeriod') || safeGet(formData, 'old_office_shifted_period') || safeGet(formData, 'shiftedPeriod'),
+      Current_Company_Name: safeGet(formData, 'currentCompanyName') || safeGet(formData, 'current_company_name') || safeGet(formData, 'companyName'),
+      Current_Company_Period: safeGet(formData, 'currentCompanyPeriod') || safeGet(formData, 'current_company_period') || safeGet(formData, 'establishmentPeriod')
     };
   }
 }
