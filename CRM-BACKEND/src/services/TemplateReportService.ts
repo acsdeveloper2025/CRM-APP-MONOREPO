@@ -177,77 +177,165 @@ Hence the profile is marked as {Final_Status}.`
   };
 
   private readonly OFFICE_TEMPLATES = {
-    'POSITIVE': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}. Met with {Met_Person_Name} {Designation}, confirmed {Applicant_Status} is working in given office since last {Working_Period} as {Applicant_Designation}. {Applicant_Status} working on {Applicant_Designation} & sitting at {Applicant_Working_Premises} {Sitting_Location}. It's a {Office_Type} and nature of business is {Company_Nature_Of_Business}. Total strength of the staff is {Staff_Strength} & seen {Staff_Seen}. Office area approx. {Office_Approx_Area} Sq. feet. Company Name board {Company_Name_Plate} {Name_On_Board}.
+    'POSITIVE': `Office Remark: POSITIVE.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}. Met with {Met_Person_Name} ({Designation}), confirmed {Customer_Name} is working in given office since last {Working_Period} as {Applicant_Designation}.
+
+EMPLOYMENT & OFFICE DETAILS:
+{Customer_Name} working on {Applicant_Designation} & sitting at {Applicant_Working_Premises} {Sitting_Location}. It's a {Office_Type} and nature of business is {Company_Nature_Of_Business}. Total strength of the staff is {Staff_Strength} & seen {Staff_Seen}. Office area approx. {Office_Approx_Area} sq. feet. Company Name board {Company_Name_Plate} {Name_On_Board}.
+
+LOCALITY INFORMATION:
 Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
-TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Applicant_Status} & office existence.
-It is {Dominated_Area} area.
-Landmarks: {Landmark_1} and {Landmark_2}.
-{Feedback_From_Neighbour} feedback found against {Applicant_Status} & his firm.
-Field executive also confirmed {Applicant_Status} is {Political_Connection}.
-{Applicant_Status} stability is confirmed by our executive's observation as well as from TPC.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Customer_Name} & office existence.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback found against {Customer_Name} & his firm. Field executive also confirmed {Customer_Name} is {Political_Connection}. {Customer_Name} stability is confirmed by our executive's observation as well as from TPC.
+
+CONCLUSION:
 Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`,
 
-    'POSITIVE_DOOR_LOCKED': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Applicant_Status} & office existence.
-They informed that given office at given address since last {Address_Structure}. Company Name board {Company_Name_Plate} {Name_On_Board}. Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
-It is {Dominated_Area} area.
-Landmark: {Landmark_1} and {Landmark_2}.
-{Feedback_From_Neighbour} feedback received from neighbors.
-Field executive also confirmed {Applicant_Status} is {Political_Connection}.
-Field Executive Observation: {Other_Observation}.
-Hence the profile is marked as {Final_Status}.`,
+    'POSITIVE_DOOR_LOCKED': `Office Remark: POSITIVE & DOOR LOCKED.
 
-    'SHIFTED': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {Office_Status}. Met with {Met_Person_Name} {Designation} confirmed that company shifted from the given address {Old_Office_Shifted_Period} ago. {Current_Company_Name} Company operating business at given address from last {Current_Company_Period}. Company name board is {Company_Name_Plate} {Name_On_Board}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they confirmed that company is shifted from the given address on {Old_Office_Shifted_Period} ago. Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
-It is {Dominated_Area} area.
-Landmark: {Landmark_1} and {Landmark_2}.
-{Feedback_From_Neighbour} feedback received from neighbors.
-Field executive also confirmed {Applicant_Status} is {Political_Connection}.
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Customer_Name} & office existence. They informed that given office at given address since last {Working_Period}.
+
+OFFICE & COMPANY DETAILS:
+Company Name board {Company_Name_Plate} {Name_On_Board}. Office area approx. {Office_Approx_Area} sq. feet. Nature of business is {Company_Nature_Of_Business}.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
+
+CONCLUSION:
 Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`,
 
-    'SHIFTED_DOOR_LOCKED': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {Office_Status}. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they confirmed that company shifted from the given address {Old_Office_Shifted_Period} ago. {Current_Company_Name} Company operating business at given address. Company name board is {Company_Name_Plate} {Name_On_Board}. Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
-It is {Dominated_Area} area.
-Landmarks: {Landmark_1} and {Landmark_2}.
-{Feedback_From_Neighbour} feedback from neighbors.
-Field executive also confirmed {Applicant_Status} is {Political_Connection}.
+    'SHIFTED': `Office Remark: SHIFTED.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}. Met with {Met_Person_Name} ({Designation}) confirmed that company shifted from the given address {Old_Office_Shifted_Period} ago.
+
+CURRENT OFFICE STATUS:
+{Current_Company_Name} Company operating business at given address from last {Current_Company_Period}. Company name board is {Company_Name_Plate} {Name_On_Board}.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they confirmed that company is shifted from the given address on {Old_Office_Shifted_Period} ago.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
+
+CONCLUSION:
 Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`,
 
-    'ERT': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. It is {Applicant_Status} address. At the time of visit met with {Met_Person_Type} {Name_Of_Met_Person} informed that given premises entry not allowed. {Met_Person_Type} {Met_Person_Confirmation} {Office_Status} given address.
+    'SHIFTED_DOOR_LOCKED': `Office Remark: SHIFTED & DOOR LOCKED.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they confirmed that company shifted from the given address {Old_Office_Shifted_Period} ago.
+
+CURRENT OFFICE STATUS:
+{Current_Company_Name} Company operating business at given address. Company name board is {Company_Name_Plate} {Name_On_Board}.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'ERT': `Office Entry Restricted Remark (ERT):-
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. It is {Customer_Name} address. At the time of visit met with {Met_Person_Type} {Name_Of_Met_Person} informed that given premises entry not allowed.
+
+ENTRY RESTRICTION DETAILS:
+{Met_Person_Type} {Met_Person_Confirmation} {Office_Status} given address. Entry is restricted due to security protocols or company policies.
+
+LOCALITY INFORMATION:
 Locality is {Locality}. {Locality} is of {Locality} and address located on {Office_Exist_Floor} floor. {Locality} color is {Address_Structure_Color}.
-It's a {Dominated_Area} area.
-Landmark: {Landmark_1} and {Landmark_2}.
-{Feedback_From_Neighbour} feedback received from neighbors.
-Field executive also confirmed {Applicant_Status} is {Political_Connection}.
-Field Executive Observation: {Other_Observation}.
-Hence the profile is marked as {Final_Status}.`,
 
-    'UNTRACEABLE': `Visited at the given address {ADDRESS}. The given address is incorrect and untraceable. At the time of visit met with {Met_Person_Name}, Met person's informed that provided address is short. We called {Applicant_Status} but {Applicant_Status} {Call_Remark}.
-We required proper guidance to trace the address.
-Type of Locality is {Locality}.
-Field executive reached up to {Landmark_1}, {Landmark_2}, {Landmark_3}, {Landmark_4}.
-It's a {Dominated_Area} area.
-Field Executive Observation: {Other_Observation}.
-Hence the profile is marked as {Final_Status}.`,
+AREA ASSESSMENT:
+It's a {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
 
-    'NSP': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}.
-Met with {Met_Person_Name} {Designation}. Met person informed that there are no such person working at given address. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {Third_Party_Confirmation} there is no such person working at given address.
-Company name board is Company Name board {Company_Name_Plate} {Name_On_Board}.
-Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
-It is {Dominated_Area} area.
-Landmarks: {Landmark_1} and {Landmark_2}.
-{Feedback_From_Neighbour} feedback received from neighbors.
-Applicant's stability is not confirmed by our executive's observation as well as from TPC.
+CONCLUSION:
 Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`,
 
-    'NSP_DOOR_LOCKED': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}.
-TPC done {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} Office {Office_Existence} at given address. {Current_Company_Name} Company operating business at given address. Company name board is {Company_Name_Plate} {Name_On_Board}.
+    'UNTRACEABLE': `Office Untraceable Remark (UT):-
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is incorrect and untraceable. At the time of visit met with {Met_Person_Name}, Met person informed that provided address is short.
+
+CONTACT ATTEMPT:
+We called {Customer_Name} but {Customer_Name} {Call_Remark}. We required proper guidance to trace the address.
+
+SEARCH EFFORTS:
+Type of Locality is {Locality}. Field executive reached up to {Landmark_1}, {Landmark_2}, {Landmark_3}, {Landmark_4}. It's a {Dominated_Area} area.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'NSP': `Office Remark: NSP (No Such Person).
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}. Met with {Met_Person_Name} ({Designation}).
+
+EMPLOYMENT VERIFICATION:
+Met person informed that there is no such person working at given address. As per current office staff, {Customer_Name} has never worked at this office.
+
+OFFICE DETAILS:
+Company name board is {Company_Name_Plate} {Name_On_Board}. Office area approx. {Office_Approx_Area} sq. feet.
+
+LOCALITY INFORMATION:
 Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
-It is {Dominated_Area} area.
-Landmarks: {Landmark_1} and {Landmark_2}.
-{Feedback_From_Neighbour} feedback received from neighbors.
-Applicant's stability is not confirmed by our executive's observation as well as from TPC.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {Third_Party_Confirmation} there is no such person working at given address.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Applicant's stability is not confirmed by our executive's observation as well as from TPC.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'NSP_DOOR_LOCKED': `Office Remark: NSP & DOOR LOCKED.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} Office {Office_Existence} at given address. As per TPC confirmation, there is no such person working at this office.
+
+CURRENT OFFICE STATUS:
+{Current_Company_Name} Company operating business at given address. Company name board is {Company_Name_Plate} {Name_On_Board}.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Applicant's stability is not confirmed by our executive's observation as well as from TPC.
+
+CONCLUSION:
 Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`
   };
@@ -437,8 +525,14 @@ Hence the profile is marked as {Final_Status}.`
   /**
    * Format area in square feet with proper units
    */
-  private formatAreaSqFeet(formData: any): string {
-    const area = formData?.approxArea || formData?.approx_area || formData?.approximateArea || formData?.approxAreaSqFeet;
+  private formatAreaSqFeet(formData: any, type: string = 'residence'): string {
+    let area: any;
+
+    if (type === 'office') {
+      area = formData?.officeApproxArea || formData?.office_approx_area || formData?.officeArea;
+    } else {
+      area = formData?.approxArea || formData?.approx_area || formData?.approximateArea || formData?.approxAreaSqFeet;
+    }
 
     if (area && !isNaN(area) && area > 0) {
       return `${area} sq. feet`;
@@ -546,7 +640,7 @@ Hence the profile is marked as {Final_Status}.`
       Company_Nature_Of_Business: safeGet(formData, 'companyNatureOfBusiness') || safeGet(formData, 'company_nature_of_business'),
       Staff_Strength: safeGet(formData, 'staffStrength') || safeGet(formData, 'staff_strength'),
       Staff_Seen: safeGet(formData, 'staffSeen') || safeGet(formData, 'staff_seen'),
-      Office_Approx_Area: safeGet(formData, 'officeApproxArea') || safeGet(formData, 'office_approx_area'),
+      Office_Approx_Area: this.formatAreaSqFeet(formData, 'office'),
       Company_Name_Plate: safeGet(formData, 'companyNamePlateStatus') || safeGet(formData, 'company_nameplate_status'),
       Name_On_Board: safeGet(formData, 'nameOnCompanyBoard') || safeGet(formData, 'name_on_company_board'),
 
