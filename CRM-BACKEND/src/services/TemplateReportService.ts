@@ -51,7 +51,7 @@ CONCLUSION:
 Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`,
 
-    'POSITIVE_DOOR_LOCKED': `Residence Remark: POSITIVE.
+    'POSITIVE_DOOR_LOCKED': `Residence Remark: POSITIVE & DOOR LOCKED.
 
 VERIFICATION DETAILS:
 Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}.
@@ -93,7 +93,7 @@ CONCLUSION:
 Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`,
 
-    'SHIFTED_DOOR_LOCKED': `Residence Remark: SHIFTED.
+    'SHIFTED_DOOR_LOCKED': `Residence Remark: SHIFTED & DOOR LOCKED.
 
 VERIFICATION DETAILS:
 Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}.
@@ -154,7 +154,7 @@ CONCLUSION:
 Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`,
 
-    'NSP_DOOR_LOCKED': `Residence Remark: NSP (No Such Person).
+    'NSP_DOOR_LOCKED': `Residence Remark: NSP & DOOR LOCKED.
 
 VERIFICATION DETAILS:
 Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit door was {House_Status}.
