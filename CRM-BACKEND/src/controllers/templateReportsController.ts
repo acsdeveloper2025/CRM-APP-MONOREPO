@@ -162,7 +162,11 @@ export async function generateTemplateReport(req: AuthenticatedRequest, res: Res
           // UNTRACEABLE-specific fields
           callRemark: officeData.call_remark,
           landmark3: officeData.landmark3,
-          landmark4: officeData.landmark4
+          landmark4: officeData.landmark4,
+
+          // NSP-specific fields
+          thirdPartyConfirmation: officeData.third_party_confirmation,
+          officeExistence: officeData.office_existence
         };
       }
     }

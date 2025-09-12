@@ -147,6 +147,27 @@ Type of Locality is {Locality}.
 Field executive reached up to {Landmark_1}, {Landmark_2}, {Landmark_3}, {Landmark_4}.
 It's a {Dominated_Area} area.
 Field Executive Observation: {Other_Observation}.
+Hence the profile is marked as {Final_Status}.`,
+
+    'NSP': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}.
+Met with {Met_Person_Name} {Designation}. Met person informed that there are no such person working at given address. TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {Third_Party_Confirmation} there is no such person working at given address.
+Company name board is Company Name board {Company_Name_Plate} {Name_On_Board}.
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+It is {Dominated_Area} area.
+Landmarks: {Landmark_1} and {Landmark_2}.
+{Feedback_From_Neighbour} feedback received from neighbors.
+Applicant's stability is not confirmed by our executive's observation as well as from TPC.
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'NSP_DOOR_LOCKED': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit office was {Office_Status}.
+TPC done {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} Office {Office_Existence} at given address. {Current_Company_Name} Company operating business at given address. Company name board is {Company_Name_Plate} {Name_On_Board}.
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+It is {Dominated_Area} area.
+Landmarks: {Landmark_1} and {Landmark_2}.
+{Feedback_From_Neighbour} feedback received from neighbors.
+Applicant's stability is not confirmed by our executive's observation as well as from TPC.
+Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`
   };
 
@@ -246,14 +267,7 @@ Hence the profile is marked as {Final_Status}.`
         return 'UNTRACEABLE';
       }
 
-      // Handle NSP scenarios
-      if (outcomeNormalized.includes('nsp')) {
-        if (outcomeNormalized.includes('door lock') || outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
-          return 'NSP_DOOR_LOCKED';
-        } else {
-          return 'NSP';
-        }
-      }
+
 
       // Handle Positive scenarios
       if (outcomeNormalized.includes('positive')) {
@@ -286,12 +300,13 @@ Hence the profile is marked as {Final_Status}.`
         return 'UNTRACEABLE';
       }
 
-      // Handle NSP scenarios
+      // Handle NSP scenarios - use office status to determine template
       if (outcomeNormalized.includes('nsp')) {
-        if (outcomeNormalized.includes('door lock') || outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
-          return 'NSP_DOOR_LOCKED';
+        const officeStatus = formData?.officeStatus || formData?.office_status;
+        if (officeStatus && officeStatus.toLowerCase() === 'opened') {
+          return 'NSP'; // Office was open, person was met
         } else {
-          return 'NSP';
+          return 'NSP_DOOR_LOCKED'; // Office was closed, only TPC
         }
       }
 
@@ -421,7 +436,11 @@ Hence the profile is marked as {Final_Status}.`
       Met_Person_Type: safeGet(formData, 'metPersonType') || safeGet(formData, 'met_person_type') || 'Security',
       Name_Of_Met_Person: safeGet(formData, 'nameOfMetPerson') || safeGet(formData, 'name_of_met_person') || safeGet(formData, 'metPersonName'),
       Met_Person_Confirmation: safeGet(formData, 'metPersonConfirmation') || safeGet(formData, 'met_person_confirmation') || 'confirmed',
-      Office_Exist_Floor: safeGet(formData, 'officeExistFloor') || safeGet(formData, 'office_exist_floor') || safeGet(formData, 'addressFloor') || safeGet(formData, 'floor')
+      Office_Exist_Floor: safeGet(formData, 'officeExistFloor') || safeGet(formData, 'office_exist_floor') || safeGet(formData, 'addressFloor') || safeGet(formData, 'floor'),
+
+      // Office NSP-specific variables
+      Third_Party_Confirmation: safeGet(formData, 'thirdPartyConfirmation') || safeGet(formData, 'third_party_confirmation') || 'confirmed',
+      Office_Existence: safeGet(formData, 'officeExistence') || safeGet(formData, 'office_existence') || 'exists'
     };
   }
 }
