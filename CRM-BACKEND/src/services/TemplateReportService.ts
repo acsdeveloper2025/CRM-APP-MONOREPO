@@ -269,12 +269,13 @@ Hence the profile is marked as {Final_Status}.`
 
 
 
-      // Handle Positive scenarios
+      // Handle Positive scenarios - use house status to determine template
       if (outcomeNormalized.includes('positive')) {
-        if (outcomeNormalized.includes('door locked') || outcomeNormalized.includes('locked')) {
-          return 'POSITIVE_DOOR_LOCKED';
+        const houseStatus = formData?.houseStatus || formData?.house_status;
+        if (houseStatus && houseStatus.toLowerCase() === 'opened') {
+          return 'POSITIVE_DOOR_ACCESSIBLE'; // Door was open, person was met
         } else {
-          return 'POSITIVE_DOOR_ACCESSIBLE';
+          return 'POSITIVE_DOOR_LOCKED'; // Door was closed/locked
         }
       }
     }
@@ -364,9 +365,9 @@ Hence the profile is marked as {Final_Status}.`
       Name_on_Society_Board: safeGet(formData, 'nameOnSocietyBoard') || safeGet(formData, 'societyNamePlate'),
       
       // Locality details
-      Locality: safeGet(formData, 'locality') || safeGet(formData, 'localityType'),
+      Locality: safeGet(formData, 'localityType') || safeGet(formData, 'locality') || 'Tower / Building',
       Address_Structure_G_Plus: safeGet(formData, 'addressStructure') || safeGet(formData, 'addressStructureGPlus'),
-      Applicant_Staying_Floor: safeGet(formData, 'applicantStayingFloor') || safeGet(formData, 'floor'),
+      Applicant_Staying_Floor: safeGet(formData, 'addressFloor') || safeGet(formData, 'applicantStayingFloor') || safeGet(formData, 'floor'),
       Address_Structure_Color: safeGet(formData, 'addressStructureColor') || safeGet(formData, 'buildingColor'),
       Door_Color: safeGet(formData, 'doorColor'),
       
@@ -375,10 +376,10 @@ Hence the profile is marked as {Final_Status}.`
       
       // TPC details
       TPC_Met_Person_1: safeGet(formData, 'tpcMetPerson1') || safeGet(formData, 'tpcMetPerson'),
-      Name_of_TPC_1: safeGet(formData, 'tpcName1') || safeGet(formData, 'nameOfTpc1'),
+      Name_of_TPC_1: safeGet(formData, 'nameOfTpc1') || safeGet(formData, 'tpcName1'),
       TPC_Confirmation_1: safeGet(formData, 'tpcConfirmation1') || safeGet(formData, 'tpcConfirmation'),
       TPC_Met_Person_2: safeGet(formData, 'tpcMetPerson2'),
-      Name_of_TPC_2: safeGet(formData, 'tpcName2') || safeGet(formData, 'nameOfTpc2'),
+      Name_of_TPC_2: safeGet(formData, 'nameOfTpc2') || safeGet(formData, 'tpcName2'),
       TPC_Confirmation_2: safeGet(formData, 'tpcConfirmation2'),
       
       // Landmarks
