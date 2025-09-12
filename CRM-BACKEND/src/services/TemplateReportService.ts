@@ -1091,6 +1091,232 @@ Field Executive Observation: {Other_Observation}
 Hence the profile is marked as {Final_Status}.`
   };
 
+  private readonly PROPERTY_APF_TEMPLATES = {
+    'POSITIVE_NEGATIVE': `Property APF Remark: POSITIVE/NEGATIVE.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit property was accessible for verification.
+
+PROPERTY VERIFICATION:
+Property verification completed for APF (Approved Project Financing) assessment. Property details verified against project documentation. Property status confirmed as per APF requirements.
+
+PROPERTY DETAILS:
+Property type is {Business_Type} and project nature is {Company_Nature_Of_Business}. Property area approx. {Business_Approx_Area} sq. feet. Project establishment period is {Establishment_Period}. Developer/Builder name is {Business_Owner_Name}.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and access point color is {Door_Color}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} property existence and APF compliance.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors regarding the property. Field executive also confirmed property is {Political_Connection}.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'ERT': `Property APF Entry Restricted Remark (ERT):-
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. It is {Customer_Name} property address for APF verification. At the time of visit met with {Met_Person_Type} {Name_Of_Met_Person} informed that given premises entry not allowed.
+
+ENTRY RESTRICTION DETAILS:
+{Met_Person_Type} {Met_Person_Confirmation} property existence at given address. Entry is restricted due to security protocols or property access policies.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Locality} and property located on {Office_Exist_Floor} floor. {Locality} color is {Address_Structure_Color}.
+
+AREA ASSESSMENT:
+It's a {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Field executive also confirmed property is {Political_Connection}.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'UNTRACEABLE': `Property APF Untraceable Remark (UT):-
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is incorrect and untraceable. At the time of visit met with {Met_Person_Name}, Met person informed that provided address is short.
+
+CONTACT ATTEMPT:
+We called {Customer_Name} but {Customer_Name} {Call_Remark}. We required proper guidance to trace the property address.
+
+SEARCH EFFORTS:
+Type of Locality is {Locality}. Field executive reached up to {Landmark_1}, {Landmark_2}, {Landmark_3}, {Landmark_4}. It's a {Dominated_Area} area.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`
+  };
+
+  private readonly PROPERTY_INDIVIDUAL_TEMPLATES = {
+    'POSITIVE': `Property Individual Remark: POSITIVE.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit property was {Business_Status}. Met with {Met_Person_Name} ({Designation}), confirmed {Customer_Name} property ownership at given address since last {Business_Period}.
+
+PROPERTY OWNERSHIP DETAILS:
+Property type is {Business_Type} and nature of property is {Company_Nature_Of_Business}. Property area approx. {Business_Approx_Area} sq. feet. Property ownership period is {Establishment_Period}. Property owner name is {Business_Owner_Name}. Property name board {Company_Name_Plate} {Name_On_Board}.
+
+PROPERTY STATUS:
+Property activity includes {Business_Activity}. Property setup is {Business_Setup}. Property existence confirmed as {Business_Existence}. Current property status is verified and confirmed.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Customer_Name} & property ownership.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback found regarding {Customer_Name} & property. Field executive also confirmed {Customer_Name} is {Political_Connection}. {Customer_Name} property ownership is confirmed by our executive's observation as well as from TPC.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'POSITIVE_DOOR_LOCKED': `Property Individual Remark: POSITIVE & DOOR LOCKED.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit property was {Business_Status}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} {Customer_Name} & property ownership. They informed that given property owned by {Customer_Name} at given address since last {Business_Period}.
+
+PROPERTY OWNERSHIP DETAILS:
+Property type is {Business_Type} and nature of property is {Company_Nature_Of_Business}. Property area approx. {Business_Approx_Area} sq. feet. Property ownership period is {Establishment_Period}. Property name board {Company_Name_Plate} {Name_On_Board}.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'SHIFTED': `Property Individual Remark: SHIFTED.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit property was {Business_Status}. Met with {Met_Person_Name} ({Designation}) confirmed that property ownership shifted from {Customer_Name} {Old_Business_Shifted_Period} ago.
+
+CURRENT PROPERTY STATUS:
+{Current_Company_Name} is current property owner at given address from last {Current_Company_Period}. Property name board is {Company_Name_Plate} {Name_On_Board}.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they confirmed that property ownership is shifted from {Customer_Name}.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'SHIFTED_DOOR_LOCKED': `Property Individual Remark: SHIFTED & DOOR LOCKED.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit property was {Business_Status}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} they confirmed that property ownership shifted from {Customer_Name} {Old_Business_Shifted_Period} ago.
+
+CURRENT PROPERTY STATUS:
+{Current_Company_Name} is current property owner at given address. Property name board is {Company_Name_Plate} {Name_On_Board}.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'NSP': `Property Individual Remark: NSP (No Such Person).
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit property was {Business_Status}. Met with {Met_Person_Name} ({Designation}).
+
+PROPERTY VERIFICATION:
+Met person informed that there is no such person owning property at given address. As per current property owner, {Customer_Name} has never owned property at this address.
+
+CURRENT PROPERTY DETAILS:
+Property name board is {Company_Name_Plate} {Name_On_Board}. Property area approx. {Business_Approx_Area} sq. feet.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {Third_Party_Confirmation} there is no such person owning property at given address.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Applicant's property ownership is not confirmed by our executive's observation as well as from TPC.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'NSP_DOOR_LOCKED': `Property Individual Remark: NSP & DOOR LOCKED.
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. At the time of visit property was {Business_Status}.
+
+THIRD PARTY CONFIRMATION:
+TPC done with {TPC_Met_Person_1} {Name_of_TPC_1} {TPC_Confirmation_1} and {TPC_Met_Person_2} {Name_of_TPC_2} {TPC_Confirmation_2} Property {Business_Existence} at given address. As per TPC confirmation, there is no such person owning property at this address.
+
+CURRENT PROPERTY STATUS:
+{Current_Company_Name} is current property owner at given address. Property name board is {Company_Name_Plate} {Name_On_Board}.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Address_Structure}. {Locality} color is {Address_Structure_Color} and Door color is {Door_Color}.
+
+AREA ASSESSMENT:
+It is {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Applicant's property ownership is not confirmed by our executive's observation as well as from TPC.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'ERT': `Property Individual Entry Restricted Remark (ERT):-
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. It is {Customer_Name} property address. At the time of visit met with {Met_Person_Type} {Name_Of_Met_Person} informed that given premises entry not allowed.
+
+ENTRY RESTRICTION DETAILS:
+{Met_Person_Type} {Met_Person_Confirmation} property existence at given address. Entry is restricted due to security protocols or property access policies.
+
+LOCALITY INFORMATION:
+Locality is {Locality}. {Locality} is of {Locality} and property located on {Office_Exist_Floor} floor. {Locality} color is {Address_Structure_Color}.
+
+AREA ASSESSMENT:
+It's a {Dominated_Area} area. Landmarks: {Landmark_1} and {Landmark_2}. {Feedback_From_Neighbour} feedback received from neighbors. Field executive also confirmed {Customer_Name} is {Political_Connection}.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'UNTRACEABLE': `Property Individual Untraceable Remark (UT):-
+
+VERIFICATION DETAILS:
+Visited at the given address for {Customer_Name} ({Applicant_Type}). The given address is incorrect and untraceable. At the time of visit met with {Met_Person_Name}, Met person informed that provided address is short.
+
+CONTACT ATTEMPT:
+We called {Customer_Name} but {Customer_Name} {Call_Remark}. We required proper guidance to trace the property address.
+
+SEARCH EFFORTS:
+Type of Locality is {Locality}. Field executive reached up to {Landmark_1}, {Landmark_2}, {Landmark_3}, {Landmark_4}. It's a {Dominated_Area} area.
+
+CONCLUSION:
+Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`
+  };
+
   /**
    * Generate template-based report for verification form submission
    */
@@ -1175,6 +1401,14 @@ Hence the profile is marked as {Final_Status}.`
 
     if (verificationType.toUpperCase() === 'DSA_CONNECTOR') {
       return this.DSA_CONNECTOR_TEMPLATES[templateKey] || null;
+    }
+
+    if (verificationType.toUpperCase() === 'PROPERTY_APF') {
+      return this.PROPERTY_APF_TEMPLATES[templateKey] || null;
+    }
+
+    if (verificationType.toUpperCase() === 'PROPERTY_INDIVIDUAL') {
+      return this.PROPERTY_INDIVIDUAL_TEMPLATES[templateKey] || null;
     }
 
     // Add other verification types here as needed
@@ -1461,6 +1695,64 @@ Hence the profile is marked as {Final_Status}.`
           return 'POSITIVE'; // DSA/Connector office was open, person was met
         } else {
           return 'POSITIVE_DOOR_LOCKED'; // DSA/Connector office was closed, only TPC
+        }
+      }
+    }
+
+    if (verificationType.toUpperCase() === 'PROPERTY_APF') {
+      // PROPERTY_APF has simplified logic - only POSITIVE_NEGATIVE, ERT, and UNTRACEABLE
+      if (outcomeNormalized.includes('ert') || outcomeNormalized === 'ert') {
+        return 'ERT';
+      }
+
+      if (outcomeNormalized.includes('untraceable') || outcomeNormalized === 'untraceable') {
+        return 'UNTRACEABLE';
+      }
+
+      // Handle Positive/Negative scenarios - PROPERTY_APF uses combined template
+      if (outcomeNormalized.includes('positive') || outcomeNormalized.includes('negative')) {
+        return 'POSITIVE_NEGATIVE';
+      }
+    }
+
+    if (verificationType.toUpperCase() === 'PROPERTY_INDIVIDUAL') {
+      // Handle Shifted scenarios - use property status to determine template
+      if (outcomeNormalized.includes('shifted')) {
+        const propertyStatus = formData?.businessStatus || formData?.business_status || formData?.propertyStatus;
+        if (propertyStatus && propertyStatus.toLowerCase() === 'opened') {
+          return 'SHIFTED'; // Property was accessible, person was met
+        } else {
+          return 'SHIFTED_DOOR_LOCKED'; // Property was closed, only TPC
+        }
+      }
+
+      // Handle ERT scenarios
+      if (outcomeNormalized.includes('ert') || outcomeNormalized === 'ert') {
+        return 'ERT';
+      }
+
+      // Handle Untraceable scenarios
+      if (outcomeNormalized.includes('untraceable') || outcomeNormalized === 'untraceable') {
+        return 'UNTRACEABLE';
+      }
+
+      // Handle NSP scenarios - use property status to determine template
+      if (outcomeNormalized.includes('nsp')) {
+        const propertyStatus = formData?.businessStatus || formData?.business_status || formData?.propertyStatus;
+        if (propertyStatus && propertyStatus.toLowerCase() === 'opened') {
+          return 'NSP'; // Property was accessible, person was met
+        } else {
+          return 'NSP_DOOR_LOCKED'; // Property was closed, only TPC
+        }
+      }
+
+      // Handle Positive scenarios - use property status to determine template
+      if (outcomeNormalized.includes('positive')) {
+        const propertyStatus = formData?.businessStatus || formData?.business_status || formData?.propertyStatus;
+        if (propertyStatus && propertyStatus.toLowerCase() === 'opened') {
+          return 'POSITIVE'; // Property was accessible, person was met
+        } else {
+          return 'POSITIVE_DOOR_LOCKED'; // Property was closed, only TPC
         }
       }
     }
