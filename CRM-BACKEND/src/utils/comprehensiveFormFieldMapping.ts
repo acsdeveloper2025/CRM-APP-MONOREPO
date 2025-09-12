@@ -64,9 +64,10 @@ export const RESIDENCE_FORM_FIELDS: FormFieldDefinition[] = [
   
   // Shifting Details (SHIFTED specific)
   { id: 'shiftedPeriod', name: 'shiftedPeriod', label: 'Shifted Period', type: 'text', isRequired: false, section: 'Shifting Details', order: 1, formTypes: ['SHIFTED'] },
-  { id: 'currentLocation', name: 'currentLocation', label: 'Current Location', type: 'text', isRequired: false, section: 'Shifting Details', order: 2, formTypes: ['SHIFTED'] },
-  { id: 'premisesStatus', name: 'premisesStatus', label: 'Premises Status', type: 'select', isRequired: false, section: 'Shifting Details', order: 3, formTypes: ['SHIFTED'] },
-  { id: 'roomStatus', name: 'roomStatus', label: 'Room Status', type: 'select', isRequired: false, section: 'Shifting Details', order: 4, formTypes: ['SHIFTED'] },
+  { id: 'premisesStatus', name: 'premisesStatus', label: 'Premises Status', type: 'select', isRequired: false, section: 'Shifting Details', order: 2, formTypes: ['SHIFTED'] },
+  { id: 'roomStatus', name: 'roomStatus', label: 'Room Status', type: 'select', isRequired: false, section: 'Shifting Details', order: 3, formTypes: ['SHIFTED'] },
+  { id: 'houseStatus', name: 'houseStatus', label: 'House Status', type: 'select', isRequired: false, section: 'Shifting Details', order: 4, formTypes: ['SHIFTED'] },
+  { id: 'doorColor', name: 'doorColor', label: 'Door Color', type: 'text', isRequired: false, section: 'Shifting Details', order: 5, formTypes: ['SHIFTED'] },
   
   // NSP Details (NSP specific)
   { id: 'stayingPersonName', name: 'stayingPersonName', label: 'Staying Person Name', type: 'text', isRequired: false, section: 'NSP Details', order: 1, formTypes: ['NSP'] },
@@ -85,12 +86,12 @@ export const RESIDENCE_FORM_FIELDS: FormFieldDefinition[] = [
   { id: 'alternateContact', name: 'alternateContact', label: 'Alternate Contact', type: 'text', isRequired: false, section: 'Contact Details', order: 2, formTypes: ['UNTRACEABLE'] },
 
   // Third Party Confirmation (TPC) Section
-  { id: 'tpcMetPerson1', name: 'tpcMetPerson1', label: 'TPC Met Person 1', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 1, formTypes: ['POSITIVE', 'NSP'] },
-  { id: 'tpcName1', name: 'tpcName1', label: 'TPC Name 1', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 2, formTypes: ['POSITIVE', 'NSP'] },
-  { id: 'tpcConfirmation1', name: 'tpcConfirmation1', label: 'TPC Confirmation 1', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 3, formTypes: ['POSITIVE', 'NSP'] },
-  { id: 'tpcMetPerson2', name: 'tpcMetPerson2', label: 'TPC Met Person 2', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 4, formTypes: ['POSITIVE', 'NSP'] },
-  { id: 'tpcName2', name: 'tpcName2', label: 'TPC Name 2', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 5, formTypes: ['POSITIVE', 'NSP'] },
-  { id: 'tpcConfirmation2', name: 'tpcConfirmation2', label: 'TPC Confirmation 2', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 6, formTypes: ['POSITIVE', 'NSP'] },
+  { id: 'tpcMetPerson1', name: 'tpcMetPerson1', label: 'TPC Met Person 1', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 1, formTypes: ['POSITIVE', 'NSP', 'SHIFTED'] },
+  { id: 'tpcName1', name: 'tpcName1', label: 'TPC Name 1', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 2, formTypes: ['POSITIVE', 'NSP', 'SHIFTED'] },
+  { id: 'tpcConfirmation1', name: 'tpcConfirmation1', label: 'TPC Confirmation 1', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 3, formTypes: ['POSITIVE', 'NSP', 'SHIFTED'] },
+  { id: 'tpcMetPerson2', name: 'tpcMetPerson2', label: 'TPC Met Person 2', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 4, formTypes: ['POSITIVE', 'NSP', 'SHIFTED'] },
+  { id: 'tpcName2', name: 'tpcName2', label: 'TPC Name 2', type: 'text', isRequired: false, section: 'Third Party Confirmation', order: 5, formTypes: ['POSITIVE', 'NSP', 'SHIFTED'] },
+  { id: 'tpcConfirmation2', name: 'tpcConfirmation2', label: 'TPC Confirmation 2', type: 'select', isRequired: false, section: 'Third Party Confirmation', order: 6, formTypes: ['POSITIVE', 'NSP', 'SHIFTED'] },
 
   // Area Assessment Section (Common to all)
   { id: 'politicalConnection', name: 'politicalConnection', label: 'Political Connection', type: 'select', isRequired: false, section: 'Area Assessment', order: 1 },
