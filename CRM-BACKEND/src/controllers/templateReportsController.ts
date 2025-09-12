@@ -245,17 +245,17 @@ export async function getTemplateReport(req: Request, res: Response) {
     // Get case UUID
     const caseQuery = `SELECT id FROM cases WHERE "caseId" = $1`;
     const caseResult = await pool.query(caseQuery, [parseInt(caseId)]);
-    
+
     if (caseResult.rows.length === 0) {
       return res.status(404).json({ error: 'Case not found' });
     }
 
     const caseUuid = caseResult.rows[0].id;
 
-    // Get template report
+    // Get template report using mobile app submission ID
     const reportQuery = `
       SELECT id, report_content, metadata, created_at, created_by
-      FROM template_reports 
+      FROM template_reports
       WHERE case_id = $1 AND submission_id = $2
       ORDER BY created_at DESC
       LIMIT 1
