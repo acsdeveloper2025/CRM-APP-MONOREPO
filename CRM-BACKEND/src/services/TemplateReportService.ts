@@ -130,6 +130,15 @@ Landmarks: {Landmark_1} and {Landmark_2}.
 {Feedback_From_Neighbour} feedback from neighbors.
 Field executive also confirmed {Applicant_Status} is {Political_Connection}.
 Field Executive Observation: {Other_Observation}
+Hence the profile is marked as {Final_Status}.`,
+
+    'ERT': `Visited at the given address {ADDRESS}. The given address is traceable and {Address_Locatable}. Address locality is {Address_Rating}. It is {Applicant_Status} address. At the time of visit met with {Met_Person_Type} {Name_Of_Met_Person} informed that given premises entry not allowed. {Met_Person_Type} {Met_Person_Confirmation} {Office_Status} given address.
+Locality is {Locality}. {Locality} is of {Locality} and address located on {Office_Exist_Floor} floor. {Locality} color is {Address_Structure_Color}.
+It's a {Dominated_Area} area.
+Landmark: {Landmark_1} and {Landmark_2}.
+{Feedback_From_Neighbour} feedback received from neighbors.
+Field executive also confirmed {Applicant_Status} is {Political_Connection}.
+Field Executive Observation: {Other_Observation}.
 Hence the profile is marked as {Final_Status}.`
   };
 
@@ -398,7 +407,13 @@ Hence the profile is marked as {Final_Status}.`
       // Office SHIFTED-specific variables
       Old_Office_Shifted_Period: safeGet(formData, 'oldOfficeShiftedPeriod') || safeGet(formData, 'old_office_shifted_period') || safeGet(formData, 'shiftedPeriod'),
       Current_Company_Name: safeGet(formData, 'currentCompanyName') || safeGet(formData, 'current_company_name') || safeGet(formData, 'companyName'),
-      Current_Company_Period: safeGet(formData, 'currentCompanyPeriod') || safeGet(formData, 'current_company_period') || safeGet(formData, 'establishmentPeriod')
+      Current_Company_Period: safeGet(formData, 'currentCompanyPeriod') || safeGet(formData, 'current_company_period') || safeGet(formData, 'establishmentPeriod'),
+
+      // Office ERT-specific variables
+      Met_Person_Type: safeGet(formData, 'metPersonType') || safeGet(formData, 'met_person_type') || 'Security',
+      Name_Of_Met_Person: safeGet(formData, 'nameOfMetPerson') || safeGet(formData, 'name_of_met_person') || safeGet(formData, 'metPersonName'),
+      Met_Person_Confirmation: safeGet(formData, 'metPersonConfirmation') || safeGet(formData, 'met_person_confirmation') || 'confirmed',
+      Office_Exist_Floor: safeGet(formData, 'officeExistFloor') || safeGet(formData, 'office_exist_floor') || safeGet(formData, 'addressFloor') || safeGet(formData, 'floor')
     };
   }
 }

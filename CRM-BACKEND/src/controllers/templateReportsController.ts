@@ -146,7 +146,18 @@ export async function generateTemplateReport(req: AuthenticatedRequest, res: Res
           feedbackFromNeighbour: officeData.feedback_from_neighbour,
           politicalConnection: officeData.political_connection,
           otherObservation: officeData.other_observation,
-          finalStatus: officeData.final_status
+          finalStatus: officeData.final_status,
+
+          // ERT-specific fields
+          metPersonType: officeData.met_person_type,
+          nameOfMetPerson: officeData.name_of_met_person,
+          metPersonConfirmation: officeData.met_person_confirmation,
+          officeExistFloor: officeData.address_floor,
+
+          // SHIFTED-specific fields
+          oldOfficeShiftedPeriod: officeData.old_office_shifted_period,
+          currentCompanyName: officeData.current_company_name,
+          currentCompanyPeriod: officeData.current_company_period
         };
       }
     }
