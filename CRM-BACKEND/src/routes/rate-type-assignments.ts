@@ -27,20 +27,20 @@ const listAssignmentsValidation = [
     .withMessage('Limit must be between 1 and 100'),
   query('clientId')
     .optional()
-    .isUUID()
-    .withMessage('Client ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a valid integer'),
   query('productId')
     .optional()
-    .isUUID()
-    .withMessage('Product ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Product ID must be a valid integer'),
   query('verificationTypeId')
     .optional()
-    .isUUID()
-    .withMessage('Verification Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Verification Type ID must be a valid integer'),
   query('rateTypeId')
     .optional()
-    .isUUID()
-    .withMessage('Rate Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Rate Type ID must be a valid integer'),
   query('isActive')
     .optional()
     .isBoolean()
@@ -49,47 +49,47 @@ const listAssignmentsValidation = [
 
 const combinationValidation = [
   query('clientId')
-    .isUUID()
-    .withMessage('Client ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a valid integer'),
   query('productId')
-    .isUUID()
-    .withMessage('Product ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Product ID must be a valid integer'),
   query('verificationTypeId')
-    .isUUID()
-    .withMessage('Verification Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Verification Type ID must be a valid integer'),
 ];
 
 const bulkAssignValidation = [
   body('clientId')
-    .isUUID()
-    .withMessage('Client ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a valid integer'),
   body('productId')
-    .isUUID()
-    .withMessage('Product ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Product ID must be a valid integer'),
   body('verificationTypeId')
-    .isUUID()
-    .withMessage('Verification Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Verification Type ID must be a valid integer'),
   body('rateTypeIds')
     .isArray()
     .withMessage('Rate Type IDs must be an array'),
   body('rateTypeIds.*')
-    .isUUID()
-    .withMessage('Each Rate Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Each Rate Type ID must be a valid integer'),
 ];
 
 const createAssignmentValidation = [
   body('clientId')
-    .isUUID()
-    .withMessage('Client ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a valid integer'),
   body('productId')
-    .isUUID()
-    .withMessage('Product ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Product ID must be a valid integer'),
   body('verificationTypeId')
-    .isUUID()
-    .withMessage('Verification Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Verification Type ID must be a valid integer'),
   body('rateTypeId')
-    .isUUID()
-    .withMessage('Rate Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Rate Type ID must be a valid integer'),
   body('isActive')
     .optional()
     .isBoolean()
@@ -122,7 +122,7 @@ router.post('/',
 );
 
 router.delete('/:id',
-  [param('id').isUUID().withMessage('Assignment ID must be a valid UUID')],
+  [param('id').isInt({ min: 1 }).withMessage('Assignment ID must be a valid integer')],
   handleValidationErrors,
   deleteRateTypeAssignment
 );

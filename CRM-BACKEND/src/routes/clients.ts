@@ -79,10 +79,8 @@ const updateClientValidation = [
     .withMessage('verificationTypeIds must be an array of IDs'),
   body('verificationTypeIds.*')
     .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Each verificationTypeId must be a non-empty string'),
+    .isInt({ min: 1 })
+    .withMessage('Each verificationTypeId must be a positive integer'),
 ];
 
 // GET /api/clients - Get all clients
@@ -101,7 +99,7 @@ router.get('/',
 router.get('/:id',
   authenticateToken,
   validate([
-    param('id').trim().notEmpty().withMessage('Client ID is required'),
+    param('id').isInt({ min: 1 }).withMessage('Client ID must be a positive integer'),
   ]),
   getClientById
 );
@@ -110,7 +108,7 @@ router.get('/:id',
 router.get('/:id/verification-types',
   authenticateToken,
   validate([
-    param('id').trim().notEmpty().withMessage('Client ID is required'),
+    param('id').isInt({ min: 1 }).withMessage('Client ID must be a positive integer'),
     query('isActive').optional().isBoolean().withMessage('isActive must be a boolean')
   ]),
   getClientVerificationTypes

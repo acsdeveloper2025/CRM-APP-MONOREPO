@@ -177,7 +177,7 @@ export function RateAssignmentTab() {
             {/* Client Selection */}
             <div className="space-y-2">
               <Label htmlFor="client-select">Client *</Label>
-              <Select value={selectedClientId} onValueChange={handleClientChange}>
+              <Select value={selectedClientId ? String(selectedClientId) : ""} onValueChange={handleClientChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
@@ -195,7 +195,7 @@ export function RateAssignmentTab() {
             <div className="space-y-2">
               <Label htmlFor="product-select">Product *</Label>
               <Select
-                value={selectedProductId}
+                value={selectedProductId ? String(selectedProductId) : ""}
                 onValueChange={handleProductChange}
                 disabled={!selectedClientId}
               >
@@ -216,7 +216,7 @@ export function RateAssignmentTab() {
             <div className="space-y-2">
               <Label htmlFor="verification-type-select">Verification Type *</Label>
               <Select
-                value={selectedVerificationTypeId}
+                value={selectedVerificationTypeId ? String(selectedVerificationTypeId) : ""}
                 onValueChange={handleVerificationTypeChange}
                 disabled={!selectedProductId}
               >
@@ -225,7 +225,7 @@ export function RateAssignmentTab() {
                 </SelectTrigger>
                 <SelectContent>
                   {verificationTypes.map((vt) => (
-                    <SelectItem key={vt.id} value={vt.id}>
+                    <SelectItem key={vt.id} value={String(vt.id)}>
                       {vt.name} ({vt.code})
                     </SelectItem>
                   ))}

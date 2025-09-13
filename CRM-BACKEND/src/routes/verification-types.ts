@@ -117,20 +117,20 @@ router.post('/',
 // );
 
 router.get('/:id',
-  [param('id').trim().notEmpty().withMessage('Verification type ID is required')],
+  [param('id').isInt({ min: 1 }).withMessage('Verification type ID must be a positive integer')],
   handleValidationErrors,
   getVerificationTypeById
 );
 
 router.put('/:id',
-  [param('id').trim().notEmpty().withMessage('Verification type ID is required')],
+  [param('id').isInt({ min: 1 }).withMessage('Verification type ID must be a positive integer')],
   updateVerificationTypeValidation,
   handleValidationErrors,
   updateVerificationType
 );
 
 router.delete('/:id',
-  [param('id').trim().notEmpty().withMessage('Verification type ID is required')],
+  [param('id').isInt({ min: 1 }).withMessage('Verification type ID must be a positive integer')],
   handleValidationErrors,
   deleteVerificationType
 );

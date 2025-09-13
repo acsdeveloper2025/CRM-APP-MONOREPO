@@ -41,8 +41,7 @@ const fullCaseFormSchema = z.object({
   // Client Information
   clientId: z.string().min(1, 'Client selection is required'),
   productId: z.string().min(1, 'Product selection is required'),
-  verificationType: z.string().min(1, 'Verification type is required'),
-  verificationTypeId: z.string().optional(),
+  verificationTypeId: z.string().min(1, 'Verification type is required'),
 
   // Assignment Information
   createdByBackendUser: z.string().min(1, 'Created by backend user is required'),
@@ -118,7 +117,6 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
       trigger: initialData.trigger || '', // TRIGGER field
       clientId: initialData.clientId || '',
       productId: initialData.productId || '',
-      verificationType: initialData.verificationType || '',
       verificationTypeId: initialData.verificationTypeId || '',
       createdByBackendUser: initialData.createdByBackendUser || getUserDisplayName(user),
       backendContactNumber: initialData.backendContactNumber || '',
@@ -179,7 +177,6 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
         trigger: initialData.trigger || '', // TRIGGER field
         clientId: initialData.clientId || '',
         productId: initialData.productId || '',
-        verificationType: initialData.verificationType || '',
         verificationTypeId: initialData.verificationTypeId || '',
         createdByBackendUser: initialData.createdByBackendUser || getUserDisplayName(user),
         backendContactNumber: initialData.backendContactNumber || '',
@@ -398,7 +395,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                 {/* Verification Type */}
                 <FormField
                   control={form.control}
-                  name="verificationType"
+                  name="verificationTypeId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Verification Type *</FormLabel>
@@ -410,7 +407,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                         </FormControl>
                         <SelectContent>
                           {verificationTypes?.map((type) => (
-                            <SelectItem key={type.id} value={type.name}>
+                            <SelectItem key={type.id} value={type.id.toString()}>
                               {type.name}
                             </SelectItem>
                           ))}
@@ -554,20 +551,36 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                                 : availableRateTypes.length === 0
                                 ? "No rate types available"
                                 : "Select rate type"
-                            } />
+                            }>
+                              {field.value && availableRateTypes && (() => {
+                                const selectedRateType = availableRateTypes.find(rt => rt.id.toString() === field.value);
+                                return selectedRateType ? (
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className="font-medium">{selectedRateType.name}</span>
+                                    {selectedRateType.hasRate && selectedRateType.amount && (
+                                      <span className="text-sm font-semibold text-green-600 ml-2">
+                                        ₹{selectedRateType.amount}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : null;
+                              })()}
+                            </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {availableRateTypes?.map((rateType) => (
                             <SelectItem key={rateType.id} value={rateType.id.toString()}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{rateType.name}</span>
-                                {rateType.description && (
-                                  <span className="text-sm text-gray-500">{rateType.description}</span>
-                                )}
+                              <div className="flex items-center justify-between w-full py-2">
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-gray-900">{rateType.name}</span>
+                                  {rateType.description && (
+                                    <span className="text-xs text-gray-500 mt-1">{rateType.description}</span>
+                                  )}
+                                </div>
                                 {rateType.hasRate && rateType.amount && (
-                                  <span className="text-sm text-green-600 font-medium">
-                                    ₹{rateType.amount} {rateType.currency || 'INR'}
+                                  <span className="text-sm font-semibold text-green-600 ml-4">
+                                    ₹{rateType.amount}
                                   </span>
                                 )}
                               </div>

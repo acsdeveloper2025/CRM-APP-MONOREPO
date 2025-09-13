@@ -27,20 +27,20 @@ const listRatesValidation = [
     .withMessage('Limit must be between 1 and 1000'),
   query('clientId')
     .optional()
-    .isUUID()
-    .withMessage('Client ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a valid integer'),
   query('productId')
     .optional()
-    .isUUID()
-    .withMessage('Product ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Product ID must be a valid integer'),
   query('verificationTypeId')
     .optional()
-    .isUUID()
-    .withMessage('Verification Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Verification Type ID must be a valid integer'),
   query('rateTypeId')
     .optional()
-    .isUUID()
-    .withMessage('Rate Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Rate Type ID must be a valid integer'),
   query('isActive')
     .optional()
     .isBoolean()
@@ -62,29 +62,29 @@ const listRatesValidation = [
 
 const availableRateTypesValidation = [
   query('clientId')
-    .isUUID()
-    .withMessage('Client ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a valid integer'),
   query('productId')
-    .isUUID()
-    .withMessage('Product ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Product ID must be a valid integer'),
   query('verificationTypeId')
-    .isUUID()
-    .withMessage('Verification Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Verification Type ID must be a valid integer'),
 ];
 
 const createOrUpdateRateValidation = [
   body('clientId')
-    .isUUID()
-    .withMessage('Client ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a valid integer'),
   body('productId')
-    .isUUID()
-    .withMessage('Product ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Product ID must be a valid integer'),
   body('verificationTypeId')
-    .isUUID()
-    .withMessage('Verification Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Verification Type ID must be a valid integer'),
   body('rateTypeId')
-    .isUUID()
-    .withMessage('Rate Type ID must be a valid UUID'),
+    .isInt({ min: 1 })
+    .withMessage('Rate Type ID must be a valid integer'),
   body('amount')
     .isNumeric()
     .withMessage('Amount must be a number')
@@ -124,7 +124,7 @@ router.post('/',
 );
 
 router.delete('/:id',
-  [param('id').isUUID().withMessage('Rate ID must be a valid UUID')],
+  [param('id').isInt({ min: 1 }).withMessage('Rate ID must be a valid integer')],
   handleValidationErrors,
   deleteRate
 );

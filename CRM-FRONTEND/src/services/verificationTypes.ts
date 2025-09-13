@@ -2,7 +2,7 @@ import { apiService } from './api';
 import type { ApiResponse, PaginationQuery, PaginatedResponse } from '@/types/api';
 
 export interface VerificationType {
-  id: string;
+  id: number; // Fixed: Changed from string to number to match database
   name: string;
   code: string;
   description?: string;

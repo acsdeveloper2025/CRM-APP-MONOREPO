@@ -17,7 +17,7 @@ export const clientKeys = {
   lists: () => [...clientKeys.all, 'list'] as const,
   list: (filters: PaginationQuery) => [...clientKeys.lists(), filters] as const,
   details: () => [...clientKeys.all, 'detail'] as const,
-  detail: (id: number) => [...clientKeys.details(), id] as const,
+  detail: (id: string | number) => [...clientKeys.details(), id] as const,
 };
 
 export const productKeys = {
@@ -25,8 +25,8 @@ export const productKeys = {
   lists: () => [...productKeys.all, 'list'] as const,
   list: (filters: PaginationQuery) => [...productKeys.lists(), filters] as const,
   details: () => [...productKeys.all, 'detail'] as const,
-  detail: (id: string) => [...productKeys.details(), id] as const,
-  byClient: (clientId: string) => [...productKeys.all, 'by-client', clientId] as const,
+  detail: (id: string | number) => [...productKeys.details(), id] as const,
+  byClient: (clientId: string | number) => [...productKeys.all, 'by-client', clientId] as const,
 };
 
 export const verificationTypeKeys = {
@@ -49,7 +49,7 @@ export const useClients = (query: PaginationQuery = {}) => {
 export const useClient = (id: string) => {
   return useQuery({
     queryKey: clientKeys.detail(id),
-    queryFn: () => clientsService.getClientById(id),
+    queryFn: () => clientsService.getClientById(Number(id)),
     enabled: !!id,
   });
 };
@@ -65,7 +65,7 @@ export const useProducts = (query: PaginationQuery = {}) => {
 export const useProduct = (id: string) => {
   return useQuery({
     queryKey: productKeys.detail(id),
-    queryFn: () => clientsService.getProductById(id),
+    queryFn: () => clientsService.getProductById(Number(id)),
     enabled: !!id,
   });
 };
@@ -73,7 +73,7 @@ export const useProduct = (id: string) => {
 export const useProductsByClient = (clientId: string) => {
   return useQuery({
     queryKey: productKeys.byClient(clientId),
-    queryFn: () => clientsService.getProductsByClient(clientId),
+    queryFn: () => clientsService.getProductsByClient(Number(clientId)),
     enabled: !!clientId,
   });
 };

@@ -257,17 +257,17 @@ export class MobileSyncController {
         createdByBackendUser: caseItem.createdByUserName, // Created By Backend User
         assignedToFieldUser: caseItem.assignedToUserName, // Assign to Field User
         client: {
-          id: caseItem.clientId ? String(caseItem.clientId) : '',
+          id: caseItem.clientId || 0, // Use number instead of string
           name: caseItem.clientName || '', // Client
           code: caseItem.clientCode || '',
         },
         product: caseItem.productId ? {
-          id: caseItem.productId ? String(caseItem.productId) : '',
+          id: caseItem.productId || 0, // Use number instead of string
           name: caseItem.productName || '', // Product
           code: caseItem.productCode || '',
         } : undefined,
         verificationTypeDetails: caseItem.verificationTypeId ? {
-          id: caseItem.verificationTypeId ? String(caseItem.verificationTypeId) : '',
+          id: caseItem.verificationTypeId || 0, // Use number instead of string
           name: caseItem.verificationTypeName || '', // Verification Type
           code: caseItem.verificationTypeCode || '',
         } : undefined,

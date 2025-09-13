@@ -72,9 +72,8 @@ const listProductsValidation = [
     .withMessage('Limit must be between 1 and 100'),
   query('clientId')
     .optional()
-    .trim()
-    .notEmpty()
-    .withMessage('Client ID must not be empty'),
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a positive integer'),
   query('category')
     .optional()
     .isIn(['LOAN_VERIFICATION', 'EMPLOYMENT_VERIFICATION', 'BUSINESS_VERIFICATION', 'IDENTITY_VERIFICATION', 'ADDRESS_VERIFICATION', 'OTHER'])
@@ -128,9 +127,8 @@ const listProductsValidation = [
 
 const clientProductsValidation = [
   param('id')
-    .trim()
-    .notEmpty()
-    .withMessage('Client ID is required'),
+    .isInt({ min: 1 })
+    .withMessage('Client ID must be a positive integer'),
   query('isActive')
     .optional()
     .isBoolean()
@@ -163,20 +161,20 @@ router.post('/',
 // );
 
 router.get('/:id',
-  [param('id').trim().notEmpty().withMessage('Product ID is required')],
+  [param('id').isInt({ min: 1 }).withMessage('Product ID must be a positive integer')],
   handleValidationErrors,
   getProductById
 );
 
 router.put('/:id',
-  [param('id').trim().notEmpty().withMessage('Product ID is required')],
+  [param('id').isInt({ min: 1 }).withMessage('Product ID must be a positive integer')],
   updateProductValidation,
   handleValidationErrors,
   updateProduct
 );
 
 router.delete('/:id',
-  [param('id').trim().notEmpty().withMessage('Product ID is required')],
+  [param('id').isInt({ min: 1 }).withMessage('Product ID must be a positive integer')],
   handleValidationErrors,
   deleteProduct
 );
@@ -184,7 +182,7 @@ router.delete('/:id',
 // Get verification types for a product
 router.get('/:id/verification-types',
   [
-    param('id').trim().notEmpty().withMessage('Product ID is required'),
+    param('id').isInt({ min: 1 }).withMessage('Product ID must be a positive integer'),
     query('isActive').optional().isBoolean().withMessage('isActive must be a boolean')
   ],
   handleValidationErrors,

@@ -40,7 +40,7 @@ export const authenticateToken = (
   // Development bypass
   if (config.nodeEnv === 'development' && token === 'dev-token') {
     req.user = {
-      id: 'dev-user-1',
+      id: '02dbbee4-37ed-48e1-b899-24bb21a87b5d', // Use actual admin user UUID
       username: 'admin',
       role: Role.ADMIN,
     };

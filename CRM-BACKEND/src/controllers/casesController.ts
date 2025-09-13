@@ -566,9 +566,9 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       customerName,
       customerPhone,
       customerCallingCode,
-      clientId,
-      productId,
-      verificationTypeId,
+      clientId && clientId.trim() !== '' ? Number(clientId) : null, // Convert string to integer, handle empty strings
+      productId && productId.trim() !== '' ? Number(productId) : null, // Convert string to integer, handle empty strings
+      verificationTypeId && verificationTypeId.trim() !== '' ? Number(verificationTypeId) : null, // Convert string to integer, handle empty strings
       address,
       pincode,
       priority,
@@ -576,7 +576,7 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       applicantType,
       backendContactNumber,
       assignedToId,
-      rateTypeId ? Number(rateTypeId) : null, // rateTypeId
+      rateTypeId && rateTypeId.trim() !== '' ? Number(rateTypeId) : null, // rateTypeId, handle empty strings
       'PENDING',
       req.user?.id
     ];

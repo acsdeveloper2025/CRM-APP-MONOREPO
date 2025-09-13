@@ -175,9 +175,12 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
       const selectedPincode = pincodes.find(p => p.id.toString() === data.pincodeId);
       const pincodeCode = selectedPincode?.code || data.pincodeId;
 
-      // Get verification type ID from verification type name
-      const selectedVerificationType = verificationTypes.find(vt => vt.name === data.verificationType);
-      const verificationTypeId = selectedVerificationType?.id?.toString() || '';
+      // Use verification type ID directly from form data
+      const verificationTypeId = data.verificationTypeId;
+
+      // Get verification type name for legacy verificationType field
+      const selectedVerificationType = verificationTypes.find(vt => vt.id.toString() === data.verificationTypeId);
+      const verificationTypeName = selectedVerificationType?.name || '';
 
       const caseData: CreateCaseData = {
         // Core case fields
@@ -185,17 +188,18 @@ export const CaseCreationStepper: React.FC<CaseCreationStepperProps> = ({
         customerCallingCode: customerInfo.customerCallingCode,
         customerPhone: customerInfo.mobileNumber,
         createdByBackendUser: data.createdByBackendUser,
-        verificationType: mapVerificationType(data.verificationType),
+        verificationType: mapVerificationType(verificationTypeName),
         address: data.address,
         pincode: pincodeCode, // Use actual pincode code, not ID
         assignedToId: data.assignedToId,
-        clientId: data.clientId,
-        productId: data.productId,
-        verificationTypeId: verificationTypeId,
+        clientId: data.clientId, // Keep as string - backend will convert
+        productId: data.productId, // Keep as string - backend will convert
+        verificationTypeId: verificationTypeId, // Keep as string - backend will convert
         applicantType: data.applicantType,
         backendContactNumber: data.backendContactNumber,
         priority: data.priority,
         trigger: data.trigger,
+        rateTypeId: data.rateTypeId, // Keep as string - backend will convert
 
         // Deduplication fields
         panNumber: customerInfo.panNumber,

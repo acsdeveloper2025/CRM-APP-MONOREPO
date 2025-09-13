@@ -70,11 +70,11 @@ export class ProductsService {
 
   async getProductsByClient(clientId: string, isActive?: boolean): Promise<ApiResponse<Product[]>> {
     const params = isActive !== undefined ? { isActive } : {};
-    return apiService.get(`/clients/${clientId}/products`, params);
+    return apiService.get(`/clients/${Number(clientId)}/products`, params);
   }
 
   async mapVerificationTypes(productId: string, verificationTypes: string[]): Promise<ApiResponse<void>> {
-    return apiService.post(`/products/${productId}/verification-types`, { verificationTypes });
+    return apiService.post(`/products/${Number(productId)}/verification-types`, { verificationTypes });
   }
 
   async bulkImportProducts(products: CreateProductData[]): Promise<ApiResponse<{ created: number; errors: string[] }>> {

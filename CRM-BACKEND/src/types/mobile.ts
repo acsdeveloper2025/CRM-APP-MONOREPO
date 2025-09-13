@@ -81,17 +81,17 @@ export interface MobileCaseResponse {
   createdByBackendUser?: string; // Created By Backend User name
   assignedToFieldUser?: string; // Assign to Field User name
   client: {
-    id: string;
+    id: number; // Changed from string to number to match database
     name: string;
     code: string;
   };
   product?: {
-    id: string;
+    id: number; // Changed from string to number to match database
     name: string;
     code?: string;
   };
   verificationTypeDetails?: {
-    id: string;
+    id: number; // Changed from string to number to match database
     name: string;
     code?: string;
   };
