@@ -228,15 +228,15 @@ export function NotificationHistoryPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DELIVERED':
-        return 'text-green-600';
+        return 'text-green-600 dark:text-green-400';
       case 'SENT':
-        return 'text-blue-600';
+        return 'text-blue-600 dark:text-blue-400';
       case 'FAILED':
-        return 'text-red-600';
+        return 'text-red-600 dark:text-red-400';
       case 'PENDING':
-        return 'text-yellow-600';
+        return 'text-yellow-600 dark:text-yellow-400';
       default:
-        return 'text-gray-600';
+        return 'text-muted-foreground';
     }
   };
 

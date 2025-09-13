@@ -41,7 +41,7 @@ export const FormsDebug: React.FC<FormsDebugProps> = ({ caseId }) => {
         
         <div>
           <strong>Data:</strong>
-          <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-40">
+          <pre className="bg-muted p-2 rounded text-xs overflow-auto max-h-40">
             {JSON.stringify(data, null, 2)}
           </pre>
         </div>

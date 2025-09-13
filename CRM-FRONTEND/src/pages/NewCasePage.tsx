@@ -146,7 +146,7 @@ export const NewCasePage: React.FC = () => {
             <p>Has Case Data: {caseData?.data ? 'Yes' : 'No'}</p>
             <div>
               <p>Case Data:</p>
-              <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-40 text-left">
+              <pre className="bg-muted p-2 rounded text-xs overflow-auto max-h-40 text-left">
                 {JSON.stringify(caseData, null, 2) || 'null'}
               </pre>
             </div>

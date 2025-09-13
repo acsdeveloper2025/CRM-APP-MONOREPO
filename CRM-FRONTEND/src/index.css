@@ -8,24 +8,44 @@
   --color-card-foreground: #0f172a;
   --color-popover: #ffffff;
   --color-popover-foreground: #0f172a;
-  --color-primary: #3b82f6;
-  --color-primary-foreground: #f8fafc;
+  --color-primary: #00a950;
+  --color-primary-foreground: #ffffff;
   --color-secondary: #f1f5f9;
   --color-secondary-foreground: #0f172a;
   --color-muted: #f1f5f9;
   --color-muted-foreground: #64748b;
-  --color-accent: #f1f5f9;
-  --color-accent-foreground: #0f172a;
+  --color-accent: #f0fdf4;
+  --color-accent-foreground: #166534;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #f8fafc;
   --color-border: #e2e8f0;
   --color-input: #e2e8f0;
-  --color-ring: #3b82f6;
+  --color-ring: #00a950;
 
   /* Additional semantic colors */
-  --color-success: #10b981;
+  --color-success: #00a950;
   --color-warning: #f59e0b;
   --color-info: #3b82f6;
+
+  /* Status colors for badges and indicators */
+  --color-status-pending: #3b82f6;
+  --color-status-pending-bg: #dbeafe;
+  --color-status-in-progress: #f59e0b;
+  --color-status-in-progress-bg: #fef3c7;
+  --color-status-completed: #00a950;
+  --color-status-completed-bg: #dcfce7;
+  --color-status-cancelled: #ef4444;
+  --color-status-cancelled-bg: #fee2e2;
+
+  /* Priority colors */
+  --color-priority-low: #6b7280;
+  --color-priority-low-bg: #f9fafb;
+  --color-priority-medium: #3b82f6;
+  --color-priority-medium-bg: #dbeafe;
+  --color-priority-high: #f59e0b;
+  --color-priority-high-bg: #fef3c7;
+  --color-priority-urgent: #ef4444;
+  --color-priority-urgent-bg: #fee2e2;
 
   /* Spacing and sizing */
   --radius: 0.5rem;
@@ -42,22 +62,42 @@
     --color-card-foreground: #f8fafc;
     --color-popover: #1e293b;
     --color-popover-foreground: #f8fafc;
-    --color-primary: #60a5fa;
+    --color-primary: #22c55e;
     --color-primary-foreground: #0f172a;
     --color-secondary: #334155;
     --color-secondary-foreground: #f8fafc;
     --color-muted: #334155;
     --color-muted-foreground: #94a3b8;
-    --color-accent: #334155;
-    --color-accent-foreground: #f8fafc;
+    --color-accent: #1e293b;
+    --color-accent-foreground: #22c55e;
     --color-destructive: #dc2626;
     --color-destructive-foreground: #f8fafc;
     --color-border: #334155;
     --color-input: #334155;
-    --color-ring: #60a5fa;
-    --color-success: #059669;
+    --color-ring: #22c55e;
+    --color-success: #22c55e;
     --color-warning: #d97706;
     --color-info: #60a5fa;
+
+    /* Status colors for badges and indicators - Dark mode */
+    --color-status-pending: #60a5fa;
+    --color-status-pending-bg: rgba(59, 130, 246, 0.2);
+    --color-status-in-progress: #fbbf24;
+    --color-status-in-progress-bg: rgba(245, 158, 11, 0.2);
+    --color-status-completed: #22c55e;
+    --color-status-completed-bg: rgba(34, 197, 94, 0.2);
+    --color-status-cancelled: #ef4444;
+    --color-status-cancelled-bg: rgba(239, 68, 68, 0.2);
+
+    /* Priority colors - Dark mode */
+    --color-priority-low: #9ca3af;
+    --color-priority-low-bg: rgba(107, 114, 128, 0.2);
+    --color-priority-medium: #60a5fa;
+    --color-priority-medium-bg: rgba(59, 130, 246, 0.2);
+    --color-priority-high: #fbbf24;
+    --color-priority-high-bg: rgba(245, 158, 11, 0.2);
+    --color-priority-urgent: #ef4444;
+    --color-priority-urgent-bg: rgba(239, 68, 68, 0.2);
   }
 }
 
@@ -68,22 +108,42 @@
   --color-card-foreground: #f8fafc;
   --color-popover: #1e293b;
   --color-popover-foreground: #f8fafc;
-  --color-primary: #60a5fa;
+  --color-primary: #22c55e;
   --color-primary-foreground: #0f172a;
   --color-secondary: #334155;
   --color-secondary-foreground: #f8fafc;
   --color-muted: #334155;
   --color-muted-foreground: #94a3b8;
-  --color-accent: #334155;
-  --color-accent-foreground: #f8fafc;
+  --color-accent: #1e293b;
+  --color-accent-foreground: #22c55e;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #f8fafc;
   --color-border: #334155;
   --color-input: #334155;
-  --color-ring: #60a5fa;
-  --color-success: #059669;
+  --color-ring: #22c55e;
+  --color-success: #22c55e;
   --color-warning: #d97706;
   --color-info: #60a5fa;
+
+  /* Status colors for badges and indicators - Dark mode */
+  --color-status-pending: #60a5fa;
+  --color-status-pending-bg: rgba(59, 130, 246, 0.2);
+  --color-status-in-progress: #fbbf24;
+  --color-status-in-progress-bg: rgba(245, 158, 11, 0.2);
+  --color-status-completed: #22c55e;
+  --color-status-completed-bg: rgba(34, 197, 94, 0.2);
+  --color-status-cancelled: #ef4444;
+  --color-status-cancelled-bg: rgba(239, 68, 68, 0.2);
+
+  /* Priority colors - Dark mode */
+  --color-priority-low: #9ca3af;
+  --color-priority-low-bg: rgba(107, 114, 128, 0.2);
+  --color-priority-medium: #60a5fa;
+  --color-priority-medium-bg: rgba(59, 130, 246, 0.2);
+  --color-priority-high: #fbbf24;
+  --color-priority-high-bg: rgba(245, 158, 11, 0.2);
+  --color-priority-urgent: #ef4444;
+  --color-priority-urgent-bg: rgba(239, 68, 68, 0.2);
 }
 
 /* Base styles */
@@ -290,4 +350,46 @@ body {
   inset: 0;
   z-index: 40;
   background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Status badge utilities */
+.badge-pending {
+  background-color: var(--color-status-pending-bg);
+  color: var(--color-status-pending);
+}
+
+.badge-in-progress {
+  background-color: var(--color-status-in-progress-bg);
+  color: var(--color-status-in-progress);
+}
+
+.badge-completed {
+  background-color: var(--color-status-completed-bg);
+  color: var(--color-status-completed);
+}
+
+.badge-cancelled {
+  background-color: var(--color-status-cancelled-bg);
+  color: var(--color-status-cancelled);
+}
+
+/* Priority badge utilities */
+.badge-priority-low {
+  background-color: var(--color-priority-low-bg);
+  color: var(--color-priority-low);
+}
+
+.badge-priority-medium {
+  background-color: var(--color-priority-medium-bg);
+  color: var(--color-priority-medium);
+}
+
+.badge-priority-high {
+  background-color: var(--color-priority-high-bg);
+  color: var(--color-priority-high);
+}
+
+.badge-priority-urgent {
+  background-color: var(--color-priority-urgent-bg);
+  color: var(--color-priority-urgent);
 }

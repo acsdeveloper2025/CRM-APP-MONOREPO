@@ -133,8 +133,8 @@ export const CompletedCasesPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Completed Cases</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Completed Cases</h1>
+          <p className="mt-2 text-muted-foreground">
             View and manage all completed verification cases
           </p>
         </div>
@@ -163,8 +163,8 @@ export const CompletedCasesPage: React.FC = () => {
             <div className="flex items-center">
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Completed</p>
-                <p className="text-2xl font-bold text-gray-900">{pagination.total}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Completed</p>
+                <p className="text-2xl font-bold text-foreground">{pagination.total}</p>
               </div>
             </div>
           </CardContent>
@@ -176,8 +176,8 @@ export const CompletedCasesPage: React.FC = () => {
                 <span className="text-blue-600 font-semibold">📅</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">This Month</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">This Month</p>
+                <p className="text-2xl font-bold text-foreground">
                   {cases.filter(c => {
                     const completedDate = new Date(c.completedAt || c.updatedAt);
                     const now = new Date();
@@ -196,8 +196,8 @@ export const CompletedCasesPage: React.FC = () => {
                 <span className="text-green-600 font-semibold">⭐</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">High Priority</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">High Priority</p>
+                <p className="text-2xl font-bold text-foreground">
                   {cases.filter(c => c.priority >= 4).length}
                 </p>
               </div>
@@ -211,8 +211,8 @@ export const CompletedCasesPage: React.FC = () => {
                 <span className="text-purple-600 font-semibold">👥</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Field Users</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">Field Users</p>
+                <p className="text-2xl font-bold text-foreground">
                   {new Set(cases.map(c => c.assignedToId)).size}
                 </p>
               </div>
@@ -226,7 +226,7 @@ export const CompletedCasesPage: React.FC = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Filter className="h-5 w-5 text-gray-400" />
+              <Filter className="h-5 w-5 text-muted-foreground" />
               <CardTitle>Filters</CardTitle>
               {hasActiveFilters && (
                 <Badge variant="secondary">
@@ -248,7 +248,7 @@ export const CompletedCasesPage: React.FC = () => {
             <div className="space-y-2">
               <Label htmlFor="search">Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   ref={searchInputRef}
                   id="search"

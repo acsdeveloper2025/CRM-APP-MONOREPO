@@ -111,8 +111,8 @@ export const FormValidationStatus: React.FC = () => {
       {/* Header with Controls */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Form Validation Status</h2>
-          <p className="mt-1 text-gray-600">
+          <h2 className="text-2xl font-bold text-foreground">Form Validation Status</h2>
+          <p className="mt-1 text-muted-foreground">
             Track validation performance and identify quality trends
           </p>
         </div>
@@ -309,7 +309,7 @@ export const FormValidationStatus: React.FC = () => {
                           {validationRate.toFixed(1)}%
                         </Badge>
                       </div>
-                      <div className="space-y-1 text-sm text-gray-600">
+                      <div className="space-y-1 text-sm text-muted-foreground">
                         <div>Total: {formType.total_forms}</div>
                         <div>Validated: {formType.validated_forms}</div>
                         <div>Pending: {formType.pending_forms}</div>
@@ -322,9 +322,9 @@ export const FormValidationStatus: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <XCircle className="mx-auto h-12 w-12 text-gray-400" />
+              <XCircle className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-semibold">No validation data</h3>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 Form validation data will appear here once forms are submitted.
               </p>
             </div>

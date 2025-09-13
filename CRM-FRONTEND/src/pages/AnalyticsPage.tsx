@@ -43,8 +43,8 @@ export const AnalyticsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Analytics & Reporting</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Analytics & Reporting</h1>
+          <p className="mt-2 text-muted-foreground">
             Comprehensive insights into form submissions, case performance, and agent productivity
           </p>
         </div>
@@ -235,56 +235,56 @@ export const AnalyticsPage: React.FC = () => {
                 <div className="text-center p-4 border rounded-lg">
                   <FileText className="mx-auto h-8 w-8 text-blue-600 mb-2" />
                   <h3 className="font-semibold">Form Analysis</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Comprehensive form submission data with interactive charts and validation tracking
                   </p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <CheckCircle className="mx-auto h-8 w-8 text-green-600 mb-2" />
                   <h3 className="font-semibold">Validation Status</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Track validation performance, quality trends, and form type breakdown
                   </p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <Target className="mx-auto h-8 w-8 text-purple-600 mb-2" />
                   <h3 className="font-semibold">Distribution Charts</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Visual breakdown of form types, case status, and performance distributions
                   </p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <BarChart3 className="mx-auto h-8 w-8 text-orange-600 mb-2" />
                   <h3 className="font-semibold">Case Analytics</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Monitor case progress, completion times, and workflow bottlenecks
                   </p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <Clock className="mx-auto h-8 w-8 text-red-600 mb-2" />
                   <h3 className="font-semibold">Timing Analysis</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Analyze completion times, identify delays, and optimize workflows
                   </p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <Users className="mx-auto h-8 w-8 text-indigo-600 mb-2" />
                   <h3 className="font-semibold">Agent Performance</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Comprehensive agent analytics with radar charts and productivity metrics
                   </p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <TrendingUp className="mx-auto h-8 w-8 text-teal-600 mb-2" />
                   <h3 className="font-semibold">Data Export</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Export analytics data in multiple formats with scheduled reporting
                   </p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <BarChart3 className="mx-auto h-8 w-8 text-pink-600 mb-2" />
                   <h3 className="font-semibold">Interactive Charts</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Rich visualizations with filters, trends, and comparative analysis
                   </p>
                 </div>

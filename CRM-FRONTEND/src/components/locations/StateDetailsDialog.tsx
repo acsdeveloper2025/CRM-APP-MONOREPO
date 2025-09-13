@@ -120,9 +120,9 @@ export function StateDetailsDialog({ state, open, onOpenChange }: StateDetailsDi
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Building className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No cities found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <Building className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-2 text-sm font-medium text-foreground">No cities found</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     No cities have been added to this state yet.
                   </p>
                 </div>

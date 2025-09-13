@@ -34,13 +34,13 @@ interface CaseTableProps {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'ASSIGNED':
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
     case 'IN_PROGRESS':
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
     case 'COMPLETED':
-      return 'bg-green-100 text-green-800';
+      return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-muted text-muted-foreground';
   }
 };
 
@@ -51,15 +51,15 @@ const getPriorityColor = (priority: number | string) => {
 
   switch (priorityNum) {
     case 1:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-muted text-muted-foreground';
     case 2:
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
     case 3:
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
     case 4:
-      return 'bg-red-100 text-red-800';
+      return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-muted text-muted-foreground';
   }
 };
 
@@ -136,40 +136,40 @@ export const CaseTable: React.FC<CaseTableProps> = ({
             {[1, 2, 3, 4, 5].map((item) => (
               <TableRow key={item}>
                 <TableCell>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-6 bg-gray-200 rounded animate-pulse w-20"></div>
+                  <div className="h-6 bg-muted rounded animate-pulse w-20"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-6 bg-gray-200 rounded animate-pulse w-16"></div>
+                  <div className="h-6 bg-muted rounded animate-pulse w-16"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-6 bg-gray-200 rounded animate-pulse w-16"></div>
+                  <div className="h-6 bg-muted rounded animate-pulse w-16"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-6 bg-gray-200 rounded animate-pulse w-16"></div>
+                  <div className="h-6 bg-muted rounded animate-pulse w-16"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse"></div>
                 </TableCell>
                 <TableCell>
-                  <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
                 </TableCell>
               </TableRow>
             ))}
@@ -182,7 +182,7 @@ export const CaseTable: React.FC<CaseTableProps> = ({
   if (cases.length === 0) {
     return (
       <div className="border rounded-lg p-8 text-center">
-        <p className="text-gray-500">No cases found matching your criteria.</p>
+        <p className="text-muted-foreground">No cases found matching your criteria.</p>
       </div>
     );
   }
@@ -220,7 +220,7 @@ export const CaseTable: React.FC<CaseTableProps> = ({
               <TableCell>
                 <div>
                   <div className="font-medium">{caseItem.customerName || caseItem.applicantName}</div>
-                  <div className="text-sm text-gray-500">{caseItem.customerPhone || caseItem.applicantPhone}</div>
+                  <div className="text-sm text-muted-foreground">{caseItem.customerPhone || caseItem.applicantPhone}</div>
                 </div>
               </TableCell>
               <TableCell>
@@ -269,7 +269,7 @@ export const CaseTable: React.FC<CaseTableProps> = ({
                 </div>
               </TableCell>
               <TableCell>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   {formatDistanceToNow(new Date(caseItem.updatedAt), { addSuffix: true })}
                 </div>
               </TableCell>

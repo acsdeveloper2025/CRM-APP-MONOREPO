@@ -202,14 +202,14 @@ export const DashboardPage: React.FC = () => {
                       <action.icon className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 group-hover:text-primary">
+                      <h3 className="font-medium text-foreground group-hover:text-primary">
                         {action.title}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         {action.description}
                       </p>
                       {action.count !== null && (
-                        <p className="text-lg font-bold text-gray-900 mt-1">
+                        <p className="text-lg font-bold text-foreground mt-1">
                           {action.count}
                         </p>
                       )}
@@ -239,17 +239,17 @@ export const DashboardPage: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Monthly Revenue</span>
+                <span className="text-sm text-muted-foreground">Monthly Revenue</span>
                 <span className="font-bold text-green-600">
                   ${stats.monthlyRevenue?.toLocaleString() || '0'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Total Invoices</span>
+                <span className="text-sm text-muted-foreground">Total Invoices</span>
                 <span className="font-bold">{stats.totalInvoices || 0}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Pending Commissions</span>
+                <span className="text-sm text-muted-foreground">Pending Commissions</span>
                 <span className="font-bold text-yellow-600">{stats.pendingCommissions || 0}</span>
               </div>
             </CardContent>
@@ -262,15 +262,15 @@ export const DashboardPage: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Avg. Completion Time</span>
+                <span className="text-sm text-muted-foreground">Avg. Completion Time</span>
                 <span className="font-bold">2.3 days</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Success Rate</span>
+                <span className="text-sm text-muted-foreground">Success Rate</span>
                 <span className="font-bold text-green-600">94%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Client Satisfaction</span>
+                <span className="text-sm text-muted-foreground">Client Satisfaction</span>
                 <span className="font-bold text-blue-600">4.8/5</span>
               </div>
             </CardContent>

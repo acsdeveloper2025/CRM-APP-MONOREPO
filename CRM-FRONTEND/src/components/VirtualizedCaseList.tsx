@@ -56,7 +56,7 @@ const CaseItem: React.FC<CaseItemProps> = React.memo(({ index, style, data }) =>
     return (
       <div style={style} className="flex items-center justify-center p-4">
         <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-        <span className="ml-2 text-gray-600">Loading more cases...</span>
+        <span className="ml-2 text-muted-foreground">Loading more cases...</span>
       </div>
     );
   }
@@ -127,16 +127,16 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header with search and controls */}
-      <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-gray-50">
+      <div className="flex-shrink-0 p-4 border-b border-border bg-muted">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-foreground">
             Cases ({totalCount.toLocaleString()})
           </h2>
           <div className="flex items-center space-x-2">
             <button
               onClick={onRefresh}
               disabled={loading}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
               title="Refresh cases"
             >
               <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
@@ -146,7 +146,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
               className={`p-2 rounded-md transition-colors ${
                 showFilters || Object.keys(currentFilters).length > 0
                   ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
               title="Filter cases"
             >
@@ -157,23 +157,23 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
 
         {/* Search bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search cases by customer name, case ID, or address..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
         {/* Filter panel */}
         {showFilters && (
-          <div className="mt-4 p-4 bg-white border border-gray-200 rounded-md shadow-sm">
+          <div className="mt-4 p-4 bg-white border border-border rounded-md shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Status filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Status
                 </label>
                 <select
@@ -182,7 +182,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
                     ...prev, 
                     status: e.target.value || undefined 
                   }))}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Statuses</option>
                   <option value="PENDING">Pending</option>
@@ -194,7 +194,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
 
               {/* Priority filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Priority
                 </label>
                 <select
@@ -203,7 +203,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
                     ...prev, 
                     priority: e.target.value || undefined 
                   }))}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Priorities</option>
                   <option value="LOW">Low</option>
@@ -215,7 +215,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
 
               {/* Assigned to filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Assigned To
                 </label>
                 <input
@@ -226,13 +226,13 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
                     ...prev, 
                     assignedTo: e.target.value || undefined 
                   }))}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-border rounded-md focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               {/* Date range filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Date Range
                 </label>
                 <div className="flex space-x-2">
@@ -246,7 +246,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
                         to: prev.dateRange?.to || new Date(),
                       }
                     }))}
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 p-2 border border-border rounded-md focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     type="date"
@@ -258,7 +258,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
                         to: e.target.value ? new Date(e.target.value) : new Date(),
                       }
                     }))}
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 p-2 border border-border rounded-md focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -268,7 +268,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
             <div className="flex justify-end space-x-2 mt-4">
               <button
                 onClick={handleFilterReset}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+                className="px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
               >
                 Reset
               </button>
@@ -307,7 +307,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
       {/* Virtualized list */}
       <div className="flex-1 overflow-hidden">
         {cases.length === 0 && !loading ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <Search className="h-12 w-12 mb-4" />
             <h3 className="text-lg font-medium mb-2">No cases found</h3>
             <p className="text-center">
@@ -334,7 +334,7 @@ export const VirtualizedCaseList: React.FC<VirtualizedCaseListProps> = ({
       {loading && cases.length === 0 && (
         <div className="flex items-center justify-center p-8">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <span className="ml-3 text-gray-600">Loading cases...</span>
+          <span className="ml-3 text-muted-foreground">Loading cases...</span>
         </div>
       )}
     </div>

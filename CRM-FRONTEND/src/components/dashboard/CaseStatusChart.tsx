@@ -49,10 +49,10 @@ export const CaseStatusChart: React.FC<CaseStatusChartProps> = ({ data, isLoadin
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
           <p className="font-medium">{data.name}</p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Count: {data.value}
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Percentage: {data.payload.percentage}%
           </p>
         </div>

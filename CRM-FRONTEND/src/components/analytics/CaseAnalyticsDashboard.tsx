@@ -64,9 +64,9 @@ export const CaseAnalyticsDashboard: React.FC = () => {
       case 'ASSIGNED':
         return 'bg-yellow-100 text-yellow-800';
       case 'PENDING':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -79,7 +79,7 @@ export const CaseAnalyticsDashboard: React.FC = () => {
       case 'LOW':
         return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -88,8 +88,8 @@ export const CaseAnalyticsDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Case Analytics</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Case Analytics</h1>
+          <p className="mt-2 text-muted-foreground">
             Comprehensive case performance and completion metrics
           </p>
         </div>
@@ -306,7 +306,7 @@ export const CaseAnalyticsDashboard: React.FC = () => {
                     <TableRow key={index}>
                       {Array.from({ length: 8 }).map((_, cellIndex) => (
                         <TableCell key={cellIndex}>
-                          <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="h-4 bg-muted rounded animate-pulse"></div>
                         </TableCell>
                       ))}
                     </TableRow>
@@ -314,9 +314,9 @@ export const CaseAnalyticsDashboard: React.FC = () => {
                 ) : cases.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8">
-                      <BarChart3 className="mx-auto h-12 w-12 text-gray-400" />
+                      <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground" />
                       <h3 className="mt-4 text-lg font-semibold">No cases found</h3>
-                      <p className="text-gray-500">
+                      <p className="text-muted-foreground">
                         Try adjusting your filters or check back later.
                       </p>
                     </TableCell>
@@ -335,7 +335,7 @@ export const CaseAnalyticsDashboard: React.FC = () => {
                       <TableCell>
                         <div>
                           <div className="font-medium">{caseItem.customerName}</div>
-                          <div className="text-sm text-gray-500">{caseItem.clientName}</div>
+                          <div className="text-sm text-muted-foreground">{caseItem.clientName}</div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -351,7 +351,7 @@ export const CaseAnalyticsDashboard: React.FC = () => {
                       <TableCell>
                         <div>
                           <div className="font-medium">{caseItem.agentName || 'Unassigned'}</div>
-                          <div className="text-sm text-gray-500">{caseItem.employeeId}</div>
+                          <div className="text-sm text-muted-foreground">{caseItem.employeeId}</div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -364,7 +364,7 @@ export const CaseAnalyticsDashboard: React.FC = () => {
                           <div className="text-sm font-medium">
                             {caseItem.formCompletionPercentage}%
                           </div>
-                          <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div className="w-16 bg-muted rounded-full h-2">
                             <div 
                               className="bg-blue-600 h-2 rounded-full" 
                               style={{ width: `${caseItem.formCompletionPercentage}%` }}

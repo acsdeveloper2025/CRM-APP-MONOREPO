@@ -214,21 +214,21 @@ export function MultiSelectDropdown({
                     key={option.id}
                     onClick={() => !option.disabled && handleToggleOption(option.id)}
                     className={cn(
-                      "flex items-center gap-2 p-2 cursor-pointer hover:bg-gray-50",
+                      "flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/50",
                       option.disabled && "opacity-50 cursor-not-allowed",
                       isSelected && "bg-blue-50"
                     )}
                   >
                     <div className={cn(
                       "w-4 h-4 border rounded flex items-center justify-center",
-                      isSelected ? "bg-blue-600 border-blue-600" : "border-gray-300"
+                      isSelected ? "bg-primary border-primary" : "border-border"
                     )}>
-                      {isSelected && <Check className="h-3 w-3 text-white" />}
+                      {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">{option.label}</div>
+                      <div className="text-sm font-medium text-foreground truncate">{option.label}</div>
                       {option.description && (
-                        <div className="text-xs text-gray-600 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           {option.description}
                         </div>
                       )}
@@ -241,7 +241,7 @@ export function MultiSelectDropdown({
 
           {/* Footer with selection count */}
           {filteredOptions.length > 0 && (
-            <div className="p-2 border-t bg-gray-50 text-xs text-muted-foreground">
+            <div className="p-2 border-t bg-muted text-xs text-muted-foreground">
               {selectedValues.length} of {options.length} items selected
               {filteredOptions.length < options.length && (
                 <span> • Showing {filteredOptions.length} filtered results</span>

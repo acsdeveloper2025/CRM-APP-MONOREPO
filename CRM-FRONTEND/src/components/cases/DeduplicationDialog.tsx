@@ -73,7 +73,7 @@ export const DeduplicationDialog: React.FC<DeduplicationDialogProps> = ({
       case 'Name':
         return 'bg-blue-100 text-blue-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -88,7 +88,7 @@ export const DeduplicationDialog: React.FC<DeduplicationDialogProps> = ({
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -148,7 +148,7 @@ export const DeduplicationDialog: React.FC<DeduplicationDialogProps> = ({
               <Card 
                 key={duplicate.id} 
                 className={`cursor-pointer transition-colors ${
-                  selectedCaseId === duplicate.id ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                  selectedCaseId === duplicate.id ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-muted'
                 }`}
                 onClick={() => setSelectedCaseId(duplicate.id)}
               >
@@ -160,30 +160,30 @@ export const DeduplicationDialog: React.FC<DeduplicationDialogProps> = ({
                         <Badge className={getStatusColor(duplicate.status)}>
                           {duplicate.status}
                         </Badge>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           Score: {duplicate.matchScore}%
                         </span>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400" />
+                          <User className="h-4 w-4 text-muted-foreground" />
                           <span>{duplicate.applicantName}</span>
                         </div>
                         {duplicate.applicantPhone && (
                           <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-gray-400" />
+                            <Phone className="h-4 w-4 text-muted-foreground" />
                             <span>{duplicate.applicantPhone}</span>
                           </div>
                         )}
                         {duplicate.applicantEmail && (
                           <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-gray-400" />
+                            <Mail className="h-4 w-4 text-muted-foreground" />
                             <span>{duplicate.applicantEmail}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span>{formatDistanceToNow(new Date(duplicate.createdAt), { addSuffix: true })}</span>
                         </div>
                       </div>

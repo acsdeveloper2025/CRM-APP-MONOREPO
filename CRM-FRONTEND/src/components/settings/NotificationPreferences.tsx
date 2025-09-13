@@ -206,7 +206,7 @@ export function NotificationPreferences() {
           </div>
           
           {preferences.caseAssignmentEnabled && (
-            <div className="ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
+            <div className="ml-4 space-y-3 border-l-2 border-border pl-4">
               <div className="flex items-center justify-between">
                 <Label className="text-sm flex items-center">
                   <Smartphone className="h-4 w-4 mr-2" />
@@ -244,7 +244,7 @@ export function NotificationPreferences() {
           </div>
           
           {preferences.caseReassignmentEnabled && (
-            <div className="ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
+            <div className="ml-4 space-y-3 border-l-2 border-border pl-4">
               <div className="flex items-center justify-between">
                 <Label className="text-sm flex items-center">
                   <Smartphone className="h-4 w-4 mr-2" />
@@ -294,7 +294,7 @@ export function NotificationPreferences() {
           </div>
           
           {preferences.caseCompletionEnabled && (
-            <div className="ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
+            <div className="ml-4 space-y-3 border-l-2 border-border pl-4">
               <div className="flex items-center justify-between">
                 <Label className="text-sm flex items-center">
                   <Smartphone className="h-4 w-4 mr-2" />
@@ -332,7 +332,7 @@ export function NotificationPreferences() {
           </div>
           
           {preferences.caseRevocationEnabled && (
-            <div className="ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
+            <div className="ml-4 space-y-3 border-l-2 border-border pl-4">
               <div className="flex items-center justify-between">
                 <Label className="text-sm flex items-center">
                   <Smartphone className="h-4 w-4 mr-2" />
@@ -382,7 +382,7 @@ export function NotificationPreferences() {
           </div>
           
           {preferences.systemNotificationsEnabled && (
-            <div className="ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
+            <div className="ml-4 space-y-3 border-l-2 border-border pl-4">
               <div className="flex items-center justify-between">
                 <Label className="text-sm flex items-center">
                   <Smartphone className="h-4 w-4 mr-2" />
@@ -432,7 +432,7 @@ export function NotificationPreferences() {
           </div>
           
           {preferences.quietHoursEnabled && (
-            <div className="ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
+            <div className="ml-4 space-y-3 border-l-2 border-border pl-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="quiet-hours-start" className="text-sm">

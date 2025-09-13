@@ -111,7 +111,7 @@ export function FormViewerPage() {
               }}
             />
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               No form data available. Mock data has been removed.
             </div>
           )}

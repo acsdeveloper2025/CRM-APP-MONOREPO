@@ -85,7 +85,7 @@ export const AgentDashboard: React.FC = () => {
       case 'poor':
         return <Wifi className="h-4 w-4 text-yellow-500" />;
       default:
-        return <Wifi className="h-4 w-4 text-gray-500" />;
+        return <Wifi className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -105,17 +105,17 @@ export const AgentDashboard: React.FC = () => {
 
   if (isLoading && !agentStats) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <p className="text-muted-foreground">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       {/* Mobile Header */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="px-4 py-3">
@@ -125,8 +125,8 @@ export const AgentDashboard: React.FC = () => {
                 <User className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">{user?.name}</h1>
-                <p className="text-sm text-gray-600">Field Agent</p>
+                <h1 className="text-lg font-semibold text-foreground">{user?.name}</h1>
+                <p className="text-sm text-muted-foreground">Field Agent</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -149,7 +149,7 @@ export const AgentDashboard: React.FC = () => {
               <span>{isOnline ? `Online (${connectionQuality})` : 'Offline'}</span>
             </span>
             {lastSync && (
-              <span className="text-gray-500">
+              <span className="text-muted-foreground">
                 Last sync: {lastSync.toLocaleTimeString()}
               </span>
             )}
@@ -269,7 +269,7 @@ export const AgentDashboard: React.FC = () => {
                 <CardDescription>Your key metrics at a glance</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Target className="h-5 w-5 text-blue-600" />
                     <span className="font-medium">Quality Score</span>
@@ -279,7 +279,7 @@ export const AgentDashboard: React.FC = () => {
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <span className="font-medium">Completion Rate</span>
@@ -289,7 +289,7 @@ export const AgentDashboard: React.FC = () => {
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Clock className="h-5 w-5 text-purple-600" />
                     <span className="font-medium">Avg Response Time</span>
@@ -299,7 +299,7 @@ export const AgentDashboard: React.FC = () => {
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Calendar className="h-5 w-5 text-orange-600" />
                     <span className="font-medium">Monthly Total</span>

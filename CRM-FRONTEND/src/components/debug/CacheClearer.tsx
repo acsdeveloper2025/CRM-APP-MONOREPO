@@ -177,7 +177,7 @@ export const CacheClearer: React.FC = () => {
           <Badge variant="destructive">Development Only</Badge>
         </CardTitle>
         {lastCleared && (
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
             <span>Last cleared: {lastCleared}</span>
           </div>
@@ -226,7 +226,7 @@ export const CacheClearer: React.FC = () => {
                 </div>
               </div>
               
-              <p className="text-sm text-gray-600">{cache.description}</p>
+              <p className="text-sm text-muted-foreground">{cache.description}</p>
               
               <Button
                 onClick={() => clearSpecificCache(cache.key)}
@@ -248,7 +248,7 @@ export const CacheClearer: React.FC = () => {
 
         {/* Results Summary */}
         {Object.keys(results).length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-muted rounded-lg p-4">
             <h4 className="font-medium mb-2">Last Operation Results:</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
               {Object.entries(results).map(([type, success]) => (
@@ -268,7 +268,7 @@ export const CacheClearer: React.FC = () => {
         )}
 
         {/* Instructions */}
-        <div className="text-xs text-gray-500 space-y-1">
+        <div className="text-xs text-muted-foreground space-y-1">
           <p><strong>Tip:</strong> After clearing caches, refresh the page to see changes.</p>
           <p><strong>Note:</strong> This component should only be used in development environments.</p>
         </div>

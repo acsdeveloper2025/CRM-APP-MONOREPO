@@ -177,7 +177,7 @@ export function MultiAreaInput({
             key={area.id}
             className={cn(
               "flex items-center gap-2 p-2 border rounded-md",
-              editingId === area.id ? "border-blue-500 bg-blue-50" : "border-gray-200"
+              editingId === area.id ? "border-blue-500 bg-blue-50" : "border-border"
             )}
           >
             {/* Reorder buttons */}
@@ -227,7 +227,7 @@ export function MultiAreaInput({
                 </div>
               ) : (
                 <div
-                  className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-1 rounded"
+                  className="flex items-center justify-between cursor-pointer hover:bg-muted p-1 rounded"
                   onClick={() => !disabled && startEditing(area)}
                 >
                   <div className="flex items-center gap-2">

@@ -454,7 +454,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                           {...field}
                           placeholder="Backend user name"
                           disabled={true}
-                          className="bg-gray-50 text-gray-600"
+                          className="bg-muted text-muted-foreground"
                         />
                       </FormControl>
                       <FormMessage />
@@ -581,9 +581,9 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                             <SelectItem key={rateType.id} value={rateType.id.toString()}>
                               <div className="flex items-center justify-between w-full py-2">
                                 <div className="flex flex-col">
-                                  <span className="font-medium text-gray-900">{rateType.name}</span>
+                                  <span className="font-medium text-foreground">{rateType.name}</span>
                                   {rateType.description && (
-                                    <span className="text-xs text-gray-500 mt-1">{rateType.description}</span>
+                                    <span className="text-xs text-muted-foreground mt-1">{rateType.description}</span>
                                   )}
                                 </div>
                                 {rateType.hasRate && rateType.amount && (

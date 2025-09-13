@@ -147,7 +147,7 @@ export function RealTimeDashboard({ refreshInterval = 30000 }: RealTimeDashboard
                 <span className="text-sm font-medium">System Load</span>
                 <span className="text-sm text-muted-foreground">{stats.systemLoad}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full transition-all duration-300 ${
                     stats.systemLoad < 50 ? 'bg-green-600' :

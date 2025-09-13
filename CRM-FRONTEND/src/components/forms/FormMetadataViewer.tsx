@@ -210,7 +210,7 @@ export function FormMetadataViewer({ submission }: FormMetadataViewerProps) {
                         {completedFields}/{totalFields} ({Math.round(percentage)}%)
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <div 
                         className="bg-primary h-2 rounded-full transition-all duration-300" 
                         style={{ width: `${percentage}%` }}

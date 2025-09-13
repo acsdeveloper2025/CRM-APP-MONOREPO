@@ -71,12 +71,12 @@ export const ReassignCaseModal: React.FC<ReassignCaseModalProps> = ({
 
         <div className="space-y-4 py-4">
           {/* Current Assignment Info */}
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-muted p-3 rounded-lg">
             <div className="text-sm">
               <span className="font-medium">Currently assigned to:</span>{' '}
               <span className="text-blue-600">{currentAssignee}</span>
             </div>
-            <div className="text-sm text-gray-600 mt-1">
+            <div className="text-sm text-muted-foreground mt-1">
               Case: {caseItem.applicantName} - {caseItem.address}
             </div>
           </div>
@@ -140,7 +140,7 @@ export const ReassignCaseModal: React.FC<ReassignCaseModalProps> = ({
                 <span className="font-medium">Will be assigned to:</span>{' '}
                 <span className="text-blue-600">{selectedUser.name}</span>
               </div>
-              <div className="text-sm text-gray-600 mt-1">
+              <div className="text-sm text-muted-foreground mt-1">
                 Email: {selectedUser.email}
               </div>
             </div>

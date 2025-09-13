@@ -81,7 +81,7 @@ export function CompletionRateChart({ data }: CompletionRateChartProps) {
                 <span className="text-sm">Completed</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-32 bg-gray-200 rounded-full h-2">
+                <div className="w-32 bg-muted rounded-full h-2">
                   <div 
                     className="bg-green-600 h-2 rounded-full" 
                     style={{ width: `${(data.completedCases / data.totalCases) * 100}%` }}
@@ -97,7 +97,7 @@ export function CompletionRateChart({ data }: CompletionRateChartProps) {
                 <span className="text-sm">In Progress</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-32 bg-gray-200 rounded-full h-2">
+                <div className="w-32 bg-muted rounded-full h-2">
                   <div 
                     className="bg-blue-600 h-2 rounded-full" 
                     style={{ width: `${(data.inProgressCases / data.totalCases) * 100}%` }}
@@ -109,13 +109,13 @@ export function CompletionRateChart({ data }: CompletionRateChartProps) {
             
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Circle className="h-4 w-4 text-gray-600" />
+                <Circle className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">Pending</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-32 bg-gray-200 rounded-full h-2">
+                <div className="w-32 bg-muted rounded-full h-2">
                   <div 
-                    className="bg-gray-600 h-2 rounded-full" 
+                    className="bg-muted-foreground h-2 rounded-full"
                     style={{ width: `${(data.pendingCases / data.totalCases) * 100}%` }}
                   />
                 </div>

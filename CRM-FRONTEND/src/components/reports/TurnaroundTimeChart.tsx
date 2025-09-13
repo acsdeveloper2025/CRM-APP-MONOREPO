@@ -80,7 +80,7 @@ export function TurnaroundTimeChart({ data }: TurnaroundTimeChartProps) {
               <div key={index} className="flex items-center justify-between">
                 <span className="text-sm">{range.range}</span>
                 <div className="flex items-center space-x-2">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
+                  <div className="w-32 bg-muted rounded-full h-2">
                     <div 
                       className="bg-primary h-2 rounded-full" 
                       style={{ width: `${range.percentage}%` }}

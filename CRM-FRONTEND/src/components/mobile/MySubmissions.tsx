@@ -209,7 +209,7 @@ export const MySubmissions: React.FC = () => {
       case 'REQUIRES_REVIEW':
         return <AlertCircle className="h-4 w-4 text-orange-600" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-600" />;
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -224,7 +224,7 @@ export const MySubmissions: React.FC = () => {
       case 'REQUIRES_REVIEW':
         return 'bg-orange-100 text-orange-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -237,7 +237,7 @@ export const MySubmissions: React.FC = () => {
       case 'BUSINESS':
         return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -252,7 +252,7 @@ export const MySubmissions: React.FC = () => {
       case 'OFFLINE':
         return 'text-red-600';
       default:
-        return 'text-gray-600';
+        return 'text-muted-foreground';
     }
   };
 
@@ -261,7 +261,7 @@ export const MySubmissions: React.FC = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-center py-8">
           <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading submissions...</span>
+          <span className="ml-2 text-muted-foreground">Loading submissions...</span>
         </div>
       </div>
     );
@@ -280,7 +280,7 @@ export const MySubmissions: React.FC = () => {
         <CardContent className="space-y-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by customer, case ID, or address..."
               value={searchTerm}
@@ -345,7 +345,7 @@ export const MySubmissions: React.FC = () => {
                       {submission.formType}
                     </Badge>
                   </div>
-                  <p className="text-xs text-gray-600">Case: {submission.caseId}</p>
+                  <p className="text-xs text-muted-foreground">Case: {submission.caseId}</p>
                 </div>
                 <div className="flex items-center space-x-1">
                   {getStatusIcon(submission.status)}
@@ -358,8 +358,8 @@ export const MySubmissions: React.FC = () => {
               {/* Location */}
               {submission.location && (
                 <div className="flex items-center space-x-2 mb-3">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs text-gray-600">{submission.location.address}</span>
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{submission.location.address}</span>
                 </div>
               )}
 
@@ -367,20 +367,20 @@ export const MySubmissions: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 mb-3">
                 <div className="flex items-center space-x-2">
                   <FileText className="h-4 w-4 text-blue-600" />
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-muted-foreground">
                     {submission.photos} photos, {submission.attachments} files
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-purple-600" />
-                  <span className="text-xs text-gray-600">{submission.timeSpent}min</span>
+                  <span className="text-xs text-muted-foreground">{submission.timeSpent}min</span>
                 </div>
               </div>
 
               {/* Quality Score */}
               {submission.qualityScore && (
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-gray-600">Quality Score:</span>
+                  <span className="text-xs text-muted-foreground">Quality Score:</span>
                   <Badge 
                     className={
                       submission.qualityScore >= 90 ? 'bg-green-100 text-green-800' :
@@ -398,7 +398,7 @@ export const MySubmissions: React.FC = () => {
               {/* Footer */}
               <div className="flex items-center justify-between pt-3 border-t">
                 <div className="flex items-center space-x-4">
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     {new Date(submission.submittedAt).toLocaleDateString()}
                   </span>
                   <span className={`text-xs ${getNetworkQualityColor(submission.networkQuality)}`}>
@@ -422,9 +422,9 @@ export const MySubmissions: React.FC = () => {
       {filteredSubmissions.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions found</h3>
-            <p className="text-gray-600">
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No submissions found</h3>
+            <p className="text-muted-foreground">
               {searchTerm || statusFilter !== 'all' || formTypeFilter !== 'all' || dateFilter !== 'all'
                 ? 'Try adjusting your search or filters'
                 : 'You haven\'t submitted any forms yet'

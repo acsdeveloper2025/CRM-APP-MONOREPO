@@ -170,8 +170,8 @@ export const CaseStatusDistribution: React.FC = () => {
       {/* Header with Controls */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Case Status Distribution</h2>
-          <p className="mt-1 text-gray-600">
+          <h2 className="text-2xl font-bold text-foreground">Case Status Distribution</h2>
+          <p className="mt-1 text-muted-foreground">
             Monitor case progress and identify bottlenecks in the workflow
           </p>
         </div>
@@ -243,10 +243,10 @@ export const CaseStatusDistribution: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-gray-600" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-600">
+            <div className="text-2xl font-bold text-muted-foreground">
               {statusDistribution.PENDING || 0}
             </div>
             <p className="text-xs text-muted-foreground">Awaiting assignment</p>
@@ -398,13 +398,13 @@ export const CaseStatusDistribution: React.FC = () => {
                     <Badge style={{ backgroundColor: getStatusColor(flow.from), color: 'white' }}>
                       {flow.from.replace('_', ' ')}
                     </Badge>
-                    <span className="text-gray-400">→</span>
+                    <span className="text-muted-foreground">→</span>
                     <Badge style={{ backgroundColor: getStatusColor(flow.to), color: 'white' }}>
                       {flow.to.replace('_', ' ')}
                     </Badge>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <span className="text-sm text-gray-600">{flow.count} cases</span>
+                    <span className="text-sm text-muted-foreground">{flow.count} cases</span>
                     <Badge variant="outline">{flow.percentage}%</Badge>
                   </div>
                 </div>
@@ -439,11 +439,11 @@ export const CaseStatusDistribution: React.FC = () => {
                   
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Count:</span>
+                      <span className="text-muted-foreground">Count:</span>
                       <span className="font-medium">{status.value}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Percentage:</span>
+                      <span className="text-muted-foreground">Percentage:</span>
                       <span className="font-medium">{status.percentage}%</span>
                     </div>
                   </div>

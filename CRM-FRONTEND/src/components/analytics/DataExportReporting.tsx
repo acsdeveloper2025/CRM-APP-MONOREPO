@@ -148,7 +148,7 @@ export const DataExportReporting: React.FC = () => {
       case 'failed':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -157,8 +157,8 @@ export const DataExportReporting: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Data Export & Reporting</h2>
-          <p className="mt-1 text-gray-600">
+          <h2 className="text-2xl font-bold text-foreground">Data Export & Reporting</h2>
+          <p className="mt-1 text-muted-foreground">
             Export analytics data and generate custom reports
           </p>
         </div>
@@ -185,7 +185,7 @@ export const DataExportReporting: React.FC = () => {
                     <Label htmlFor={option.id} className="font-medium cursor-pointer">
                       {option.label}
                     </Label>
-                    <p className="text-sm text-gray-600 mt-1">{option.description}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
                   </div>
                 </div>
               ))}
@@ -220,7 +220,7 @@ export const DataExportReporting: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {formatOptions.find(opt => opt.value === exportConfig.format)?.description}
                 </p>
               </div>
@@ -388,7 +388,7 @@ export const DataExportReporting: React.FC = () => {
                       </Badge>
                     </div>
                     
-                    <div className="text-xs text-gray-600 space-y-1">
+                    <div className="text-xs text-muted-foreground space-y-1">
                       <div>Size: {exportItem.size}</div>
                       <div>
                         Created: {new Date(exportItem.createdAt).toLocaleDateString()}
@@ -421,30 +421,30 @@ export const DataExportReporting: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="grid gap-4">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Total Exports:</span>
+                  <span className="text-sm text-muted-foreground">Total Exports:</span>
                   <span className="font-medium">47</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">This Month:</span>
+                  <span className="text-sm text-muted-foreground">This Month:</span>
                   <span className="font-medium">12</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Most Popular:</span>
+                  <span className="text-sm text-muted-foreground">Most Popular:</span>
                   <span className="font-medium">Excel</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Total Size:</span>
+                  <span className="text-sm text-muted-foreground">Total Size:</span>
                   <span className="font-medium">156 MB</span>
                 </div>
               </div>
               
               <div className="pt-4 border-t">
-                <div className="text-sm text-gray-600 mb-2">Format Distribution:</div>
+                <div className="text-sm text-muted-foreground mb-2">Format Distribution:</div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span>Excel</span>
                     <div className="flex items-center space-x-2">
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                      <div className="w-16 bg-muted rounded-full h-2">
                         <div className="bg-blue-600 h-2 rounded-full" style={{ width: '60%' }}></div>
                       </div>
                       <span>60%</span>
@@ -453,7 +453,7 @@ export const DataExportReporting: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span>PDF</span>
                     <div className="flex items-center space-x-2">
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                      <div className="w-16 bg-muted rounded-full h-2">
                         <div className="bg-green-600 h-2 rounded-full" style={{ width: '25%' }}></div>
                       </div>
                       <span>25%</span>
@@ -462,7 +462,7 @@ export const DataExportReporting: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span>CSV</span>
                     <div className="flex items-center space-x-2">
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                      <div className="w-16 bg-muted rounded-full h-2">
                         <div className="bg-yellow-600 h-2 rounded-full" style={{ width: '15%' }}></div>
                       </div>
                       <span>15%</span>

@@ -67,7 +67,7 @@ export function NotificationCenter() {
       case 'MEDIUM':
         return 'border-l-4 border-blue-500 bg-blue-50';
       case 'LOW':
-        return 'border-l-4 border-gray-500 bg-gray-50';
+        return 'border-l-4 border-border bg-muted';
       default:
         return 'border-l-4 border-blue-500 bg-blue-50';
     }

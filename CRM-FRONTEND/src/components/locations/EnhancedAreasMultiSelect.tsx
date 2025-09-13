@@ -49,7 +49,7 @@ export function EnhancedAreasMultiSelect({
       .map(area => ({
         id: area.id,
         label: area.name,
-        className: "text-gray-900" // Ensure text is visible
+        className: "text-foreground" // Ensure text is visible
       }));
   }, [allAreas, searchQuery]);
 

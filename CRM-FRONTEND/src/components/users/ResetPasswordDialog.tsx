@@ -157,7 +157,7 @@ export function ResetPasswordDialog({ user, open, onOpenChange }: ResetPasswordD
                     id="username"
                     value={user.username}
                     readOnly
-                    className="bg-white text-gray-900 font-medium border-2 border-gray-200 focus:border-gray-400 shadow-sm"
+                    className="bg-white text-foreground font-medium border-2 border-border focus:border-border shadow-sm"
                   />
                 </div>
 
@@ -169,7 +169,7 @@ export function ResetPasswordDialog({ user, open, onOpenChange }: ResetPasswordD
                       type={showPassword ? 'text' : 'password'}
                       value={generatedPassword}
                       readOnly
-                      className="bg-white text-gray-900 font-mono font-bold pr-20 border-2 border-blue-200 text-lg focus:border-blue-400 shadow-sm"
+                      className="bg-white text-foreground font-mono font-bold pr-20 border-2 border-blue-200 text-lg focus:border-blue-400 shadow-sm"
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex space-x-1">
                       <Button

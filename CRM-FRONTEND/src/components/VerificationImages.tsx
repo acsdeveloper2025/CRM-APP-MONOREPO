@@ -242,7 +242,7 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
       case 'selfie':
         return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -280,7 +280,7 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             <ImageIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Failed to load verification images</p>
           </div>
@@ -299,7 +299,7 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             <ImageIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No verification images found</p>
           </div>
@@ -345,7 +345,7 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
             {/* Verification Photos */}
             {verificationPhotos.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <Camera className="h-4 w-4" />
                   Verification Photos ({verificationPhotos.length})
                 </h4>
@@ -353,10 +353,10 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                   {verificationPhotos.map((image) => (
                     <div key={image.id} className="group relative">
                       {/* Attachment Card Format */}
-                      <Card className="border border-gray-200 hover:border-gray-300 transition-colors">
+                      <Card className="border border-border hover:border-border transition-colors">
                         <CardContent className="p-0">
                           {/* Image with overlay */}
-                          <div className="relative aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
+                          <div className="relative aspect-square bg-muted rounded-t-lg overflow-hidden">
                             <img
                               src={image.thumbnailUrl
                                 ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)
@@ -453,7 +453,7 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
             {/* Selfie Photos */}
             {selfiePhotos.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <Camera className="h-4 w-4" />
                   Selfie Photos ({selfiePhotos.length})
                 </h4>
@@ -461,10 +461,10 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                   {selfiePhotos.map((image) => (
                     <div key={image.id} className="group relative">
                       {/* Attachment Card Format */}
-                      <Card className="border border-gray-200 hover:border-gray-300 transition-colors">
+                      <Card className="border border-border hover:border-border transition-colors">
                         <CardContent className="p-0">
                           {/* Image with overlay */}
-                          <div className="relative aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
+                          <div className="relative aspect-square bg-muted rounded-t-lg overflow-hidden">
                             <img
                               src={image.thumbnailUrl
                                 ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)

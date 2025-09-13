@@ -116,8 +116,8 @@ export const CasesPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Cases</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Cases</h1>
+          <p className="mt-2 text-muted-foreground">
             Manage and track all verification cases
           </p>
         </div>

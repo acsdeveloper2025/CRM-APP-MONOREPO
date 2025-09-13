@@ -206,25 +206,25 @@ export const CaseCompletionTimeAnalysis: React.FC = () => {
   }
 
   const getEfficiencyColor = (efficiency: number) => {
-    if (efficiency >= 90) return 'text-green-600';
-    if (efficiency >= 80) return 'text-blue-600';
-    if (efficiency >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+    if (efficiency >= 90) return 'text-green-600 dark:text-green-400';
+    if (efficiency >= 80) return 'text-blue-600 dark:text-blue-400';
+    if (efficiency >= 70) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const getEfficiencyBadge = (efficiency: number) => {
-    if (efficiency >= 90) return 'bg-green-100 text-green-800';
-    if (efficiency >= 80) return 'bg-blue-100 text-blue-800';
-    if (efficiency >= 70) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
+    if (efficiency >= 90) return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
+    if (efficiency >= 80) return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
+    if (efficiency >= 70) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
+    return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
   };
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
-      case 'High': return 'bg-red-100 text-red-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'High': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
+      case 'Medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
+      case 'Low': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -233,8 +233,8 @@ export const CaseCompletionTimeAnalysis: React.FC = () => {
       {/* Header with Controls */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Case Completion Time Analysis</h2>
-          <p className="mt-1 text-gray-600">
+          <h2 className="text-2xl font-bold text-foreground">Case Completion Time Analysis</h2>
+          <p className="mt-1 text-muted-foreground">
             Analyze completion patterns and identify optimization opportunities
           </p>
         </div>
@@ -493,15 +493,15 @@ export const CaseCompletionTimeAnalysis: React.FC = () => {
                   
                   <div className="grid gap-4 md:grid-cols-3 mb-3">
                     <div>
-                      <span className="text-sm text-gray-600">Avg Time:</span>
+                      <span className="text-sm text-muted-foreground">Avg Time:</span>
                       <div className="font-bold">{bottleneck.avgTime} days</div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600">Cases Affected:</span>
+                      <span className="text-sm text-muted-foreground">Cases Affected:</span>
                       <div className="font-bold">{bottleneck.cases}</div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600">Impact Level:</span>
+                      <span className="text-sm text-muted-foreground">Impact Level:</span>
                       <div className="font-bold">{bottleneck.impact}</div>
                     </div>
                   </div>

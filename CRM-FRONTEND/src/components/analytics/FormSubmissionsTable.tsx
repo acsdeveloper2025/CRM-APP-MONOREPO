@@ -65,16 +65,16 @@ export const FormSubmissionsTable: React.FC = () => {
       case 'VALID': return 'bg-green-100 text-green-800';
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
       case 'INVALID': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-muted text-foreground';
     }
   };
 
   const getFormTypeColor = (type: string) => {
     switch (type) {
-      case 'RESIDENCE': return 'bg-blue-100 text-blue-800';
-      case 'OFFICE': return 'bg-purple-100 text-purple-800';
-      case 'BUSINESS': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'RESIDENCE': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
+      case 'OFFICE': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300';
+      case 'BUSINESS': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -83,8 +83,8 @@ export const FormSubmissionsTable: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Form Submissions Analysis</h2>
-          <p className="mt-1 text-gray-600">
+          <h2 className="text-2xl font-bold text-foreground">Form Submissions Analysis</h2>
+          <p className="mt-1 text-muted-foreground">
             Comprehensive view of all form submissions with validation status and trends
           </p>
         </div>
@@ -230,7 +230,7 @@ export const FormSubmissionsTable: React.FC = () => {
                     <TableRow key={index}>
                       {Array.from({ length: 6 }).map((_, cellIndex) => (
                         <TableCell key={cellIndex}>
-                          <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="h-4 bg-muted rounded animate-pulse"></div>
                         </TableCell>
                       ))}
                     </TableRow>
@@ -238,9 +238,9 @@ export const FormSubmissionsTable: React.FC = () => {
                 ) : submissions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8">
-                      <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                      <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
                       <h3 className="mt-4 text-lg font-semibold">No submissions found</h3>
-                      <p className="text-gray-500">
+                      <p className="text-muted-foreground">
                         Form submissions will appear here once agents start submitting data.
                       </p>
                     </TableCell>
@@ -256,13 +256,13 @@ export const FormSubmissionsTable: React.FC = () => {
                       <TableCell>
                         <div>
                           <div className="font-medium">#{submission.caseNumber || 'N/A'}</div>
-                          <div className="text-sm text-gray-500">{submission.customerName}</div>
+                          <div className="text-sm text-muted-foreground">{submission.customerName}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{submission.agentName || 'Unknown'}</div>
-                          <div className="text-sm text-gray-500">{submission.employeeId}</div>
+                          <div className="text-sm text-muted-foreground">{submission.employeeId}</div>
                         </div>
                       </TableCell>
                       <TableCell>

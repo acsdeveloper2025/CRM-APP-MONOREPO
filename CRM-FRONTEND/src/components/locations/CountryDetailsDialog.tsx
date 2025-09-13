@@ -32,15 +32,15 @@ export function CountryDetailsDialog({ country, open, onOpenChange }: CountryDet
 
   const getContinentColor = (continent: string) => {
     const colors: Record<string, string> = {
-      'Asia': 'bg-blue-100 text-blue-800',
-      'Europe': 'bg-green-100 text-green-800',
-      'North America': 'bg-purple-100 text-purple-800',
-      'South America': 'bg-orange-100 text-orange-800',
-      'Africa': 'bg-yellow-100 text-yellow-800',
-      'Oceania': 'bg-cyan-100 text-cyan-800',
-      'Antarctica': 'bg-gray-100 text-gray-800',
+      'Asia': 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+      'Europe': 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+      'North America': 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300',
+      'South America': 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300',
+      'Africa': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
+      'Oceania': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-300',
+      'Antarctica': 'bg-muted text-muted-foreground',
     };
-    return colors[continent] || 'bg-gray-100 text-gray-800';
+    return colors[continent] || 'bg-muted text-muted-foreground';
   };
 
   return (
@@ -65,7 +65,7 @@ export function CountryDetailsDialog({ country, open, onOpenChange }: CountryDet
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Globe className="h-4 w-4" />
                     <span>Country Name</span>
                   </div>
@@ -73,7 +73,7 @@ export function CountryDetailsDialog({ country, open, onOpenChange }: CountryDet
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Hash className="h-4 w-4" />
                     <span>Country Code</span>
                   </div>
@@ -83,7 +83,7 @@ export function CountryDetailsDialog({ country, open, onOpenChange }: CountryDet
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4" />
                     <span>Continent</span>
                   </div>
@@ -93,7 +93,7 @@ export function CountryDetailsDialog({ country, open, onOpenChange }: CountryDet
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>Created</span>
                   </div>
@@ -136,21 +136,21 @@ export function CountryDetailsDialog({ country, open, onOpenChange }: CountryDet
                       className="flex items-center justify-between p-3 border rounded-lg"
                     >
                       <div className="flex items-center space-x-3">
-                        <MapPin className="h-4 w-4 text-gray-400" />
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="font-medium">{state.name}</p>
-                          <p className="text-sm text-gray-500">Code: {state.code}</p>
+                          <p className="text-sm text-muted-foreground">Code: {state.code}</p>
                         </div>
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         {new Date(state.createdAt).toLocaleDateString()}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-gray-500">
-                  <Building className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                <div className="text-center py-6 text-muted-foreground">
+                  <Building className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                   <p>No states found for this country</p>
                   <p className="text-sm">States will appear here when created</p>
                 </div>
@@ -167,19 +167,19 @@ export function CountryDetailsDialog({ country, open, onOpenChange }: CountryDet
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="space-y-1">
                   <p className="text-2xl font-bold text-blue-600">{states.length}</p>
-                  <p className="text-sm text-gray-500">States</p>
+                  <p className="text-sm text-muted-foreground">States</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-2xl font-bold text-green-600">
                     {states.reduce((acc, state) => acc + (state.cities?.length || 0), 0)}
                   </p>
-                  <p className="text-sm text-gray-500">Cities</p>
+                  <p className="text-sm text-muted-foreground">Cities</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-2xl font-bold text-purple-600">
                     {country.continent}
                   </p>
-                  <p className="text-sm text-gray-500">Continent</p>
+                  <p className="text-sm text-muted-foreground">Continent</p>
                 </div>
               </div>
             </CardContent>

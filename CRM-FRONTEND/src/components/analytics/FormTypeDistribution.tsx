@@ -156,8 +156,8 @@ export const FormTypeDistribution: React.FC = () => {
       {/* Header with Controls */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Form Type Distribution</h2>
-          <p className="mt-1 text-gray-600">
+          <h2 className="text-2xl font-bold text-foreground">Form Type Distribution</h2>
+          <p className="mt-1 text-muted-foreground">
             Analyze form submission patterns by type and trends
           </p>
         </div>
@@ -388,15 +388,15 @@ export const FormTypeDistribution: React.FC = () => {
                   
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Total Submissions:</span>
+                      <span className="text-sm text-muted-foreground">Total Submissions:</span>
                       <span className="font-medium">{formType.value}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Percentage:</span>
+                      <span className="text-sm text-muted-foreground">Percentage:</span>
                       <span className="font-medium">{formType.percentage}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Avg per Day:</span>
+                      <span className="text-sm text-muted-foreground">Avg per Day:</span>
                       <span className="font-medium">
                         {timeRange === '7d' ? (formType.value / 7).toFixed(1) : 
                          timeRange === '30d' ? (formType.value / 30).toFixed(1) : 

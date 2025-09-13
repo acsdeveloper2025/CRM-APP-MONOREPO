@@ -180,7 +180,7 @@ export const AgentPerformanceCharts: React.FC = () => {
       average: 'bg-yellow-100 text-yellow-800',
       poor: 'bg-red-100 text-red-800'
     };
-    return colors[performance as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return colors[performance as keyof typeof colors] || 'bg-muted text-foreground';
   };
 
   return (
@@ -188,8 +188,8 @@ export const AgentPerformanceCharts: React.FC = () => {
       {/* Header with Controls */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Agent Performance Analytics</h2>
-          <p className="mt-1 text-gray-600">
+          <h2 className="text-2xl font-bold text-foreground">Agent Performance Analytics</h2>
+          <p className="mt-1 text-muted-foreground">
             Comprehensive performance metrics and productivity analysis
           </p>
         </div>
@@ -402,15 +402,15 @@ export const AgentPerformanceCharts: React.FC = () => {
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="p-4 border rounded-lg">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-600">Cases Assigned</span>
+                            <span className="text-sm text-muted-foreground">Cases Assigned</span>
                             <span className="font-bold">{agent.totalCasesAssigned}</span>
                           </div>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-600">Cases Completed</span>
+                            <span className="text-sm text-muted-foreground">Cases Completed</span>
                             <span className="font-bold text-green-600">{agent.casesCompleted}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Completion Rate</span>
+                            <span className="text-sm text-muted-foreground">Completion Rate</span>
                             <Badge className={getPerformanceBadge(getPerformanceLevel(agent.formQualityScore, completionRate))}>
                               {completionRate.toFixed(1)}%
                             </Badge>
@@ -419,15 +419,15 @@ export const AgentPerformanceCharts: React.FC = () => {
                         
                         <div className="p-4 border rounded-lg">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-600">Quality Score</span>
+                            <span className="text-sm text-muted-foreground">Quality Score</span>
                             <span className="font-bold">{agent.formQualityScore.toFixed(1)}</span>
                           </div>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-600">Avg Completion</span>
+                            <span className="text-sm text-muted-foreground">Avg Completion</span>
                             <span className="font-bold">{agent.avgCompletionDays ? `${agent.avgCompletionDays.toFixed(1)}d` : 'N/A'}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Forms Submitted</span>
+                            <span className="text-sm text-muted-foreground">Forms Submitted</span>
                             <span className="font-bold">{agent.residenceFormsSubmitted + agent.officeFormsSubmitted}</span>
                           </div>
                         </div>
@@ -455,9 +455,9 @@ export const AgentPerformanceCharts: React.FC = () => {
                 })()
               ) : (
                 <div className="text-center py-8">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
+                  <Users className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-4 text-lg font-semibold">Select an Agent</h3>
-                  <p className="text-gray-500">Choose an agent to view detailed metrics</p>
+                  <p className="text-muted-foreground">Choose an agent to view detailed metrics</p>
                 </div>
               )}
             </CardContent>

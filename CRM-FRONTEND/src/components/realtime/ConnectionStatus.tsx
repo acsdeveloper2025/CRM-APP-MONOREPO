@@ -53,8 +53,8 @@ export function ConnectionStatus({ showText = false, size = 'sm' }: ConnectionSt
     
     return {
       icon: WifiOff,
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-100',
+      color: 'text-muted-foreground',
+      bgColor: 'bg-muted',
       variant: 'secondary' as const,
       text: 'Disconnected',
       description: 'Not connected to real-time server',

@@ -116,17 +116,17 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
 
   const getRiskBadgeColor = (level: string) => {
     switch (level) {
-      case 'LOW': return 'bg-green-100 text-green-800 border-green-200';
-      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'HIGH': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'LOW': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
+      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800';
+      case 'HIGH': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 85) return 'text-green-600';
-    if (confidence >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+    if (confidence >= 85) return 'text-green-600 dark:text-green-400';
+    if (confidence >= 70) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   if (isLoading) {
@@ -135,7 +135,7 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
         <CardContent className="p-6">
           <div className="flex items-center justify-center space-x-2">
             <RefreshCw className="h-5 w-5 animate-spin text-blue-600" />
-            <span className="text-sm text-gray-600">Loading AI report...</span>
+            <span className="text-sm text-muted-foreground">Loading AI report...</span>
           </div>
         </CardContent>
       </Card>
@@ -159,10 +159,10 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
         <CardContent className="pt-0">
           <div className="text-center py-6">
             <Brain className="h-12 w-12 text-purple-400 mx-auto mb-3" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-foreground mb-2">
               Generate AI-Powered Report
             </h3>
-            <p className="text-sm text-gray-600 mb-4 max-w-md mx-auto">
+            <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
               Get comprehensive insights and analysis of this verification using advanced AI technology.
             </p>
             <Button 
@@ -220,9 +220,9 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
         <div>
           <div className="flex items-center space-x-2 mb-2">
             <FileText className="h-4 w-4 text-blue-600" />
-            <h3 className="font-semibold text-gray-900">Executive Summary</h3>
+            <h3 className="font-semibold text-foreground">Executive Summary</h3>
           </div>
-          <p className="text-sm text-gray-700 leading-relaxed">
+          <p className="text-sm text-foreground leading-relaxed">
             {report.executiveSummary}
           </p>
         </div>
@@ -234,12 +234,12 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
           <div>
             <div className="flex items-center space-x-2 mb-3">
               <Shield className="h-4 w-4 text-orange-600" />
-              <h3 className="font-semibold text-gray-900">Risk Assessment</h3>
+              <h3 className="font-semibold text-foreground">Risk Assessment</h3>
               <Badge className={getRiskBadgeColor(report.templateInsights.riskAssessment.level)}>
                 {report.templateInsights.riskAssessment.level} RISK
               </Badge>
             </div>
-            <p className="text-sm text-gray-700 mb-3">
+            <p className="text-sm text-foreground mb-3">
               {report.riskAssessment}
             </p>
             {report.templateInsights.riskAssessment.factors.length > 0 && (
@@ -264,13 +264,13 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
         <div>
           <div className="flex items-center space-x-2 mb-3">
             <Target className="h-4 w-4 text-green-600" />
-            <h3 className="font-semibold text-gray-900">Key Findings</h3>
+            <h3 className="font-semibold text-foreground">Key Findings</h3>
           </div>
           <ul className="space-y-2">
             {report.keyFindings.map((finding, index) => (
               <li key={index} className="flex items-start space-x-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-700">{finding}</span>
+                <span className="text-foreground">{finding}</span>
               </li>
             ))}
           </ul>
@@ -282,13 +282,13 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
         <div>
           <div className="flex items-center space-x-2 mb-3">
             <TrendingUp className="h-4 w-4 text-blue-600" />
-            <h3 className="font-semibold text-gray-900">Recommendations</h3>
+            <h3 className="font-semibold text-foreground">Recommendations</h3>
           </div>
           <ul className="space-y-2">
             {report.recommendations.map((recommendation, index) => (
               <li key={index} className="flex items-start space-x-2 text-sm">
                 <span className="text-blue-500 mt-1 flex-shrink-0">•</span>
-                <span className="text-gray-700">{recommendation}</span>
+                <span className="text-foreground">{recommendation}</span>
               </li>
             ))}
           </ul>
@@ -298,8 +298,8 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
 
         {/* Conclusion */}
         <div>
-          <h3 className="font-semibold text-gray-900 mb-2">Conclusion</h3>
-          <p className="text-sm text-gray-700 leading-relaxed">
+          <h3 className="font-semibold text-foreground mb-2">Conclusion</h3>
+          <p className="text-sm text-foreground leading-relaxed">
             {report.conclusion}
           </p>
         </div>
@@ -311,11 +311,11 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <FileText className="h-4 w-4 text-blue-600" />
-                <h3 className="font-semibold text-gray-900">Residence Verification Report</h3>
+                <h3 className="font-semibold text-foreground">Residence Verification Report</h3>
                 <Badge variant="outline" className="text-xs">Template-Based</Badge>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
+              <div className="bg-muted rounded-lg p-4">
+                <pre className="text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed">
                   {report.templateReport}
                 </pre>
               </div>
@@ -325,12 +325,12 @@ export const AIReportCard: React.FC<AIReportCardProps> = ({
 
         {/* Metadata */}
         {report.metadata && (
-          <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+          <div className="bg-muted border border-border rounded-md p-3">
             <div className="flex items-center space-x-2 mb-2">
-              <Clock className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Report Details</span>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">Report Details</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
               <div>Generated: {new Date(report.metadata.generatedAt).toLocaleString()}</div>
               <div>Type: {report.metadata.verificationType}</div>
               <div>Outcome: {report.metadata.outcome}</div>

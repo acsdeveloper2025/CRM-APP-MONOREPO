@@ -56,15 +56,15 @@ export const AgentPerformanceDashboard: React.FC = () => {
   };
 
   const getPerformanceColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-green-600 dark:text-green-400';
+    if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const getCompletionRateColor = (rate: number) => {
-    if (rate >= 90) return 'bg-green-100 text-green-800';
-    if (rate >= 70) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
+    if (rate >= 90) return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
+    if (rate >= 70) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
+    return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
   };
 
   return (
@@ -72,8 +72,8 @@ export const AgentPerformanceDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Agent Performance</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Agent Performance</h1>
+          <p className="mt-2 text-muted-foreground">
             Track field agent productivity and performance metrics
           </p>
         </div>
@@ -166,7 +166,7 @@ export const AgentPerformanceDashboard: React.FC = () => {
                       {index === 0 && <Star className="h-5 w-5 text-yellow-500 fill-current" />}
                     </div>
                     <div className="font-medium">{agent.name}</div>
-                    <div className="text-sm text-gray-500">{agent.employeeId}</div>
+                    <div className="text-sm text-muted-foreground">{agent.employeeId}</div>
                     <div className="mt-2">
                       <Badge className={getCompletionRateColor(completionRate)}>
                         {completionRate.toFixed(1)}% completion
@@ -291,7 +291,7 @@ export const AgentPerformanceDashboard: React.FC = () => {
                     <TableRow key={index}>
                       {Array.from({ length: 8 }).map((_, cellIndex) => (
                         <TableCell key={cellIndex}>
-                          <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="h-4 bg-muted rounded animate-pulse"></div>
                         </TableCell>
                       ))}
                     </TableRow>
@@ -299,9 +299,9 @@ export const AgentPerformanceDashboard: React.FC = () => {
                 ) : agents.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8">
-                      <Users className="mx-auto h-12 w-12 text-gray-400" />
+                      <Users className="mx-auto h-12 w-12 text-muted-foreground" />
                       <h3 className="mt-4 text-lg font-semibold">No agents found</h3>
-                      <p className="text-gray-500">
+                      <p className="text-muted-foreground">
                         Try adjusting your filters or check back later.
                       </p>
                     </TableCell>
@@ -317,7 +317,7 @@ export const AgentPerformanceDashboard: React.FC = () => {
                         <TableCell>
                           <div>
                             <div className="font-medium">{agent.name}</div>
-                            <div className="text-sm text-gray-500">{agent.employeeId}</div>
+                            <div className="text-sm text-muted-foreground">{agent.employeeId}</div>
                           </div>
                         </TableCell>
                         <TableCell>

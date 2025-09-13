@@ -183,7 +183,7 @@ export const PerformanceMetrics: React.FC = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-center py-8">
           <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading performance data...</span>
+          <span className="ml-2 text-muted-foreground">Loading performance data...</span>
         </div>
       </div>
     );
@@ -328,7 +328,7 @@ export const PerformanceMetrics: React.FC = () => {
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: COLORS[index % COLORS.length] }}
                 />
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-muted-foreground">
                   {entry.type} ({entry.percentage}%)
                 </span>
               </div>

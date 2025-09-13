@@ -101,7 +101,7 @@ export const EnhancedCaseStatus: React.FC<EnhancedCaseStatusProps> = ({
       case 'FAILED':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -114,7 +114,7 @@ export const EnhancedCaseStatus: React.FC<EnhancedCaseStatusProps> = ({
       case 'IN_PROGRESS':
         return <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-400" />;
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -201,16 +201,16 @@ export const EnhancedCaseStatus: React.FC<EnhancedCaseStatusProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium">Submission Progress</h4>
-                    <span className="text-sm text-gray-600">{submissionProgress.overallProgress}%</span>
+                    <span className="text-sm text-muted-foreground">{submissionProgress.overallProgress}%</span>
                   </div>
                   <Progress value={submissionProgress.overallProgress} className="w-full" />
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-muted-foreground">
                     {submissionProgress.verificationType} verification for Case #{caseId}
                   </p>
                 </div>
 
                 {submissionProgress.estimatedTimeRemaining && (
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     Estimated time remaining: {formatTime(submissionProgress.estimatedTimeRemaining)}
                   </div>
                 )}
@@ -224,7 +224,7 @@ export const EnhancedCaseStatus: React.FC<EnhancedCaseStatusProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-sm">{step.name}</span>
                           {step.status === 'IN_PROGRESS' && (
-                            <span className="text-xs text-gray-500">{step.progress}%</span>
+                            <span className="text-xs text-muted-foreground">{step.progress}%</span>
                           )}
                         </div>
                         {step.status === 'IN_PROGRESS' && (
@@ -239,7 +239,7 @@ export const EnhancedCaseStatus: React.FC<EnhancedCaseStatusProps> = ({
                 </div>
               </>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No active submission progress</p>
               </div>
@@ -253,15 +253,15 @@ export const EnhancedCaseStatus: React.FC<EnhancedCaseStatusProps> = ({
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="space-y-1">
                     <p className="text-2xl font-bold text-orange-600">{retryQueueStatus.pending}</p>
-                    <p className="text-xs text-gray-600">Pending</p>
+                    <p className="text-xs text-muted-foreground">Pending</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-2xl font-bold text-blue-600">{retryQueueStatus.retrying}</p>
-                    <p className="text-xs text-gray-600">Retrying</p>
+                    <p className="text-xs text-muted-foreground">Retrying</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-2xl font-bold text-red-600">{retryQueueStatus.failed}</p>
-                    <p className="text-xs text-gray-600">Failed</p>
+                    <p className="text-xs text-muted-foreground">Failed</p>
                   </div>
                 </div>
 
@@ -295,7 +295,7 @@ export const EnhancedCaseStatus: React.FC<EnhancedCaseStatusProps> = ({
                 </div>
               </>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <RotateCcw className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No pending retries</p>
               </div>
@@ -351,7 +351,7 @@ export const EnhancedCaseStatus: React.FC<EnhancedCaseStatusProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No compression statistics available</p>
               </div>

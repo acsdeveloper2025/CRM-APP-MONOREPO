@@ -57,7 +57,7 @@ export const FormSubmissionsDashboard: React.FC = () => {
       case 'INVALID':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -70,7 +70,7 @@ export const FormSubmissionsDashboard: React.FC = () => {
       case 'BUSINESS':
         return 'bg-orange-100 text-orange-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -79,8 +79,8 @@ export const FormSubmissionsDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Form Submissions</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Form Submissions</h1>
+          <p className="mt-2 text-muted-foreground">
             Track and analyze all form submissions with validation status
           </p>
         </div>
@@ -257,7 +257,7 @@ export const FormSubmissionsDashboard: React.FC = () => {
                     <TableRow key={index}>
                       {Array.from({ length: 6 }).map((_, cellIndex) => (
                         <TableCell key={cellIndex}>
-                          <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="h-4 bg-muted rounded animate-pulse"></div>
                         </TableCell>
                       ))}
                     </TableRow>
@@ -265,9 +265,9 @@ export const FormSubmissionsDashboard: React.FC = () => {
                 ) : submissions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8">
-                      <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                      <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
                       <h3 className="mt-4 text-lg font-semibold">No submissions found</h3>
-                      <p className="text-gray-500">
+                      <p className="text-muted-foreground">
                         Try adjusting your filters or check back later.
                       </p>
                     </TableCell>
@@ -283,13 +283,13 @@ export const FormSubmissionsDashboard: React.FC = () => {
                       <TableCell>
                         <div>
                           <div className="font-medium">#{submission.caseNumber || 'N/A'}</div>
-                          <div className="text-sm text-gray-500">{submission.customerName}</div>
+                          <div className="text-sm text-muted-foreground">{submission.customerName}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{submission.agentName || 'Unknown'}</div>
-                          <div className="text-sm text-gray-500">{submission.employeeId}</div>
+                          <div className="text-sm text-muted-foreground">{submission.employeeId}</div>
                         </div>
                       </TableCell>
                       <TableCell>

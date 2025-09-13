@@ -65,17 +65,17 @@ export const CaseDetailPage: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-4">
-          <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+          <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+          <div className="h-8 bg-muted rounded w-48 animate-pulse"></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-48 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-64 bg-muted rounded animate-pulse"></div>
+            <div className="h-48 bg-muted rounded animate-pulse"></div>
           </div>
           <div className="space-y-6">
-            <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-48 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-32 bg-muted rounded animate-pulse"></div>
+            <div className="h-48 bg-muted rounded animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -85,8 +85,8 @@ export const CaseDetailPage: React.FC = () => {
   if (!caseItem) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900">Case not found</h2>
-        <p className="mt-2 text-gray-600">The case you're looking for doesn't exist.</p>
+        <h2 className="text-2xl font-bold text-foreground">Case not found</h2>
+        <p className="mt-2 text-muted-foreground">The case you're looking for doesn't exist.</p>
         <Link to="/cases">
           <Button className="mt-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -100,13 +100,13 @@ export const CaseDetailPage: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ASSIGNED':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
       case 'IN_PROGRESS':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
       case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -117,15 +117,15 @@ export const CaseDetailPage: React.FC = () => {
 
     switch (priorityNum) {
       case 1:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
       case 2:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
       case 3:
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
       case 4:
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -159,10 +159,10 @@ export const CaseDetailPage: React.FC = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-foreground">
               Case #{caseItem.caseId || caseItem.id?.slice(-8) || 'N/A'}
             </h1>
-            <p className="mt-2 text-gray-600">{caseItem.title || 'Case Details'}</p>
+            <p className="mt-2 text-muted-foreground">{caseItem.title || 'Case Details'}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -214,24 +214,24 @@ export const CaseDetailPage: React.FC = () => {
                       <h4 className="font-medium text-blue-900">Applicant Information</h4>
                       <div className="mt-2 space-y-2">
                         <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-gray-400" />
+                          <User className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">{caseItem.applicantName}</span>
                         </div>
                         {caseItem.applicantPhone && (
                           <div className="flex items-center space-x-2">
-                            <Phone className="h-4 w-4 text-gray-400" />
+                            <Phone className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm">{caseItem.applicantPhone}</span>
                           </div>
                         )}
                         {caseItem.applicantEmail && (
                           <div className="flex items-center space-x-2">
-                            <Mail className="h-4 w-4 text-gray-400" />
+                            <Mail className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm">{caseItem.applicantEmail}</span>
                           </div>
                         )}
                         {caseItem.applicantType && (
                           <div className="flex items-center space-x-2">
-                            <User className="h-4 w-4 text-gray-400" />
+                            <User className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm">Type: {caseItem.applicantType}</span>
                           </div>
                         )}
@@ -242,7 +242,7 @@ export const CaseDetailPage: React.FC = () => {
                       <h4 className="font-medium text-blue-900">Address</h4>
                       <div className="mt-2">
                         <div className="flex items-start space-x-2">
-                          <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                           <div className="text-sm">
                             <div>{caseItem.address}</div>
                             <div>Pincode: {caseItem.pincode}</div>
@@ -254,10 +254,10 @@ export const CaseDetailPage: React.FC = () => {
 
                   <div>
                     <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4 text-gray-400" />
+                      <User className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Created By Backend User</span>
                     </div>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {caseItem.createdByBackendUser?.name || 'System'}
                     </p>
                   </div>
@@ -266,16 +266,16 @@ export const CaseDetailPage: React.FC = () => {
                     <h4 className="font-medium text-blue-900">Case Details</h4>
                     <div className="mt-2 space-y-2">
                       <div className="flex items-center space-x-2">
-                        <FileText className="h-4 w-4 text-gray-400" />
+                        <FileText className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">Case ID: {caseItem.caseId}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Building2 className="h-4 w-4 text-gray-400" />
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">Client: {caseItem.clientName}</span>
                       </div>
                       {caseItem.backendContactNumber && (
                         <div className="flex items-center space-x-2">
-                          <Phone className="h-4 w-4 text-gray-400" />
+                          <Phone className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">Backend Contact: {caseItem.backendContactNumber}</span>
                         </div>
                       )}
@@ -285,7 +285,7 @@ export const CaseDetailPage: React.FC = () => {
                   {(caseItem.trigger || caseItem.notes) && (
                     <div>
                       <h4 className="font-medium text-blue-900">TRIGGER</h4>
-                      <p className="mt-1 text-gray-600">{caseItem.trigger || caseItem.notes}</p>
+                      <p className="mt-1 text-muted-foreground">{caseItem.trigger || caseItem.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -331,9 +331,9 @@ export const CaseDetailPage: React.FC = () => {
                 ) : (
                   <Card>
                     <CardContent className="p-6 text-center">
-                      <FormInput className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Form Submissions</h3>
-                      <p className="text-gray-600">
+                      <FormInput className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">No Form Submissions</h3>
+                      <p className="text-muted-foreground">
                         No verification forms have been submitted for this case yet.
                       </p>
                     </CardContent>
@@ -365,10 +365,10 @@ export const CaseDetailPage: React.FC = () => {
             <CardContent className="space-y-4">
               <div>
                 <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-gray-400" />
+                  <User className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Assigned To</span>
                 </div>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {caseItem.assignedTo?.name || 'Not assigned'}
                 </p>
               </div>
@@ -377,10 +377,10 @@ export const CaseDetailPage: React.FC = () => {
 
               <div>
                 <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Last Updated</span>
                 </div>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {safeFormatDistanceToNow(caseItem.updatedAt)}
                 </p>
               </div>

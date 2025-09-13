@@ -176,7 +176,7 @@ export function RealTimeCaseUpdates({ caseId, maxUpdates = 20 }: RealTimeCaseUpd
       case 'photo':
         return <Camera className="h-4 w-4 text-orange-600" />;
       case 'typing':
-        return <User className="h-4 w-4 text-gray-600" />;
+        return <User className="h-4 w-4 text-muted-foreground" />;
       case 'submission_progress':
         return <Upload className="h-4 w-4 text-blue-600" />;
       case 'retry_status':
@@ -184,7 +184,7 @@ export function RealTimeCaseUpdates({ caseId, maxUpdates = 20 }: RealTimeCaseUpd
       case 'compression':
         return <Zap className="h-4 w-4 text-green-600" />;
       default:
-        return <Activity className="h-4 w-4 text-gray-600" />;
+        return <Activity className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -277,7 +277,7 @@ export function RealTimeCaseUpdates({ caseId, maxUpdates = 20 }: RealTimeCaseUpd
                           <span>Progress</span>
                           <span>{update.progress}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1">
+                        <div className="w-full bg-muted rounded-full h-1">
                           <div
                             className="bg-blue-600 h-1 rounded-full transition-all duration-300"
                             style={{ width: `${update.progress}%` }}
@@ -332,7 +332,7 @@ export function RealTimeCaseUpdates({ caseId, maxUpdates = 20 }: RealTimeCaseUpd
                           </span>
                         )}
                         {update.type === 'form' && (
-                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                          <div className="w-full bg-muted rounded-full h-1.5 mt-1">
                             <div
                               className="bg-blue-600 h-1.5 rounded-full"
                               style={{ width: `${update.data.progress}%` }}

@@ -96,9 +96,9 @@ export function CountriesTable({ data, isLoading }: CountriesTableProps) {
   if (!data.length) {
     return (
       <div className="text-center py-8">
-        <Globe className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No countries found</h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <Globe className="mx-auto h-12 w-12 text-muted-foreground" />
+        <h3 className="mt-2 text-sm font-medium text-foreground">No countries found</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
           Get started by creating a new country.
         </p>
       </div>
@@ -107,15 +107,15 @@ export function CountriesTable({ data, isLoading }: CountriesTableProps) {
 
   const getContinentColor = (continent: string) => {
     const colors: Record<string, string> = {
-      'Asia': 'bg-blue-100 text-blue-800',
-      'Europe': 'bg-green-100 text-green-800',
-      'North America': 'bg-purple-100 text-purple-800',
-      'South America': 'bg-orange-100 text-orange-800',
-      'Africa': 'bg-yellow-100 text-yellow-800',
-      'Oceania': 'bg-cyan-100 text-cyan-800',
-      'Antarctica': 'bg-gray-100 text-gray-800',
+      'Asia': 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+      'Europe': 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+      'North America': 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300',
+      'South America': 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300',
+      'Africa': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
+      'Oceania': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-300',
+      'Antarctica': 'bg-muted text-muted-foreground',
     };
-    return colors[continent] || 'bg-gray-100 text-gray-800';
+    return colors[continent] || 'bg-muted text-muted-foreground';
   };
 
   return (
@@ -136,7 +136,7 @@ export function CountriesTable({ data, isLoading }: CountriesTableProps) {
               <TableRow key={country.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center space-x-2">
-                    <Globe className="h-4 w-4 text-gray-400" />
+                    <Globe className="h-4 w-4 text-muted-foreground" />
                     <span>{country.name}</span>
                   </div>
                 </TableCell>
@@ -150,7 +150,7 @@ export function CountriesTable({ data, isLoading }: CountriesTableProps) {
                     {country.continent}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-gray-500">
+                <TableCell className="text-muted-foreground">
                   {new Date(country.createdAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">

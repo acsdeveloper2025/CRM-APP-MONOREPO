@@ -163,14 +163,14 @@ export const EnterpriseDashboard: React.FC = () => {
   const systemLoadStatus = getPerformanceStatus(dashboardMetrics.systemLoad, { good: 60, warning: 80 });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white shadow-sm border-b border-border">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Enterprise Dashboard</h1>
-              <p className="text-gray-600">Real-time system monitoring and case management</p>
+              <h1 className="text-2xl font-bold text-foreground">Enterprise Dashboard</h1>
+              <p className="text-muted-foreground">Real-time system monitoring and case management</p>
             </div>
             <div className="flex items-center space-x-4">
               {/* Performance indicators */}
@@ -203,7 +203,7 @@ export const EnterpriseDashboard: React.FC = () => {
           <div className="p-6">
             {!sidebarCollapsed && (
               <>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">System Metrics</h2>
+                <h2 className="text-lg font-semibold text-foreground mb-4">System Metrics</h2>
                 
                 {/* Key Performance Indicators */}
                 <div className="grid grid-cols-1 gap-4 mb-6">
@@ -258,12 +258,12 @@ export const EnterpriseDashboard: React.FC = () => {
 
                 {/* System Health */}
                 <div className="mb-6">
-                  <h3 className="text-md font-semibold text-gray-900 mb-3">System Health</h3>
+                  <h3 className="text-md font-semibold text-foreground mb-3">System Health</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <Database className="h-4 w-4 text-gray-500 mr-2" />
-                        <span className="text-sm text-gray-700">Cache Hit Rate</span>
+                        <Database className="h-4 w-4 text-muted-foreground mr-2" />
+                        <span className="text-sm text-foreground">Cache Hit Rate</span>
                       </div>
                       <span className="text-sm font-medium text-green-600">
                         {dashboardMetrics.cacheHitRate}%
@@ -272,8 +272,8 @@ export const EnterpriseDashboard: React.FC = () => {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <Zap className="h-4 w-4 text-gray-500 mr-2" />
-                        <span className="text-sm text-gray-700">Avg Response</span>
+                        <Zap className="h-4 w-4 text-muted-foreground mr-2" />
+                        <span className="text-sm text-foreground">Avg Response</span>
                       </div>
                       <span className="text-sm font-medium text-blue-600">
                         {dashboardMetrics.averageResponseTime}ms
@@ -282,10 +282,10 @@ export const EnterpriseDashboard: React.FC = () => {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <Wifi className="h-4 w-4 text-gray-500 mr-2" />
-                        <span className="text-sm text-gray-700">Queue Size</span>
+                        <Wifi className="h-4 w-4 text-muted-foreground mr-2" />
+                        <span className="text-sm text-foreground">Queue Size</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-600">
+                      <span className="text-sm font-medium text-muted-foreground">
                         {dashboardMetrics.queueSize}
                       </span>
                     </div>
@@ -295,12 +295,12 @@ export const EnterpriseDashboard: React.FC = () => {
                 {/* Field Agent Workload */}
                 {workloadData.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-md font-semibold text-gray-900 mb-3">Top Field Agents</h3>
+                    <h3 className="text-md font-semibold text-foreground mb-3">Top Field Agents</h3>
                     <div className="space-y-2">
                       {workloadData.slice(0, 5).map((agent) => (
                         <div key={agent.userId} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-700 truncate">{agent.userName}</span>
-                          <span className="text-gray-500">{agent.assignedCases}</span>
+                          <span className="text-foreground truncate">{agent.userName}</span>
+                          <span className="text-muted-foreground">{agent.assignedCases}</span>
                         </div>
                       ))}
                     </div>
@@ -310,7 +310,7 @@ export const EnterpriseDashboard: React.FC = () => {
                 {/* Recent Notifications */}
                 {notifications.length > 0 && (
                   <div>
-                    <h3 className="text-md font-semibold text-gray-900 mb-3">Recent Alerts</h3>
+                    <h3 className="text-md font-semibold text-foreground mb-3">Recent Alerts</h3>
                     <div className="space-y-2">
                       {notifications.slice(0, 3).map((notification) => (
                         <div key={notification.id} className="flex items-start space-x-2 text-sm">
@@ -320,8 +320,8 @@ export const EnterpriseDashboard: React.FC = () => {
                             <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
                           )}
                           <div className="flex-1">
-                            <p className="text-gray-700 truncate">{notification.title}</p>
-                            <p className="text-gray-500 text-xs">
+                            <p className="text-foreground truncate">{notification.title}</p>
+                            <p className="text-muted-foreground text-xs">
                               {new Date(notification.timestamp).toLocaleTimeString()}
                             </p>
                           </div>

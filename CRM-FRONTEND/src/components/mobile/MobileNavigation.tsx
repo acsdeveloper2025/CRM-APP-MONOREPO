@@ -72,7 +72,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
       case 'poor':
         return <Wifi className="h-4 w-4 text-yellow-500" />;
       default:
-        return <Wifi className="h-4 w-4 text-gray-500" />;
+        return <Wifi className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -89,7 +89,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
   return (
     <>
       {/* Top Status Bar */}
-      <div className="bg-gray-900 text-white px-4 py-1 text-xs flex items-center justify-between">
+      <div className="bg-background text-white px-4 py-1 text-xs flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           {getConnectionIcon()}
@@ -110,7 +110,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             </div>
             <div>
               <h1 className="text-lg font-semibold">CRM Mobile</h1>
-              <p className="text-xs text-gray-600">{user?.name}</p>
+              <p className="text-xs text-muted-foreground">{user?.name}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -165,10 +165,10 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                 </div>
                 <div>
                   <h3 className="font-semibold">{user?.name}</h3>
-                  <p className="text-sm text-gray-600">{user?.role}</p>
+                  <p className="text-sm text-muted-foreground">{user?.role}</p>
                   <div className="flex items-center space-x-1 mt-1">
                     {getConnectionIcon()}
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {isOnline ? connectionQuality?.toUpperCase() : 'OFFLINE'}
                     </span>
                   </div>
@@ -237,7 +237,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                 key={item.id}
                 variant="ghost"
                 className={`h-16 flex-col space-y-1 rounded-none relative ${
-                  isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-600'
+                  isActive ? 'text-blue-600 bg-blue-50' : 'text-muted-foreground'
                 }`}
                 onClick={() => onViewChange(item.id)}
               >

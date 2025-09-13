@@ -39,30 +39,30 @@ export const FormSubmissionsPage: React.FC = () => {
     switch (status.toLowerCase()) {
       case 'completed':
       case 'approved':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
       case 'pending':
       case 'under_review':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
       case 'failed':
       case 'rejected':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   const getValidationColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'valid':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
       case 'invalid':
       case 'flagged':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
       case 'warning':
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -70,12 +70,12 @@ export const FormSubmissionsPage: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-4">
-          <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+          <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+          <div className="h-8 bg-muted rounded w-48 animate-pulse"></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 bg-gray-200 rounded animate-pulse"></div>
+            <div key={i} className="h-64 bg-muted rounded animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -86,8 +86,8 @@ export const FormSubmissionsPage: React.FC = () => {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Form Submissions</h2>
-        <p className="text-gray-600">There was an error loading the form submissions for this case.</p>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Error Loading Form Submissions</h2>
+        <p className="text-muted-foreground">There was an error loading the form submissions for this case.</p>
       </div>
     );
   }
@@ -97,8 +97,8 @@ export const FormSubmissionsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Form Submissions</h1>
-          <p className="mt-2 text-gray-600">Case #{caseId}</p>
+          <h1 className="text-3xl font-bold text-foreground">Form Submissions</h1>
+          <p className="mt-2 text-muted-foreground">Case #{caseId}</p>
         </div>
         <Badge variant="outline" className="text-lg px-3 py-1">
           {submissions.length} Submissions
@@ -109,9 +109,9 @@ export const FormSubmissionsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {submissions.length === 0 ? (
           <div className="col-span-full text-center py-12">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Form Submissions</h3>
-            <p className="text-gray-600">No form submissions found for this case.</p>
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No Form Submissions</h3>
+            <p className="text-muted-foreground">No form submissions found for this case.</p>
           </div>
         ) : (
           submissions.map((submission) => (
@@ -128,7 +128,7 @@ export const FormSubmissionsPage: React.FC = () => {
                     </div>
                     <div>
                       <CardTitle className="text-lg">{submission.submittedByName}</CardTitle>
-                      <p className="text-sm text-gray-600">Field Agent</p>
+                      <p className="text-sm text-muted-foreground">Field Agent</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end space-y-1">
@@ -143,17 +143,17 @@ export const FormSubmissionsPage: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />
                     <span>
                       {formatDistanceToNow(new Date(submission.submittedAt), { addSuffix: true })}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <FileText className="h-4 w-4" />
                     <span>{submission.formType} Form</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Camera className="h-4 w-4" />
                     <span>{submission.photos?.length || 0} photos captured</span>
                   </div>
@@ -182,7 +182,7 @@ export const FormSubmissionsPage: React.FC = () => {
                     className="group relative cursor-pointer"
                     onClick={() => handleSubmissionSelect(submission)}
                   >
-                    <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                    <div className="aspect-square bg-muted rounded-lg overflow-hidden">
                       <img
                         src={photo.thumbnailUrl || photo.url}
                         alt={`Photo by ${submission.submittedByName}`}

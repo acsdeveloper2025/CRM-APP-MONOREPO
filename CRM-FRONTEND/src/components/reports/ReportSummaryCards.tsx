@@ -31,7 +31,7 @@ export function ReportSummaryCards({ summaries }: ReportSummaryCardsProps) {
       case 'down':
         return <TrendingDown className="h-3 w-3 text-red-600" />;
       case 'stable':
-        return <Minus className="h-3 w-3 text-gray-600" />;
+        return <Minus className="h-3 w-3 text-muted-foreground" />;
       default:
         return null;
     }
@@ -44,7 +44,7 @@ export function ReportSummaryCards({ summaries }: ReportSummaryCardsProps) {
       case 'down':
         return 'text-red-600';
       case 'stable':
-        return 'text-gray-600';
+        return 'text-muted-foreground';
       default:
         return 'text-muted-foreground';
     }
