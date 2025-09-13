@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CaseStatus } from '../types';
 
 // Utility function to safely get product name
-export const getProductName = (product: string | { id: string; name: string; code: string } | undefined): string => {
+export const getProductName = (product: string | { id: number; name: string; code: string } | undefined): string => {
   if (!product) return 'N/A';
   if (typeof product === 'string') return product;
   return product.name || 'N/A';

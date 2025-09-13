@@ -1778,7 +1778,7 @@ export interface Case {
   clientName?: string; // Client name from backend JOIN
   clientCode?: string; // Client code from backend JOIN
   client?: {
-    id: string;
+    id: number; // Fixed: Use number to match backend
     name: string;
     code: string;
   };
@@ -1788,7 +1788,7 @@ export interface Case {
   productName?: string; // Product name from backend JOIN
   productCode?: string; // Product code from backend JOIN
   product?: string | {
-    id: string;
+    id: number; // Fixed: Use number to match backend
     name: string;
     code: string;
   }; // Legacy field for backward compatibility
