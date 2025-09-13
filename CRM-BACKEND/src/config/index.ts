@@ -59,14 +59,18 @@ export const config = {
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
   rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '5000', 10), // Increased from 500 to 5000 for high-volume operations
   
-  // File Upload
+  // File Upload - ONLY images, PDF, and Word documents
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10), // 10MB
   uploadPath: process.env.UPLOAD_PATH || './uploads',
   allowedFileTypes: process.env.ALLOWED_FILE_TYPES?.split(',') || [
     'image/jpeg',
     'image/png',
     'image/gif',
+    'image/bmp',
+    'image/webp',
     'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   ],
   
   // Geolocation
@@ -125,6 +129,8 @@ export const config = {
     ],
     allowedDocumentTypes: process.env.MOBILE_ALLOWED_DOCUMENT_TYPES?.split(',') || [
       'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ],
 
     // Mobile Location Services

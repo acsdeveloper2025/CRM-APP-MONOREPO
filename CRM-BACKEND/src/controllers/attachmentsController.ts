@@ -37,19 +37,15 @@ let attachments: any[] = [
   },
 ];
 
-// Supported file types
+// Supported file types - ONLY images, PDF, and Word documents
 const SUPPORTED_FILE_TYPES = {
   images: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'],
-  documents: ['.pdf', '.doc', '.docx', '.txt', '.rtf'],
-  spreadsheets: ['.xls', '.xlsx', '.csv'],
-  archives: ['.zip', '.rar', '.7z'],
+  documents: ['.pdf', '.doc', '.docx'], // Removed .txt, .rtf
 };
 
 const ALL_SUPPORTED_EXTENSIONS = [
   ...SUPPORTED_FILE_TYPES.images,
   ...SUPPORTED_FILE_TYPES.documents,
-  ...SUPPORTED_FILE_TYPES.spreadsheets,
-  ...SUPPORTED_FILE_TYPES.archives,
 ];
 
 // Configure multer for file uploads
@@ -542,17 +538,7 @@ export const getSupportedFileTypes = async (req: AuthenticatedRequest, res: Resp
       },
       documents: {
         extensions: SUPPORTED_FILE_TYPES.documents,
-        description: 'Document files (PDF, DOC, DOCX, TXT, RTF)',
-        maxSize: '10MB',
-      },
-      spreadsheets: {
-        extensions: SUPPORTED_FILE_TYPES.spreadsheets,
-        description: 'Spreadsheet files (XLS, XLSX, CSV)',
-        maxSize: '10MB',
-      },
-      archives: {
-        extensions: SUPPORTED_FILE_TYPES.archives,
-        description: 'Archive files (ZIP, RAR, 7Z)',
+        description: 'Document files (PDF, DOC, DOCX)',
         maxSize: '10MB',
       },
     };
