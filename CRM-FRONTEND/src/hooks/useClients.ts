@@ -89,7 +89,7 @@ export const useVerificationTypes = (query: PaginationQuery = {}) => {
 export const useVerificationType = (id: string) => {
   return useQuery({
     queryKey: verificationTypeKeys.detail(id),
-    queryFn: () => clientsService.getVerificationTypeById(id),
+    queryFn: () => clientsService.getVerificationTypeById(Number(id)),
     enabled: !!id,
   });
 };
@@ -97,7 +97,7 @@ export const useVerificationType = (id: string) => {
 export const useVerificationTypesByClient = (clientId: string) => {
   return useQuery({
     queryKey: verificationTypeKeys.byClient(clientId),
-    queryFn: () => clientsService.getVerificationTypesByClient(clientId),
+    queryFn: () => clientsService.getVerificationTypesByClient(Number(clientId)),
     enabled: !!clientId,
   });
 };

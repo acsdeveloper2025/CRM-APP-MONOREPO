@@ -209,7 +209,7 @@ export function GenerateReportDialog({ open, onOpenChange }: GenerateReportDialo
                     <SelectContent>
                       <SelectItem value="all">All Clients</SelectItem>
                       {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
+                        <SelectItem key={client.id} value={client.id.toString()}>
                           {client.name} ({client.code})
                         </SelectItem>
                       ))}

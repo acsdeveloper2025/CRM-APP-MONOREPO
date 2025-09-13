@@ -53,7 +53,7 @@ export class ProductsService {
   }
 
   async getProductById(id: string): Promise<ApiResponse<Product>> {
-    return apiService.get(`/products/${id}`);
+    return apiService.get(`/products/${Number(id)}`);
   }
 
   async createProduct(data: CreateProductData): Promise<ApiResponse<Product>> {
@@ -61,11 +61,11 @@ export class ProductsService {
   }
 
   async updateProduct(id: string, data: UpdateProductData): Promise<ApiResponse<Product>> {
-    return apiService.put(`/products/${id}`, data);
+    return apiService.put(`/products/${Number(id)}`, data);
   }
 
   async deleteProduct(id: string): Promise<ApiResponse<void>> {
-    return apiService.delete(`/products/${id}`);
+    return apiService.delete(`/products/${Number(id)}`);
   }
 
   async getProductsByClient(clientId: string, isActive?: boolean): Promise<ApiResponse<Product[]>> {

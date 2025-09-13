@@ -48,7 +48,7 @@ export class VerificationTypesService {
   }
 
   async getVerificationTypeById(id: string): Promise<ApiResponse<VerificationType>> {
-    return apiService.get(`/verification-types/${id}`);
+    return apiService.get(`/verification-types/${Number(id)}`);
   }
 
   async createVerificationType(data: CreateVerificationTypeData): Promise<ApiResponse<VerificationType>> {
@@ -56,11 +56,11 @@ export class VerificationTypesService {
   }
 
   async updateVerificationType(id: string, data: UpdateVerificationTypeData): Promise<ApiResponse<VerificationType>> {
-    return apiService.put(`/verification-types/${id}`, data);
+    return apiService.put(`/verification-types/${Number(id)}`, data);
   }
 
   async deleteVerificationType(id: string): Promise<ApiResponse<void>> {
-    return apiService.delete(`/verification-types/${id}`);
+    return apiService.delete(`/verification-types/${Number(id)}`);
   }
 
   async bulkImportVerificationTypes(verificationTypes: CreateVerificationTypeData[]): Promise<ApiResponse<{ created: number; errors: string[] }>> {
@@ -82,12 +82,12 @@ export class VerificationTypesService {
 
   async getVerificationTypesByClient(clientId: string, isActive?: boolean): Promise<ApiResponse<VerificationType[]>> {
     const params = isActive !== undefined ? { isActive } : {};
-    return apiService.get(`/clients/${clientId}/verification-types`, params);
+    return apiService.get(`/clients/${Number(clientId)}/verification-types`, params);
   }
 
   async getVerificationTypesByProduct(productId: string, isActive?: boolean): Promise<ApiResponse<VerificationType[]>> {
     const params = isActive !== undefined ? { isActive } : {};
-    return apiService.get(`/products/${productId}/verification-types`, params);
+    return apiService.get(`/products/${Number(productId)}/verification-types`, params);
   }
 }
 
