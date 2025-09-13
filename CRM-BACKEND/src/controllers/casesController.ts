@@ -251,8 +251,9 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
         rt.description as "rateTypeDescription",
         -- Area information derived from rate type (local/ogl classification)
         CASE
-          WHEN LOWER(rt.name) LIKE '%local%' OR LOWER(rt.description) LIKE '%local%' THEN 'local'
-          WHEN LOWER(rt.name) LIKE '%ogl%' OR LOWER(rt.description) LIKE '%ogl%' THEN 'ogl'
+          WHEN LOWER(rt.name) = 'ogl' OR LOWER(rt.name) LIKE 'ogl%' OR LOWER(rt.description) LIKE '%out of geo%' THEN 'ogl'
+          WHEN LOWER(rt.name) = 'local' OR LOWER(rt.name) LIKE 'local%' OR (LOWER(rt.description) LIKE '%local%' AND LOWER(rt.description) NOT LIKE '%out of geo%') THEN 'local'
+          WHEN LOWER(rt.name) LIKE '%outstation%' OR LOWER(rt.description) LIKE '%outstation%' THEN 'outstation'
           ELSE 'standard'
         END as "areaType",
         -- Created by backend user information (Field 7: Created By Backend User)
@@ -418,8 +419,9 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
         rt.description as "rateTypeDescription",
         -- Area information derived from rate type (local/ogl classification)
         CASE
-          WHEN LOWER(rt.name) LIKE '%local%' OR LOWER(rt.description) LIKE '%local%' THEN 'local'
-          WHEN LOWER(rt.name) LIKE '%ogl%' OR LOWER(rt.description) LIKE '%ogl%' THEN 'ogl'
+          WHEN LOWER(rt.name) = 'ogl' OR LOWER(rt.name) LIKE 'ogl%' OR LOWER(rt.description) LIKE '%out of geo%' THEN 'ogl'
+          WHEN LOWER(rt.name) = 'local' OR LOWER(rt.name) LIKE 'local%' OR (LOWER(rt.description) LIKE '%local%' AND LOWER(rt.description) NOT LIKE '%out of geo%') THEN 'local'
+          WHEN LOWER(rt.name) LIKE '%outstation%' OR LOWER(rt.description) LIKE '%outstation%' THEN 'outstation'
           ELSE 'standard'
         END as "areaType",
         -- Created by backend user information (Field 7: Created By Backend User)

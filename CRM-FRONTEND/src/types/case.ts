@@ -66,7 +66,7 @@ export interface Case {
   // Rate management fields for case table display
   rateTypeName?: string;
   rateTypeDescription?: string;
-  areaType?: 'local' | 'ogl' | 'standard';
+  areaType?: 'local' | 'ogl' | 'outstation' | 'standard';
   createdBy?: string;
   createdByBackendUser?: {
     id: string;

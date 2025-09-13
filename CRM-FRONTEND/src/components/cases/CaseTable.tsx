@@ -243,6 +243,7 @@ export const CaseTable: React.FC<CaseTableProps> = ({
                   <Badge variant="outline" className="text-xs">
                     {caseItem.areaType === 'local' ? 'Local' :
                      caseItem.areaType === 'ogl' ? 'OGL' :
+                     caseItem.areaType === 'outstation' ? 'Outstation' :
                      caseItem.areaType === 'standard' ? 'Standard' : 'N/A'}
                   </Badge>
                 </div>
