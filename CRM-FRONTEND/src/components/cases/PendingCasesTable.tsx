@@ -296,11 +296,11 @@ export const PendingCasesTable: React.FC<PendingCasesTableProps> = ({
                       <Building2 className="h-4 w-4 text-gray-400" />
                       <div>
                         <div className="font-medium text-gray-900">
-                          {caseItem.clientName || 'N/A'}
+                          {caseItem.clientName || caseItem.client?.name || 'N/A'}
                         </div>
-                        {caseItem.clientCode && (
+                        {(caseItem.clientCode || caseItem.client?.code) && (
                           <div className="text-sm text-gray-600">
-                            {caseItem.clientCode}
+                            {caseItem.clientCode || caseItem.client?.code}
                           </div>
                         )}
                       </div>

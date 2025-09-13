@@ -297,6 +297,12 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
     // Transform data to match frontend expectations
     const transformedData = casesResult.rows.map((row: any) => ({
       ...row,
+      // Provide flat fields for frontend compatibility
+      clientName: row.clientName,
+      clientCode: row.clientCode,
+      assignedToName: row.assignedToName,
+      productName: row.productName,
+      productCode: row.productCode,
       // Transform client data to nested object
       client: row.clientName ? {
         id: row.clientId,
@@ -321,16 +327,7 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
         id: row.createdByBackendUser,
         name: row.createdByBackendUserName,
         employeeId: row.createdByBackendUserEmail
-      } : null,
-      // Clean up flat fields to avoid confusion
-      clientName: undefined,
-      clientCode: undefined,
-      assignedToName: undefined,
-      assignedToEmail: undefined,
-      productName: undefined,
-      productCode: undefined,
-      createdByBackendUserName: undefined,
-      createdByBackendUserEmail: undefined
+      } : null
     }));
 
     const response = {
@@ -463,6 +460,12 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
     const row = result.rows[0];
     const transformedData = {
       ...row,
+      // Provide flat fields for frontend compatibility
+      clientName: row.clientName,
+      clientCode: row.clientCode,
+      assignedToName: row.assignedToName,
+      productName: row.productName,
+      productCode: row.productCode,
       // Transform client data to nested object
       client: row.clientName ? {
         id: row.clientId,
@@ -487,16 +490,7 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
         id: row.createdByBackendUser,
         name: row.createdByBackendUserName,
         employeeId: row.createdByBackendUserEmail
-      } : null,
-      // Clean up flat fields to avoid confusion
-      clientName: undefined,
-      clientCode: undefined,
-      assignedToName: undefined,
-      assignedToEmail: undefined,
-      productName: undefined,
-      productCode: undefined,
-      createdByBackendUserName: undefined,
-      createdByBackendUserEmail: undefined
+      } : null
     };
 
     logger.info('Case retrieved', {

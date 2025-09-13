@@ -239,20 +239,20 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
               </TableCell>
               <TableCell>
                 <div>
-                  <div className="font-medium">{caseItem.assignedTo?.name || 'Unassigned'}</div>
+                  <div className="font-medium">{caseItem.assignedToName || caseItem.assignedTo?.name || 'Unassigned'}</div>
                   <div className="text-sm text-gray-500">{caseItem.assignedTo?.username}</div>
                 </div>
               </TableCell>
               <TableCell>
                 <div>
-                  <div className="font-medium">{caseItem.client?.name}</div>
-                  <div className="text-sm text-gray-500">{caseItem.client?.code}</div>
+                  <div className="font-medium">{caseItem.clientName || caseItem.client?.name}</div>
+                  <div className="text-sm text-gray-500">{caseItem.clientCode || caseItem.client?.code}</div>
                 </div>
               </TableCell>
               <TableCell>
                 <div>
-                  <div className="font-medium">{caseItem.product?.name || 'Not specified'}</div>
-                  <div className="text-sm text-gray-500">{caseItem.product?.code}</div>
+                  <div className="font-medium">{caseItem.productName || caseItem.product?.name || 'Not specified'}</div>
+                  <div className="text-sm text-gray-500">{caseItem.productCode || caseItem.product?.code}</div>
                 </div>
               </TableCell>
               <TableCell>
