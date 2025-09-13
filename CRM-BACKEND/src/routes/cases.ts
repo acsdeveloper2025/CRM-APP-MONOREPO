@@ -95,6 +95,10 @@ const createCaseValidation = [
     .trim()
     .isLength({ min: 1 })
     .withMessage('TRIGGER field is required'),
+  body('rateTypeId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Rate type ID must be a positive integer'),
 
   // Customer information (at least one name required)
   body('applicantName')

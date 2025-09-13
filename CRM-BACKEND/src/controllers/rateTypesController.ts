@@ -167,6 +167,79 @@ export const createRateType = async (req: AuthenticatedRequest, res: Response) =
   }
 };
 
+// GET /api/rate-types/available-for-case - Get available rate types for case assignment
+export const getAvailableRateTypesForCase = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { clientId, productId, verificationTypeId } = req.query;
+
+    // Validate required parameters
+    if (!clientId || !productId || !verificationTypeId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Client ID, Product ID, and Verification Type ID are required',
+        error: { code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    // Get rate types that are assigned to this combination and have rates
+    const availableRes = await query(
+      `SELECT DISTINCT
+        rt.id,
+        rt.name,
+        rt.description,
+        rt."isActive",
+        r.amount,
+        r.currency,
+        CASE WHEN r.id IS NOT NULL THEN true ELSE false END as "hasRate"
+       FROM "rateTypeAssignments" rta
+       JOIN "rateTypes" rt ON rta."rateTypeId" = rt.id
+       LEFT JOIN rates r ON rta."clientId" = r."clientId"
+         AND rta."productId" = r."productId"
+         AND rta."verificationTypeId" = r."verificationTypeId"
+         AND rta."rateTypeId" = r."rateTypeId"
+         AND r."isActive" = true
+       WHERE rta."clientId" = $1
+         AND rta."productId" = $2
+         AND rta."verificationTypeId" = $3
+         AND rta."isActive" = true
+         AND rt."isActive" = true
+       ORDER BY rt.name ASC`,
+      [Number(clientId), Number(productId), Number(verificationTypeId)]
+    );
+
+    const availableRateTypes = availableRes.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      isActive: row.isActive,
+      amount: row.amount,
+      currency: row.currency || 'INR',
+      hasRate: row.hasRate,
+    }));
+
+    logger.info(`Retrieved ${availableRateTypes.length} available rate types for case assignment`, {
+      userId: req.user?.id,
+      clientId,
+      productId,
+      verificationTypeId,
+      rateTypeCount: availableRateTypes.length
+    });
+
+    res.json({
+      success: true,
+      data: availableRateTypes,
+      message: `Found ${availableRateTypes.length} available rate types`,
+    });
+  } catch (error) {
+    logger.error('Error fetching available rate types for case:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch available rate types',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
 // PUT /api/rate-types/:id - Update rate type
 export const updateRateType = async (req: AuthenticatedRequest, res: Response) => {
   try {

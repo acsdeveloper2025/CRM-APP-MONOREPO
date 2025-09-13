@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
-import { pool } from '../config/database';
+import { pool, query } from '../config/database';
 import { EnterpriseCacheService, CacheKeys } from '../services/enterpriseCacheService';
 import multer from 'multer';
 import path from 'path';
@@ -513,17 +513,52 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       trigger,
       applicantType = 'APPLICANT',
       backendContactNumber,
-      assignedToId
+      assignedToId,
+      rateTypeId
     } = req.body;
+
+    // Validate rate type if provided
+    if (rateTypeId) {
+      // Check if rate type exists and is active
+      const rateTypeRes = await query(
+        `SELECT id FROM "rateTypes" WHERE id = $1 AND "isActive" = true`,
+        [Number(rateTypeId)]
+      );
+
+      if (rateTypeRes.rowCount === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or inactive rate type',
+          error: { code: 'INVALID_RATE_TYPE' },
+        });
+      }
+
+      // Check if rate type is assigned to this client/product/verification type combination
+      if (clientId && productId && verificationTypeId) {
+        const assignmentRes = await query(
+          `SELECT id FROM "rateTypeAssignments"
+           WHERE "clientId" = $1 AND "productId" = $2 AND "verificationTypeId" = $3 AND "rateTypeId" = $4 AND "isActive" = true`,
+          [Number(clientId), Number(productId), Number(verificationTypeId), Number(rateTypeId)]
+        );
+
+        if (assignmentRes.rowCount === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Rate type is not assigned to this client/product/verification type combination',
+            error: { code: 'RATE_TYPE_NOT_ASSIGNED' },
+          });
+        }
+      }
+    }
 
     const insertQuery = `
       INSERT INTO cases (
         "customerName", "customerPhone", "customerCallingCode",
         "clientId", "productId", "verificationTypeId",
         address, pincode, priority, trigger, "applicantType",
-        "backendContactNumber", "assignedTo",
+        "backendContactNumber", "assignedTo", "rateTypeId",
         status, "createdByBackendUser", "createdAt", "updatedAt"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
       RETURNING *
     `;
 
@@ -541,6 +576,7 @@ export const createCase = async (req: AuthenticatedRequest, res: Response) => {
       applicantType,
       backendContactNumber,
       assignedToId,
+      rateTypeId ? Number(rateTypeId) : null, // rateTypeId
       'PENDING',
       req.user?.id
     ];

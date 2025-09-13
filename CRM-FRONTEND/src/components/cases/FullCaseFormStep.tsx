@@ -29,6 +29,8 @@ import { useAreasByPincode } from '@/hooks/useAreas';
 import { useAuth } from '@/contexts/AuthContext';
 import { CaseFormAttachmentsSection, type CaseFormAttachment } from '@/components/attachments/CaseFormAttachmentsSection';
 import type { CustomerInfoData } from './CustomerInfoStep';
+import { rateTypesService } from '@/services/rateTypes';
+import { useQuery } from '@tanstack/react-query';
 
 const fullCaseFormSchema = z.object({
   // Customer Information (new fields)
@@ -49,6 +51,7 @@ const fullCaseFormSchema = z.object({
   areaId: z.string().min(1, 'Area selection is required'),
   assignedToId: z.string().min(1, 'Field user assignment is required'),
   priority: z.string().min(1, 'Priority is required'),
+  rateTypeId: z.string().optional(),
 });
 
 export type FullCaseFormData = z.infer<typeof fullCaseFormSchema>;
@@ -123,6 +126,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
       areaId: initialData.areaId || '',
       assignedToId: initialData.assignedToId || '',
       priority: initialData.priority || 'MEDIUM',
+      rateTypeId: initialData.rateTypeId || '',
     },
   });
 
@@ -136,6 +140,7 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
 
   // Watch for product selection to fetch verification types
   const selectedProductId = form.watch('productId');
+  const selectedVerificationTypeId = form.watch('verificationTypeId');
 
   // Watch for pincode selection to fetch areas
   const selectedPincodeId = form.watch('pincodeId');
@@ -144,7 +149,26 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
   const { data: areasResponse } = useAreasByPincode(selectedPincodeId ? parseInt(selectedPincodeId) : undefined);
   const areas = areasResponse?.data || [];
 
+  // Fetch available rate types when client, product, and verification type are selected
+  const { data: availableRateTypesResponse, isLoading: loadingRateTypes } = useQuery({
+    queryKey: ['available-rate-types-for-case', selectedClientId, selectedProductId, selectedVerificationTypeId],
+    queryFn: () => rateTypesService.getAvailableRateTypesForCase(
+      parseInt(selectedClientId!),
+      parseInt(selectedProductId!),
+      parseInt(selectedVerificationTypeId!)
+    ),
+    enabled: !!(selectedClientId && selectedProductId && selectedVerificationTypeId),
+  });
+  const availableRateTypes = availableRateTypesResponse?.data || [];
 
+  // Watch for rate type selection to show rate calculation
+  const selectedRateTypeId = form.watch('rateTypeId');
+  const selectedRateType = availableRateTypes.find(rt => rt.id.toString() === selectedRateTypeId);
+
+  // Clear rate type when client, product, or verification type changes
+  useEffect(() => {
+    form.setValue('rateTypeId', '');
+  }, [selectedClientId, selectedProductId, selectedVerificationTypeId, form]);
 
   // Update form when initialData changes (for edit mode)
   useEffect(() => {
@@ -507,6 +531,109 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                     </FormItem>
                   )}
                 />
+
+                {/* Rate Type */}
+                <FormField
+                  control={form.control}
+                  name="rateTypeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rate Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={!selectedClientId || !selectedProductId || !selectedVerificationTypeId || loadingRateTypes}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              !selectedClientId || !selectedProductId || !selectedVerificationTypeId
+                                ? "Select client, product & verification type first"
+                                : loadingRateTypes
+                                ? "Loading rate types..."
+                                : availableRateTypes.length === 0
+                                ? "No rate types available"
+                                : "Select rate type"
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableRateTypes?.map((rateType) => (
+                            <SelectItem key={rateType.id} value={rateType.id.toString()}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{rateType.name}</span>
+                                {rateType.description && (
+                                  <span className="text-sm text-gray-500">{rateType.description}</span>
+                                )}
+                                {rateType.hasRate && rateType.amount && (
+                                  <span className="text-sm text-green-600 font-medium">
+                                    ₹{rateType.amount} {rateType.currency || 'INR'}
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      {selectedClientId && selectedProductId && selectedVerificationTypeId && availableRateTypes.length === 0 && !loadingRateTypes && (
+                        <p className="text-sm text-amber-600">
+                          No rate types are configured for this client/product/verification type combination.
+                        </p>
+                      )}
+                    </FormItem>
+                  )}
+                />
+
+                {/* Rate Calculation Display */}
+                {selectedRateType && selectedRateType.hasRate && selectedRateType.amount && (
+                  <div className="col-span-full">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-sm font-medium text-green-900">Rate Information</h4>
+                          <p className="text-sm text-green-700">
+                            Selected Rate Type: <span className="font-medium">{selectedRateType.name}</span>
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-green-700">
+                            ₹{selectedRateType.amount}
+                          </div>
+                          <div className="text-sm text-green-600">
+                            {selectedRateType.currency || 'INR'}
+                          </div>
+                        </div>
+                      </div>
+                      {selectedRateType.description && (
+                        <p className="text-sm text-green-600 mt-2">
+                          {selectedRateType.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Rate Warning */}
+                {selectedRateType && !selectedRateType.hasRate && (
+                  <div className="col-span-full">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <div className="flex items-center">
+                        <div className="text-amber-600">
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-sm font-medium text-amber-900">Rate Not Configured</h4>
+                          <p className="text-sm text-amber-700">
+                            The selected rate type "{selectedRateType.name}" does not have a rate amount configured. Please contact your administrator to set up the rate.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Assign to Field User */}
                 <FormField

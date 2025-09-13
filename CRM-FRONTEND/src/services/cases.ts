@@ -36,6 +36,7 @@ export interface CreateCaseData {
   backendContactNumber?: string;
   priority?: string;
   trigger?: string;
+  rateTypeId?: string;
 
   // Deduplication fields
   panNumber?: string;

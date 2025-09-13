@@ -5,7 +5,8 @@ import type {
   CreateRateTypeData,
   UpdateRateTypeData,
   RateTypeListQuery,
-  RateTypeStats
+  RateTypeStats,
+  AvailableRateTypeForCase
 } from '@/types/rateManagement';
 
 export class RateTypesService {
@@ -42,6 +43,19 @@ export class RateTypesService {
       data: response.data || [],
       error: response.error
     };
+  }
+
+  // Get available rate types for case assignment
+  async getAvailableRateTypesForCase(
+    clientId: number,
+    productId: number,
+    verificationTypeId: number
+  ): Promise<ApiResponse<AvailableRateTypeForCase[]>> {
+    return apiService.get('/rate-types/available-for-case', {
+      clientId,
+      productId,
+      verificationTypeId
+    });
   }
 }
 

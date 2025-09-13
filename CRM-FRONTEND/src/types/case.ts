@@ -55,6 +55,14 @@ export interface Case {
   verificationTypeId?: string | number;
   verificationTypeName?: string;
   verificationTypeCode?: string;
+  rateTypeId?: string | number;
+  rateType?: {
+    id: string | number;
+    name: string;
+    description?: string;
+    amount?: number;
+    currency?: string;
+  };
   createdBy?: string;
   createdByBackendUser?: {
     id: string;

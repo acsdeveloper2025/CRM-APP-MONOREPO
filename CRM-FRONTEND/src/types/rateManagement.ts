@@ -207,3 +207,10 @@ export interface AvailableRateType extends RateType {
   currentAmount?: number;
   currentCurrency?: string;
 }
+
+// Available rate types for case assignment
+export interface AvailableRateTypeForCase extends RateType {
+  amount?: number;
+  currency?: string;
+  hasRate: boolean;
+}

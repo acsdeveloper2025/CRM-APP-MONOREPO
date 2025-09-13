@@ -8,7 +8,8 @@ import {
   createRateType,
   updateRateType,
   deleteRateType,
-  getRateTypeStats
+  getRateTypeStats,
+  getAvailableRateTypesForCase
 } from '@/controllers/rateTypesController';
 
 const router = express.Router();
@@ -78,6 +79,24 @@ const listRateTypesValidation = [
     .withMessage('Sort order must be asc or desc'),
 ];
 
+const availableRateTypesValidation = [
+  query('clientId')
+    .trim()
+    .notEmpty()
+    .isInt({ min: 1 })
+    .withMessage('Client ID is required and must be a positive integer'),
+  query('productId')
+    .trim()
+    .notEmpty()
+    .isInt({ min: 1 })
+    .withMessage('Product ID is required and must be a positive integer'),
+  query('verificationTypeId')
+    .trim()
+    .notEmpty()
+    .isInt({ min: 1 })
+    .withMessage('Verification Type ID is required and must be a positive integer'),
+];
+
 // Core CRUD routes
 router.get('/',
   listRateTypesValidation,
@@ -86,6 +105,13 @@ router.get('/',
 );
 
 router.get('/stats', getRateTypeStats);
+
+// GET /api/rate-types/available-for-case - Get available rate types for case assignment
+router.get('/available-for-case',
+  availableRateTypesValidation,
+  handleValidationErrors,
+  getAvailableRateTypesForCase
+);
 
 router.post('/',
   createRateTypeValidation,
