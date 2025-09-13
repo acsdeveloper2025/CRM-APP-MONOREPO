@@ -127,10 +127,22 @@ export const uploadAttachment = async (req: AuthenticatedRequest, res: Response)
         });
       }
 
-      const uploadedAttachments = [];
-
       // Import query function
       const { query } = await import('@/config/database');
+
+      // Get case UUID for mobile compatibility
+      const caseResult = await query('SELECT id FROM cases WHERE "caseId" = $1', [caseId]);
+
+      if (caseResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Case not found',
+          error: { code: 'CASE_NOT_FOUND' },
+        });
+      }
+
+      const caseUUID = caseResult.rows[0].id;
+      const uploadedAttachments = [];
 
       // Create case-specific directory
       const caseUploadDir = path.join(process.cwd(), 'uploads', 'attachments', `case_${caseId}`);
@@ -161,8 +173,9 @@ export const uploadAttachment = async (req: AuthenticatedRequest, res: Response)
             "fileSize",
             "filePath",
             "uploadedBy",
-            "caseId"
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "caseId",
+            case_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           RETURNING id, filename, "originalName", "mimeType", "fileSize" as size, "filePath", "uploadedBy", "createdAt" as "uploadedAt", "caseId"`,
           [
             file.filename,
@@ -171,7 +184,8 @@ export const uploadAttachment = async (req: AuthenticatedRequest, res: Response)
             file.size,
             `/uploads/attachments/case_${caseId}/${file.filename}`,
             req.user?.id,
-            caseId
+            caseId,
+            caseUUID  // Add the case UUID for mobile compatibility
           ]
         );
 
@@ -451,6 +465,67 @@ export const downloadAttachment = async (req: AuthenticatedRequest, res: Respons
     res.status(500).json({
       success: false,
       message: 'Failed to download attachment',
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  }
+};
+
+// GET /api/attachments/:id/serve - Serve attachment for viewing (secure)
+export const serveAttachment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Import query function
+    const { query } = await import('@/config/database');
+
+    // Get attachment details from database
+    const attachmentResult = await query(
+      'SELECT filename, "originalName", "mimeType", "fileSize", "caseId" FROM attachments WHERE id = $1',
+      [id]
+    );
+
+    if (attachmentResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Attachment not found',
+        error: { code: 'NOT_FOUND' },
+      });
+    }
+
+    const attachment = attachmentResult.rows[0];
+
+    // Check if file exists in case-specific folder
+    const filePath = path.join(process.cwd(), 'uploads', 'attachments', `case_${attachment.caseId}`, attachment.filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found on server',
+        error: { code: 'FILE_NOT_FOUND' },
+      });
+    }
+
+    // Set appropriate headers for viewing (not downloading)
+    res.setHeader('Content-Type', attachment.mimeType);
+    res.setHeader('Content-Length', attachment.fileSize.toString());
+    res.setHeader('Cache-Control', 'private, max-age=3600'); // Cache for 1 hour
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow CORS for mobile app
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
+    logger.info(`Served attachment: ${id}`, {
+      userId: req.user?.id,
+      filename: attachment.originalName,
+      size: attachment.fileSize,
+      caseId: attachment.caseId
+    });
+  } catch (error) {
+    logger.error('Error serving attachment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to serve attachment',
       error: { code: 'INTERNAL_ERROR' },
     });
   }

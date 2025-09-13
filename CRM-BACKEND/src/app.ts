@@ -204,8 +204,8 @@ app.get('/api/ai-test', async (req, res) => {
 // Mobile API routes
 app.use('/api/mobile', mobileRoutes);
 
-// Serve uploaded files
-app.use('/uploads', express.static(config.uploadPath));
+// NOTE: Uploads are now served through authenticated API endpoints only
+// Removed public static file serving for security: app.use('/uploads', express.static(config.uploadPath));
 
 // 404 handler
 app.use(notFoundHandler);

@@ -5,6 +5,7 @@ import AuthStorageService from './authStorageService';
 
 class AttachmentService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://172.20.10.8:3000/api';
+  private staticBaseUrl = (import.meta.env.VITE_API_BASE_URL_DEVICE || import.meta.env.VITE_API_BASE_URL || 'http://172.20.10.8:3000/api').replace('/api', '');
   private maxFileSize = 10485760; // 10MB in bytes
   private maxAttachments = 15;
   private isOfflineMode = false;
@@ -85,8 +86,8 @@ class AttachmentService {
         type: att.mimeType?.startsWith('image/') ? 'image' : 'pdf',
         mimeType: att.mimeType,
         size: att.size,
-        url: `${this.baseUrl}${att.url}`,
-        thumbnailUrl: att.thumbnailUrl ? `${this.baseUrl}${att.thumbnailUrl}` : undefined,
+        url: att.url.startsWith('/api/') ? `${this.baseUrl}${att.url.substring(4)}` : `${this.baseUrl}/attachments/${att.id}/serve`, // Use secure API endpoint
+        thumbnailUrl: att.thumbnailUrl ? `${this.baseUrl}/attachments/${att.id}/serve` : undefined,
         uploadedAt: att.uploadedAt,
         uploadedBy: 'Field Agent', // Default for mobile uploads
         description: att.description || ''
@@ -130,10 +131,10 @@ class AttachmentService {
       let content: string;
       if (attachment.type === 'pdf') {
         // Return base64 PDF content for secure in-app viewing
-        content = this.generateSecurePdfContent(attachment);
+        content = await this.generateSecurePdfContent(attachment);
       } else {
-        // Return secure image URL for in-app viewing
-        content = this.generateSecureImageContent(attachment);
+        // Return secure image data URL for in-app viewing
+        content = await this.generateSecureImageContent(attachment);
       }
 
       // Optionally store for offline access (auto-download)
@@ -366,19 +367,43 @@ class AttachmentService {
   /**
    * Generate secure PDF content for in-app viewing
    */
-  private generateSecurePdfContent(attachment: Attachment): string {
-    // For demo purposes, create a working PDF data URL
-    // In production, this would fetch actual PDF content from secure endpoints
+  private async generateSecurePdfContent(attachment: Attachment): Promise<string> {
+    console.log(`📄 Generating secure PDF content for: ${attachment.name}`);
+    console.log(`📍 Secure API URL: ${attachment.url}`);
 
-    console.log(`📄 Generating PDF content for: ${attachment.name}`);
+    try {
+      // Get authentication token
+      const token = await AuthStorageService.getAccessToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
 
-    // Try to use the download.pdf file if available, otherwise use embedded content
-    if (this.isDownloadPdfAvailable()) {
-      return '/download.pdf';
+      // Fetch PDF data with authentication
+      const response = await fetch(attachment.url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-App-Version': '4.0.0',
+          'X-Platform': 'MOBILE'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
+      }
+
+      // Convert to blob and then to data URL
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to convert PDF to data URL'));
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error generating secure PDF content:', error);
+      // Return a placeholder PDF
+      return 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsO4CjIgMCBvYmoKPDwKL0xlbmd0aCAzIDAgUgo+PgpzdHJlYW0KQNC0xLjQKJcOkw7zDtsO4CjIgMCBvYmoKPDwKL0xlbmd0aCAzIDAgUgo+PgpzdHJlYW0KZW5kc3RyZWFtCmVuZG9iago=';
     }
-
-    // Fallback to embedded base64 PDF content
-    return this.createEmbeddedPdfContent(attachment.name);
   }
 
   /**
@@ -616,17 +641,43 @@ ${500 + this.calculateContentLength(docInfo)}
   /**
    * Generate secure image content for in-app viewing
    */
-  private generateSecureImageContent(attachment: Attachment): string {
-    // Use high-quality sample images for demo purposes
-    const imageUrls = {
-      'Identity_Verification.jpg': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80',
-      'Site_Photo_Exterior.png': 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80',
-      'Address_Proof.jpg': 'https://images.unsplash.com/photo-1554224154-26032fced8bd?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80',
-      'Building_Interior.png': 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80'
-    };
+  private async generateSecureImageContent(attachment: Attachment): Promise<string> {
+    console.log(`🖼️ Generating secure image content for: ${attachment.name}`);
+    console.log(`📍 Secure API URL: ${attachment.url}`);
 
-    const fileName = attachment.name as keyof typeof imageUrls;
-    return imageUrls[fileName] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80';
+    try {
+      // Get authentication token
+      const token = await AuthStorageService.getAccessToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      // Fetch image data with authentication
+      const response = await fetch(attachment.url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-App-Version': '4.0.0',
+          'X-Platform': 'MOBILE'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
+
+      // Convert to blob and then to data URL
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to convert image to data URL'));
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error generating secure image content:', error);
+      // Return a placeholder or error image
+      return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NzM4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkVycm9yIExvYWRpbmcgSW1hZ2U8L3RleHQ+PC9zdmc+';
+    }
   }
 
   /**

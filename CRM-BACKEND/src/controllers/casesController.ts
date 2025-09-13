@@ -1087,6 +1087,7 @@ export const createCaseWithAttachments = async (req: AuthenticatedRequest, res: 
       const caseResult = await client.query(insertCaseQuery, caseValues);
       const newCase = caseResult.rows[0];
       const caseId = newCase.caseId;
+      const caseUUID = newCase.id; // Get the UUID for mobile compatibility
 
       // Step 2: Process uploaded files if any
       const files = req.files as Express.Multer.File[];
@@ -1110,8 +1111,8 @@ export const createCaseWithAttachments = async (req: AuthenticatedRequest, res: 
             const insertAttachmentQuery = `
               INSERT INTO attachments (
                 filename, "originalName", "filePath", "fileSize",
-                "mimeType", "uploadedBy", "caseId", "createdAt"
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+                "mimeType", "uploadedBy", "caseId", case_id, "createdAt"
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
               RETURNING *
             `;
 
@@ -1122,7 +1123,8 @@ export const createCaseWithAttachments = async (req: AuthenticatedRequest, res: 
               file.size,
               file.mimetype,
               req.user?.id,
-              caseId
+              caseId,
+              caseUUID  // Add the case UUID for mobile compatibility
             ];
 
             const attachmentResult = await client.query(insertAttachmentQuery, attachmentValues);

@@ -10,6 +10,7 @@ import {
   deleteAttachment,
   updateAttachment,
   downloadAttachment,
+  serveAttachment,
   getSupportedFileTypes,
   bulkUploadAttachments,
   bulkDeleteAttachments
@@ -98,7 +99,7 @@ router.post('/:id/download',
 router.get('/:id/serve',
   [param('id').trim().notEmpty().withMessage('Attachment ID is required')],
   validate,
-  downloadAttachment
+  serveAttachment
 );
 
 // File management routes

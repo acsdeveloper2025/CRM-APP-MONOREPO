@@ -288,7 +288,7 @@ export class MobileAttachmentController {
         originalName: att.originalName,
         mimeType: att.mimeType,
         size: att.fileSize,
-        url: att.filePath,
+        url: `/api/attachments/${att.id}/serve`, // Use secure API endpoint
         thumbnailUrl: null, // Not available in current schema
         uploadedAt: new Date(att.createdAt).toISOString(),
         geoLocation: undefined, // Not available in current schema
