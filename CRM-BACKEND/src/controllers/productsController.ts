@@ -108,7 +108,7 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
 export const getProductById = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const productRes = await query(`SELECT id, name, code, "createdAt", "updatedAt" FROM products WHERE id = $1`, [id]);
+    const productRes = await query(`SELECT id, name, code, "createdAt", "updatedAt" FROM products WHERE id = $1`, [Number(id)]);
     const product = productRes.rows[0];
 
     if (!product) {
@@ -305,7 +305,7 @@ export const getProductsByClient = async (req: AuthenticatedRequest, res: Respon
     const { isActive } = req.query as { isActive?: string };
 
     // Build where clause for mapping table
-    const values: any[] = [clientId];
+    const values: any[] = [Number(clientId)];
     const activeClause = typeof isActive !== 'undefined' ? 'AND cp."isActive" = $2' : '';
     if (typeof isActive !== 'undefined') values.push(String(isActive) === 'true');
     const mapRes = await query(

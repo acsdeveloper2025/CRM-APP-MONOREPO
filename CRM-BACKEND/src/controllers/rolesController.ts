@@ -86,7 +86,7 @@ export const getRole = async (req: AuthenticatedRequest, res: Response) => {
       WHERE r.id = $1
     `;
 
-    const result = await query(roleQuery, [id]);
+    const result = await query(roleQuery, [Number(id)]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -173,7 +173,7 @@ export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
     const { name, description, permissions, isActive } = req.body;
 
     // Check if role exists
-    const existingRole = await query('SELECT * FROM roles WHERE id = $1', [id]);
+    const existingRole = await query('SELECT * FROM roles WHERE id = $1', [Number(id)]);
     if (existingRole.rows.length === 0) {
       return res.status(404).json({
         success: false,

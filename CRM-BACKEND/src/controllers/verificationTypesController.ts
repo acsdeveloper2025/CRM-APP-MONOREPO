@@ -59,8 +59,8 @@ export const getVerificationTypes = async (req: AuthenticatedRequest, res: Respo
 export const getVerificationTypeById = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    
-    const vtRes2 = await query(`SELECT * FROM "verificationTypes" WHERE id = $1`, [id]);
+
+    const vtRes2 = await query(`SELECT * FROM "verificationTypes" WHERE id = $1`, [Number(id)]);
     const verificationType = vtRes2.rows[0];
     if (!verificationType) {
       return res.status(404).json({
