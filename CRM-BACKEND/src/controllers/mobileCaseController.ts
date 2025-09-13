@@ -114,6 +114,15 @@ export class MobileCaseController {
                vt.id as "verificationTypeId",
                vt.name as "verificationTypeName",
                vt.code as "verificationTypeCode",
+               -- Rate type information (for Area and Rate Type columns)
+               rt.name as "rateTypeName",
+               rt.description as "rateTypeDescription",
+               -- Area information derived from rate type (local/ogl classification)
+               CASE
+                 WHEN LOWER(rt.name) LIKE '%local%' OR LOWER(rt.description) LIKE '%local%' THEN 'local'
+                 WHEN LOWER(rt.name) LIKE '%ogl%' OR LOWER(rt.description) LIKE '%ogl%' THEN 'ogl'
+                 ELSE 'standard'
+               END as "areaType",
                -- Field 7: Created By Backend User
                cu.id as "createdByUserId",
                cu.name as "createdByUserName",
@@ -128,6 +137,7 @@ export class MobileCaseController {
         LEFT JOIN clients cl ON cl.id = c."clientId"
         LEFT JOIN products p ON p.id = c."productId"
         LEFT JOIN "verificationTypes" vt ON vt.id = c."verificationTypeId"
+        LEFT JOIN "rateTypes" rt ON rt.id = c."rateTypeId"
         LEFT JOIN users cu ON cu.id = c."createdByBackendUser"
         LEFT JOIN users au ON au.id = c."assignedTo"
         LEFT JOIN (

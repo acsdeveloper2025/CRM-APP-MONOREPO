@@ -246,6 +246,15 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
         -- Verification type information (Field 5: Verification Type)
         vt.name as "verificationTypeName",
         vt.code as "verificationTypeCode",
+        -- Rate type information (for Area and Rate Type columns)
+        rt.name as "rateTypeName",
+        rt.description as "rateTypeDescription",
+        -- Area information derived from rate type (local/ogl classification)
+        CASE
+          WHEN LOWER(rt.name) LIKE '%local%' OR LOWER(rt.description) LIKE '%local%' THEN 'local'
+          WHEN LOWER(rt.name) LIKE '%ogl%' OR LOWER(rt.description) LIKE '%ogl%' THEN 'ogl'
+          ELSE 'standard'
+        END as "areaType",
         -- Created by backend user information (Field 7: Created By Backend User)
         created_user.name as "createdByBackendUserName",
         created_user.email as "createdByBackendUserEmail",
@@ -268,6 +277,7 @@ export const getCases = async (req: AuthenticatedRequest, res: Response) => {
       LEFT JOIN users created_user ON c."createdByBackendUser" = created_user.id
       LEFT JOIN products p ON c."productId" = p.id
       LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
+      LEFT JOIN "rateTypes" rt ON c."rateTypeId" = rt.id
       ${whereClause}
       ${orderByClause}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -403,6 +413,15 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
         -- Verification type information (Field 5: Verification Type)
         vt.name as "verificationTypeName",
         vt.code as "verificationTypeCode",
+        -- Rate type information (for Area and Rate Type columns)
+        rt.name as "rateTypeName",
+        rt.description as "rateTypeDescription",
+        -- Area information derived from rate type (local/ogl classification)
+        CASE
+          WHEN LOWER(rt.name) LIKE '%local%' OR LOWER(rt.description) LIKE '%local%' THEN 'local'
+          WHEN LOWER(rt.name) LIKE '%ogl%' OR LOWER(rt.description) LIKE '%ogl%' THEN 'ogl'
+          ELSE 'standard'
+        END as "areaType",
         -- Created by backend user information (Field 7: Created By Backend User)
         created_user.name as "createdByBackendUserName",
         created_user.email as "createdByBackendUserEmail"
@@ -412,6 +431,7 @@ export const getCaseById = async (req: AuthenticatedRequest, res: Response) => {
       LEFT JOIN users created_user ON c."createdByBackendUser" = created_user.id
       LEFT JOIN products p ON c."productId" = p.id
       LEFT JOIN "verificationTypes" vt ON c."verificationTypeId" = vt.id
+      LEFT JOIN "rateTypes" rt ON c."rateTypeId" = rt.id
       WHERE ${isNumeric ? 'c."caseId" = $1' : 'c.id = $1'}
     `;
 
@@ -1322,6 +1342,8 @@ export const exportCases = async (req: AuthenticatedRequest, res: Response) => {
       { header: 'Client', key: 'client_name', width: 20 },
       { header: 'Product', key: 'product_name', width: 20 },
       { header: 'Verification Type', key: 'verification_type_name', width: 25 },
+      { header: 'Area', key: 'area_type', width: 15 },
+      { header: 'Rate Type', key: 'rate_type_name', width: 20 },
       { header: 'Status', key: 'status', width: 15 },
       { header: 'Priority', key: 'priority', width: 12 },
       { header: 'Assigned To', key: 'assigned_to_name', width: 20 },

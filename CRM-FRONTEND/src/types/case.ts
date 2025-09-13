@@ -63,6 +63,10 @@ export interface Case {
     amount?: number;
     currency?: string;
   };
+  // Rate management fields for case table display
+  rateTypeName?: string;
+  rateTypeDescription?: string;
+  areaType?: 'local' | 'ogl' | 'standard';
   createdBy?: string;
   createdByBackendUser?: {
     id: string;

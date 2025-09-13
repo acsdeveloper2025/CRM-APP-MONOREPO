@@ -125,6 +125,8 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
               <TableHead>Case ID</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Verification Type</TableHead>
+              <TableHead>Area</TableHead>
+              <TableHead>Rate Type</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Assigned To</TableHead>
               <TableHead>Client</TableHead>
@@ -138,7 +140,7 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
           <TableBody>
             {[1, 2, 3, 4, 5].map((item) => (
               <TableRow key={item}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((cell) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((cell) => (
                   <TableCell key={cell}>
                     <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                   </TableCell>
@@ -171,6 +173,8 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
             <TableHead>Case ID</TableHead>
             <TableHead>Customer</TableHead>
             <TableHead>Verification Type</TableHead>
+            <TableHead>Area</TableHead>
+            <TableHead>Rate Type</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Assigned To</TableHead>
             <TableHead>Client</TableHead>
@@ -212,6 +216,20 @@ export const CompletedCaseTable: React.FC<CompletedCaseTableProps> = ({
                 <Badge className={getVerificationTypeColor(caseItem.verificationType)}>
                   {caseItem.verificationType || 'Not specified'}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  <Badge variant="outline" className="text-xs">
+                    {caseItem.areaType === 'local' ? 'Local' :
+                     caseItem.areaType === 'ogl' ? 'OGL' :
+                     caseItem.areaType === 'standard' ? 'Standard' : 'N/A'}
+                  </Badge>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  {caseItem.rateTypeName || 'N/A'}
+                </div>
               </TableCell>
               <TableCell>
                 <Badge className={getPriorityColor(caseItem.priority)}>

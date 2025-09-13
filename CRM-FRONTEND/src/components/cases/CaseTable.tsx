@@ -123,6 +123,8 @@ export const CaseTable: React.FC<CaseTableProps> = ({
               <TableHead>Client</TableHead>
               <TableHead>Product</TableHead>
               <TableHead>Verification Type</TableHead>
+              <TableHead>Area</TableHead>
+              <TableHead>Rate Type</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Assigned To</TableHead>
@@ -147,6 +149,12 @@ export const CaseTable: React.FC<CaseTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <div className="h-6 bg-gray-200 rounded animate-pulse w-20"></div>
+                </TableCell>
+                <TableCell>
+                  <div className="h-6 bg-gray-200 rounded animate-pulse w-16"></div>
+                </TableCell>
+                <TableCell>
+                  <div className="h-6 bg-gray-200 rounded animate-pulse w-16"></div>
                 </TableCell>
                 <TableCell>
                   <div className="h-6 bg-gray-200 rounded animate-pulse w-16"></div>
@@ -189,6 +197,8 @@ export const CaseTable: React.FC<CaseTableProps> = ({
             <TableHead>Client</TableHead>
             <TableHead>Product</TableHead>
             <TableHead>Verification Type</TableHead>
+            <TableHead>Area</TableHead>
+            <TableHead>Rate Type</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Assigned To</TableHead>
@@ -226,6 +236,20 @@ export const CaseTable: React.FC<CaseTableProps> = ({
               <TableCell>
                 <div className="text-sm">
                   {caseItem.verificationTypeName || caseItem.verificationType || 'N/A'}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  <Badge variant="outline" className="text-xs">
+                    {caseItem.areaType === 'local' ? 'Local' :
+                     caseItem.areaType === 'ogl' ? 'OGL' :
+                     caseItem.areaType === 'standard' ? 'Standard' : 'N/A'}
+                  </Badge>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="text-sm">
+                  {caseItem.rateTypeName || 'N/A'}
                 </div>
               </TableCell>
               <TableCell>
