@@ -142,7 +142,7 @@ export const getCountryById = async (req: AuthenticatedRequest, res: Response) =
         "updatedAt"
       FROM countries
       WHERE id = $1`,
-      [id]
+      [Number(id)]
     );
 
     if (result.rows.length === 0) {

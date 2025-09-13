@@ -147,7 +147,7 @@ export const getStateById = async (req: AuthenticatedRequest, res: Response) => 
        FROM states s
        JOIN countries c ON s."countryId" = c.id
        WHERE s.id = $1`,
-      [id]
+      [Number(id)]
     );
 
     if (result.rows.length === 0) {
