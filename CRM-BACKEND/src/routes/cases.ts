@@ -85,8 +85,8 @@ const createCaseValidation = [
   // New required fields for form integration
   body('applicantType')
     .trim()
-    .isIn(['APPLICANT', 'CO-APPLICANT', 'REFERENCE PERSON'])
-    .withMessage('Applicant type must be APPLICANT, CO-APPLICANT, or REFERENCE PERSON'),
+    .isIn(['APPLICANT', 'CO-APPLICANT', 'CO-APPLICANT 1', 'CO-APPLICANT 2', 'CO-APPLICANT 3', 'GUARANTOR', 'SELLER', 'PROPRIETOR', 'PARTNER', 'DIRECTOR', 'REFERENCE PERSON'])
+    .withMessage('Applicant type must be one of: APPLICANT, CO-APPLICANT, CO-APPLICANT 1, CO-APPLICANT 2, CO-APPLICANT 3, GUARANTOR, SELLER, PROPRIETOR, PARTNER, DIRECTOR, or REFERENCE PERSON'),
   body('backendContactNumber')
     .trim()
     .matches(/^[+]?[\d\s\-\(\)]{10,15}$/)

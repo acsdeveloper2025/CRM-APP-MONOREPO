@@ -269,6 +269,14 @@ export const FullCaseFormStep: React.FC<FullCaseFormStepProps> = ({
                       <SelectContent>
                         <SelectItem value="APPLICANT">APPLICANT</SelectItem>
                         <SelectItem value="CO-APPLICANT">CO-APPLICANT</SelectItem>
+                        <SelectItem value="CO-APPLICANT 1">CO-APPLICANT 1</SelectItem>
+                        <SelectItem value="CO-APPLICANT 2">CO-APPLICANT 2</SelectItem>
+                        <SelectItem value="CO-APPLICANT 3">CO-APPLICANT 3</SelectItem>
+                        <SelectItem value="GUARANTOR">GUARANTOR</SelectItem>
+                        <SelectItem value="SELLER">SELLER</SelectItem>
+                        <SelectItem value="PROPRIETOR">PROPRIETOR</SelectItem>
+                        <SelectItem value="PARTNER">PARTNER</SelectItem>
+                        <SelectItem value="DIRECTOR">DIRECTOR</SelectItem>
                         <SelectItem value="REFERENCE PERSON">REFERENCE PERSON</SelectItem>
                       </SelectContent>
                     </Select>
