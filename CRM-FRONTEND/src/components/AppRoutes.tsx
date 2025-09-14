@@ -24,6 +24,7 @@ import RoleManagementPage from '@/pages/RoleManagementPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { BillingPage } from '@/pages/BillingPage';
+import { CommissionManagementPage } from '@/pages/CommissionManagementPage';
 import { LocationsPage } from '@/pages/LocationsPage';
 import { RealTimePage } from '@/pages/RealTimePage';
 import { FormViewerPage } from '@/pages/FormViewerPage';
@@ -289,6 +290,16 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
             <Layout>
               <BillingPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/commission-management"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'BACKEND', 'SUPER_ADMIN']}>
+            <Layout>
+              <CommissionManagementPage />
             </Layout>
           </ProtectedRoute>
         }

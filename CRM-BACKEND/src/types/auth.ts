@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 // Role enum for consistent usage
 export enum Role {
   SUPER_ADMIN = 'SUPER_ADMIN',

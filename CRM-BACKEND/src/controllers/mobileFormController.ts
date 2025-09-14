@@ -1493,6 +1493,15 @@ export class MobileFormController {
       const caseUpd = await query(`SELECT id, status, "completedAt" FROM cases WHERE id = $1`, [caseId]);
       const updatedCase = caseUpd.rows[0];
 
+      // Auto-calculate commission for completed case
+      try {
+        const { autoCalculateCommissionForCase } = await import('../controllers/commissionManagementController');
+        await autoCalculateCommissionForCase(caseId);
+      } catch (error) {
+        console.error('Error auto-calculating commission for residence form:', error);
+        // Don't fail the form submission if commission calculation fails
+      }
+
       // Update attachment geo-locations
       for (const photo of photos) {
         await query(`UPDATE attachments SET "geoLocation" = $1 WHERE id = $2`, [JSON.stringify(photo.geoLocation), photo.attachmentId]);
@@ -2277,6 +2286,15 @@ export class MobileFormController {
       const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
 
+      // Auto-calculate commission for completed case
+      try {
+        const { autoCalculateCommissionForCase } = await import('../controllers/commissionManagementController');
+        await autoCalculateCommissionForCase(actualCaseId);
+      } catch (error) {
+        console.error('Error auto-calculating commission for office form:', error);
+        // Don't fail the form submission if commission calculation fails
+      }
+
       // Create comprehensive office verification report using all available fields
       const dbInsertData = {
         // Core case information
@@ -2596,6 +2614,15 @@ export class MobileFormController {
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'BUSINESS', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
       const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
+
+      // Auto-calculate commission for completed case
+      try {
+        const { autoCalculateCommissionForCase } = await import('../controllers/commissionManagementController');
+        await autoCalculateCommissionForCase(actualCaseId);
+      } catch (error) {
+        console.error('Error auto-calculating commission for business form:', error);
+        // Don't fail the form submission if commission calculation fails
+      }
 
       // Create comprehensive business verification report using all available fields
       const dbInsertData = {
@@ -2932,6 +2959,15 @@ export class MobileFormController {
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'BUILDER', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
       const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
+
+      // Auto-calculate commission for completed case
+      try {
+        const { autoCalculateCommissionForCase } = await import('../controllers/commissionManagementController');
+        await autoCalculateCommissionForCase(actualCaseId);
+      } catch (error) {
+        console.error('Error auto-calculating commission for builder form:', error);
+        // Don't fail the form submission if commission calculation fails
+      }
 
       // Create comprehensive builder verification report using all available fields
       const dbInsertData = {
@@ -3569,6 +3605,15 @@ export class MobileFormController {
       await query(`UPDATE cases SET status = 'COMPLETED', "completedAt" = CURRENT_TIMESTAMP, "verificationData" = $1, "verificationType" = 'DSA_CONNECTOR', "verificationOutcome" = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3`, [JSON.stringify(verificationData), verificationOutcome, actualCaseId]);
       const caseUpd = await query(`SELECT id, "caseId", status, "completedAt", "customerName", "backendContactNumber", address FROM cases WHERE id = $1`, [actualCaseId]);
       const updatedCase = caseUpd.rows[0];
+
+      // Auto-calculate commission for completed case
+      try {
+        const { autoCalculateCommissionForCase } = await import('../controllers/commissionManagementController');
+        await autoCalculateCommissionForCase(actualCaseId);
+      } catch (error) {
+        console.error('Error auto-calculating commission for DSA connector form:', error);
+        // Don't fail the form submission if commission calculation fails
+      }
 
       // Create comprehensive DSA/DST Connector verification report using all available fields
       const dbInsertData = {

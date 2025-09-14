@@ -186,6 +186,13 @@ export const navigationItems: NavigationItem[] = [
         icon: BarChart3,
         permission: { resource: 'reports', action: 'read' },
       },
+      {
+        id: 'commission-management',
+        label: 'Commission Management',
+        href: '/commission-management',
+        icon: DollarSign,
+        permission: { resource: 'reports', action: 'read' },
+      },
     ],
   },
   {

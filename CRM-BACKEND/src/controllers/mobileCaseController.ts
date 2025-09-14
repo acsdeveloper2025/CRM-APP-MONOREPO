@@ -483,6 +483,17 @@ export class MobileCaseController {
         userAgent: req.get('User-Agent'),
       });
 
+      // Auto-calculate commission if case is completed
+      if (status === 'COMPLETED') {
+        try {
+          const { autoCalculateCommissionForCase } = await import('../controllers/commissionManagementController');
+          await autoCalculateCommissionForCase(actualCaseId);
+        } catch (error) {
+          console.error('Error auto-calculating commission:', error);
+          // Don't fail the case update if commission calculation fails
+        }
+      }
+
       res.json({
         success: true,
         message: 'Case status updated successfully',
