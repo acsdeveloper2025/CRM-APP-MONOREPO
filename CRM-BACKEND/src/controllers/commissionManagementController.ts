@@ -496,6 +496,134 @@ export const createFieldUserCommissionAssignment = async (req: AuthenticatedRequ
   }
 };
 
+export const updateFieldUserCommissionAssignment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      userId,
+      rateTypeId,
+      commissionAmount,
+      currency = 'INR',
+      clientId,
+      effectiveFrom,
+      effectiveTo
+    }: CreateFieldUserCommissionAssignmentData = req.body;
+
+    // Validate required fields
+    if (!userId || !rateTypeId || !commissionAmount) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID, rate type ID, and commission amount are required',
+        error: { code: 'VALIDATION_ERROR' }
+      });
+    }
+
+    // Check if assignment exists
+    const existingAssignment = await query(
+      'SELECT id FROM field_user_commission_assignments WHERE id = $1',
+      [id]
+    );
+
+    if (existingAssignment.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Field user commission assignment not found',
+        error: { code: 'NOT_FOUND' }
+      });
+    }
+
+    // Update the assignment
+    const updateQuery = `
+      UPDATE field_user_commission_assignments
+      SET
+        user_id = $1,
+        rate_type_id = $2,
+        commission_amount = $3,
+        currency = $4,
+        client_id = $5,
+        effective_from = $6,
+        effective_to = $7,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $8
+      RETURNING *
+    `;
+
+    const result = await query(updateQuery, [
+      userId,
+      rateTypeId,
+      commissionAmount,
+      currency,
+      clientId || null,
+      effectiveFrom || new Date().toISOString(),
+      effectiveTo || null,
+      id
+    ]);
+
+    logger.info('Updated field user commission assignment', {
+      userId: req.user?.id,
+      assignmentId: id,
+      targetUserId: userId,
+      rateTypeId,
+      commissionAmount
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result.rows[0],
+      message: 'Field user commission assignment updated successfully'
+    });
+
+  } catch (error) {
+    logger.error('Error updating field user commission assignment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update field user commission assignment',
+      error: { code: 'INTERNAL_ERROR' }
+    });
+  }
+};
+
+export const deleteFieldUserCommissionAssignment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Check if assignment exists
+    const existingAssignment = await query(
+      'SELECT id FROM field_user_commission_assignments WHERE id = $1',
+      [id]
+    );
+
+    if (existingAssignment.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Field user commission assignment not found',
+        error: { code: 'NOT_FOUND' }
+      });
+    }
+
+    // Delete the assignment
+    await query('DELETE FROM field_user_commission_assignments WHERE id = $1', [id]);
+
+    logger.info('Deleted field user commission assignment', {
+      userId: req.user?.id,
+      assignmentId: id
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Field user commission assignment deleted successfully'
+    });
+
+  } catch (error) {
+    logger.error('Error deleting field user commission assignment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete field user commission assignment',
+      error: { code: 'INTERNAL_ERROR' }
+    });
+  }
+};
+
 // =====================================================
 // COMMISSION CALCULATIONS
 // =====================================================
@@ -566,7 +694,7 @@ export const getCommissionCalculations = async (req: AuthenticatedRequest, res: 
         u.email as user_email,
         c.name as client_name,
         rt.name as rate_type_name,
-        cases.customer_name,
+        cases."customerName" as customer_name,
         cases.address
       FROM commission_calculations cc
       LEFT JOIN users u ON cc.user_id = u.id
@@ -907,5 +1035,167 @@ export const autoCalculateCommissionForCase = async (caseId: string): Promise<bo
   } catch (error) {
     console.error(`❌ Error auto-calculating commission for case ${caseId}:`, error);
     return false;
+  }
+};
+
+// =====================================================
+// COMMISSION STATISTICS
+// =====================================================
+
+export const getCommissionStats = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    // Get commission calculations stats
+    const calculationsStatsQuery = `
+      SELECT
+        COUNT(*) as total_calculations,
+        COUNT(CASE WHEN status = 'PAID' THEN 1 END) as paid_calculations,
+        COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_calculations,
+        COUNT(CASE WHEN status = 'APPROVED' THEN 1 END) as approved_calculations,
+        COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) as rejected_calculations,
+        COALESCE(SUM(CASE WHEN status = 'PAID' THEN commission_amount ELSE 0 END), 0) as total_paid_amount,
+        COALESCE(SUM(CASE WHEN status = 'PENDING' THEN commission_amount ELSE 0 END), 0) as total_pending_amount,
+        COALESCE(AVG(commission_amount), 0) as average_commission
+      FROM commission_calculations
+    `;
+
+    const calculationsStats = await query(calculationsStatsQuery);
+    const stats = calculationsStats.rows[0];
+
+    // Get active field users count
+    const activeUsersQuery = `
+      SELECT COUNT(DISTINCT user_id) as active_users
+      FROM field_user_commission_assignments
+      WHERE is_active = true
+    `;
+    const activeUsersResult = await query(activeUsersQuery);
+    const activeUsers = activeUsersResult.rows[0]?.active_users || 0;
+
+    // Get total assignments count
+    const assignmentsQuery = `
+      SELECT COUNT(*) as total_assignments
+      FROM field_user_commission_assignments
+    `;
+    const assignmentsResult = await query(assignmentsQuery);
+    const totalAssignments = assignmentsResult.rows[0]?.total_assignments || 0;
+
+    // Get top performing user
+    const topUserQuery = `
+      SELECT u.name as user_name, COUNT(*) as calculation_count
+      FROM commission_calculations cc
+      LEFT JOIN users u ON cc.user_id = u.id
+      WHERE cc.status = 'PAID'
+      GROUP BY cc.user_id, u.name
+      ORDER BY calculation_count DESC
+      LIMIT 1
+    `;
+    const topUserResult = await query(topUserQuery);
+    const topUser = topUserResult.rows[0]?.user_name || null;
+
+    // Get most used rate type
+    const topRateTypeQuery = `
+      SELECT rt.name as rate_type_name, COUNT(*) as usage_count
+      FROM field_user_commission_assignments fuca
+      LEFT JOIN "rateTypes" rt ON fuca.rate_type_id = rt.id
+      GROUP BY fuca.rate_type_id, rt.name
+      ORDER BY usage_count DESC
+      LIMIT 1
+    `;
+    const topRateTypeResult = await query(topRateTypeQuery);
+    const topRateType = topRateTypeResult.rows[0]?.rate_type_name || null;
+
+    // Get total rate types count
+    const rateTypesQuery = `
+      SELECT COUNT(*) as total_rate_types
+      FROM "rateTypes"
+      WHERE "isActive" = true
+    `;
+    const rateTypesResult = await query(rateTypesQuery);
+    const totalRateTypes = rateTypesResult.rows[0]?.total_rate_types || 0;
+
+    // Get today's stats
+    const todayQuery = `
+      SELECT
+        COUNT(CASE WHEN DATE(cc.created_at) = CURRENT_DATE THEN 1 END) as calculations_today,
+        COALESCE(SUM(CASE WHEN DATE(cc.created_at) = CURRENT_DATE THEN cc.commission_amount ELSE 0 END), 0) as commission_today
+      FROM commission_calculations cc
+    `;
+    const todayResult = await query(todayQuery);
+    const todayStats = todayResult.rows[0];
+
+    // Get this week's new assignments
+    const thisWeekQuery = `
+      SELECT COUNT(*) as new_assignments_week
+      FROM field_user_commission_assignments
+      WHERE created_at >= DATE_TRUNC('week', CURRENT_DATE)
+    `;
+    const thisWeekResult = await query(thisWeekQuery);
+    const newAssignmentsWeek = thisWeekResult.rows[0]?.new_assignments_week || 0;
+
+    const commissionStats = {
+      // Basic stats
+      totalCommissions: parseInt(stats.total_calculations) || 0,
+      totalAmount: parseFloat(stats.total_paid_amount) + parseFloat(stats.total_pending_amount) || 0,
+      pendingCommissions: parseInt(stats.pending_calculations) || 0,
+      pendingAmount: parseFloat(stats.total_pending_amount) || 0,
+      approvedCommissions: parseInt(stats.approved_calculations) || 0,
+      approvedAmount: 0, // Can be calculated if needed
+      paidCommissions: parseInt(stats.paid_calculations) || 0,
+      paidAmount: parseFloat(stats.total_paid_amount) || 0,
+      rejectedCommissions: parseInt(stats.rejected_calculations) || 0,
+      rejectedAmount: 0, // Can be calculated if needed
+      currency: 'INR',
+
+      // Frontend specific stats
+      totalCommissionPaid: parseFloat(stats.total_paid_amount) || 0,
+      totalCommissionPending: parseFloat(stats.total_pending_amount) || 0,
+      activeFieldUsers: parseInt(activeUsers) || 0,
+      totalAssignments: parseInt(totalAssignments) || 0,
+      averageCommissionPerCase: parseFloat(stats.average_commission) || 0,
+      topPerformingUser: topUser,
+      mostUsedRateType: topRateType,
+      totalRateTypes: parseInt(totalRateTypes) || 0,
+      casesCompletedToday: parseInt(todayStats.calculations_today) || 0,
+      commissionCalculatedToday: parseFloat(todayStats.commission_today) || 0,
+      newAssignmentsThisWeek: parseInt(newAssignmentsWeek) || 0,
+      paymentBatchesPending: 0 // Can be implemented when payment batches are added
+    };
+
+    logger.info('Retrieved commission statistics', {
+      userId,
+      totalCalculations: commissionStats.totalCommissions,
+      totalPaid: commissionStats.totalCommissionPaid,
+      totalPending: commissionStats.totalCommissionPending,
+      activeUsers: commissionStats.activeFieldUsers,
+      service: 'crm-backend',
+      timestamp: new Date().toISOString()
+    });
+
+    res.json({
+      success: true,
+      data: commissionStats
+    });
+
+  } catch (error) {
+    logger.error('Error retrieving commission statistics', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: req.user?.id,
+      service: 'crm-backend',
+      timestamp: new Date().toISOString()
+    });
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve commission statistics'
+    });
   }
 };

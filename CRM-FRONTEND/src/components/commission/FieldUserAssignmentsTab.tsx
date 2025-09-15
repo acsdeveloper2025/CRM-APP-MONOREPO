@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { SearchableSelect, SearchableSelectOption } from '@/components/ui/searchable-select';
 import { commissionManagementApi } from '../../services/commissionManagementApi';
 import { FieldUserCommissionAssignment, CreateFieldUserCommissionAssignmentData } from '../../types/commission';
 import { User } from '../../types/user';
@@ -60,7 +68,7 @@ export const FieldUserAssignmentsTab: React.FC = () => {
 
       // Load users and rate types for dropdowns
       const [usersResponse, rateTypesResponse] = await Promise.all([
-        userApi.getUsers({ role: 'FIELD_AGENT', limit: 1000 }),
+        userApi.getUsers({ role: 'FIELD_AGENT', limit: 100 }),
         rateTypeApi.getRateTypes({ isActive: true })
       ]);
 
@@ -87,8 +95,10 @@ export const FieldUserAssignmentsTab: React.FC = () => {
       };
 
       if (editingAssignment) {
-        // Update logic would go here when implemented
-        console.log('Update not implemented yet');
+        await commissionManagementApi.updateFieldUserCommissionAssignment(
+          String(editingAssignment.id),
+          assignmentData
+        );
       } else {
         await commissionManagementApi.createFieldUserCommissionAssignment(assignmentData);
       }
@@ -173,239 +183,282 @@ export const FieldUserAssignmentsTab: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Field User Commission Assignments
+            Commission Rate Assignments
           </CardTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            Configure commission rates for field users by rate type and client (not for case assignments)
+          </p>
         </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex gap-4">
-              <div className="relative">
-                <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search assignments..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+        <CardContent className="p-6">
+          {/* Search and Filter Section */}
+          <div className="space-y-4 mb-6">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="relative">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Input
+                    placeholder="Search assignments..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-64"
+                  />
+                </div>
+
+                <div className="w-48">
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: 'All Users' },
+                      ...(users || []).map(user => ({
+                        value: user.id,
+                        label: user.name,
+                        description: user.email
+                      }))
+                    ]}
+                    value={filterUserId}
+                    onValueChange={setFilterUserId}
+                    placeholder="Filter by user..."
+                    searchPlaceholder="Search users..."
+                  />
+                </div>
+
+                <div className="w-48">
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: 'All Rate Types' },
+                      ...(rateTypes || []).map(rateType => ({
+                        value: rateType.id.toString(),
+                        label: rateType.name,
+                        description: `Rate: ${rateType.rate_amount || 'Not set'}`
+                      }))
+                    ]}
+                    value={filterRateTypeId}
+                    onValueChange={setFilterRateTypeId}
+                    placeholder="Filter by rate type..."
+                    searchPlaceholder="Search rate types..."
+                  />
+                </div>
               </div>
-              <select
-                value={filterUserId}
-                onChange={(e) => setFilterUserId(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Users</option>
-                {users.map(user => (
-                  <option key={user.id} value={user.id}>{user.name}</option>
-                ))}
-              </select>
-              <select
-                value={filterRateTypeId}
-                onChange={(e) => setFilterRateTypeId(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Rate Types</option>
-                {rateTypes.map(rateType => (
-                  <option key={rateType.id} value={rateType.id}>{rateType.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={exportData}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </button>
-              <button
-                onClick={() => {
-                  setShowForm(true);
-                  setEditingAssignment(null);
-                  resetForm();
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4" />
-                Add Assignment
-              </button>
+
+              <div className="flex gap-2 flex-shrink-0">
+                <Button
+                  onClick={exportData}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowForm(true);
+                    setEditingAssignment(null);
+                    resetForm();
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Rate Assignment
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Assignments Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Effective Period</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Rate Type</TableHead>
+                  <TableHead>Commission</TableHead>
+                  <TableHead>Effective Period</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[120px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {assignments.map((assignment) => (
-                  <tr key={assignment.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <TableRow key={assignment.id}>
+                    <TableCell>
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{assignment.user_name}</div>
-                        <div className="text-sm text-gray-500">{assignment.user_email}</div>
+                        <div className="font-medium">{assignment.user_name}</div>
+                        <div className="text-sm text-muted-foreground">{assignment.user_email}</div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {assignment.rate_type_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{assignment.rate_type_name}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
                       {assignment.currency} {assignment.commission_amount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
                         <div>From: {assignment.effective_from ? new Date(assignment.effective_from).toLocaleDateString() : 'N/A'}</div>
                         <div>To: {assignment.effective_to ? new Date(assignment.effective_to).toLocaleDateString() : 'Ongoing'}</div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        assignment.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={assignment.is_active ? "default" : "secondary"}>
                         {assignment.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        <button
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleEdit(assignment)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="h-8 w-8"
                         >
                           <Edit className="h-4 w-4" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleDelete(String(assignment.id))}
-                          className="text-red-600 hover:text-red-900"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-6">
-              <div className="text-sm text-gray-700">
+              <div className="text-sm text-muted-foreground">
                 Page {currentPage} of {totalPages}
               </div>
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50"
                 >
                   Previous
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Assignment Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              {editingAssignment ? 'Edit Assignment' : 'Add New Assignment'}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Field User</label>
-                <select
+      {/* Assignment Form Dialog */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAssignment ? 'Edit Commission Rate Assignment' : 'Create Commission Rate Assignment'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingAssignment
+                ? 'Update the commission rate assignment details for the selected field user.'
+                : 'Create a new commission rate assignment for a field user. This will determine their commission rate for specific verification types.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="userId">Field User *</Label>
+                <SearchableSelect
+                  options={(users || []).map(user => ({
+                    value: user.id,
+                    label: user.name,
+                    description: user.email
+                  }))}
                   value={formData.userId}
-                  onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select User</option>
-                  {users.map(user => (
-                    <option key={user.id} value={user.id}>{user.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rate Type</label>
-                <select
-                  value={formData.rateTypeId}
-                  onChange={(e) => setFormData({ ...formData, rateTypeId: Number(e.target.value) })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value={0}>Select Rate Type</option>
-                  {rateTypes.map(rateType => (
-                    <option key={rateType.id} value={rateType.id}>{rateType.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Commission Amount</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.commissionAmount}
-                  onChange={(e) => setFormData({ ...formData, commissionAmount: Number(e.target.value) })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onValueChange={(value) => setFormData({ ...formData, userId: value })}
+                  placeholder="Search and select field user..."
+                  searchPlaceholder="Search by name or email..."
+                  emptyMessage="No field users found"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                <select
-                  value={formData.currency}
-                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="INR">INR</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                </select>
+
+              <div className="space-y-2">
+                <Label htmlFor="rateTypeId">Rate Type *</Label>
+                <SearchableSelect
+                  options={(rateTypes || []).map(rateType => ({
+                    value: rateType.id.toString(),
+                    label: rateType.name,
+                    description: `Rate: ${rateType.rate_amount || 'Not set'}`
+                  }))}
+                  value={formData.rateTypeId ? formData.rateTypeId.toString() : ''}
+                  onValueChange={(value) => setFormData({ ...formData, rateTypeId: value ? Number(value) : 0 })}
+                  placeholder="Search and select rate type..."
+                  searchPlaceholder="Search rate types..."
+                  emptyMessage="No rate types found"
+                />
               </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingAssignment(null);
-                    resetForm();
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  {editingAssignment ? 'Update' : 'Create'}
-                </button>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency *</Label>
+                  <Select
+                    value={formData.currency}
+                    onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INR">INR</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="commissionAmount">Commission Amount *</Label>
+                  <Input
+                    id="commissionAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.commissionAmount}
+                    onChange={(e) => setFormData({ ...formData, commissionAmount: Number(e.target.value) })}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingAssignment(null);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                {editingAssignment ? 'Update Assignment' : 'Create Assignment'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

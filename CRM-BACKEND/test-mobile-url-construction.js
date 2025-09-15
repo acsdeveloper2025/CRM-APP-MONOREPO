@@ -51,7 +51,7 @@ async function testMobileUrlConstruction() {
     console.log('\n3. 🔗 Testing URL construction...');
     
     // Simulate mobile app URL construction
-    const baseUrl = 'http://172.20.10.8:3000/api';
+    const baseUrl = 'http://192.168.1.36:3000/api';
     const staticBaseUrl = baseUrl.replace('/api', '');
     
     console.log(`Base URL: ${baseUrl}`);

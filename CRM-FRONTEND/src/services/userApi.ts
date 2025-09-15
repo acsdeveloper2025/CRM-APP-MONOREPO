@@ -25,7 +25,10 @@ export const userApi = {
   // Get users with pagination and filters
   async getUsers(params: GetUsersParams = {}): Promise<GetUsersResponse> {
     const response = await apiService.get('/users', params);
-    return response.data;
+    return {
+      data: response.data || [],
+      pagination: response.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 }
+    };
   },
 
   // Get user by ID

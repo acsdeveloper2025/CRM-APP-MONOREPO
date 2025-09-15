@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { commissionManagementService } from '@/services/commissionManagement';
@@ -90,6 +91,9 @@ export const CommissionRateTypesTab: React.FC = () => {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Create Commission Rate Type</DialogTitle>
+              <DialogDescription>
+                Create a new commission rate type template that can be used for field user assignments.
+              </DialogDescription>
             </DialogHeader>
             <CommissionRateTypeForm
               onSuccess={handleFormSuccess}
@@ -227,6 +231,9 @@ export const CommissionRateTypesTab: React.FC = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Commission Rate Type</DialogTitle>
+            <DialogDescription>
+              Update the commission rate type details and configuration.
+            </DialogDescription>
           </DialogHeader>
           {editingRateType && (
             <CommissionRateTypeForm

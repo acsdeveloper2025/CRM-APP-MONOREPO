@@ -8,7 +8,7 @@ export const useCaseFormSubmissions = (caseId: string) => {
     queryKey: ['case-form-submissions', caseId],
     queryFn: () => formsService.getCaseFormSubmissions(caseId),
     enabled: !!caseId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // Always fetch fresh data to ensure sections are loaded
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
@@ -81,12 +81,23 @@ export const useFormSubmission = (caseId: string, submissionId: string) => {
 // Utility hook to get the latest form submission for a case
 export const useLatestFormSubmission = (caseId: string) => {
   const { data: formSubmissions, isLoading, error } = useCaseFormSubmissions(caseId);
-  
+
   const latestSubmission = formSubmissions?.data?.submissions?.[0]; // Assuming they're sorted by date
-  
+
   return {
     data: latestSubmission,
     isLoading,
     error: error || (!latestSubmission && formSubmissions ? new Error('No form submissions found') : null),
+  };
+};
+
+// Utility hook to refresh form submissions cache
+export const useRefreshFormSubmissions = () => {
+  const queryClient = useQueryClient();
+
+  return (caseId: string) => {
+    queryClient.invalidateQueries({
+      queryKey: ['case-form-submissions', caseId],
+    });
   };
 };

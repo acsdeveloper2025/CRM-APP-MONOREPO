@@ -51,7 +51,7 @@ export const TemplateReportCard: React.FC<TemplateReportCardProps> = ({
 
       const token = localStorage.getItem('accessToken');
       const response = await fetch(
-        `http://172.20.10.8:3000/api/template-reports/cases/${caseId}/submissions/${submissionId}`,
+        `http://192.168.1.36:3000/api/template-reports/cases/${caseId}/submissions/${submissionId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -65,16 +65,19 @@ export const TemplateReportCard: React.FC<TemplateReportCardProps> = ({
         if (data.success && data.report) {
           setReport(data.report);
         }
-      } else if (response.status !== 404) {
-        // 404 is expected if no report exists yet
-        throw new Error('Failed to load existing report');
+      } else if (response.status === 404) {
+        // 404 is expected when no report exists yet - this is normal behavior
+        // Don't log this as an error since it's expected
+        setReport(null);
+      } else {
+        // Other HTTP errors are unexpected and should be handled
+        throw new Error(`Failed to load template report: ${response.status} ${response.statusText}`);
       }
-      // 404 is expected when no report exists yet - don't treat as error
     } catch (err) {
-      // Only log and show error if it's not a 404 (report not found)
+      // Only show error for unexpected failures, not for 404s
       if (err instanceof Error && !err.message.includes('404')) {
-        console.error('Error loading existing report:', err);
-        setError(err.message);
+        console.error('Error loading template report:', err);
+        setError('Failed to load existing template report. You can still generate a new one.');
       }
     } finally {
       setLoading(false);
@@ -88,7 +91,7 @@ export const TemplateReportCard: React.FC<TemplateReportCardProps> = ({
 
       const token = localStorage.getItem('accessToken');
       const response = await fetch(
-        `http://172.20.10.8:3000/api/template-reports/cases/${caseId}/submissions/${submissionId}/generate`,
+        `http://192.168.1.36:3000/api/template-reports/cases/${caseId}/submissions/${submissionId}/generate`,
         {
           method: 'POST',
           headers: {

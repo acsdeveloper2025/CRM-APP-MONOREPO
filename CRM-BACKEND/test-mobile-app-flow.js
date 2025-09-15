@@ -56,7 +56,7 @@ async function testMobileAppFlow() {
       console.log(`   URL: ${attachment.url}`);
       
       // Simulate mobile app URL construction
-      const baseUrl = 'http://172.20.10.8:3000/api';
+      const baseUrl = 'http://192.168.1.36:3000/api';
       const fullUrl = attachment.url.startsWith('/api/') 
         ? `${baseUrl}${attachment.url.substring(4)}`
         : `${baseUrl}${attachment.url}`;

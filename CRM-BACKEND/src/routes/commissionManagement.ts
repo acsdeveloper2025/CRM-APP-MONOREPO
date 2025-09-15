@@ -11,9 +11,13 @@ import {
   // Field User Commission Assignments
   getFieldUserCommissionAssignments,
   createFieldUserCommissionAssignment,
+  updateFieldUserCommissionAssignment,
+  deleteFieldUserCommissionAssignment,
   // Commission Calculations
   getCommissionCalculations,
-  calculateCommissionForCompletedCase
+  calculateCommissionForCompletedCase,
+  // Commission Statistics
+  getCommissionStats
 } from '@/controllers/commissionManagementController';
 
 const router = express.Router();
@@ -143,6 +147,18 @@ router.post('/field-user-assignments',
   createFieldUserCommissionAssignment as any
 );
 
+router.put('/field-user-assignments/:id',
+  createFieldUserCommissionAssignmentValidation,
+  validate,
+  updateFieldUserCommissionAssignment as any
+);
+
+router.delete('/field-user-assignments/:id',
+  param('id').isUUID().withMessage('Assignment ID must be a valid UUID'),
+  validate,
+  deleteFieldUserCommissionAssignment as any
+);
+
 // =====================================================
 // COMMISSION CALCULATIONS ROUTES
 // =====================================================
@@ -207,5 +223,12 @@ router.post('/test-calculation',
   validate,
   calculateCommissionForCompletedCase as any
 );
+
+// =====================================================
+// COMMISSION STATISTICS ROUTES
+// =====================================================
+
+// Commission Statistics Route
+router.get('/stats', getCommissionStats as any);
 
 export default router;

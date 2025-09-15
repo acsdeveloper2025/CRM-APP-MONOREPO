@@ -15,7 +15,10 @@ export const rateTypeApi = {
   // Get all rate types with optional filtering
   async getRateTypes(params: RateTypeListQuery = {}): Promise<GetRateTypesResponse> {
     const response = await apiService.get('/rate-types', params);
-    return response.data;
+    return {
+      data: response.data || [],
+      pagination: response.pagination
+    };
   },
 
   // Get rate type by ID
