@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,22 +9,114 @@ import { verificationImagesService } from '@/services/verificationImages';
 import { Camera, MapPin, Calendar, Download, Eye, Image as ImageIcon, ExternalLink, Navigation, Clock, Home } from 'lucide-react';
 import { format } from 'date-fns';
 
+// Custom hook to handle async image URL loading
+const useImageUrl = (imageUrl: string, imageId?: number) => {
+  const [url, setUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadImageUrl = async () => {
+      try {
+        setLoading(true);
+        const displayUrl = await verificationImagesService.getImageDisplayUrl(imageUrl, imageId);
+        setUrl(displayUrl);
+      } catch (error) {
+        console.error('Error loading image URL:', error);
+        setUrl(''); // Fallback to empty string
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadImageUrl();
+  }, [imageUrl, imageId]);
+
+  return { url, loading };
+};
+
+// Custom hook to handle async thumbnail URL loading
+const useThumbnailUrl = (thumbnailUrl: string, imageId?: number) => {
+  const [url, setUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadThumbnailUrl = async () => {
+      try {
+        setLoading(true);
+        const displayUrl = await verificationImagesService.getThumbnailDisplayUrl(thumbnailUrl, imageId);
+        setUrl(displayUrl);
+      } catch (error) {
+        console.error('Error loading thumbnail URL:', error);
+        setUrl(''); // Fallback to empty string
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadThumbnailUrl();
+  }, [thumbnailUrl, imageId]);
+
+  return { url, loading };
+};
+
+// Component to handle async image loading with fallback
+interface AsyncImageProps {
+  imageUrl: string;
+  imageId?: number;
+  thumbnailUrl?: string;
+  alt: string;
+  className?: string;
+  onClick?: () => void;
+}
+
+const AsyncImage: React.FC<AsyncImageProps> = ({
+  imageUrl,
+  imageId,
+  thumbnailUrl,
+  alt,
+  className,
+  onClick
+}) => {
+  const { url: displayUrl, loading: imageLoading } = useImageUrl(imageUrl, imageId);
+  const { url: thumbUrl, loading: thumbLoading } = useThumbnailUrl(thumbnailUrl || '', imageId);
+
+  const finalUrl = thumbnailUrl ? thumbUrl : displayUrl;
+  const isLoading = thumbnailUrl ? thumbLoading : imageLoading;
+
+  if (isLoading) {
+    return <Skeleton className={className || "w-full h-full"} />;
+  }
+
+  return (
+    <img
+      src={finalUrl}
+      alt={alt}
+      className={className}
+      onClick={onClick}
+    />
+  );
+};
+
 interface VerificationImagesProps {
   caseId: string;
   submissionId?: string;
   title?: string;
   showStats?: boolean;
   submissionAddress?: string;
+  customerName?: string;
 }
 
 interface ImageViewerProps {
   imageUrl: string;
+  imageId?: number;
   imageName: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-const ImageViewer: React.FC<ImageViewerProps> = ({ imageUrl, imageName, isOpen, onClose }) => {
+const ImageViewer: React.FC<ImageViewerProps> = ({ imageUrl, imageId, imageName, isOpen, onClose }) => {
+  const { url: displayUrl, loading } = useImageUrl(imageUrl, imageId);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
@@ -35,11 +127,15 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ imageUrl, imageName, isOpen, 
           </DialogTitle>
         </DialogHeader>
         <div className="flex justify-center">
-          <img
-            src={verificationImagesService.getImageDisplayUrl(imageUrl)}
-            alt={imageName}
-            className="max-w-full max-h-[70vh] object-contain rounded-lg"
-          />
+          {loading ? (
+            <Skeleton className="w-full h-96" />
+          ) : (
+            <img
+              src={displayUrl}
+              alt={imageName}
+              className="max-w-full max-h-[70vh] object-contain rounded-lg"
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -51,9 +147,10 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
   submissionId,
   title = "Verification Images",
   showStats = true,
-  submissionAddress
+  submissionAddress,
+  customerName
 }) => {
-  const [selectedImage, setSelectedImage] = useState<{ url: string; name: string } | null>(null);
+  const [selectedImage, setSelectedImage] = useState<{ url: string; name: string; imageId?: number } | null>(null);
 
   // Use appropriate hook based on whether submissionId is provided
   const { data, isLoading, error } = submissionId
@@ -62,13 +159,13 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
 
   const images = data?.data || [];
 
-  const handleImageClick = (imageUrl: string, imageName: string) => {
-    setSelectedImage({ url: imageUrl, name: imageName });
+  const handleImageClick = (imageUrl: string, imageName: string, imageId?: number) => {
+    setSelectedImage({ url: imageUrl, name: imageName, imageId });
   };
 
-  const handleDownload = async (imageUrl: string, imageName: string) => {
+  const handleDownload = async (imageId: number, imageName: string) => {
     try {
-      const blob = await verificationImagesService.downloadVerificationImage(imageUrl);
+      const blob = await verificationImagesService.downloadVerificationImage(imageId);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -82,10 +179,10 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
     }
   };
 
-  const handleDownloadWithMetadata = async (image: any, imageName: string) => {
+  const handleDownloadWithMetadata = async (image: any, imageIndex: number) => {
     try {
       // Download the original image
-      const blob = await verificationImagesService.downloadVerificationImage(image.url);
+      const blob = await verificationImagesService.downloadVerificationImage(image.id);
 
       // Create a canvas to composite the image with metadata
       const canvas = document.createElement('canvas');
@@ -185,7 +282,9 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
             const url = URL.createObjectURL(compositeBlob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${imageName.replace(/\.[^/.]+$/, '')}_with_metadata.png`;
+            // Create filename with case ID format: "case-{caseId}-{imageIndex}.png"
+            const filename = `case-${caseId}-${imageIndex}.png`;
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -200,8 +299,9 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
       img.src = imageUrl;
     } catch (error) {
       console.error('Failed to download image with metadata:', error);
-      // Fallback to regular download
-      handleDownload(image.url, imageName);
+      // Fallback to regular download with case ID format
+      const filename = `case-${caseId}-${imageIndex}.jpg`;
+      handleDownload(image.id, filename);
     }
   };
 
@@ -350,21 +450,20 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                   Verification Photos ({verificationPhotos.length})
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {verificationPhotos.map((image) => (
+                  {verificationPhotos.map((image, index) => (
                     <div key={image.id} className="group relative">
                       {/* Attachment Card Format */}
                       <Card className="border border-border hover:border-border transition-colors">
                         <CardContent className="p-0">
                           {/* Image with overlay */}
                           <div className="relative aspect-square bg-muted rounded-t-lg overflow-hidden">
-                            <img
-                              src={image.thumbnailUrl
-                                ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)
-                                : verificationImagesService.getImageDisplayUrl(image.url)
-                              }
+                            <AsyncImage
+                              imageUrl={image.url}
+                              imageId={image.id}
+                              thumbnailUrl={image.thumbnailUrl}
                               alt={image.originalName}
                               className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                              onClick={() => handleImageClick(image.url, image.originalName)}
+                              onClick={() => handleImageClick(image.url, image.originalName, image.id)}
                             />
 
                             {/* Photo type badge overlay */}
@@ -424,7 +523,7 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                                 size="sm"
                                 variant="secondary"
                                 className="flex-1 h-8 text-xs bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
-                                onClick={() => handleDownloadWithMetadata(image, image.originalName)}
+                                onClick={() => handleDownloadWithMetadata(image, index + 1)}
                               >
                                 <Download className="h-3 w-3 mr-1" />
                                 Download
@@ -458,21 +557,20 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                   Selfie Photos ({selfiePhotos.length})
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {selfiePhotos.map((image) => (
+                  {selfiePhotos.map((image, index) => (
                     <div key={image.id} className="group relative">
                       {/* Attachment Card Format */}
                       <Card className="border border-border hover:border-border transition-colors">
                         <CardContent className="p-0">
                           {/* Image with overlay */}
                           <div className="relative aspect-square bg-muted rounded-t-lg overflow-hidden">
-                            <img
-                              src={image.thumbnailUrl
-                                ? verificationImagesService.getThumbnailDisplayUrl(image.thumbnailUrl)
-                                : verificationImagesService.getImageDisplayUrl(image.url)
-                              }
+                            <AsyncImage
+                              imageUrl={image.url}
+                              imageId={image.id}
+                              thumbnailUrl={image.thumbnailUrl}
                               alt={image.originalName}
                               className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                              onClick={() => handleImageClick(image.url, image.originalName)}
+                              onClick={() => handleImageClick(image.url, image.originalName, image.id)}
                             />
 
                             {/* Photo type badge overlay */}
@@ -532,7 +630,7 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
                                 size="sm"
                                 variant="secondary"
                                 className="flex-1 h-8 text-xs bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
-                                onClick={() => handleDownloadWithMetadata(image, image.originalName)}
+                                onClick={() => handleDownloadWithMetadata(image, verificationPhotos.length + index + 1)}
                               >
                                 <Download className="h-3 w-3 mr-1" />
                                 Download
@@ -565,6 +663,7 @@ const VerificationImages: React.FC<VerificationImagesProps> = ({
       {selectedImage && (
         <ImageViewer
           imageUrl={selectedImage.url}
+          imageId={selectedImage.imageId}
           imageName={selectedImage.name}
           isOpen={!!selectedImage}
           onClose={() => setSelectedImage(null)}

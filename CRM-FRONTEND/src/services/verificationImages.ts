@@ -1,6 +1,9 @@
 import { apiService } from './api';
 import type { ApiResponse } from '@/types/api';
 
+// Cache for blob URLs to avoid re-fetching
+const blobUrlCache = new Map<string, string>();
+
 export interface VerificationImage {
   id: number;
   filename: string;
@@ -93,10 +96,8 @@ class VerificationImagesService {
   /**
    * Download verification image
    */
-  async downloadVerificationImage(imageUrl: string): Promise<Blob> {
-    // Static files are served from the base URL without /api suffix
-    const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
-    const response = await fetch(`${baseUrl}${imageUrl}`, {
+  async downloadVerificationImage(imageId: number): Promise<Blob> {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cases/verification-images/${imageId}/serve`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
@@ -110,19 +111,93 @@ class VerificationImagesService {
   }
 
   /**
-   * Get verification image URL for display
+   * Get verification image URL for display (returns blob URL for authenticated access)
    */
-  getImageDisplayUrl(imageUrl: string): string {
-    // Static files are served from the base URL without /api suffix
+  async getImageDisplayUrl(imageUrl: string, imageId?: number): Promise<string> {
+    // If we have an imageId, use the secure API endpoint with blob URL
+    if (imageId) {
+      const cacheKey = `image-${imageId}`;
+
+      // Check if we already have a blob URL for this image
+      if (blobUrlCache.has(cacheKey)) {
+        return blobUrlCache.get(cacheKey)!;
+      }
+
+      try {
+        // Fetch the image as blob with authentication
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cases/verification-images/${imageId}/serve`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.statusText}`);
+        }
+
+        // Create blob URL
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        // Cache the blob URL
+        blobUrlCache.set(cacheKey, blobUrl);
+
+        return blobUrl;
+      } catch (error) {
+        console.error('Error fetching image:', error);
+        // Fallback to direct URL (might not work with auth)
+        const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+        return `${baseUrl}${imageUrl}`;
+      }
+    }
+
+    // Fallback to direct URL (for backward compatibility)
     const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
     return `${baseUrl}${imageUrl}`;
   }
 
   /**
-   * Get thumbnail URL for display
+   * Get thumbnail URL for display (returns blob URL for authenticated access)
    */
-  getThumbnailDisplayUrl(thumbnailUrl: string): string {
-    // Static files are served from the base URL without /api suffix
+  async getThumbnailDisplayUrl(thumbnailUrl: string, imageId?: number): Promise<string> {
+    // If we have an imageId, use the secure API endpoint with blob URL
+    if (imageId) {
+      const cacheKey = `thumbnail-${imageId}`;
+
+      // Check if we already have a blob URL for this thumbnail
+      if (blobUrlCache.has(cacheKey)) {
+        return blobUrlCache.get(cacheKey)!;
+      }
+
+      try {
+        // Fetch the thumbnail as blob with authentication
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cases/verification-images/${imageId}/thumbnail`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch thumbnail: ${response.statusText}`);
+        }
+
+        // Create blob URL
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        // Cache the blob URL
+        blobUrlCache.set(cacheKey, blobUrl);
+
+        return blobUrl;
+      } catch (error) {
+        console.error('Error fetching thumbnail:', error);
+        // Fallback to direct URL (might not work with auth)
+        const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+        return `${baseUrl}${thumbnailUrl}`;
+      }
+    }
+
+    // Fallback to direct URL (for backward compatibility)
     const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
     return `${baseUrl}${thumbnailUrl}`;
   }
@@ -188,6 +263,16 @@ class VerificationImagesService {
       submissionCount: stats.submissions.size,
       verificationTypeCount: stats.verificationTypes.size,
     };
+  }
+
+  /**
+   * Clean up blob URLs to prevent memory leaks
+   */
+  static cleanupBlobUrls(): void {
+    blobUrlCache.forEach((blobUrl) => {
+      window.URL.revokeObjectURL(blobUrl);
+    });
+    blobUrlCache.clear();
   }
 }
 

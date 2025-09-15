@@ -4,6 +4,7 @@ import { createAuditLog } from '@/utils/auditLogger';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
+import * as fsSync from 'fs';
 import sharp from 'sharp';
 import { config } from '@/config';
 
@@ -339,6 +340,133 @@ export class VerificationAttachmentController {
           code: 'GET_VERIFICATION_IMAGES_FAILED',
           timestamp: new Date().toISOString(),
         },
+      });
+    }
+  }
+
+  /**
+   * Serve verification image file
+   */
+  static async serveVerificationImage(req: Request, res: Response) {
+    try {
+      const { imageId } = req.params;
+
+      // Get image details from database
+      const imageResult = await query(
+        `SELECT filename, "originalName", "mimeType", "fileSize", "filePath", case_id, verification_type
+         FROM verification_attachments WHERE id = $1`,
+        [imageId]
+      );
+
+      if (imageResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Verification image not found',
+          error: { code: 'IMAGE_NOT_FOUND' }
+        });
+      }
+
+      const image = imageResult.rows[0];
+
+      // Construct file path
+      const filePath = path.join(
+        process.cwd(),
+        'uploads',
+        'verification',
+        image.verification_type.toLowerCase(),
+        image.case_id,
+        image.filename
+      );
+
+      // Check if file exists
+      if (!fsSync.existsSync(filePath)) {
+        return res.status(404).json({
+          success: false,
+          message: 'Image file not found on server',
+          error: { code: 'FILE_NOT_FOUND' }
+        });
+      }
+
+      // Set appropriate headers
+      res.setHeader('Content-Type', image.mimeType);
+      res.setHeader('Content-Length', image.fileSize);
+      res.setHeader('Content-Disposition', `inline; filename="${image.originalName}"`);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+
+      // Stream the file
+      const fileStream = fsSync.createReadStream(filePath);
+      fileStream.pipe(res);
+
+    } catch (error) {
+      console.error('Error serving verification image:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: { code: 'INTERNAL_ERROR' }
+      });
+    }
+  }
+
+  /**
+   * Serve verification image thumbnail
+   */
+  static async serveVerificationThumbnail(req: Request, res: Response) {
+    try {
+      const { imageId } = req.params;
+
+      // Get image details from database
+      const imageResult = await query(
+        `SELECT filename, "originalName", "mimeType", "fileSize", "thumbnailPath", case_id, verification_type
+         FROM verification_attachments WHERE id = $1`,
+        [imageId]
+      );
+
+      if (imageResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Verification image not found',
+          error: { code: 'IMAGE_NOT_FOUND' }
+        });
+      }
+
+      const image = imageResult.rows[0];
+
+      // If no thumbnail, serve original image
+      if (!image.thumbnailPath) {
+        return VerificationAttachmentController.serveVerificationImage(req, res);
+      }
+
+      // Construct thumbnail file path
+      const thumbnailPath = path.join(
+        process.cwd(),
+        'uploads',
+        'verification',
+        image.verification_type.toLowerCase(),
+        image.case_id,
+        'thumbnails',
+        `thumb_${image.filename}`
+      );
+
+      // Check if thumbnail exists, fallback to original
+      if (!fsSync.existsSync(thumbnailPath)) {
+        return VerificationAttachmentController.serveVerificationImage(req, res);
+      }
+
+      // Set appropriate headers
+      res.setHeader('Content-Type', image.mimeType);
+      res.setHeader('Content-Disposition', `inline; filename="thumb_${image.originalName}"`);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+
+      // Stream the thumbnail file
+      const fileStream = fsSync.createReadStream(thumbnailPath);
+      fileStream.pipe(res);
+
+    } catch (error) {
+      console.error('Error serving verification thumbnail:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: { code: 'INTERNAL_ERROR' }
       });
     }
   }

@@ -416,6 +416,20 @@ router.get('/:id/verification-images',
   VerificationAttachmentController.getVerificationImages
 );
 
+// Serve verification image file
+router.get('/verification-images/:imageId/serve',
+  [param('imageId').trim().notEmpty().withMessage('Image ID is required')],
+  validate,
+  VerificationAttachmentController.serveVerificationImage
+);
+
+// Serve verification image thumbnail
+router.get('/verification-images/:imageId/thumbnail',
+  [param('imageId').trim().notEmpty().withMessage('Image ID is required')],
+  validate,
+  VerificationAttachmentController.serveVerificationThumbnail
+);
+
 // TODO: Implement remaining case workflow functions
 // router.post('/:id/notes',
 //   [param('id').trim().notEmpty().withMessage('Case ID is required')],

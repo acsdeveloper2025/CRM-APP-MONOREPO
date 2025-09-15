@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { FormSubmission } from '@/types/form';
 import VerificationImages from '@/components/VerificationImages';
 import { TemplateReportCard } from '@/components/forms/TemplateReportCard';
@@ -220,21 +221,29 @@ export const OptimizedFormSubmissionViewer: React.FC<OptimizedFormSubmissionView
                       <Badge variant="outline">{section.fields?.length || 0} fields</Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {section.fields?.map((field, fieldIndex) => (
-                        <div key={fieldIndex} className="border rounded-lg p-3 bg-muted">
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="text-sm font-medium text-foreground">
-                              {field.label}
-                              {field.isRequired && <span className="text-red-500 ml-1">*</span>}
-                            </label>
-                            <Badge variant="outline" className="text-xs">
+                        <div key={fieldIndex} className="space-y-3">
+                          {/* Field Label with Enhanced Styling */}
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-semibold text-foreground flex items-center space-x-2">
+                              <span className="bg-muted text-muted-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                                {fieldIndex + 1}
+                              </span>
+                              <span>{field.label}</span>
+                              {field.isRequired && <span className="text-red-500 text-lg">*</span>}
+                            </Label>
+                            <Badge variant="secondary" className="text-xs">
                               {field.type}
                             </Badge>
                           </div>
-                          <div className="text-sm text-foreground bg-white rounded p-2 min-h-[2.5rem] flex items-center border">
-                            {field.value || <span className="text-muted-foreground italic">Not provided</span>}
+
+                          {/* Field Value Display with Enhanced Styling */}
+                          <div className="min-h-[50px] p-4 bg-muted border-2 border-border rounded-lg">
+                            <div className="text-sm text-foreground">
+                              {field.value || <span className="text-muted-foreground italic">Not provided</span>}
+                            </div>
                           </div>
                         </div>
                       ))}
